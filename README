@@ -1,0 +1,27 @@
+NOTES
+The software currently has been tested only under GNU/Linux systems
+However, binaries will be made available in the future
+
+PREREQUISITES
+
+For cytostream
+
+    Python     - www.python.org
+    PyQt4      - http://www.riverbankcomputing.co.uk/software/pyqt/intr0
+    Numpy      - http://numpy.scipy.org/
+    Matplotlib - http://matplotlib.sourceforge.net/
+    fcm        - http://code.google.com/p/py-fcm/
+
+For fcm
+    SciPy      - http://www.scipy.org/
+    traits     - http://code.enthought.com/projects/traits/
+
+ON MECURIAL
+
+A good start for the .hginore file would be somthing like
+
+*****************************
+./*/projects/*
+.*\.pyc
+.*~
+*****************************
