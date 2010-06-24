@@ -2,18 +2,17 @@ import sys,os,time
 from PyQt4 import QtGui, QtCore
 
 class FileSelector(QtGui.QWidget):
-    def __init__(self, fileList, color='white', parent=None, fileDefault=None, selectionFn=None):
+    def __init__(self, fileList, color='white', parent=None, modelsRun = None, fileDefault=None, selectionFn=None, showModelSelector=False):
         QtGui.QWidget.__init__(self,parent)
 
         self.color = color
         vbox = QtGui.QVBoxLayout()
-        hbox1 = QtGui.QVBoxLayout()
-        hbox2 = QtGui.QVBoxLayout()
+        hbox1 = QtGui.QHBoxLayout()
+        hbox2 = QtGui.QHBoxLayout()
         
         ## file selector
         hbox1.addWidget(QtGui.QLabel('File Selector'))
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
-        vbox.addLayout(hbox1)
         self.fileSelector = QtGui.QComboBox(self)
         self.fileSelector.setMaximumWidth(150)
         for fileName in fileList:
@@ -21,7 +20,6 @@ class FileSelector(QtGui.QWidget):
 
         hbox2.addWidget(self.fileSelector)
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
-        vbox.addLayout(hbox2)
 
         if fileDefault != None:
             if fileList.__contains__(fileDefault):
@@ -29,14 +27,45 @@ class FileSelector(QtGui.QWidget):
             else:
                 print "ERROR: in file selector - bad specified fileDefault"
 
-        if selectionFn != None:
-            #self.connect(self.fileSelector,QtCore.SIGNAL('activated(QString)'), selectionFn)
-            #self.connect(self.fileSelector,QtCore.SIGNAL('clicked()'), selectionFn)
-            self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)
+        if selectionFn == None:
+            selectionFn = self.generic_callback
+        self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
 
+        if showModelSelector != False:
+            ## model selector label
+            modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
+            hbox3 = QtGui.QHBoxLayout()
+            hbox4 = QtGui.QHBoxLayout()
+            hbox3.addWidget(QtGui.QLabel('Model Selector'))
+            hbox3.setAlignment(QtCore.Qt.AlignCenter)
 
-        ## finalize layout                                                                                                                                                 
+            ## model selector combobox  
+            self.modelSelector = QtGui.QComboBox(self)
+            self.modelSelector.setMaximumWidth(180)
+            self.modelSelector.setMinimumWidth(180)
+            for model in modelsRun:
+                self.modelSelector.addItem(model)
+            hbox4.addWidget(self.modelSelector)
+            hbox4.setAlignment(QtCore.Qt.AlignCenter)
+
+            if modelDefault != None:
+                if modelsRun.__contains__(modelDefault):
+                    self.modelSelector.setCurrentIndex(modelsRun.index(modelDefault))
+                else:
+                    print "ERROR: in dpd - bad specified modelDefault"
+
+            if selectionFn != None:
+                self.selectionFn = self.generic_callback
+            self.connect(self.modelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)
+
+        ## finalize layout                           
         vbox.setAlignment(QtCore.Qt.AlignTop)
+        vbox.addLayout(hbox1)
+        vbox.addLayout(hbox2)
+        if showModelSelector == True:
+             vbox.addLayout(hbox1)
+             vbox.addLayout(hbox2)
+    
         self.setLayout(vbox)
 
         ## color the background
@@ -45,12 +74,20 @@ class FileSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
-
     def get_selected_file(self):
         sfInd = self.fileSelector.currentIndex()
         sf = str(self.fileSelector.currentText())
 
         return sf, sfInd
+
+    def get_selected_model(self):
+        smInd = self.modelSelector.currentIndex()
+        sm = str(self.modelSelector.currentText())
+
+        return sm, smInd
+
+    def generic_callback(self):
+        print 'callback does not do anything yet'
 
 
 if __name__ == '__main__':

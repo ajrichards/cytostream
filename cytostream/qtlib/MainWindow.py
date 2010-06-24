@@ -25,7 +25,7 @@ from BulkNewProject import BulkNewProject
 from OpenExistingProject import OpenExistingProject
 from ScatterPlotter import ScatterPlotter
 from FileSelector import FileSelector
-from ModelSelector import ModelSelector
+#from ModelSelector import ModelSelector
 from DataProcessingCenter import DataProcessingCenter
 from DataProcessingDock import DataProcessingDock
 from QualityAssuranceDock import QualityAssuranceDock
@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         self.filename = None
         self.dockWidget = None
         self.fileSelector = None
-        self.modelSelector = None
+        #self.modelSelector = None
 
 
     #################################################
@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
 
     def show_model_log_info(self):
         self.set_selected_model(withRefresh=False)
-        selectedModel, selectedModelIndex = self.modelSelector.get_selected_model()
+        selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
 
         modelLogFile = self.log.read_model_log(selectedModel) 
         QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
@@ -371,7 +371,6 @@ class MainWindow(QMainWindow):
         hbl.setAlignment(QtCore.Qt.AlignTop)
         hbl.addWidget(dpc)
         self.refresh_main_widget()
-        #self.setCentralWidget(self.mainWidget)
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
@@ -397,7 +396,6 @@ class MainWindow(QMainWindow):
             hbl = QtGui.QHBoxLayout(self.mainWidget)
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
-            #self.setCentralWidget(self.mainWidget)
         
         self.track_highest_state()
         self.refresh_main_widget()
@@ -418,11 +416,9 @@ class MainWindow(QMainWindow):
         hbl = QtGui.QHBoxLayout(self.mainWidget)
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl.addWidget(self.mc)
-        #self.setCentralWidget(self.mainWidget)
         self.refresh_main_widget()
         self.add_dock()
         self.track_highest_state()
-        #self.update()
         self.controller.save()
 
     def move_to_results_navigation(self,runNew=False):
@@ -431,19 +427,21 @@ class MainWindow(QMainWindow):
         if proceed == False:
             return
 
-        if self.modelSelector != None and self.log.log['selectedModel'] == None:
-                self.set_selected_model(withRefresh=False)
-        
         if self.dockWidget != None:
             self.clear_dock()
 
         fileList = get_fcs_file_names(self.controller.homeDir)
         self.log.log['currentState'] = "Results Navigation"
-        self.add_dock()
+        self.clear_dock()
         self.display_thumbnails(runNew)
+        self.add_dock()
         self.track_highest_state()
-        #self.update()
         self.controller.save()
+
+        if self.log.log['selectedModel'] == None:
+            self.set_selected_model(withRefresh=False)
+        
+
 
     def generic_callback(self):
         print "this button/widget does not do anything yet"
@@ -459,10 +457,10 @@ class MainWindow(QMainWindow):
             self.clear_dock()
 
         if self.fileSelector != None and self.log.log['selectedFile'] == None:
-                self.set_selected_file(withRefresh=False)
+            self.set_selected_file(withRefresh=False)
 
-        if self.modelSelector != None and self.log.log['selectedModel'] == None:
-                self.set_selected_model(withRefresh=False)
+        if self.log.log['currentState'] == 'Results Navigation' and self.log.log['selectedModel'] == None:
+            self.set_selected_model(withRefresh=False)
 
         masterChannelList = self.model.get_master_channel_list()
         fileList = get_fcs_file_names(self.controller.homeDir)
@@ -483,19 +481,18 @@ class MainWindow(QMainWindow):
         hbl2 = QtGui.QHBoxLayout()
         hbl2.setAlignment(QtCore.Qt.AlignTop)
        
-        self.fileSelector = FileSelector(fileList,parent=self.dockWidget,selectionFn=self.set_selected_file,fileDefault=self.log.log['selectedFile'])
-        self.fileSelector.setAutoFillBackground(True)
-        hbl2.addWidget(self.fileSelector)
-
         if self.log.log['currentState'] in ['Results Navigation']:
-            hbl3 = QtGui.QVBoxLayout()
-            hbl3.setAlignment(QtCore.Qt.AlignTop)
-            modelsRun = get_models_run(self.controller.homeDir)
-            self.modelSelector = ModelSelector(modelsRun,parent=self.dockWidget,selectionFn=self.set_selected_model,modelDefault=self.log.log['selectedModel'])
-            self.modelSelector.setAutoFillBackground(True)
-            hbl3.addWidget(self.modelSelector)
-       
-        subsamplingDefault = self.log.log['subsample']
+            showModelSelector = True
+        else:
+            showModelSelector = False
+
+        if self.log.log['currentState'] not in ['Model']:
+            self.fileSelector = FileSelector(fileList,parent=self.dockWidget,selectionFn=self.set_selected_file,fileDefault=self.log.log['selectedFile'],
+                                             showModelSelector=showModelSelector)
+            self.fileSelector.setAutoFillBackground(True)
+            hbl2.addWidget(self.fileSelector)
+
+            subsamplingDefault = self.log.log['subsample']
 
         if self.log.log['currentState'] == "Data Processing":
             self.dock = DataProcessingDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=self.dockWidget,
@@ -583,7 +580,6 @@ class MainWindow(QMainWindow):
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             self.refresh_main_widget()
-            #self.setCentralWidget(self.mainWidget)
             self.add_dock()
 
     def create_results_thumbs(self):
@@ -600,7 +596,7 @@ class MainWindow(QMainWindow):
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
             tv = ThumbnailViewer(thumbDir,fileChannels,parent=self.mainWidget,viewScatterFn=self.handle_show_scatter)
             hbl = QtGui.QHBoxLayout()#self.mainWidget
-            vbl = QtGui.QHBoxLayout()
+            vbl = QtGui.QVBoxLayout()
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             hbl.addWidget(tv)
             vbl.setAlignment(QtCore.Qt.AlignTop)
@@ -656,7 +652,7 @@ class MainWindow(QMainWindow):
             self.refresh_state()
         
     def set_selected_model(self,withRefresh=True):
-        selectedModel, selectedModleInd = self.modelSelector.get_selected_model()
+        selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
         self.log.log['selectedModel'] = selectedModel
         if withRefresh == True:
             self.refresh_state()
