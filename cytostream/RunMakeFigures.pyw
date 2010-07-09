@@ -54,7 +54,6 @@ for o, a in optlist:
         modelName = a
 
 
-
 def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
     fig = pyplot.figure(figsize=(7,7),facecolor=None)
     markerSize = 5
@@ -90,6 +89,8 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
         numColors = range(maxLabel)
         cmp = model.get_n_color_colorbar(maxLabel)
 
+
+        print 'labels are', labels
         for l in range(maxLabel):
             rgbVal = tuple([val * 256 for val in cmp[l,:3]])
             hexColor = model.rgb_to_hex(rgbVal)[:7]

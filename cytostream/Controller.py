@@ -4,7 +4,7 @@ A.Richards
 
 '''
 
-import csv,sys
+import csv,sys,time
 import numpy as np
 
 try:
@@ -13,12 +13,19 @@ except:
     print "IMPORT WARNING: Module PyQt4 is not available"
     sys.exit()
 
+try:
+    from config_cs import configCS
+    pythonPath = configCS['pythonPath']
+except:
+    pythonPath = 'python'
+
 import re,os,sys,csv,webbrowser,cPickle
 from Model import Model
 from Logging import Logger
 import matplotlib.pyplot as plt
 import subprocess
 from FileControls import *
+from MakeScatter import MakeScatter
 
 ### get base directory 
 BASEDIR = os.path.abspath('')
@@ -36,6 +43,7 @@ class Controller:
         self.homeDir = None
         self.model = Model()
         self.log = Logger()
+        self.subsampleIndices = None
                               
     def save(self):
         self.log.write()
@@ -46,7 +54,7 @@ class Controller:
         self.log.initialize(self.projectID,self.homeDir,load=loadExisting) 
         self.model.initialize(self.projectID,self.homeDir)
 
-    def process_images(self,mode,progressBar=None,modelName=None,modelClassLabels=None):
+    def process_images(self,mode,progressBar=None,modelName=None,modelClassLabels=None,view=None):
 
         if mode not in ['qa','results']:
             print "ERROR: invalid mode specified"
@@ -98,24 +106,35 @@ class Controller:
 
                     indexJ = fileSpecificIndices[j]
                     channelJ = fileChannels[indexJ]
-                    script = os.path.join(self.homeDir,"..","..","RunMakeFigures.py")
                     subset = self.log.log['subsample']
-                    proc = subprocess.Popen("python %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
+                    
+                    script = os.path.join(self.homeDir,"..","..","RunMakeFigures.pyw")
+                    subset = self.log.log['subsample']
+                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
+                    
                                             shell=True,
-                                            stdout=subprocess.PIPE,
-                                            stdin=subprocess.PIPE)
+                                            stdout=subprocess.PIPE
+                                            )#stdin=subprocess.PIPE
                     while True:
-                        next_line = proc.stdout.readline()
-                        if next_line == '' and proc.poll() != None:
+                        try:
+                            next_line = proc.stdout.readline()
+                            proc.wait()
+                            if next_line == '' and proc.poll() != None:
+                                break
+                            else:
+                                print next_line
+                        except:
+                            proc.wait()
                             break
-
-                    #print next_line
+                                         
                     imageCount += 1
+                    print imageCount
                     progress = 1.0 / float(len(imageProgress)) *100.0
                     percentDone+=progress
 
                     if progressBar != None:
                         progressBar.move_bar(int(round(percentDone)))
+                        print 'moving', percentDone
 
             ## create the thumbnails
             if mode == 'qa':
@@ -309,37 +328,69 @@ class Controller:
         for file in fileList:
             if selectedModel == 'dpmm-cpu':
 
-                proc = subprocess.Popen("python RunDPM-CPU.py -p %s -f %s -k %s"%(self.projectID,file,numComponents), 
+                proc = subprocess.Popen("%s RunDPM-CPU.py -p %s -f %s -k %s"%(pythonPath, self.projectID,file,numComponents), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
                 
                 while True:
-                    next_line = proc.stdout.readline()
-                    if next_line == '' and proc.poll() != None:
-                        break
+                    try:
+                        next_line = proc.stdout.readline()
+                        if next_line == '' and proc.poll() != None:
+                            break
 
-                    if re.search("it =",next_line):
-                        progress = 1.0 / totalIters
-                        percentDone+=progress * 100.0
-                        if progressBar != None:
-                            progressBar.move_bar(int(round(percentDone)))
+                        if re.search("it =",next_line):
+                            progress = 1.0 / totalIters
+                            percentDone+=progress * 100.0
+                            if progressBar != None:
+                                progressBar.move_bar(int(round(percentDone)))
+                    except:
+                        break
 
             elif selectedModel == 'dpmm-gpu':
 
-               proc = subprocess.Popen("python RunDPM-GPU.py -p %s -f %s -k %s"%(self.projectID,file,numComponents), 
+               proc = subprocess.Popen("%s RunDPM-GPU.py -p %s -f %s -k %s"%(pythonPath,self.projectID,file,numComponents), 
                                        shell=True,
                                        stdout=subprocess.PIPE,
                                        stdin=subprocess.PIPE)
                while True:
-                   next_line = proc.stdout.readline()
-                   if next_line == '' and proc.poll() != None:
+                   try:
+                       next_line = proc.stdout.readline()
+                       if next_line == '' and proc.poll() != None:
+                           break
+                        #print next_line
+
+                       if re.search("it =",next_line):
+                           progress = 1.0 / totalIters *100.0
+                           percentDone+=progress
+                           if progressBar != None:
+                               proc.wait()
+                               progressBar.move_bar(int(round(percentDone)))
+                   except:
                        break
-                   #print next_line
+                               
+class Worker(QtCore.QThread):
+    def __init__(self, parent = None):
+    
+        QtCore.QThread.__init__(self, parent)
+        self.exiting = False
+        #self.size = QSize(0, 0)
+        #self.stars = 0
 
-                   if re.search("it =",next_line):
-                       progress = 1.0 / totalIters *100.0
-                       percentDone+=progress
-                       if progressBar != None:
-                           progressBar.move_bar(int(round(percentDone)))
+    def __del__(self):
+    
+        self.exiting = True
+        self.wait()
 
+    def setup(self, cmd):
+        self.cmd = cmd
+        self.start()
+
+    ## The run method is where we perform the processing that occurs in the thread provided by the Worker instance
+    def run(self):
+        
+        # Note: This is never called directly. It is called by Qt once the
+        # thread environment has been set up.
+        ##"%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
+                    
+        os.system(self.cmd)

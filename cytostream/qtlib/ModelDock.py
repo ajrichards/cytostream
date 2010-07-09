@@ -33,7 +33,6 @@ class ModelDock(QtGui.QWidget):
         #self.componentViewer = QtGui.QLCDNumber(self)
         #self.componentViewer.display(defaultComponents)
         self.componentViewer = QtGui.QLabel('%s'%defaultComponents)
-        print dir(self.componentViewer)
         hbox5.setAlignment(QtCore.Qt.AlignCenter)
         hbox5.addWidget(self.componentViewer)
 

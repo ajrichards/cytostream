@@ -79,7 +79,9 @@ class ProgressBar(QtGui.QWidget):
     
     def move_bar(self,step):
         self.step = step
-        self.pbar.setValue(self.step)   
+        self.pbar.setValue(self.step)
+        self.show()
+        QtCore.QCoreApplication.processEvents()
 
     def set_callback(self,callback):
         #self.connect(self.button, SIGNAL("returnPressed()"), callback)

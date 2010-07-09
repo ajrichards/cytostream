@@ -32,9 +32,10 @@ from QualityAssuranceDock import QualityAssuranceDock
 from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter
 from ModelDock import ModelDock
+from PipelineDock import PipelineDock
 from ResultsNavigationDock import ResultsNavigationDock
 #from ResultsNavigationCenter import ResultsNavigationCenter
-
+from ScatterBar import ScatterBar
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 __version__ = "0.1"
@@ -47,14 +48,19 @@ class MainWindow(QMainWindow):
         QtGui.QMainWindow.__init__(self)
         
         ## variables
+        self.myWidth = 800
+        self.myHeight = 600
+        self.eSize = 50
+        self.buff = 2.0
         self.controller = Controller()
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
         self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation']
         self.modelList = ['dpmm-cpu','dpmm-gpu']
+        
         self.move_to_initial()
+        self.add_pipeline_dock()
         self.printer = None
-
 
         self.sizeLabel = QLabel()
         self.sizeLabel.setFrameStyle(QFrame.StyledPanel|QFrame.Sunken)
@@ -63,15 +69,9 @@ class MainWindow(QMainWindow):
         self.create_menubar_toolbar()
 
         ## settings
-        settings = QSettings()
-        size = settings.value("MainWindow/Size",
-                              QVariant(QSize(800, 600))).toSize()
-        self.resize(size)
-        position = settings.value("MainWindow/Position",
-                                  QVariant(QPoint(0, 0))).toPoint()
-        self.move(position)
+        self.showMaximized()
         self.setWindowTitle(self.controller.appName)
-
+        
     def reset_view_workspace(self):
         self.log = self.controller.log
         self.model = self.controller.model
@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
     # menubar and toolbar
     #
     #################################################
-
+    
     def create_menubar_toolbar(self):
         fileNewAction = self.create_action("&New...", self.create_new_project,
                 QKeySequence.New, "filenew", "Create a new project")
@@ -127,13 +127,6 @@ class MainWindow(QMainWindow):
         editResultsNavigation = self.create_action("&Results Navigation", self.move_to_results_navigation, 
                                                    "Ctrl+R", "resultsnavigation", "Move to Results Navigation")
 
-        arrowNext1 = self.create_action("Next", self.move_to_quality_assurance,
-                                        "Alt+Z", "go-next", "")
-        arrowNext2 = self.create_action("Next", self.move_to_model,
-                                        "Alt+Z", "go-next", "")
-        arrowNext3 = self.create_action("Next", self.move_to_results_navigation,
-                                        "Alt+Z", "go-next", "")
-
         helpAboutAction = self.create_action("&About %s"%self.controller.appName,
                 self.helpAbout)
         helpHelpAction = self.create_action("&Help", self.helpHelp,
@@ -151,25 +144,34 @@ class MainWindow(QMainWindow):
         self.addActions(mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
         helpMenu = self.menuBar().addMenu("&Help")
         self.addActions(helpMenu, (helpAboutAction, helpHelpAction))
-
-        #fileToolbar = self.addToolBar("File")
-        #fileToolbar.setObjectName("FileToolBar")
-        #self.addActions(fileToolbar, (fileNewAction, fileOpenAction,
-        #                              fileSaveAsAction))
-        self.pipelineToolbar = self.addToolBar("Edit")
-        self.pipelineToolbar.setObjectName("EditToolBar")
-        self.addActions(self.pipelineToolbar, (editDataProcessing, arrowNext1,
-                                               editQualityAssurance, arrowNext2,
-                                               editModel, arrowNext3,
-                                               editResultsNavigation))
-
         self.addActions(self.mainWidget,(editDataProcessing,
                                          editQualityAssurance,editModel,
                                          editResultsNavigation))
-
-    def display_stage(self):
-        statusLabel = QtGui.QLabel('blah blah blah')
-        self.pipelineToolbar.addWidget(statusLabel)
+    def add_pipeline_dock(self):
+        self.pipelineDock = QDockWidget(self)
+        self.pipelineDock.setObjectName("PipelineDockWidget")
+        self.pipelineDock.setAllowedAreas(Qt.TopDockWidgetArea|Qt.BottomDockWidgetArea)
+        self.pipelineDock.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
+ 
+        self.pipelineDockWidget = QtGui.QWidget(self)
+        self.pipelineDockWidget.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
+        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize)
+        palette = self.pipelineDockWidget.palette()
+        role = self.pipelineDockWidget.backgroundRole()
+        palette.setColor(role, QtGui.QColor('black'))
+        self.pipelineDockWidget.setPalette(palette)
+        self.pipelineDockWidget.setAutoFillBackground(True)
+        hbl1 = QtGui.QHBoxLayout()
+        hbl1.setAlignment(QtCore.Qt.AlignCenter)
+        hbl1.addWidget(self.pipelineDock)
+        vbl = QtGui.QVBoxLayout(self.pipelineDockWidget)
+        vbl.addLayout(hbl1)
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        
+        self.pipelineDock.setWidget(self.pDock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.pipelineDock)
+        self.pipelineDock.setMinimumWidth(self.eSize*2)
+        self.pipelineDock.setMaximumWidth(self.eSize*2)
 
     def create_action(self, text, slot=None, shortcut=None, icon=None,
                      tip=None, checkable=False, signal="triggered()"):
@@ -198,7 +200,7 @@ class MainWindow(QMainWindow):
                 target.addAction(action)
 
     def create_new_project(self):
-        QtGui.QMessageBox.information(self,self.controller.appName,"Load a FCS file")
+        #QtGui.QMessageBox.information(self,self.controller.appName,"Load a FCS file")
         self.fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
         goFlag = self.controller.create_new_project(self.fileName,self)
         if goFlag == True:
@@ -315,7 +317,6 @@ class MainWindow(QMainWindow):
                 __version__, platform.python_version(),
                 QT_VERSION_STR, PYQT_VERSION_STR, platform.system()))
 
-
     def show_model_log_info(self):
         self.set_selected_model(withRefresh=False)
         selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
@@ -343,7 +344,6 @@ class MainWindow(QMainWindow):
             self.clear_dock()
       
         self.pngViewer = QLabel(self.mainWidget)
-        #self.pngViewer.setMinimumSize(200, 200)
         self.pngViewer.setAlignment(Qt.AlignCenter)
         self.pngViewer.setContextMenuPolicy(Qt.ActionsContextMenu)
         self.mainWidget = self.pngViewer
@@ -391,10 +391,22 @@ class MainWindow(QMainWindow):
         if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
             self.display_thumbnails()
         else:
+            #self.scatterBar = ScatterBar(parent=self.mainWidget)
+            #self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
+            #self.progressBar.set_callback(lambda runNew=True: self.run_progress_bar(runNew))
+            self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
-            self.progressBar.set_callback(lambda runNew=True: self.run_progress_bar(runNew))
+            self.progressBar.set_callback(self.run_progress_bar)
             hbl = QtGui.QHBoxLayout(self.mainWidget)
             hbl.addWidget(self.progressBar)
+            hbl.setAlignment(QtCore.Qt.AlignCenter)
+            
+            self.refresh_main_widget()
+            self.add_dock()
+
+
+            hbl = QtGui.QHBoxLayout()
+            hbl.addWidget(self.scatterBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
         
         self.track_highest_state()
@@ -404,6 +416,7 @@ class MainWindow(QMainWindow):
 
     def move_to_model(self):
         nextState = self.stateList.index('Model')
+        print "moving to model", nextState
         proceed = self.check_state_status(nextState)
         if proceed == False:
             return
@@ -441,8 +454,6 @@ class MainWindow(QMainWindow):
         if self.log.log['selectedModel'] == None:
             self.set_selected_model(withRefresh=False)
         
-
-
     def generic_callback(self):
         print "this button/widget does not do anything yet"
 
@@ -521,6 +532,7 @@ class MainWindow(QMainWindow):
         #vbl.setAlignment(QtCore.Qt.AlignTop)
         self.mainDockWidget.setWidget(self.dockWidget)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.mainDockWidget)
+        #self.add_pipeline_dock()
 
     def clear_dock(self):
         self.removeDockWidget(self.mainDockWidget)
@@ -565,13 +577,17 @@ class MainWindow(QMainWindow):
 
     def run_progress_bar(self,runNew=False):
         mode = self.log.log['currentState']
+
+        if self.controller.subsampleIndices == None:
+            self.controller.handle_subsampling()
+
         fileList = get_fcs_file_names(self.controller.homeDir)
         if mode == 'Quality Assurance':
-            self.controller.process_images('qa',progressBar=self.progressBar)
+            self.controller.process_images('qa',progressBar=self.progressBar,view=self)
             self.display_thumbnails(runNew)
         if mode == 'Model':
-            self.set_model_to_run()
             self.controller.run_selected_model(progressBar=self.mc.progressBar)
+            self.set_model_to_run()
             self.clear_dock()
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
@@ -579,11 +595,12 @@ class MainWindow(QMainWindow):
             hbl = QtGui.QHBoxLayout(self.mainWidget)
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
+            
             self.refresh_main_widget()
             self.add_dock()
 
     def create_results_thumbs(self):
-        self.controller.process_images('results',modelName=self.log.log['modelToRun'],progressBar=self.progressBar)
+        self.controller.process_images('results',modelName=self.log.log['modelToRun'],progressBar=self.progressBar,view=self)
         self.move_to_results_navigation(runNew=True)
  
     def display_thumbnails(self,runNew=False):
@@ -595,7 +612,7 @@ class MainWindow(QMainWindow):
                         
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
             tv = ThumbnailViewer(thumbDir,fileChannels,parent=self.mainWidget,viewScatterFn=self.handle_show_scatter)
-            hbl = QtGui.QHBoxLayout()#self.mainWidget
+            hbl = QtGui.QHBoxLayout()
             vbl = QtGui.QVBoxLayout()
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             hbl.addWidget(tv)
@@ -652,10 +669,13 @@ class MainWindow(QMainWindow):
             self.refresh_state()
         
     def set_selected_model(self,withRefresh=True):
-        selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-        self.log.log['selectedModel'] = selectedModel
-        if withRefresh == True:
-            self.refresh_state()
+        try:
+            selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
+            self.log.log['selectedModel'] = selectedModel
+            if withRefresh == True:
+                self.refresh_state()
+        except:
+            print 'no selected model available'
 
     def refresh_state(self):
         if self.log.log['currentState'] == "Data Processing":
@@ -712,7 +732,7 @@ class MainWindow(QMainWindow):
 
     # check state status
     # nextState is the int index of the next state
-    #
+    # state counting begins at 0
     def check_state_status(self,nextState):
         if self.controller.projectID == None:
             self.display_info('To begin create a new project or open an existing one')
@@ -725,6 +745,7 @@ class MainWindow(QMainWindow):
             print self.log.log['currentState'], nextState
             return False
         elif nextState > int(self.log.log['highestState']) + 1:
+            print 'nextstate', nextState, int(self.log.log['highestState']) 
             self.display_info('User must follow the flow of the pipeline \n i.e. please do not skip steps')
             return False
         else:

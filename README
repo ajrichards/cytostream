@@ -24,4 +24,6 @@ A good start for the .hginore file would be somthing like
 ./*/projects/*
 .*\.pyc
 .*~
+config_cs.py
+./.hg/hgrc
 *****************************
