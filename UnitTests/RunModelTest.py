@@ -31,10 +31,9 @@ class RunModelTest(unittest.TestCase):
     def testRunSelectedModel(self):
         self.controller.log.log['modelToRun'] = 'dpmm-cpu'
         self.controller.run_selected_model()
-        modelName = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4] 
+        modelName = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
         classes = self.verifyModelRun(modelName)
-        rows,cols = np.shape(classes)
-        self.assertEqual(rows,1000)
+        self.assertEqual(len(classes),1000)
 
 ### Run the tests 
 if __name__ == '__main__':

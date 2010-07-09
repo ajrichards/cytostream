@@ -32,7 +32,7 @@ hgrc file
 
 *****************************
 [paths]
-default = https://<username>%%40gmail.com:<generated.passkey@cytostream.googlecode.com/hg/
+default = https://<username>@gmail.com:<generated.passkey@cytostream.googlecode.com/hg/
 
 [ui]
 username = <username>@gmail.com
