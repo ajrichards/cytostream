@@ -108,13 +108,12 @@ class Controller:
                     channelJ = fileChannels[indexJ]
                     subset = self.log.log['subsample']
                     
-                    script = os.path.join(self.homeDir,"..","..","RunMakeFigures.pyw")
+                    script = os.path.join(self.homeDir,"..","..","RunMakeFigures.py")
                     subset = self.log.log['subsample']
                     proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
-                    
                                             shell=True,
-                                            stdout=subprocess.PIPE
-                                            )#stdin=subprocess.PIPE
+                                            stdout=subprocess.PIPE,
+                                            stdin=subprocess.PIPE)
                     while True:
                         try:
                             next_line = proc.stdout.readline()
@@ -128,7 +127,6 @@ class Controller:
                             break
                                          
                     imageCount += 1
-                    print imageCount
                     progress = 1.0 / float(len(imageProgress)) *100.0
                     percentDone+=progress
 
