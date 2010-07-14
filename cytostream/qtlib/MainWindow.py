@@ -25,7 +25,6 @@ from BulkNewProject import BulkNewProject
 from OpenExistingProject import OpenExistingProject
 from ScatterPlotter import ScatterPlotter
 from FileSelector import FileSelector
-#from ModelSelector import ModelSelector
 from DataProcessingCenter import DataProcessingCenter
 from DataProcessingDock import DataProcessingDock
 from QualityAssuranceDock import QualityAssuranceDock
@@ -34,7 +33,6 @@ from ModelCenter import ModelCenter
 from ModelDock import ModelDock
 from PipelineDock import PipelineDock
 from ResultsNavigationDock import ResultsNavigationDock
-#from ResultsNavigationCenter import ResultsNavigationCenter
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 __version__ = "0.1"
@@ -47,9 +45,6 @@ class MainWindow(QMainWindow):
         QtGui.QMainWindow.__init__(self)
         
         ## variables
-        self.myWidth = 800
-        self.myHeight = 600
-        self.eSize = 50
         self.buff = 2.0
         self.controller = Controller()
         self.mainWidget = QtGui.QWidget(self)
@@ -58,19 +53,27 @@ class MainWindow(QMainWindow):
         self.modelList = ['dpmm-cpu','dpmm-gpu']
         
         self.move_to_initial()
-        #self.add_pipeline_dock()
         self.printer = None
-
         self.sizeLabel = QLabel()
         self.sizeLabel.setFrameStyle(QFrame.StyledPanel|QFrame.Sunken)
-        
         self.create_statusbar()
         self.create_menubar_toolbar()
+
 
         ## settings
         self.showMaximized()
         self.setWindowTitle(self.controller.appName)
-        
+        print dir(self)
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        print dir(screen)
+        self.screenWidth = screen.width()
+        self.screenHeight = screen.height()
+        print self.screenWidth, self.screenHeight
+        #if os.name == 'posix':
+        self.eSize = 0.03 * self.screenWidth
+        #else:
+        #    self.eSize = 0.03 * self.screenWidth
+            
     def reset_view_workspace(self):
         self.log = self.controller.log
         self.model = self.controller.model
@@ -79,8 +82,7 @@ class MainWindow(QMainWindow):
         self.filename = None
         self.dockWidget = None
         self.fileSelector = None
-        #self.modelSelector = None
-
+        self.pDock = None        
 
     #################################################
     #
@@ -148,10 +150,9 @@ class MainWindow(QMainWindow):
         self.pipelineDock = QDockWidget(self)
         self.pipelineDock.setObjectName("PipelineDockWidget")
         self.pipelineDock.setAllowedAreas(Qt.TopDockWidgetArea|Qt.BottomDockWidgetArea)
-        self.pipelineDock.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
  
         self.pipelineDockWidget = QtGui.QWidget(self)
-        self.pipelineDockWidget.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
+        #self.pipelineDockWidget.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
         self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize)
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
@@ -200,9 +201,11 @@ class MainWindow(QMainWindow):
         #QtGui.QMessageBox.information(self,self.controller.appName,"Load a FCS file")
         self.fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
         goFlag = self.controller.create_new_project(self.fileName,self)
+        print goFlag
         if goFlag == True:
-            self.add_pipeline_dock()
             self.move_to_data_processing()
+            self.add_pipeline_dock()
+            self.pDock.set_btn_highlight('data processing')
 
     def remove_project(self):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
@@ -232,6 +235,8 @@ class MainWindow(QMainWindow):
 
         if goFlag == True:
             self.move_to_data_processing()
+            self.add_pipeline_dock()
+            #self.pDock.set_btn_highlight('data processing')
         else:
             print "ERROR: not moving to data processing bad goflag"
 
@@ -262,23 +267,26 @@ class MainWindow(QMainWindow):
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
         
-        if self.log.log['currentState'] == 'Date Processing':
-            self.add_pipeline_dock()
+        if self.log.log['currentState'] == 'Data Processing':
+            print 'moving to dp'
             self.move_to_data_processing()
+            self.add_pipeline_dock()
+            #self.pDock.set_btn_highlight('data processing')
         elif self.log.log['currentState'] == 'Quality Assurance':
-            self.add_pipeline_dock()
             self.move_to_quality_assurance()
+            self.add_pipeline_dock()
+            #self.pDock.set_btn_highlight('quality assurance')
         elif self.log.log['currentState'] == 'Model':
-            self.add_pipeline_dock()
             self.move_to_model()
-        elif self.log.log['currentState'] == 'Results Navigation':
             self.add_pipeline_dock()
+            #self.pDock.set_btn_highlight('model')
+        elif self.log.log['currentState'] == 'Results Navigation':
             self.move_to_results_navigation()
+            self.add_pipeline_dock()
+            #self.pDock.set_btn_highlight('results navigation')
         else:
             self.move_to_initial()
             print 'hmmm... ', self.log.log['currentState']
-
-        
 
     def fileSave(self):
         if self.controller.homeDir != None:
@@ -346,6 +354,8 @@ class MainWindow(QMainWindow):
 
     ################################################################################################3
     def move_to_initial(self):
+        #if self.pDock != None:
+        #    self.pDock.unset_all_highlights()
         if self.dockWidget != None:
             self.clear_dock()
       
@@ -380,6 +390,8 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
+        #if self.pDock != None:
+        #    self.pDock.set_btn_highlight('data processing')
 
     def move_to_quality_assurance(self,runNew=False):
         nextState = self.stateList.index('Quality Assurance')
@@ -411,6 +423,8 @@ class MainWindow(QMainWindow):
         self.refresh_main_widget()
         self.add_dock()
         self.controller.save()
+        #if self.pDock != None:
+        #    self.pDock.set_btn_highlight('quality assurance')
 
     def move_to_model(self):
         nextState = self.stateList.index('Model')
@@ -430,6 +444,8 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
+        #if self.pDock != None:
+        #    self.pDock.set_btn_highlight('model')
 
     def move_to_results_navigation(self,runNew=False):
         nextState = self.stateList.index('Results Navigation')
@@ -447,6 +463,8 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
+        #if self.pDock != None:
+        #    self.pDock.set_btn_highlight('results navigation')
         
     def generic_callback(self):
         print "this button/widget does not do anything yet"
