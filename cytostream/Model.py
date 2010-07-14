@@ -129,14 +129,14 @@ class Model:
         #newMus = newMus.transpose()
     
         # alternative is to just take one of the occurances of each
-        newPis = model.pis()[:k]
-        newMus =  model.mus()[:k,:]
-        newSigmas = model.sigmas()[:k,:,:]
-        print np.shape(newPis), np.shape(newMus), np.shape(newSigmas)
+        #newPis = model.pis()[:k]
+        #newMus =  model.mus()[:k,:]
+        #newSigmas = model.sigmas()[:k,:,:]
+        #print np.shape(newPis), np.shape(newMus), np.shape(newSigmas)
         
-        model.pis = newPis
-        model.mus = newMus
-        model.sigmas = newSigmas
+        #model.pis = newPis
+        #model.mus = newMus
+        #model.sigmas = newSigmas
         
         classify = cPickle.load(tmp2)
         tmp1.close()

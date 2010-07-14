@@ -54,14 +54,12 @@ class Controller:
         self.log.initialize(self.projectID,self.homeDir,load=loadExisting) 
         self.model.initialize(self.projectID,self.homeDir)
 
-    def process_images(self,mode,progressBar=None,modelName=None,modelClassLabels=None,view=None):
+    def process_images(self,mode,progressBar=None,modelName=None,view=None):
 
         if mode not in ['qa','results']:
             print "ERROR: invalid mode specified"
 
-        if mode == 'results' and modelName == None:
-            print "ERROR: if mode is results must specify modelName"
-
+        modelName = self.log.log['modelToRun']
         fileList = get_fcs_file_names(self.homeDir)
         numImagesToCreate = 0
                     
@@ -137,7 +135,9 @@ class Controller:
             ## create the thumbnails
             if mode == 'qa':
                 imgDir = os.path.join(self.homeDir,"figs")
-            
+            elif mode == 'results':
+                imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
+
             thumbDir = os.path.join(imgDir,fileName[:-4]+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
             
@@ -207,7 +207,7 @@ class Controller:
             view.display_warning("file is not of type fcs")
             fcsFileName = None
             createNew = False
-
+            
         ## get project id
         if view == None:
             pass
@@ -223,6 +223,7 @@ class Controller:
         elif createNew == True:
             self.initialize_project(projectID)
         else:
+            print "WARNING: did not initialize project"
             return False
 
         # remove previous 
@@ -311,7 +312,6 @@ class Controller:
     ##################################################################################################
 
     def run_selected_model(self,progressBar=None):
-        print 'running...'
         numItersMCMC = 1100
         selectedModel = self.log.log['modelToRun']
         numComponents = self.log.log['numComponents']
@@ -323,10 +323,10 @@ class Controller:
 
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
-        for file in fileList:
+        print 'running for ...', fileList
+        for fileName in fileList:
             if selectedModel == 'dpmm-cpu':
-
-                proc = subprocess.Popen("%s RunDPM-CPU.py -p %s -f %s -k %s"%(pythonPath, self.projectID,file,numComponents), 
+                proc = subprocess.Popen("%s RunDPM-CPU.py -p %s -f %s -k %s"%(pythonPath, self.projectID,fileName,numComponents), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
@@ -336,6 +336,7 @@ class Controller:
                         next_line = proc.stdout.readline()
                         if next_line == '' and proc.poll() != None:
                             break
+                        #print next_line
 
                         if re.search("it =",next_line):
                             progress = 1.0 / totalIters
@@ -346,8 +347,7 @@ class Controller:
                         break
 
             elif selectedModel == 'dpmm-gpu':
-
-               proc = subprocess.Popen("%s RunDPM-GPU.py -p %s -f %s -k %s"%(pythonPath,self.projectID,file,numComponents), 
+               proc = subprocess.Popen("%s RunDPM-GPU.py -p %s -f %s -k %s"%(pythonPath,self.projectID,fileName,numComponents), 
                                        shell=True,
                                        stdout=subprocess.PIPE,
                                        stdin=subprocess.PIPE)
@@ -366,29 +366,5 @@ class Controller:
                                progressBar.move_bar(int(round(percentDone)))
                    except:
                        break
-                               
-class Worker(QtCore.QThread):
-    def __init__(self, parent = None):
-    
-        QtCore.QThread.__init__(self, parent)
-        self.exiting = False
-        #self.size = QSize(0, 0)
-        #self.stars = 0
-
-    def __del__(self):
-    
-        self.exiting = True
-        self.wait()
-
-    def setup(self, cmd):
-        self.cmd = cmd
-        self.start()
-
-    ## The run method is where we perform the processing that occurs in the thread provided by the Worker instance
-    def run(self):
-        
-        # Note: This is never called directly. It is called by Qt once the
-        # thread environment has been set up.
-        ##"%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
-                    
-        os.system(self.cmd)
+            else:
+                print "ERROR: invalid selected model", selectedModel
