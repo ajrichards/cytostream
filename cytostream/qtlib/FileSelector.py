@@ -1,14 +1,19 @@
-import sys,os,time
+import sys,os,time,re
 from PyQt4 import QtGui, QtCore
 
 class FileSelector(QtGui.QWidget):
-    def __init__(self, fileList, color='white', parent=None, modelsRun = None, fileDefault=None, selectionFn=None, showModelSelector=False):
+    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
         QtGui.QWidget.__init__(self,parent)
 
         self.color = color
         vbox = QtGui.QVBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
         hbox2 = QtGui.QHBoxLayout()
+
+        ## error checking
+        if showModelSelector == True and modelsRun == None:
+            print "ERROR: must specify modelsRun if ModelSelector is true"
+
         
         ## file selector
         hbox1.addWidget(QtGui.QLabel('File Selector'))
@@ -63,8 +68,8 @@ class FileSelector(QtGui.QWidget):
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         if showModelSelector == True:
-             vbox.addLayout(hbox1)
-             vbox.addLayout(hbox2)
+             vbox.addLayout(hbox3)
+             vbox.addLayout(hbox4)
     
         self.setLayout(vbox)
 
@@ -94,7 +99,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
     fileList = ['file1', 'file2']
-    
-    fs = FileSelector(fileList)
+    modelsRun = ['model1', 'model2']
+    fs = FileSelector(fileList,modelsRun = modelsRun, showModelSelector=True)
     fs.show()
     sys.exit(app.exec_())

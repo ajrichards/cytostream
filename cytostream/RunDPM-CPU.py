@@ -31,6 +31,8 @@ for o, a in optlist:
     if o == '-n':
         name = a
 
+print 'running dpmm with %s'%k
+
 longModelName = "Dirichlet Process Mixture Model - CPU Version"
 longProjName = os.path.join(".","projects",projName)
 longFileName = os.path.join(longProjName,"data",fileName)
@@ -55,7 +57,7 @@ if re.search("\.fcs",longFileName):
 elif re.search("\.pickle",longFileName):
     data= cPickle.load(open(longFileName,'r'))
     
-mod = fcm.statistics.DPMixtureModel(data,k)
+mod = fcm.statistics.DPMixtureModel(data,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)
 modelRunStop = time.time()
@@ -64,6 +66,7 @@ full = mod.get_results()
 #print 'full', type(full)
 classify = full.classify(data)
 #print 'classify', type(classify)
+
 
 print 'dumping fit'
 if name == None:

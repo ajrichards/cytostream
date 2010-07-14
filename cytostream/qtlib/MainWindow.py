@@ -35,7 +35,6 @@ from ModelDock import ModelDock
 from PipelineDock import PipelineDock
 from ResultsNavigationDock import ResultsNavigationDock
 #from ResultsNavigationCenter import ResultsNavigationCenter
-from ScatterBar import ScatterBar
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 __version__ = "0.1"
@@ -59,7 +58,7 @@ class MainWindow(QMainWindow):
         self.modelList = ['dpmm-cpu','dpmm-gpu']
         
         self.move_to_initial()
-        self.add_pipeline_dock()
+        #self.add_pipeline_dock()
         self.printer = None
 
         self.sizeLabel = QLabel()
@@ -102,9 +101,7 @@ class MainWindow(QMainWindow):
     #################################################
     
     def create_menubar_toolbar(self):
-        fileNewAction = self.create_action("&New...", self.create_new_project,
-                QKeySequence.New, "filenew", "Create a new project")
-        fileNewBulkAction = self.create_action("New bulk...", self.create_new_project_bulk,
+        fileNewBulkAction = self.create_action("New...", self.create_new_project_bulk,
                 QKeySequence.New, "filenew", "Create a new project with mulitple files")
         fileOpenAction = self.create_action("&Open...", self.open_existing_project,
                 QKeySequence.Open, "fileopen",
@@ -133,7 +130,7 @@ class MainWindow(QMainWindow):
                 QKeySequence.HelpContents)
 
         self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenuActions = (fileNewAction, fileNewBulkAction,fileOpenAction,
+        self.fileMenuActions = (fileNewBulkAction,fileOpenAction,
                 fileSaveAction, fileSaveAsAction, None,
                 filePrintAction, fileQuitAction)
         self.addActions(self.fileMenu,self.fileMenuActions)
@@ -204,6 +201,7 @@ class MainWindow(QMainWindow):
         self.fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
         goFlag = self.controller.create_new_project(self.fileName,self)
         if goFlag == True:
+            self.add_pipeline_dock()
             self.move_to_data_processing()
 
     def remove_project(self):
@@ -220,10 +218,10 @@ class MainWindow(QMainWindow):
             pass
 
     def create_new_project_bulk(self):
-        QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
-        allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open multiple files')
+        #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
+        allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open file(s)')
         firstFile = True
-        goFlag = False
+        goFlag = True
         for fileName in allFiles:
             fileName = str(fileName)
             if firstFile == True:
@@ -234,6 +232,8 @@ class MainWindow(QMainWindow):
 
         if goFlag == True:
             self.move_to_data_processing()
+        else:
+            print "ERROR: not moving to data processing bad goflag"
 
     def open_existing_project(self):        
         if self.controller.projectID != None:
@@ -263,16 +263,22 @@ class MainWindow(QMainWindow):
         self.reset_view_workspace()
         
         if self.log.log['currentState'] == 'Date Processing':
+            self.add_pipeline_dock()
             self.move_to_data_processing()
         elif self.log.log['currentState'] == 'Quality Assurance':
+            self.add_pipeline_dock()
             self.move_to_quality_assurance()
         elif self.log.log['currentState'] == 'Model':
+            self.add_pipeline_dock()
             self.move_to_model()
         elif self.log.log['currentState'] == 'Results Navigation':
+            self.add_pipeline_dock()
             self.move_to_results_navigation()
         else:
             self.move_to_initial()
             print 'hmmm... ', self.log.log['currentState']
+
+        
 
     def fileSave(self):
         if self.controller.homeDir != None:
@@ -391,9 +397,6 @@ class MainWindow(QMainWindow):
         if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
             self.display_thumbnails()
         else:
-            #self.scatterBar = ScatterBar(parent=self.mainWidget)
-            #self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
-            #self.progressBar.set_callback(lambda runNew=True: self.run_progress_bar(runNew))
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
             self.progressBar.set_callback(self.run_progress_bar)
@@ -403,11 +406,6 @@ class MainWindow(QMainWindow):
             
             self.refresh_main_widget()
             self.add_dock()
-
-
-            hbl = QtGui.QHBoxLayout()
-            hbl.addWidget(self.scatterBar)
-            hbl.setAlignment(QtCore.Qt.AlignCenter)
         
         self.track_highest_state()
         self.refresh_main_widget()
@@ -416,7 +414,6 @@ class MainWindow(QMainWindow):
 
     def move_to_model(self):
         nextState = self.stateList.index('Model')
-        print "moving to model", nextState
         proceed = self.check_state_status(nextState)
         if proceed == False:
             return
@@ -450,9 +447,6 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
-
-        if self.log.log['selectedModel'] == None:
-            self.set_selected_model(withRefresh=False)
         
     def generic_callback(self):
         print "this button/widget does not do anything yet"
@@ -469,9 +463,6 @@ class MainWindow(QMainWindow):
 
         if self.fileSelector != None and self.log.log['selectedFile'] == None:
             self.set_selected_file(withRefresh=False)
-
-        if self.log.log['currentState'] == 'Results Navigation' and self.log.log['selectedModel'] == None:
-            self.set_selected_model(withRefresh=False)
 
         masterChannelList = self.model.get_master_channel_list()
         fileList = get_fcs_file_names(self.controller.homeDir)
@@ -494,12 +485,14 @@ class MainWindow(QMainWindow):
        
         if self.log.log['currentState'] in ['Results Navigation']:
             showModelSelector = True
+            modelsRun = get_models_run(self.controller.homeDir)
         else:
             showModelSelector = False
+            modelsRun = None
 
         if self.log.log['currentState'] not in ['Model']:
             self.fileSelector = FileSelector(fileList,parent=self.dockWidget,selectionFn=self.set_selected_file,fileDefault=self.log.log['selectedFile'],
-                                             showModelSelector=showModelSelector)
+                                             showModelSelector=showModelSelector,modelsRun=modelsRun)
             self.fileSelector.setAutoFillBackground(True)
             hbl2.addWidget(self.fileSelector)
 
@@ -525,14 +518,10 @@ class MainWindow(QMainWindow):
         hbl1.addWidget(self.dock)
         vbl = QtGui.QVBoxLayout(self.dockWidget)
         vbl.addLayout(hbl2)
-        if self.log.log['currentState'] in ['Results Navigation']:
-            vbl.addLayout(hbl3)
         vbl.addLayout(hbl1)
         
-        #vbl.setAlignment(QtCore.Qt.AlignTop)
         self.mainDockWidget.setWidget(self.dockWidget)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.mainDockWidget)
-        #self.add_pipeline_dock()
 
     def clear_dock(self):
         self.removeDockWidget(self.mainDockWidget)
@@ -552,7 +541,7 @@ class MainWindow(QMainWindow):
 
     def set_num_components(self,value):
         diff = value % 8
-        print value, diff
+        #print value, diff
         if diff == 0:
             newValue = value
         elif (value - diff) % 8 == 0:
@@ -568,6 +557,8 @@ class MainWindow(QMainWindow):
             self.log.log['modelToRun'] = 'dpmm-cpu'
         elif sm == 'DPMM-GPU':
             self.log.log['modelToRun'] = 'dpmm-gpu'
+        else:
+            print "ERROR: invalid selection for modelToRun"
 
     def track_highest_state(self):
         ## keep track of the highest state
@@ -586,8 +577,8 @@ class MainWindow(QMainWindow):
             self.controller.process_images('qa',progressBar=self.progressBar,view=self)
             self.display_thumbnails(runNew)
         if mode == 'Model':
-            self.controller.run_selected_model(progressBar=self.mc.progressBar)
             self.set_model_to_run()
+            self.controller.run_selected_model(progressBar=self.mc.progressBar)
             self.clear_dock()
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
@@ -600,7 +591,7 @@ class MainWindow(QMainWindow):
             self.add_dock()
 
     def create_results_thumbs(self):
-        self.controller.process_images('results',modelName=self.log.log['modelToRun'],progressBar=self.progressBar,view=self)
+        self.controller.process_images('results',progressBar=self.progressBar,view=self)
         self.move_to_results_navigation(runNew=True)
  
     def display_thumbnails(self,runNew=False):
@@ -609,7 +600,6 @@ class MainWindow(QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
-                        
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
             tv = ThumbnailViewer(thumbDir,fileChannels,parent=self.mainWidget,viewScatterFn=self.handle_show_scatter)
             hbl = QtGui.QHBoxLayout()
@@ -623,8 +613,8 @@ class MainWindow(QMainWindow):
             QtCore.QCoreApplication.processEvents() # experimental
 
         elif mode == 'Results Navigation':
-            if self.log.log['selectedModel'] == None:
-                self.set_selected_model(withRefresh=True)
+            if self.log.log['selectedModel'] == None or self.log.log['selectedModel'] == '':
+                self.log.log['selectedModel'] = self.log.log['modelToRun']
 
             ## set basic variables 
             selectedModel = self.log.log['selectedModel']
@@ -634,14 +624,15 @@ class MainWindow(QMainWindow):
             ## get the model name
             modelName = None
             for possibleModelUsed in self.modelList:
+                print possibleModelUsed, selectedModel
                 if re.search(possibleModelUsed,selectedModel):
                     modelName = possibleModelUsed
 
             ## get the file channels
-            fileUsed = re.sub("\_%s"%modelName,"",selectedModel)
-            fileUsed = re.sub("\_sub\d+","",fileUsed) + ".fcs"
-            fileChannels = self.model.get_file_channel_list(fileUsed) 
-
+            #fileUsed = re.sub("\_%s"%modelName,"",selectedModel)
+            #fileUsed = re.sub("\_sub\d+","",fileUsed) + ".fcs"
+            #fileChannels = self.model.get_file_channel_list(fileUsed) 
+            fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
             if modelName == None:
                 print "ERROR: could not find model type used"
 
