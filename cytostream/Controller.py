@@ -206,7 +206,11 @@ class Controller:
             view.display_warning("file is not of type fcs")
             fcsFileName = None
             createNew = False
-            
+
+        ## create projects dir if necssary
+        if os.path.isdir(os.path.join('.','projects')) == False:
+            os.path.mkdir(os.path.join('.','projects'))
+
         ## get project id
         if view == None:
             pass
