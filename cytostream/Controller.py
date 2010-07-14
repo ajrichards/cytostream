@@ -25,7 +25,6 @@ from Logging import Logger
 import matplotlib.pyplot as plt
 import subprocess
 from FileControls import *
-from MakeScatter import MakeScatter
 
 ### get base directory 
 BASEDIR = os.path.abspath('')
