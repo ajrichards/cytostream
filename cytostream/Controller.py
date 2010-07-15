@@ -161,9 +161,9 @@ class Controller:
             fileChannels = self.model.get_file_channel_list(fileName)
 
             if len(fileChannels) <= 4:
-                thumbSize = 200
+                thumbSize = 210
             elif len(fileChannels) == 5:
-                thumbSize = 120
+                thumbSize = 140
             elif len(fileChannels) > 5:
                 thumbSize = 90
 

@@ -9,9 +9,9 @@ class ThumbnailViewer(QtGui.QWidget):
         self.thumbDir = thumbDir
 
         if len(fileChannels) <= 4:
-            self.thumbSize = 200
+            self.thumbSize = 210
         elif len(fileChannels) == 5:
-            self.thumbSize = 120
+            self.thumbSize = 140
         elif len(fileChannels) > 5:
             self.thumbSize = 90
 

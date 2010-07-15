@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
         self.screenWidth = screen.width()
         self.screenHeight = screen.height()
         #if os.name == 'posix':
-        self.eSize = 0.03 * self.screenWidth
+        self.eSize = 0.04 * self.screenWidth
         #else:
         #    self.eSize = 0.03 * self.screenWidth
             
@@ -220,6 +220,9 @@ class MainWindow(QMainWindow):
                 firstFile = False
             else:
                 goFlag = self.controller.load_additional_fcs_files(fileName,self)
+
+        if self.controller.homeDir == None:
+            return
 
         if goFlag == True:
             if self.model.homeDir == None:
@@ -454,7 +457,7 @@ class MainWindow(QMainWindow):
         if self.dockWidget != None:
             self.clear_dock()
 
-        fileList = get_fcs_file_names(self.controller.homeDir)
+        #fileList = get_fcs_file_names(self.controller.homeDir)
         self.log.log['currentState'] = "Results Navigation"
         self.display_thumbnails(runNew)
         self.add_dock()
@@ -526,8 +529,10 @@ class MainWindow(QMainWindow):
             self.dock = ResultsNavigationDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=self.dockWidget,
                                               contBtnFn=self.generic_callback,subsetDefault=subsamplingDefault,viewAllFn=self.display_thumbnails,
                                               infoBtnFn=self.show_model_log_info)
+        if self.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
+            self.fileSelector.set_refresh_thumbs_fn(self.display_thumbnails)
+
         self.dock.setAutoFillBackground(True)
-        
         hbl1 = QtGui.QHBoxLayout()
         hbl1.setAlignment(QtCore.Qt.AlignBottom)
         hbl1.addWidget(self.dock)
@@ -623,7 +628,6 @@ class MainWindow(QMainWindow):
             vbl.setAlignment(QtCore.Qt.AlignTop)
             vbl.addLayout(hbl)
             self.refresh_main_widget()
-            self.add_dock()
             QtCore.QCoreApplication.processEvents() # experimental
 
         elif mode == 'Results Navigation':
@@ -664,14 +668,14 @@ class MainWindow(QMainWindow):
             hbl.addWidget(tv)
             hbl.setAlignment(QtCore.Qt.AlignTop)
             self.refresh_main_widget()
-            self.add_dock()
             QtCore.QCoreApplication.processEvents() # experimental
 
     def set_selected_file(self,withRefresh=True):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selectedFile'] = selectedFile
-        if withRefresh == True:
-            self.refresh_state()
+        #self.display_thumbnails()
+        #if withRefresh == True:
+        #self.refresh_state()
         
     def set_selected_model(self,withRefresh=True):
         try:
@@ -691,6 +695,7 @@ class MainWindow(QMainWindow):
             self.move_to_model()
         elif self.log.log['currentState'] == "Results Navigation":
             self.move_to_results_navigation()
+        QtCore.QCoreApplication.processEvents()
 
     def handle_show_scatter(self,img=None):
         mode = self.log.log['currentState']
