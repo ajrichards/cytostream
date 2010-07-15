@@ -25,7 +25,7 @@ class RunModelTest(unittest.TestCase):
         self.controller.log.log['subsample'] = '1e3'
         self.controller.handle_subsampling()
 
-        #self.controller.process_images('qa')
+        self.controller.process_images('qa')
 
     def verifyModelRun(self,modelName):
        statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName)    

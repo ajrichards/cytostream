@@ -4,6 +4,7 @@ from PyQt4 import QtGui, QtCore
 class FileSelector(QtGui.QWidget):
     def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
         QtGui.QWidget.__init__(self,parent)
+        self.modelSelector = None
 
         self.color = color
         vbox = QtGui.QVBoxLayout()
@@ -14,7 +15,6 @@ class FileSelector(QtGui.QWidget):
         if showModelSelector == True and modelsRun == None:
             print "ERROR: must specify modelsRun if ModelSelector is true"
 
-        
         ## file selector
         hbox1.addWidget(QtGui.QLabel('File Selector'))
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
@@ -78,6 +78,12 @@ class FileSelector(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
+
+    def set_refresh_thumbs_fn(self,refreshFn):
+        self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn)
+        if self.modelSelector != None:
+            self.connect(self.modelSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn) 
+        
 
     def get_selected_file(self):
         sfInd = self.fileSelector.currentIndex()

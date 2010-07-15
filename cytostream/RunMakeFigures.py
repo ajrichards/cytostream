@@ -58,10 +58,11 @@ for o, a in optlist:
 
 
 def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
-    fig = pyplot.figure(figsize=(7,7),facecolor=None)
+    fig = pyplot.figure(figsize=(7,7))
     markerSize = 5
-
+    alphaVal = 0.5
     ax = fig.add_subplot(111)
+
     fontName = 'arial'
     fontSize = 12
     plotType = 'png'
@@ -92,7 +93,7 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
         maxLabel = np.max(labels)
         cmp = model.get_n_color_colorbar(maxLabel+1)
 
-        for l in np.unique(labels):
+        for l in np.sort(np.unique(labels)):
             rgbVal = tuple([val * 256 for val in cmp[l,:3]])
             hexColor = model.rgb_to_hex(rgbVal)[:7]
 
@@ -120,10 +121,10 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
     
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName)
+        fig.savefig(fileName,transparent=True)
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName)
+        fig.savefig(fileName,transparent=True)
 
 
 ## error checking 

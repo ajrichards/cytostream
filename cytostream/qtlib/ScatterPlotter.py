@@ -20,7 +20,8 @@ class ScatterPlotter(FigureCanvas):
         # plot definition   
         self.fig = Figure()
         ax = self.fig.add_subplot(111)
-
+        self.fig.set_frameon(False)
+        
         model = Model()
         model.initialize(projectID,homeDir)
         if modelName != None:
@@ -66,22 +67,20 @@ class ScatterPlotter(FigureCanvas):
 
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
-            numColors = range(maxLabel)
-            print dir(model)
-            cmp = model.get_n_color_colorbar(maxLabel)
-        
-            for l in range(maxLabel):
+            cmp = model.get_n_color_colorbar(maxLabel+1)
+
+            for l in np.sort(np.unique(labels)):
                 rgbVal = tuple([val * 256 for val in cmp[l,:3]])
                 hexColor = model.rgb_to_hex(rgbVal)[:7]
 
-                x = data[:,index1][np.where(labels[:,0]==l)[0]]
-                y = data[:,index2][np.where(labels[:,0]==l)[0]]
-
+                x = data[:,index1][np.where(labels==l)[0]]
+                y = data[:,index2][np.where(labels==l)[0]]
+            
                 totalPoints+=x.size
 
                 if x.size == 0:
                     continue
-
+    
                 ax.scatter([x],[y],color=hexColor,s=markerSize)
 
         ## handle data edge buffers 
@@ -95,16 +94,6 @@ class ScatterPlotter(FigureCanvas):
         ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
         ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
         ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
-
-        #if altDir == None:
-        #    fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        #    fig.savefig(fileName)
-        #    #os.system("convert %s %s"%(fileName, fileName[:-4]+".gif"))
-        #else:
-        #    fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        #    fig.savefig(fileName)
-        #    #os.system("convert %s %s"%(fileName, fileName[:-4]+".gif"))         
-
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

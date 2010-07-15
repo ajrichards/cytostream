@@ -49,6 +49,7 @@ class PipelineDock(QtGui.QWidget):
         self.modelBtn = QtGui.QPushButton("Model")
         self.modelBtn.setMaximumWidth(self.eSize*1.5)
         self.modelBtn.setMinimumWidth(self.eSize*1.5)
+        self.modelBtn.setAutoFillBackground(True)
         hbox.addWidget(self.modelBtn)
         self.connect(self.modelBtn, QtCore.SIGNAL('clicked()'),lambda x='model': self.btn_callback(x))
 
