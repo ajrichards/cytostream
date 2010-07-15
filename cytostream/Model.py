@@ -232,7 +232,7 @@ class Model:
         pyplot.clf()
 
     def get_n_color_colorbar(self,n):
-        cmap = cm.get_cmap('Spectral', n)
+        cmap = cm.get_cmap('jet', n) # Spectral #gist_rainbow
         return cmap(np.arange(n))
 
     def rgb_to_hex(self,rgb):
