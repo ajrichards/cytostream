@@ -63,12 +63,10 @@ class MainWindow(QMainWindow):
         ## settings
         self.showMaximized()
         self.setWindowTitle(self.controller.appName)
-        print dir(self)
         screen = QtGui.QDesktopWidget().screenGeometry()
         print dir(screen)
         self.screenWidth = screen.width()
         self.screenHeight = screen.height()
-        print self.screenWidth, self.screenHeight
         #if os.name == 'posix':
         self.eSize = 0.03 * self.screenWidth
         #else:
@@ -153,7 +151,8 @@ class MainWindow(QMainWindow):
  
         self.pipelineDockWidget = QtGui.QWidget(self)
         #self.pipelineDockWidget.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
-        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize)
+        btnCallBacks = [self.move_to_data_processing, self.move_to_quality_assurance, self.move_to_model, self.move_to_results_navigation]
+        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize,btnCallBacks=btnCallBacks)
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
         palette.setColor(role, QtGui.QColor('black'))
@@ -458,7 +457,6 @@ class MainWindow(QMainWindow):
 
         fileList = get_fcs_file_names(self.controller.homeDir)
         self.log.log['currentState'] = "Results Navigation"
-        self.clear_dock()
         self.display_thumbnails(runNew)
         self.add_dock()
         self.track_highest_state()

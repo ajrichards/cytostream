@@ -5,17 +5,17 @@ import numpy as np
 
 class PipelineDock(QtGui.QWidget):
 
-    def __init__(self, parent=None, eSize=35):
+    def __init__(self, parent=None, eSize=35, btnCallBacks=None):
         QtGui.QWidget.__init__(self, parent)
 
         ## set variables
         self.eSize = eSize
         self.buff = 2.0
         self.btnColor = QtGui.QColor(0, 200, 200)
+        self.btnCallBacks = btnCallBacks
 
         ## actions
         self.create_buttons()
-
 
         ## color
         palette = self.palette()
@@ -77,17 +77,25 @@ class PipelineDock(QtGui.QWidget):
 
     def set_btn_highlight(self,btnName):
         if btnName == 'data processing':
-            self.unset_all_highlights()
-            self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.unset_all_highlights()
+            #self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            if self.btnCallBacks != None:
+                print self.btnCallBacks[0]()
         elif btnName == 'quality assurance':
-            self.unset_all_highlights()
-            self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.unset_all_highlights()
+            #self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            if self.btnCallBacks != None:
+                print self.btnCallBacks[1]()
         elif btnName == 'model':
-            self.unset_all_highlights()
-            self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.unset_all_highlights()
+            #self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            if self.btnCallBacks != None:
+                print self.btnCallBacks[2]()
         elif btnName == 'results navigation':
-            self.unset_all_highlights()
-            self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.unset_all_highlights()
+            #self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            if self.btnCallBacks != None:
+                print self.btnCallBacks[3]()
         else:
             print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
 
