@@ -2,7 +2,6 @@
 
 import os,re
 
-
 # returns a list of file names associated with the project
 #
 #
@@ -51,15 +50,4 @@ def get_project_names():
     for dirName in os.listdir(os.path.join(".","projects")):  
         if os.path.isdir(os.path.join(".","projects",dirName)) == True:
             projectNamesList.append(dirName)
-    return projectNamesList  
-
-
-## returns 
-##
-##
-#def get_file_channel_list(self,fileName):
-#    data = self.pyfcm_load_fcs_file(fileName)
-#    channels = data.channels
-#    channels = [re.sub("\s","-",c) for c in channels]
-#    
-#    return channels
+    return projectNamesList

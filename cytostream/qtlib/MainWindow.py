@@ -64,7 +64,6 @@ class MainWindow(QMainWindow):
         self.showMaximized()
         self.setWindowTitle(self.controller.appName)
         screen = QtGui.QDesktopWidget().screenGeometry()
-        print dir(screen)
         self.screenWidth = screen.width()
         self.screenHeight = screen.height()
         #if os.name == 'posix':
@@ -196,16 +195,6 @@ class MainWindow(QMainWindow):
             else:
                 target.addAction(action)
 
-    def create_new_project(self):
-        #QtGui.QMessageBox.information(self,self.controller.appName,"Load a FCS file")
-        self.fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
-        goFlag = self.controller.create_new_project(self.fileName,self)
-        print goFlag
-        if goFlag == True:
-            self.move_to_data_processing()
-            self.add_pipeline_dock()
-            self.pDock.set_btn_highlight('data processing')
-
     def remove_project(self):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
 
@@ -233,9 +222,19 @@ class MainWindow(QMainWindow):
                 goFlag = self.controller.load_additional_fcs_files(fileName,self)
 
         if goFlag == True:
-            self.move_to_data_processing()
-            self.add_pipeline_dock()
-            #self.pDock.set_btn_highlight('data processing')
+            if self.model.homeDir == None:
+                self.model.initialize(self.controller.projectID,self.controller.homeDir) 
+                fileList = get_fcs_file_names(self.controller.homeDir)
+                if len(fileList) > 0:
+                    self.controller.log.log['selectedFile'] = fileList[0]
+                self.controller.log.initialize(self.controller.projectID,self.controller.homeDir)
+                self.log = self.controller.log
+
+            if self.controller.homeDir != None:
+                self.move_to_data_processing()
+                self.add_pipeline_dock()
+                #self.pDock.set_btn_highlight('data processing')
+   
         else:
             print "ERROR: not moving to data processing bad goflag"
 
@@ -594,7 +593,7 @@ class MainWindow(QMainWindow):
             self.display_thumbnails(runNew)
         if mode == 'Model':
             self.set_model_to_run()
-            self.controller.run_selected_model(progressBar=self.mc.progressBar)
+            self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
             self.clear_dock()
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
@@ -602,7 +601,6 @@ class MainWindow(QMainWindow):
             hbl = QtGui.QHBoxLayout(self.mainWidget)
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
-            
             self.refresh_main_widget()
             self.add_dock()
 
