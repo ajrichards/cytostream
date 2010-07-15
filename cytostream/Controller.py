@@ -129,7 +129,7 @@ class Controller:
 
                     if progressBar != None:
                         progressBar.move_bar(int(round(percentDone)))
-                        print 'moving', percentDone
+                        #print 'moving', percentDone
 
             ## create the thumbnails
             if mode == 'qa':
@@ -224,6 +224,7 @@ class Controller:
         if view == None:
             pass
         elif createNew == True:
+            print 'initializing project...'
             self.initialize_project(projectID)
         else:
             print "WARNING: did not initialize project"
@@ -314,10 +315,11 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None):
+    def run_selected_model(self,progressBar=None,view=None):
         numItersMCMC = 1100
         selectedModel = self.log.log['modelToRun']
         numComponents = self.log.log['numComponents']
+        
 
         if self.subsampleIndices == None:
             fileList = get_fcs_file_names(self.homeDir)

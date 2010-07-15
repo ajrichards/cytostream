@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 
 '''
@@ -19,6 +20,11 @@ rc('font',family = 'sans-serif')
 #rc('text', usetex = True)
 
 class Model:
+
+    def __init__(self):
+        self.projectID = None
+        self.homeDir = None
+
     def initialize(self,projectID,homeDir):
         self.projectID = projectID
         self.homeDir = homeDir
@@ -30,20 +36,21 @@ class Model:
         data = fcm.loadFCS(fullFileName)
         return data
 
-    # returns a unique, sorted set of channels for all files in a project
-    #
+    ## returns a unique, sorted set of channels for all files in a project
+    ##
     def get_master_channel_list(self):
         allChannels = set()
         fileList = get_fcs_file_names(self.homeDir)
-        for file in fileList:
-            data = self.pyfcm_load_fcs_file(file)
+        for fileName in fileList:
+            data = self.pyfcm_load_fcs_file(fileName)
             allChannels.update(data.channels)
-        
+
         ## remove white space and sort
         allChannels = [re.sub("\s","-",c) for c in allChannels]
         allChannels.sort()
 
         return allChannels
+
 
     # returns the indices of given channels w.r.t. the master channel list
     # channels is a iteriable
@@ -85,7 +92,8 @@ class Model:
             if numObs == None:
                 numObs = n
             elif numObs != n:
-                print "INFO: number of observations are not equal for at least two files"
+                pass
+                #print "INFO: number of observations are not equal for at least two files"
                     
             if n < minNumObs:
                 minNumObs = n
