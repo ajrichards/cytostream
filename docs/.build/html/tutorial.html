@@ -48,10 +48,12 @@
             <ul>
 <li><a class="reference external" href="">Tutorial</a><ul>
 <li><a class="reference external" href="#running-cytostream">Running cytostream</a></li>
-<li><a class="reference external" href="#loading-the-data">Loading the data</a><ul>
-<li><a class="reference external" href="#id2">Fetching the data</a></li>
-</ul>
-</li>
+<li><a class="reference external" href="#loading-the-data">Loading the data</a></li>
+<li><a class="reference external" href="#data-processing">Data Processing</a></li>
+<li><a class="reference external" href="#quality-assurance">Quality Assurance</a></li>
+<li><a class="reference external" href="#model">Model</a></li>
+<li><a class="reference external" href="#results-navigation">Results Navigation</a></li>
+<li><a class="reference external" href="#more">More</a></li>
 </ul>
 </li>
 </ul>
@@ -88,79 +90,46 @@
 </div>
 <div class="section" id="loading-the-data">
 <h2>Loading the data<a class="headerlink" href="#loading-the-data" title="Permalink to this headline">¶</a></h2>
-<p>You may already have sphinx <a class="reference external" href="http://sphinx.pocoo.org/">sphinx</a>
-installed &#8211; you can check by doing:</p>
-<div class="highlight-python"><pre>python -c 'import sphinx'</pre>
+<p>In the opening screen <cite>File -&gt; New</cite> or <cite>File -&gt; Open</cite> are used to open projects.</p>
+<blockquote>
+<img alt="_images/screenshot_initial.png" src="_images/screenshot_initial.png" />
+</blockquote>
+<p>To begin a project cytostream takes as input *.fcs files.  They may be loaded as single files or in bulk using the commands <cite>cntl</cite> and <cite>shift</cite> to select more than one file.</p>
 </div>
-<p>If that fails grab the latest version of and install it with:</p>
-<div class="highlight-python"><pre>&gt; sudo easy_install sphinx</pre>
+<div class="section" id="data-processing">
+<h2>Data Processing<a class="headerlink" href="#data-processing" title="Permalink to this headline">¶</a></h2>
+<p>Once the file(s) are loaded then a grid of check boxes will appear, where the rows are the files and the columns are the channels.</p>
+<blockquote>
+<img alt="_images/screenshot_data-processing.png" src="_images/screenshot_data-processing.png" />
+</blockquote>
+<p>The check boxes will be used in future releases to carry out compensation and transformations.  The <cite>Subset Selector</cite> is where the user specifies how much of the data will be used throughout the subsequent steps.  Given that flow cytometry data often consists of a large number of observations, it can be helpful to carry out analyses on subsets of the data first before using  all of the observations.  Once the user continues from this stage cytostream will wait for user input to make the figures necessary for quality assurance purposes.</p>
 </div>
-<p>Now you are ready to build a template for your docs, using
-sphinx-quickstart:</p>
-<div class="highlight-python"><pre>&gt; sphinx-quickstart</pre>
+<div class="section" id="quality-assurance">
+<h2>Quality Assurance<a class="headerlink" href="#quality-assurance" title="Permalink to this headline">¶</a></h2>
+<p>Currently, this stage allows for the browsing of data to enable the user to get a feel for the results before any models are run.  More quality assurance options will be included in a later release.</p>
+<blockquote>
+<img alt="_images/screenshot_quality-assurance.png" src="_images/screenshot_quality-assurance.png" />
+</blockquote>
+<p>Clicking on an image will bring up an interactive plot of the individual scatter plot.  Using the <cite>File Selector</cite> allows the user browse the different plots associated with the the files in the project.  The <cite>View All</cite> button brings the user back to a thumbnail view of the data plots&#8212;effectivly allowing the user to toggle the view.</p>
 </div>
-<p>If you now point your browser to <tt class="docutils literal"><span class="pre">.build/html/index.html</span></tt>, you
-should see a basic sphinx site.</p>
-<img alt="_images/basic_screenshot.png" src="_images/basic_screenshot.png" />
-<div class="section" id="id2">
-<span id="fetching-the-data"></span><h3>Fetching the data<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
-<p>Now we will start to customize out docs.  Grab a couple of files from
-the <a class="reference external" href="http://matplotlib.svn.sourceforge.net/viewvc/matplotlib/trunk/sampledoc_tut/">web site</a>
-or svn.  You will need <tt class="docutils literal"><span class="pre">getting_started.rst</span></tt> and
-<tt class="docutils literal"><span class="pre">_static/basic_screenshot.png</span></tt>.  All of the files live in the
-&#8220;completed&#8221; version of this tutorial, but since this is a tutorial,
-we&#8217;ll just grab them one at a time, so you can learn what needs to be
-changed where.  Since we have more files to come, I&#8217;m going to grab
-the whole svn directory and just copy the files I need over for now.
-First, I&#8217;ll cd up back into the directory containing my project, check
-out the &#8220;finished&#8221; product from svn, and then copy in just the files I
-need into my <tt class="docutils literal"><span class="pre">sampledoc</span></tt> directory:</p>
-<div class="highlight-python"><pre>home:~/tmp/sampledoc&gt; pwd
-/Users/jdhunter/tmp/sampledoc
-home:~/tmp/sampledoc&gt; cd ..
-home:~/tmp&gt; svn co https://matplotlib.svn.sourceforge.net/svnroot/\
-matplotlib/trunk/sampledoc_tut
-A    sampledoc_tut/cheatsheet.rst
-A    sampledoc_tut/_static
-A    sampledoc_tut/_static/basic_screenshot.png
-A    sampledoc_tut/conf.py
-A    sampledoc_tut/Makefile
-A    sampledoc_tut/_templates
-A    sampledoc_tut/_build
-A    sampledoc_tut/getting_started.rst
-A    sampledoc_tut/index.rst
-Checked out revision 7449.
-home:~/tmp&gt; cp sampledoc_tut/getting_started.rst sampledoc/
-home:~/tmp&gt; cp sampledoc_tut/_static/basic_screenshot.png \
-sampledoc/_static/</pre>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>The model stage is the point where a model may be selected and associated parameters may be changed.</p>
+<blockquote>
+<img alt="_images/screenshot_model.png" src="_images/screenshot_model.png" />
+</blockquote>
+<p>After selecting a model and choosing the appropriate parameters, cytostream will then ask the user to run the model and create the figures.</p>
 </div>
-<p>The last step is to modify <tt class="docutils literal"><span class="pre">index.rst</span></tt> to include the
-<tt class="docutils literal"><span class="pre">getting_started.rst</span></tt> file (be careful with the indentation, the
-&#8220;g&#8221; in &#8220;getting_started&#8221; should line up with the &#8216;:&#8217; in <tt class="docutils literal"><span class="pre">:maxdepth</span></tt>:</p>
-<div class="highlight-python"><pre>Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   getting_started.rst</pre>
+<div class="section" id="results-navigation">
+<h2>Results Navigation<a class="headerlink" href="#results-navigation" title="Permalink to this headline">¶</a></h2>
+<p>With the model run the option to navigate results becomes available.  As seen in the <cite>Quality Assurance</cite> stage users may toggle between thumbnail and individual view modes.</p>
+<blockquote>
+<img alt="_images/screenshot_results-nav.png" src="_images/screenshot_results-nav.png" />
+</blockquote>
 </div>
-<p>and then rebuild the docs:</p>
-<div class="highlight-python"><pre>cd sampledoc
-make html</pre>
-</div>
-<p>When you reload the page by refreshing your browser pointing to
-<tt class="docutils literal"><span class="pre">_build/html/index.html</span></tt>, you should see a link to the
-&#8220;Getting Started&#8221; docs, and in there this page with the screenshot.
-<cite>Voila!</cite></p>
-<p>Note we used the image directive to include to the screenshot above
-with:</p>
-<div class="highlight-python"><pre>.. image:: _static/basic_screenshot.png</pre>
-</div>
-<p>Next we&#8217;ll customize the look and feel of our site to give it a logo,
-some custom css, and update the navigation panels to look more like
-the <a class="reference external" href="http://sphinx.pocoo.org/">sphinx</a> site itself &#8211; see
-<em class="xref">custom_look</em>.</p>
-</div>
+<div class="section" id="more">
+<h2>More<a class="headerlink" href="#more" title="Permalink to this headline">¶</a></h2>
+<p>A given project is automatically saved after the completion of each stage.  After completion of the pipeline, users may return to the <cite>Data Processing</cite> stage to increase the number of observations used as part of the analysis.  Similarly, upon return to the <cite>Model</cite> stage users may change settings and rerun the data as they see fit.  The <cite>Results Navigation</cite> allows the additional option of scrolling through the run models with the <cite>Model Selector</cite>.</p>
 </div>
 </div>
 
