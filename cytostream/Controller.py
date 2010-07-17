@@ -22,7 +22,6 @@ except:
 import re,os,sys,csv,webbrowser,cPickle
 from Model import Model
 from Logging import Logger
-import matplotlib.pyplot as plt
 import subprocess
 from FileControls import *
 
@@ -163,10 +162,14 @@ class Controller:
             if len(fileChannels) <= 4:
                 thumbSize = 210
             elif len(fileChannels) == 5:
-                thumbSize = 140
-            elif len(fileChannels) > 5:
+                thumbSize = 160
+            elif len(fileChannels) == 6:
+                thumbSize = 120
+            elif len(fileChannels) == 7:
                 thumbSize = 90
-
+            elif len(fileChannels) > 7:
+                thumbSize = 70
+          
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
             thumbFile = os.path.join(thumbDir,thumbFile)
             os.system("convert -trim " + imgFile + "[%sx%s] "%(thumbSize,thumbSize) + thumbFile)

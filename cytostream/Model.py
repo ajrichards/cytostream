@@ -10,10 +10,14 @@ import Tkinter as tk
 from FileControls import *
 
 ## matplotlib imports and configs
-from matplotlib.ticker import NullFormatter,MaxNLocator
+#from matplotlib.ticker import NullFormatter,MaxNLocator
 #from matplotlib import pyplot
-from matplotlib.figure import Figure
+#from matplotlib.figure import Figure
 
+#import matplotlib
+#matplotlib.use('Agg')
+from matplotlib import pyplot
+from matplotlib.figure import Figure
 from matplotlib import rc
 import matplotlib.cm as cm
 rc('font',family = 'sans-serif')

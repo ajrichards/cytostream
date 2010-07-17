@@ -2,7 +2,7 @@ import sys,os,time,re
 from PyQt4 import QtGui, QtCore
 
 class ThumbnailViewer(QtGui.QWidget):
-    def __init__(self, thumbDir, fileChannels, parent=None,thumbsClean=True,viewScatterFn=None):
+    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None):
         QtGui.QWidget.__init__(self,parent)
 
         ## declare variabels 
@@ -11,9 +11,13 @@ class ThumbnailViewer(QtGui.QWidget):
         if len(fileChannels) <= 4:
             self.thumbSize = 210
         elif len(fileChannels) == 5:
-            self.thumbSize = 140
-        elif len(fileChannels) > 5:
+            self.thumbSize = 160
+        elif len(fileChannels) == 6:
+            self.thumbSize = 120
+        elif len(fileChannels) == 7:
             self.thumbSize = 90
+        elif len(fileChannels) > 7:
+            self.thumbSize = 70
 
         self.fileChannels = fileChannels
         self.btns = {}
@@ -90,6 +94,6 @@ if __name__ == '__main__':
 
     print imgDir
     fileChannelList = ['FSC-H', 'SSC-H', 'FL1-H', 'FL2-H']
-    tv = ThumbnailViewer(imgDir,fileChannelList)
+    tv = ThumbnailViewer(None, imgDir,fileChannelList)
     tv.show()
     sys.exit(app.exec_())

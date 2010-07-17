@@ -78,7 +78,7 @@ class ModelDock(QtGui.QWidget):
     def set_components(self,value):
         self.componentViewer.setText(str(value))
 
-    def get_selected_model(self):
+    def get_model_to_run(self):
         msInd = self.modelSelector.currentIndex()
         ms = self.modelSelector.currentText()
         return ms, msInd
