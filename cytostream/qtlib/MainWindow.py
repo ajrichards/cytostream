@@ -32,6 +32,7 @@ from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter
 from ModelDock import ModelDock
 from PipelineDock import PipelineDock
+from BlankPage import BlankPage
 from ResultsNavigationDock import ResultsNavigationDock
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
@@ -80,6 +81,7 @@ class MainWindow(QMainWindow):
         self.dockWidget = None
         self.fileSelector = None
         self.pDock = None        
+        self.tv = None
 
     #################################################
     #
@@ -409,6 +411,7 @@ class MainWindow(QMainWindow):
 
         if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
             self.display_thumbnails()
+            self.add_dock()
         else:
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
@@ -416,13 +419,12 @@ class MainWindow(QMainWindow):
             hbl = QtGui.QHBoxLayout(self.mainWidget)
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
-            
             self.refresh_main_widget()
             self.add_dock()
         
         self.track_highest_state()
-        self.refresh_main_widget()
-        self.add_dock()
+        #self.refresh_main_widget()
+        #self.add_dock()
         self.controller.save()
         #if self.pDock != None:
         #    self.pDock.set_btn_highlight('quality assurance')
@@ -500,7 +502,9 @@ class MainWindow(QMainWindow):
         self.dockWidget.setAutoFillBackground(True)
         hbl2 = QtGui.QHBoxLayout()
         hbl2.setAlignment(QtCore.Qt.AlignTop)
-       
+        self.dockWidget.setMaximumWidth(0.15 * self.screenWidth)
+        self.dockWidget.setMinimumWidth(0.15 * self.screenWidth)
+
         if self.log.log['currentState'] in ['Results Navigation']:
             showModelSelector = True
             modelsRun = get_models_run(self.controller.homeDir)
@@ -555,10 +559,22 @@ class MainWindow(QMainWindow):
     def set_subsample(self):
         if self.log.log['currentState'] == "Data Processing":
             ss, ssInd = self.dock.get_subsample()
+
+            # if changed remove old thumbs
+            if ss != self.log.log['subsample']:
+                imgDir = os.path.join(self.controller.homeDir,"figs")
+                for img in os.listdir(imgDir):
+                    if re.search("\.png",img):
+                        os.remove(os.path.join(imgDir,img))
+                    elif re.search("\_thumbs",img) and os.path.isdir(os.path.join(imgDir,img)):
+                        for thumb in os.listdir(os.path.join(imgDir,img)):
+                            if re.search("\.png",thumb):
+                                os.remove(os.path.join(imgDir,img,thumb))
+                        os.rmdir(os.path.join(imgDir,img))
+
             self.log.log['subsample'] = ss
             self.controller.handle_subsampling()
-            self.refresh_state()
-
+            
     def set_num_components(self,value):
         diff = value % 8
         #print value, diff
@@ -572,7 +588,7 @@ class MainWindow(QMainWindow):
         self.log.log['numComponents'] = newValue
 
     def set_model_to_run(self):
-        sm, smInd = self.dock.get_selected_model()
+        sm, smInd = self.dock.get_model_to_run()
         if sm == 'DPMM-CPU':
             self.log.log['modelToRun'] = 'dpmm-cpu'
         elif sm == 'DPMM-GPU':
@@ -586,7 +602,7 @@ class MainWindow(QMainWindow):
             if self.stateList.index(self.log.log['currentState']) > self.log.log['highestState']:
                 self.log.log['highestState'] = self.stateList.index(self.log.log['currentState'])
 
-    def run_progress_bar(self,runNew=False):
+    def run_progress_bar(self):
         mode = self.log.log['currentState']
 
         if self.controller.subsampleIndices == None:
@@ -595,7 +611,7 @@ class MainWindow(QMainWindow):
         fileList = get_fcs_file_names(self.controller.homeDir)
         if mode == 'Quality Assurance':
             self.controller.process_images('qa',progressBar=self.progressBar,view=self)
-            self.display_thumbnails(runNew)
+            self.display_thumbnails()
         if mode == 'Model':
             self.set_model_to_run()
             self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
@@ -615,26 +631,27 @@ class MainWindow(QMainWindow):
  
     def display_thumbnails(self,runNew=False):
         mode = self.log.log['currentState']
+        hbl = QtGui.QHBoxLayout()
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        
         if mode == 'Quality Assurance':
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
-            tv = ThumbnailViewer(thumbDir,fileChannels,parent=self.mainWidget,viewScatterFn=self.handle_show_scatter)
-            hbl = QtGui.QHBoxLayout()
-            vbl = QtGui.QVBoxLayout()
-            hbl.setAlignment(QtCore.Qt.AlignCenter)
-            hbl.addWidget(tv)
-            vbl.setAlignment(QtCore.Qt.AlignTop)
-            vbl.addLayout(hbl)
-            self.refresh_main_widget()
-            QtCore.QCoreApplication.processEvents() # experimental
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
 
         elif mode == 'Results Navigation':
-            if self.log.log['selectedModel'] == None or self.log.log['selectedModel'] == '':
-                self.log.log['selectedModel'] = self.log.log['modelToRun']
+            try:
+                self.set_selected_model()
+            except:
+                modelsRun = get_models_run(self.controller.homeDir)
+                modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
+                self.log.log['selectedModel'] = modelsRun[0]
 
-            ## set basic variables 
+            ## set basic variables   
             selectedModel = self.log.log['selectedModel']
             fileList = get_fcs_file_names(self.controller.homeDir)
             self.mainWidget = QtGui.QWidget(self)
@@ -642,49 +659,48 @@ class MainWindow(QMainWindow):
             ## get the model name
             modelName = None
             for possibleModelUsed in self.modelList:
-                print possibleModelUsed, selectedModel
                 if re.search(possibleModelUsed,selectedModel):
                     modelName = possibleModelUsed
 
-            ## get the file channels
-            #fileUsed = re.sub("\_%s"%modelName,"",selectedModel)
-            #fileUsed = re.sub("\_sub\d+","",fileUsed) + ".fcs"
-            #fileChannels = self.model.get_file_channel_list(fileUsed) 
+            ## get the number subsample size
+            match = re.search("sub\d+",selectedModel)
+            if match != None:
+                subsetSize = match.group(0)
+            else:
+                subsetSize = ''
+
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
             if modelName == None:
                 print "ERROR: could not find model type used"
 
-            if self.log.log['subsample'] == None or self.log.log['subsample'] == 'All Data':
+            if subsetSize == '':
                 imgDir = os.path.join(self.controller.homeDir,'figs',modelName)
             else:
-                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
-
+                imgDir = os.path.join(self.controller.homeDir,'figs',"%s_%s"%(subsetSize,modelName))
             if os.path.isdir(imgDir) == False:
                 print "ERROR: a bad imgDir has been specified"
 
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
-            tv = ThumbnailViewer(thumbDir,fileChannels,parent=self.mainWidget,viewScatterFn=self.handle_show_scatter)
-            hbl = QtGui.QHBoxLayout(self.mainWidget)
-            hbl.addWidget(tv)
-            hbl.setAlignment(QtCore.Qt.AlignTop)
-            self.refresh_main_widget()
-            QtCore.QCoreApplication.processEvents() # experimental
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
+        
+        else:
+            print "ERROR: bad mode specified in display thumbnails"
+
+        ## for either mode
+        hbl.addWidget(self.tv)
+        vbl.addLayout(hbl)
+        self.mainWidget.setLayout(vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
 
     def set_selected_file(self,withRefresh=True):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selectedFile'] = selectedFile
-        #self.display_thumbnails()
-        #if withRefresh == True:
-        #self.refresh_state()
         
     def set_selected_model(self,withRefresh=True):
-        try:
-            selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-            self.log.log['selectedModel'] = selectedModel
-            if withRefresh == True:
-                self.refresh_state()
-        except:
-            print 'no selected model available'
+        selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
+        print 'setting... ', selectedModel
+        self.log.log['selectedModel'] = selectedModel
 
     def refresh_state(self):
         if self.log.log['currentState'] == "Data Processing":
@@ -699,16 +715,28 @@ class MainWindow(QMainWindow):
 
     def handle_show_scatter(self,img=None):
         mode = self.log.log['currentState']
-        print 'handling show scatter',mode
+        #print 'handling show scatter',mode
         self.set_selected_file(withRefresh=False)
         
+        # thumbs do no disappear fix
+        self.mainWidget = QtGui.QWidget(self)
+        bp = BlankPage(parent=self.mainWidget)
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.addWidget(bp)
+        vbl.addLayout(hbl)
+        self.mainWidget.setLayout(vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
+
         if img != None:
-            print img
-            print self.log.log['selectedFile']
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs","",self.log.log['selectedFile']),"",img)
-            print channels
-            chanI,chanJ = re.split("\_",channels)
-        
+            channels = re.split("\_",channels)
+            chanI = channels[-2]
+            chanJ = channels[-1]
+
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
@@ -716,33 +744,29 @@ class MainWindow(QMainWindow):
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
-            self.clear_dock()
-            self.refresh_main_widget()
-            self.add_dock()
-            QtCore.QCoreApplication.processEvents() # experimental
-            
         elif mode == "Results Navigation":
             self.set_selected_model(withRefresh=False)
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
             sp = ScatterPlotter(self.mainWidget,self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,subset=self.log.log['subsample'],
-                                modelName=self.log.log['selectedModel'])
+                                modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
-            self.clear_dock()
-            self.refresh_main_widget()
-            self.add_dock()
-            QtCore.QCoreApplication.processEvents() # experimental
+        
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
 
     def display_info(self,msg):
         reply = QtGui.QMessageBox.information(self, 'Information',msg)
     def display_warning(self,msg):
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
-    # check state status
-    # nextState is the int index of the next state
-    # state counting begins at 0
+    '''
+    check state status
+    nextState is the int index of the next state
+    state counting begins at 0
+    '''
     def check_state_status(self,nextState):
         if self.controller.projectID == None:
             self.display_info('To begin create a new project or open an existing one')

@@ -5,14 +5,14 @@ class FileSelector(QtGui.QWidget):
     def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
         QtGui.QWidget.__init__(self,parent)
         self.modelSelector = None
-
+        self.modelsRun = modelsRun
         self.color = color
         vbox = QtGui.QVBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
         hbox2 = QtGui.QHBoxLayout()
-
+        
         ## error checking
-        if showModelSelector == True and modelsRun == None:
+        if showModelSelector == True and self.modelsRun == None:
             print "ERROR: must specify modelsRun if ModelSelector is true"
 
         ## file selector
@@ -38,7 +38,8 @@ class FileSelector(QtGui.QWidget):
 
         if showModelSelector != False:
             ## model selector label
-            modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
+            self.modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in self.modelsRun]
+            self.modelsRun = list(set([re.split("_",mr)[-2] + "_" + re.split("_",mr)[-1] for mr in self.modelsRun]))
             hbox3 = QtGui.QHBoxLayout()
             hbox4 = QtGui.QHBoxLayout()
             hbox3.addWidget(QtGui.QLabel('Model Selector'))
@@ -48,14 +49,14 @@ class FileSelector(QtGui.QWidget):
             self.modelSelector = QtGui.QComboBox(self)
             self.modelSelector.setMaximumWidth(180)
             self.modelSelector.setMinimumWidth(180)
-            for model in modelsRun:
+            for model in self.modelsRun:
                 self.modelSelector.addItem(model)
             hbox4.addWidget(self.modelSelector)
             hbox4.setAlignment(QtCore.Qt.AlignCenter)
 
             if modelDefault != None:
-                if modelsRun.__contains__(modelDefault):
-                    self.modelSelector.setCurrentIndex(modelsRun.index(modelDefault))
+                if self.modelsRun.__contains__(modelDefault):
+                    self.modelSelector.setCurrentIndex(self.modelsRun.index(modelDefault))
                 else:
                     print "ERROR: in dpd - bad specified modelDefault"
 
@@ -94,7 +95,9 @@ class FileSelector(QtGui.QWidget):
     def get_selected_model(self):
         smInd = self.modelSelector.currentIndex()
         sm = str(self.modelSelector.currentText())
-
+        print 'inside model selector (fileselector)'
+        print self.modelsRun,sm
+        
         return sm, smInd
 
     def generic_callback(self):
