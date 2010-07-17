@@ -18,92 +18,42 @@ To start cytostream::
 
 Loading the data
 ================
+In the opening screen `File -> New` or `File -> Open` are used to open projects. 
 
-You may already have sphinx `sphinx <http://sphinx.pocoo.org/>`_
-installed -- you can check by doing::
+  .. image:: .static/screenshot_initial.png
 
-  python -c 'import sphinx'
+To begin a project cytostream takes as input \*.fcs files.  They may be loaded as single files or in bulk using the commands `cntl` and `shift` to select more than one file.
 
-If that fails grab the latest version of and install it with::
+Data Processing
+===============
+Once the file(s) are loaded then a grid of check boxes will appear, where the rows are the files and the columns are the channels.
 
-  > sudo easy_install sphinx
+  .. image:: .static/screenshot_data-processing.png
 
-Now you are ready to build a template for your docs, using
-sphinx-quickstart::
+The check boxes will be used in future releases to carry out compensation and transformations.  The `Subset Selector` is where the user specifies how much of the data will be used throughout the subsequent steps.  Given that flow cytometry data often consists of a large number of observations, it can be helpful to carry out analyses on subsets of the data first before using  all of the observations.  Once the user continues from this stage cytostream will wait for user input to make the figures necessary for quality assurance purposes.
 
-  > sphinx-quickstart
+Quality Assurance
+=================
+Currently, this stage allows for the browsing of data to enable the user to get a feel for the results before any models are run.  More quality assurance options will be included in a later release.
 
-If you now point your browser to :file:`.build/html/index.html`, you
-should see a basic sphinx site.
+  .. image:: .static/screenshot_quality-assurance.png
 
-.. image:: .static/basic_screenshot.png
+Clicking on an image will bring up an interactive plot of the individual scatter plot.  Using the `File Selector` allows the user browse the different plots associated with the the files in the project.  The `View All` button brings the user back to a thumbnail view of the data plots---effectivly allowing the user to toggle the view.
 
-.. _fetching-the-data:
+Model
+=====
+The model stage is the point where a model may be selected and associated parameters may be changed.
 
-Fetching the data
------------------
+  .. image:: .static/screenshot_model.png
 
-Now we will start to customize out docs.  Grab a couple of files from
-the `web site
-<http://matplotlib.svn.sourceforge.net/viewvc/matplotlib/trunk/sampledoc_tut/>`_
-or svn.  You will need :file:`getting_started.rst` and
-:file:`_static/basic_screenshot.png`.  All of the files live in the
-"completed" version of this tutorial, but since this is a tutorial,
-we'll just grab them one at a time, so you can learn what needs to be
-changed where.  Since we have more files to come, I'm going to grab
-the whole svn directory and just copy the files I need over for now.
-First, I'll cd up back into the directory containing my project, check
-out the "finished" product from svn, and then copy in just the files I
-need into my :file:`sampledoc` directory::
+After selecting a model and choosing the appropriate parameters, cytostream will then ask the user to run the model and create the figures. 
 
-  home:~/tmp/sampledoc> pwd
-  /Users/jdhunter/tmp/sampledoc
-  home:~/tmp/sampledoc> cd ..
-  home:~/tmp> svn co https://matplotlib.svn.sourceforge.net/svnroot/\
-  matplotlib/trunk/sampledoc_tut
-  A    sampledoc_tut/cheatsheet.rst
-  A    sampledoc_tut/_static
-  A    sampledoc_tut/_static/basic_screenshot.png
-  A    sampledoc_tut/conf.py
-  A    sampledoc_tut/Makefile
-  A    sampledoc_tut/_templates
-  A    sampledoc_tut/_build
-  A    sampledoc_tut/getting_started.rst
-  A    sampledoc_tut/index.rst
-  Checked out revision 7449.
-  home:~/tmp> cp sampledoc_tut/getting_started.rst sampledoc/
-  home:~/tmp> cp sampledoc_tut/_static/basic_screenshot.png \
-  sampledoc/_static/
+Results Navigation
+==================
+With the model run the option to navigate results becomes available.  As seen in the `Quality Assurance` stage users may toggle between thumbnail and individual view modes.  
 
-The last step is to modify :file:`index.rst` to include the
-:file:`getting_started.rst` file (be careful with the indentation, the
-"g" in "getting_started" should line up with the ':' in ``:maxdepth``::
+  .. image:: .static/screenshot_results-nav.png
 
-  Contents:
-
-  .. toctree::
-     :maxdepth: 2
-
-     getting_started.rst
-
-and then rebuild the docs::
-
-  cd sampledoc
-  make html
-
-
-When you reload the page by refreshing your browser pointing to
-:file:`_build/html/index.html`, you should see a link to the
-"Getting Started" docs, and in there this page with the screenshot.
-`Voila!`
-
-Note we used the image directive to include to the screenshot above
-with::
-
-  .. image:: _static/basic_screenshot.png
-
-
-Next we'll customize the look and feel of our site to give it a logo,
-some custom css, and update the navigation panels to look more like
-the `sphinx <http://sphinx.pocoo.org/>`_ site itself -- see
-:ref:`custom_look`.
+More
+====
+A given project is automatically saved after the completion of each stage.  After completion of the pipeline, users may return to the `Data Processing` stage to increase the number of observations used as part of the analysis.  Similarly, upon return to the `Model` stage users may change settings and rerun the data as they see fit.  The `Results Navigation` allows the additional option of scrolling through the run models with the `Model Selector`.
