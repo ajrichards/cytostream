@@ -151,7 +151,6 @@ class MainWindow(QMainWindow):
         self.pipelineDock.setAllowedAreas(Qt.TopDockWidgetArea|Qt.BottomDockWidgetArea)
  
         self.pipelineDockWidget = QtGui.QWidget(self)
-        #self.pipelineDockWidget.setGeometry(self.eSize*7.0+self.buff, self.eSize+2.0+self.buff, self.eSize*7.0+self.buff, self.eSize+2.0+self.buff)
         btnCallBacks = [self.move_to_data_processing, self.move_to_quality_assurance, self.move_to_model, self.move_to_results_navigation]
         self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize,btnCallBacks=btnCallBacks)
         palette = self.pipelineDockWidget.palette()
@@ -168,8 +167,8 @@ class MainWindow(QMainWindow):
         
         self.pipelineDock.setWidget(self.pDock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.pipelineDock)
-        self.pipelineDock.setMinimumWidth(self.eSize*2)
-        self.pipelineDock.setMaximumWidth(self.eSize*2)
+        self.pipelineDock.setMinimumWidth(0.10 * self.screenWidth)
+        self.pipelineDock.setMaximumWidth(0.10 * self.screenWidth)
 
     def create_action(self, text, slot=None, shortcut=None, icon=None,
                      tip=None, checkable=False, signal="triggered()"):
@@ -236,9 +235,9 @@ class MainWindow(QMainWindow):
                 self.log = self.controller.log
 
             if self.controller.homeDir != None:
-                self.move_to_data_processing()
                 self.add_pipeline_dock()
-                #self.pDock.set_btn_highlight('data processing')
+                self.pDock.set_btn_highlight('data processing')
+                self.move_to_data_processing()
    
         else:
             print "ERROR: not moving to data processing bad goflag"
@@ -269,28 +268,10 @@ class MainWindow(QMainWindow):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
+        self.add_pipeline_dock()
+        self.refresh_state()
+        self.refresh_state()  # done twice to force correct visualation in pipeline
         
-        if self.log.log['currentState'] == 'Data Processing':
-            print 'moving to dp'
-            self.move_to_data_processing()
-            self.add_pipeline_dock()
-            #self.pDock.set_btn_highlight('data processing')
-        elif self.log.log['currentState'] == 'Quality Assurance':
-            self.move_to_quality_assurance()
-            self.add_pipeline_dock()
-            #self.pDock.set_btn_highlight('quality assurance')
-        elif self.log.log['currentState'] == 'Model':
-            self.move_to_model()
-            self.add_pipeline_dock()
-            #self.pDock.set_btn_highlight('model')
-        elif self.log.log['currentState'] == 'Results Navigation':
-            self.move_to_results_navigation()
-            self.add_pipeline_dock()
-            #self.pDock.set_btn_highlight('results navigation')
-        else:
-            self.move_to_initial()
-            print 'hmmm... ', self.log.log['currentState']
-
     def fileSave(self):
         if self.controller.homeDir != None:
             self.controller.save()
@@ -357,8 +338,8 @@ class MainWindow(QMainWindow):
 
     ################################################################################################3
     def move_to_initial(self):
-        #if self.pDock != None:
-        #    self.pDock.unset_all_highlights()
+        if self.pDock != None:
+            self.pDock.unset_all_highlights()
         if self.dockWidget != None:
             self.clear_dock()
       
@@ -374,7 +355,7 @@ class MainWindow(QMainWindow):
     def move_to_data_processing(self):
         if self.controller.homeDir == None:
             self.display_info('To begin either load an existing project or create a new one')
-            return
+            return False
 
         if self.dockWidget != None:
             self.clear_dock()
@@ -393,14 +374,17 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
-        #if self.pDock != None:
-        #    self.pDock.set_btn_highlight('data processing')
+        if self.pDock != None:
+            self.pDock.set_btn_highlight('data processing')
 
+        return True
+    
     def move_to_quality_assurance(self,runNew=False):
         nextState = self.stateList.index('Quality Assurance')
         proceed = self.check_state_status(nextState)
         if proceed == False:
-            return
+            print "WARNING: failed state check not moving to qa"
+            return False
 
         self.set_subsample()
         if self.dockWidget != None:
@@ -410,7 +394,12 @@ class MainWindow(QMainWindow):
         thumbDir = os.path.join(self.controller.homeDir,"figs",self.log.log['selectedFile'][:-4]+"_thumbs")
 
         if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
-            self.display_thumbnails()
+            goFlag = self.display_thumbnails()
+
+            if goFlag == False:
+                print "WARNING: failed to display thumbnails not moving to results navigation"
+                return False
+
             self.add_dock()
         else:
             self.mainWidget = QtGui.QWidget(self)
@@ -423,17 +412,17 @@ class MainWindow(QMainWindow):
             self.add_dock()
         
         self.track_highest_state()
-        #self.refresh_main_widget()
-        #self.add_dock()
         self.controller.save()
-        #if self.pDock != None:
-        #    self.pDock.set_btn_highlight('quality assurance')
+        if self.pDock != None:
+            self.pDock.set_btn_highlight('quality assurance')
+        return True
 
     def move_to_model(self):
         nextState = self.stateList.index('Model')
         proceed = self.check_state_status(nextState)
         if proceed == False:
-            return
+            print "WARNING: failed state check not moving to model"
+            return False
 
         if self.dockWidget != None:
             self.clear_dock()
@@ -447,26 +436,33 @@ class MainWindow(QMainWindow):
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
-        #if self.pDock != None:
-        #    self.pDock.set_btn_highlight('model')
+        if self.pDock != None:
+            self.pDock.set_btn_highlight('model')
+        return True
 
     def move_to_results_navigation(self,runNew=False):
-        nextState = self.stateList.index('Results Navigation')
-        proceed = self.check_state_status(nextState)
-        if proceed == False:
-            return
+        ## error checking
+        modelsRun = get_models_run(self.controller.homeDir)
+        if len(modelsRun) == 0:
+            self.display_info("No models have been run yet -- so results cannot be viewed")
+            return False
 
         if self.dockWidget != None:
             self.clear_dock()
 
-        #fileList = get_fcs_file_names(self.controller.homeDir)
         self.log.log['currentState'] = "Results Navigation"
-        self.display_thumbnails(runNew)
+        goFlag = self.display_thumbnails(runNew)
+
+        if goFlag == False:
+            print "WARNING: failed to display thumbnails not moving to results navigation"
+            return False
+        
         self.add_dock()
         self.track_highest_state()
         self.controller.save()
-        #if self.pDock != None:
-        #    self.pDock.set_btn_highlight('results navigation')
+        if self.pDock != None:
+            self.pDock.set_btn_highlight('results navigation')
+        return True
         
     def generic_callback(self):
         print "this button/widget does not do anything yet"
@@ -642,15 +638,21 @@ class MainWindow(QMainWindow):
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
-
+            
         elif mode == 'Results Navigation':
+            ## error checking
+            modelsRun = get_models_run(self.controller.homeDir)
+            if len(modelsRun) == 0:
+                self.display_info("No models have been run yet -- so results cannot be viewed")
+                return False
+
+            ## set the selectedModel
             try:
                 self.set_selected_model()
             except:
-                modelsRun = get_models_run(self.controller.homeDir)
                 modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
                 self.log.log['selectedModel'] = modelsRun[0]
-
+                
             ## set basic variables   
             selectedModel = self.log.log['selectedModel']
             fileList = get_fcs_file_names(self.controller.homeDir)
@@ -692,6 +694,7 @@ class MainWindow(QMainWindow):
         self.mainWidget.setLayout(vbl)
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
+        return True
 
     def set_selected_file(self,withRefresh=True):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
@@ -699,7 +702,6 @@ class MainWindow(QMainWindow):
         
     def set_selected_model(self,withRefresh=True):
         selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-        print 'setting... ', selectedModel
         self.log.log['selectedModel'] = selectedModel
 
     def refresh_state(self):
@@ -757,8 +759,17 @@ class MainWindow(QMainWindow):
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
 
+    '''
+    display info
+    generic function to display info to user
+    '''
     def display_info(self,msg):
         reply = QtGui.QMessageBox.information(self, 'Information',msg)
+
+    '''
+    display warning
+    generic function to display a warning to user
+    '''
     def display_warning(self,msg):
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 

@@ -7,13 +7,7 @@
 import getopt,sys,os
 import numpy as np
 from Model import Model
-
-if os.name != 'posix':
-    import matplotlib
-    matplotlib.use('Agg')
-
 import matplotlib.pyplot as pyplot
-
 
 ## parse inputs
 def bad_input():

@@ -37,9 +37,6 @@ class ProgressBar(QtGui.QWidget):
     def __init__(self, parent=None,buttonLabel='Run'):
         QtGui.QWidget.__init__(self, parent)
 
-        #self.setGeometry(300, 300, 250, 150)
-        #self.setWindowTitle('ProgressBar')
-
         self.running = False
         vbl = QtGui.QVBoxLayout()#self
         vbl.setAlignment(QtCore.Qt.AlignTop)
@@ -49,7 +46,6 @@ class ProgressBar(QtGui.QWidget):
         hbl2.setAlignment(QtCore.Qt.AlignCenter)
         
         self.pbar = QtGui.QProgressBar(self)
-        #self.pbar.setGeometry(30, 40, 200, 25)
         hbl1.addWidget(self.pbar)
         vbl.addLayout(hbl1)
 
@@ -67,15 +63,10 @@ class ProgressBar(QtGui.QWidget):
         self.step = 0;
 
     def onStart(self):
-        #if self.timer.isActive():
-            #self.timer.stop()
         if self.running == False:
             self.button.setText('Please wait...')
             self.running = True
             self.button.setEnabled(False)
-        #elif self.running == True:
-        #    self.running = False
-        #    self.button.setText('Please wait...')
     
     def move_bar(self,step):
         self.step = step
@@ -84,7 +75,6 @@ class ProgressBar(QtGui.QWidget):
         QtCore.QCoreApplication.processEvents()
 
     def set_callback(self,callback):
-        #self.connect(self.button, SIGNAL("returnPressed()"), callback)
         self.connect(self.button, QtCore.SIGNAL('clicked()'),callback)
 
 class DisplayImage(QtGui.QWidget):
@@ -114,10 +104,4 @@ class DisplayImage(QtGui.QWidget):
         self.setLayout(hbox)
 
         if self.imgTitle != None:
-            self.setWindowTitle(self.imgTitle)
-        
-        #if self.width == None or self.height==None:
-        #    self.move(400, 300)
-        #else:
-        #    self.move(int(0.5*self.width), int(0.5*self.height))
-            
+            self.setWindowTitle(self.imgTitle)            

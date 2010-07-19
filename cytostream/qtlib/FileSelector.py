@@ -95,8 +95,6 @@ class FileSelector(QtGui.QWidget):
     def get_selected_model(self):
         smInd = self.modelSelector.currentIndex()
         sm = str(self.modelSelector.currentText())
-        print 'inside model selector (fileselector)'
-        print self.modelsRun,sm
         
         return sm, smInd
 

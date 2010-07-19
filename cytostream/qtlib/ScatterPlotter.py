@@ -2,6 +2,7 @@ import sys,os
 sys.path.append(os.path.join(".."))
 from PyQt4 import QtGui
 import numpy as np
+
 from matplotlib.figure import Figure  
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar

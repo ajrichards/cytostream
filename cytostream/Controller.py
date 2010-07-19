@@ -85,7 +85,6 @@ class Controller:
                 imgDir = 'None'
                 longModelName = 'None'
         
-            print 'creating images for ', fileName
             ## progress point information 
             imageProgress = range(int(numImagesToCreate))
         
@@ -331,7 +330,6 @@ class Controller:
 
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
-        print 'running for ...', fileList
         for fileName in fileList:
             if selectedModel == 'dpmm-cpu':
                 proc = subprocess.Popen("%s RunDPM-CPU.py -p %s -f %s -k %s"%(pythonPath, self.projectID,fileName,numComponents), 
