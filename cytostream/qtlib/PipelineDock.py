@@ -11,7 +11,7 @@ class PipelineDock(QtGui.QWidget):
         ## set variables
         self.eSize = eSize
         self.buff = 2.0
-        self.btnColor = QtGui.QColor(0, 200, 200)
+        self.btnColor = QtGui.QColor(255, 204, 153)
         self.btnCallBacks = btnCallBacks
 
         ## actions
@@ -66,10 +66,14 @@ class PipelineDock(QtGui.QWidget):
         vbox.setAlignment(QtCore.Qt.AlignTop)
         self.setLayout(vbox)
 
-    def btn_callback(self,value):
-        self.set_btn_highlight(value)
+    #def btn_callback(self,value):
+    #    self.set_btn_highlight(value)
 
     def unset_all_highlights(self):
+        #self.dataProcessingBtn.setEnabled(True)
+        #self.qualityAssuranceBtn.setEnabled(True)
+        #self.modelBtn.setEnabled(True)
+        #self.resultsNavigationBtn.setEnabled(True)
         self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % None)
@@ -78,76 +82,53 @@ class PipelineDock(QtGui.QWidget):
 
     def set_btn_highlight(self,btnName):
         if btnName == 'data processing':
-            #self.unset_all_highlights()
-            #self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-            if self.btnCallBacks != None:
-                print self.btnCallBacks[0]()
+            self.unset_all_highlights()
+            self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.dataProcessingBtn.setEnabled(False)
+           
         elif btnName == 'quality assurance':
-            #self.unset_all_highlights()
-            #self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-            if self.btnCallBacks != None:
-                print self.btnCallBacks[1]()
+            self.unset_all_highlights()
+            self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.qualityAssuranceBtn.setEnabled(False)
+
         elif btnName == 'model':
-            #self.unset_all_highlights()
-            #self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-            if self.btnCallBacks != None:
-                print self.btnCallBacks[2]()
+            self.unset_all_highlights()
+            self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.modelBtn.setEnabled(False)
+
         elif btnName == 'results navigation':
-            #self.unset_all_highlights()
-            #self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-            if self.btnCallBacks != None:
-                print self.btnCallBacks[3]()
+            self.unset_all_highlights()
+            self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            #self.resultsNavigationBtn.setEnabled(False)
         else:
             print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
 
         QtCore.QCoreApplication.processEvents()
 
-    #def paintEvent(self, event):
-    #    
-    #    paint = QtGui.QPainter()
-    #    print dir(paint)
-    #    
-    #    ## params for paint rendering
-    #    #print 'antialias', paint.Antialiasing
-    #    #print 'smooth transform', paint.SmoothPixmapTransform
-    #    #print 'high quality', paint.HighQualityAntialiasing
-    #    #print 'non cosmetic def', paint.NonCosmeticDefaultPen
-    #
-    #    paint.begin(self)
-    #    
-    #    color = QtGui.QColor(0, 0, 0)
-    #    color.setNamedColor('#d4d4d4')
-    #    #pen = QtGui.QPen(QtCore.Qt.black, 1, QtCore.Qt.SolidLine)
-    #    #paint.setPen(pen)
-    #    paint.setPen(QtCore.Qt.black)
-    #    normalColor = QtGui.QColor(0, 0, 180, 150)
-    #    highlightColor = QtGui.QColor(0, 255, 255, 150)
-    # 
-    #    ## Data processing
-    #    paint.setBrush(normalColor)
-    #    paint.drawEllipse(0, 0, 2.0*self.eSize, self.eSize)
-    #
-    #    paint.drawLine(self.eSize, self.eSize, self.eSize, 2.0*self.eSize)
-    #
-    #    ## Quality Assurance
-    #    paint.setBrush(normalColor)
-    #    paint.drawEllipse(0, 2.0*self.eSize, 2.0*self.eSize, self.eSize)
-    #
-    #    paint.drawLine(self.eSize, 3.0*self.eSize, self.eSize, 4.0*self.eSize)
-    #
-    #    ## Model
-    #    paint.setBrush(normalColor)
-    #    paint.drawEllipse(0,4.0*self.eSize, 2.0*self.eSize, self.eSize)
-    #
-    #    paint.drawLine(self.eSize, 5.0*self.eSize, self.eSize, 6.0*self.eSize)
-    #
-    #    ## Results Navigation
-    #    paint.setBrush(normalColor)
-    #    paint.drawEllipse(0,6.0*self.eSize, 2.0*self.eSize, self.eSize)
-    #    #paint.drawLine(5.0*self.eSize, 0.5*self.eSize, 6.0*self.eSize, 0.5*self.eSize)
-    #   
-    #    paint.end()
-    
+    def btn_callback(self,btnName):
+        goFlag = False
+        if btnName == 'data processing':
+            if self.btnCallBacks != None:
+                goFlag = self.btnCallBacks[0]()
+           
+        elif btnName == 'quality assurance':
+            if self.btnCallBacks != None:
+                goFlag = self.btnCallBacks[1]()
+
+        elif btnName == 'model':
+            if self.btnCallBacks != None:
+                goFlag = self.btnCallBacks[2]()
+
+        elif btnName == 'results navigation':
+            if self.btnCallBacks != None:
+                goFlag = self.btnCallBacks[3]()
+        else:
+            print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
+
+        if goFlag == True:
+            self.set_btn_highlight(btnName)
+
+        QtCore.QCoreApplication.processEvents()    
 
 ### Run the tests                                                                           
 if __name__ == '__main__':

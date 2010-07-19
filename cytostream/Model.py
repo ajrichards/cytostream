@@ -14,10 +14,11 @@ from FileControls import *
 #from matplotlib import pyplot
 #from matplotlib.figure import Figure
 
-#import matplotlib
-#matplotlib.use('Agg')
+## this prevents windows from popping up for each figure generation
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib import pyplot
-from matplotlib.figure import Figure
 from matplotlib import rc
 import matplotlib.cm as cm
 rc('font',family = 'sans-serif')
