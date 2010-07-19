@@ -2,12 +2,11 @@
 '''
 
 '''
-import tkMessageBox,tkSimpleDialog,csv,os,re,cPickle
+import sys,csv,os,re,cPickle
 import fcm
 import fcm.statistics
 import numpy as np
-import Tkinter as tk
-from FileControls import *
+from FileControls import  *
 
 ## matplotlib imports and configs
 #from matplotlib.ticker import NullFormatter,MaxNLocator
@@ -15,8 +14,9 @@ from FileControls import *
 #from matplotlib.figure import Figure
 
 ## this prevents windows from popping up for each figure generation
-import matplotlib
-matplotlib.use('Agg')
+if sys.platform == 'darwin':
+    import matplotlib
+    matplotlib.use('Agg')
 
 from matplotlib import pyplot
 from matplotlib import rc
@@ -105,6 +105,7 @@ class Model:
 
             if subsample > minNumObs:
                 print "ERROR: subsample greater than minimum num events in file", file
+                return False
 
         ## get the random integers
         np.random.seed(42)
@@ -119,7 +120,7 @@ class Model:
         tmp1 = open(os.path.join(self.homeDir,'models',modelName+".pickle"),'r')
         tmp2 = open(os.path.join(self.homeDir,'models',modelName+"_classify.pickle"),'r')
         model = cPickle.load(tmp1)
-        samplesFromPostr = 5.0
+        samplesFromPostr = 1.0
 
         k = int(model.pis().size / samplesFromPostr)
         #print 'calculated k = ', k

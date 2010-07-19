@@ -179,6 +179,13 @@ class Controller:
         if self.log.log['subsample'] != "All Data":
             print "using subsampling....", self.log.log['subsample']
             self.subsampleIndices = self.model.get_subsample_indices(self.log.log['subsample'])
+            
+            if type(self.subsampleIndices) == type(np.array([])):
+                pass
+            elif self.subsampleIndices == False:
+                print "WARNING: No subsample indices were returned to controller"
+                return False
+
             n = len(self.subsampleIndices)
 
             ## for each file associated with the project
@@ -191,6 +198,7 @@ class Controller:
                 outfile = os.path.join(self.homeDir,'data',"%s_sub%s.pickle"%(file[:-4],n))
                 tmp = open(outfile,'w')
                 cPickle.dump(data,tmp)
+            return True
 
     ##################################################################################################
     #

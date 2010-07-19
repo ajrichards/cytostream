@@ -27,10 +27,13 @@ class ScatterPlotter(FigureCanvas):
         model.initialize(projectID,homeDir)
         if modelName != None:
             statModel,statModelClasses = model.load_model_results_pickle(modelName)
+            centroids = statModel.mus()
+            #print np.shape(statModel.mus()), np.shape(statModel.mus()[0])  
         else:
             statModel,statModelClasses = None, None
+            centroids = None
 
-        self.make_scatter_plot(ax,model,selectedFile,channel1,channel2,subset,labels=statModelClasses)
+        self.make_scatter_plot(ax,model,selectedFile,channel1,channel2,subset,labels=statModelClasses,centroids=centroids)
         
         # initialization of the canvas 
         FigureCanvas.__init__(self, self.fig)
@@ -41,7 +44,7 @@ class ScatterPlotter(FigureCanvas):
         # notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
-    def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None):
+    def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None,centroids=None):
         
         markerSize = 5
         fontName = 'arial'
@@ -69,8 +72,12 @@ class ScatterPlotter(FigureCanvas):
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
             cmp = model.get_n_color_colorbar(maxLabel+1)
+            
 
-            for l in np.sort(np.unique(labels)):
+            #for l in np.sort(np.unique(labels)):
+            for labInd in np.argsort(np.unique(labels)):
+                l = np.unique(labels)[labInd]
+
                 rgbVal = tuple([val * 256 for val in cmp[l,:3]])
                 hexColor = model.rgb_to_hex(rgbVal)[:7]
 
@@ -83,6 +90,19 @@ class ScatterPlotter(FigureCanvas):
                     continue
     
                 ax.scatter([x],[y],color=hexColor,s=markerSize)
+                
+                ## add means if specified
+                #print l, rgbVal,centroids[labInd]
+                xPos = centroids[labInd][index1]
+                yPos = centroids[labInd][index2]
+                ax.text(xPos, yPos, 'c%s'%l, color='white',
+                        ha="center", va="center",
+                        bbox = dict(boxstyle="round",facecolor=hexColor)
+                        )
+                #ax.text(xPos, yPos, 'c%s'%l, color='black',
+                #        ha="center", va="center",
+                #        bbox = dict(boxstyle="round",facecolor=hexColor)
+                #        )
 
         ## handle data edge buffers 
         bufferX = buff * (data[:,index1].max() - data[:,index1].min())
