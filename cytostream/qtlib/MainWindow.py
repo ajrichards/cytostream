@@ -380,13 +380,17 @@ class MainWindow(QMainWindow):
         return True
     
     def move_to_quality_assurance(self,runNew=False):
-        nextState = self.stateList.index('Quality Assurance')
-        proceed = self.check_state_status(nextState)
-        if proceed == False:
-            print "WARNING: failed state check not moving to qa"
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        if len(fileList) == 0:
+            self.display_info("No files have been loaded -- so quality assurance cannot be carried out")
             return False
 
-        self.set_subsample()
+        ## set the subsample
+        goFlag = self.set_subsample()
+        if goFlag == False:
+            self.display_info("The number of subsamples that you have selected is greater than the total events in at least one file -- to continue select another value")
+            return False
+
         if self.dockWidget != None:
             self.clear_dock()
         self.mainWidget = QtGui.QWidget(self)
@@ -418,10 +422,9 @@ class MainWindow(QMainWindow):
         return True
 
     def move_to_model(self):
-        nextState = self.stateList.index('Model')
-        proceed = self.check_state_status(nextState)
-        if proceed == False:
-            print "WARNING: failed state check not moving to model"
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        if len(fileList) == 0:
+            self.display_info("No files have been loaded -- so no models can yet be run")
             return False
 
         if self.dockWidget != None:
@@ -569,7 +572,12 @@ class MainWindow(QMainWindow):
                         os.rmdir(os.path.join(imgDir,img))
 
             self.log.log['subsample'] = ss
-            self.controller.handle_subsampling()
+            goFlag = self.controller.handle_subsampling()
+            
+            if goFlag == True:
+                return True
+            else:
+                return False
             
     def set_num_components(self,value):
         diff = value % 8
@@ -773,28 +781,7 @@ class MainWindow(QMainWindow):
     def display_warning(self,msg):
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
-    '''
-    check state status
-    nextState is the int index of the next state
-    state counting begins at 0
-    '''
-    def check_state_status(self,nextState):
-        if self.controller.projectID == None:
-            self.display_info('To begin create a new project or open an existing one')
-            return False
-        elif self.log.log['currentState'] == 'initial' and nextState == 0:
-            self.move_to_data_processing()
-            return True
-        elif self.stateList.__contains__(self.log.log['currentState']) == False: 
-            self.display_info('User may not change stage at this time')
-            print self.log.log['currentState'], nextState
-            return False
-        elif nextState > int(self.log.log['highestState']) + 1:
-            print 'nextstate', nextState, int(self.log.log['highestState']) 
-            self.display_info('User must follow the flow of the pipeline \n i.e. please do not skip steps')
-            return False
-        else:
-            return True
+
     def refresh_main_widget(self):
         self.setCentralWidget(self.mainWidget)
         self.mainWidget.activateWindow()
