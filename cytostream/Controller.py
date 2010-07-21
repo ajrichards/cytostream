@@ -344,7 +344,6 @@ class Controller:
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
-                
                 while True:
                     try:
                         next_line = proc.stdout.readline()
@@ -370,7 +369,7 @@ class Controller:
                        next_line = proc.stdout.readline()
                        if next_line == '' and proc.poll() != None:
                            break
-                        #print next_line
+                       #print next_line
 
                        if re.search("it =",next_line):
                            progress = 1.0 / totalIters *100.0
