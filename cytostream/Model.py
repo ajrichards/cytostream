@@ -140,7 +140,7 @@ class Model:
         np.random.seed(42)
         return np.random.random_integers(0,minNumObs-1,subsample)
              
-    def load_model_results_pickle(self,modelName):
+    def load_model_results_pickle(self,modelName,modelType):
         """
         loads a pickled fcm file into the workspace
         data is a fcm data object
@@ -148,9 +148,15 @@ class Model:
         the results are the last 5 samples from the posterior so here we average those samples then 
         use those data as a summary of the posterior
         """
+        
+        if modelType not in ['components','modes']:
+            print "ERROR: invalide model type specified in load_model_results"
+            return False
+        
+        print 'from model loading...', modelType
 
-        tmp1 = open(os.path.join(self.homeDir,'models',modelName+".pickle"),'r')
-        tmp2 = open(os.path.join(self.homeDir,'models',modelName+"_classify.pickle"),'r')
+        tmp1 = open(os.path.join(self.homeDir,'models',modelName+"_%s.pickle"%modelType),'r')
+        tmp2 = open(os.path.join(self.homeDir,'models',modelName+"_classify_%s.pickle"%modelType),'r')
         model = cPickle.load(tmp1)
         samplesFromPostr = 1.0
         k = int(model.pis().size / samplesFromPostr)

@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
         self.reset_view_workspace()
         self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation']
         self.modelList = ['dpmm-cpu','dpmm-gpu']
+        self.resultsModeList = ['modes','components']
         
         self.move_to_initial()
         self.printer = None
@@ -316,10 +317,12 @@ class MainWindow(QMainWindow):
                 QT_VERSION_STR, PYQT_VERSION_STR, platform.system()))
 
     def show_model_log_info(self):
-        self.set_selected_model(withRefresh=False)
-        selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
+        self.set_selected_model()
 
-        modelLogFile = self.log.read_model_log(selectedModel) 
+        selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
+        fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']) + "_" + selectedModel
+
+        modelLogFile = self.log.read_model_log(fullModelName) 
         QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
                           """<br><b>Project ID</b> - %s
                              <br><b>Model name</b> - %s
@@ -327,9 +330,10 @@ class MainWindow(QMainWindow):
                              <br><b>Full  name</b> - %s
                              <br><b>File name</b>  - %s 
                              <br><b>Components</b> - %s
+                             <br><b>Modes</b>      - %s
                              <br><b>Run time</b>   - %s"""%(modelLogFile['project id'],selectedModel,modelLogFile['timestamp'],
                                                      modelLogFile['full model name'],modelLogFile['file name'],
-                                                     modelLogFile['number components'],modelLogFile['model runtime'])
+                                                     modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
                           )
     def helpHelp(self):
         self.display_info("The help is not yet implimented")
@@ -481,7 +485,7 @@ class MainWindow(QMainWindow):
             self.clear_dock()
 
         if self.fileSelector != None and self.log.log['selectedFile'] == None:
-            self.set_selected_file(withRefresh=False)
+            self.set_selected_file()
 
         masterChannelList = self.model.get_master_channel_list()
         fileList = get_fcs_file_names(self.controller.homeDir)
@@ -529,8 +533,8 @@ class MainWindow(QMainWindow):
             modelList = ['DPMM-CPU','DPMM-GPU']
             self.dock = ModelDock(modelList,parent=self.dockWidget,contBtnFn=self.move_to_results_navigation,componentsFn=self.set_num_components)
         elif self.log.log['currentState'] == "Results Navigation":
-            self.dock = ResultsNavigationDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=self.dockWidget,
-                                              contBtnFn=self.generic_callback,subsetDefault=subsamplingDefault,viewAllFn=self.display_thumbnails,
+            self.dock = ResultsNavigationDock(self.resultsModeList,masterChannelList,parent=self.dockWidget,resultsModeFn=self.set_selected_results_mode,
+                                              resultsModeDefault=self.log.log['resultsMode'],viewAllFn=self.display_thumbnails,
                                               infoBtnFn=self.show_model_log_info)
         if self.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
             self.fileSelector.set_refresh_thumbs_fn(self.display_thumbnails)
@@ -659,6 +663,7 @@ class MainWindow(QMainWindow):
                 self.set_selected_model()
             except:
                 modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
+                modelsRun = [re.sub('_components|_modes|_classify','',mr) for mr in modelsRun]
                 self.log.log['selectedModel'] = modelsRun[0]
                 
             ## set basic variables   
@@ -704,11 +709,15 @@ class MainWindow(QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
-    def set_selected_file(self,withRefresh=True):
+    def set_selected_results_mode(self):
+        selectedMode, selectedModeInd = self.dock.get_selected_results_mode() 
+        self.log.log['resultsMode'] = selectedMode
+
+    def set_selected_file(self):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selectedFile'] = selectedFile
         
-    def set_selected_model(self,withRefresh=True):
+    def set_selected_model(self):
         selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
         self.log.log['selectedModel'] = selectedModel
 
@@ -726,7 +735,7 @@ class MainWindow(QMainWindow):
     def handle_show_scatter(self,img=None):
         mode = self.log.log['currentState']
         #print 'handling show scatter',mode
-        self.set_selected_file(withRefresh=False)
+        self.set_selected_file()
         
         # thumbs do no disappear fix
         self.mainWidget = QtGui.QWidget(self)
@@ -750,16 +759,17 @@ class MainWindow(QMainWindow):
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.mainWidget,self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,subset=self.log.log['subsample'])
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,parent=self.mainWidget,subset=self.log.log['subsample'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
         elif mode == "Results Navigation":
-            self.set_selected_model(withRefresh=False)
+            self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.mainWidget,self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,subset=self.log.log['subsample'],
-                                modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'])
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,subset=self.log.log['subsample'],
+                                modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'],
+                                modelType=self.log.log['resultsMode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)

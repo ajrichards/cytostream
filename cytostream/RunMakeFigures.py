@@ -12,7 +12,7 @@ import matplotlib.pyplot as pyplot
 ## parse inputs
 def bad_input():
     print "\nERROR: incorrect args"
-    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subset"
+    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subset -t modelType"
     print "     projectID (-p) project name"
     print "     channel1 (-i) channel 1 name"
     print "      channel2 (-j) channel 2 name"
@@ -20,11 +20,12 @@ def bad_input():
     print "        altDir (-a) alternative directory (optional)"
     print "        subset (-s) subsampling number (optional)"
     print "     modelName (-m) model name"
+    print "     modelType (-t) model type"
     print "\n"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:],'i:j:s:a:p:f:m:')
+    optlist, args = getopt.getopt(sys.argv[1:],'i:j:s:a:p:f:m:t:')
 except getopt.GetoptError:
     print getopt.GetoptError
     bad_input()
@@ -34,6 +35,7 @@ channel1 = None
 channel2 = None
 selectedFile = None
 altDir = None
+modelType = None
 subset = "All Data"
 run = True
 for o, a in optlist:
@@ -51,7 +53,9 @@ for o, a in optlist:
         subset = a
     if o == '-m':
         modelName = a
-
+    if o == '-t':
+        modelType = a
+        
 
 def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
     fig = pyplot.figure(figsize=(7,7))
@@ -145,7 +149,6 @@ if altDir != None and os.path.isdir(altDir) == False:
     print "ERROR: specified alternative dir does not exist\n", altDir
     run = False
 
-
 if run == True:
     model = Model()
     model.initialize(projectID,homeDir)
@@ -153,5 +156,5 @@ if run == True:
     if modelName == None:
         make_scatter_plot(model,selectedFile,channel1,channel2,altDir=altDir)
     else:
-        statModel,statModelClasses = model.load_model_results_pickle(modelName) 
+        statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType) 
         make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,altDir=altDir)

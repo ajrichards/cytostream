@@ -3,22 +3,39 @@ from PyQt4 import QtGui, QtCore
 
 
 class ResultsNavigationDock(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, transformList, compensationList, subsetList, parent=None, subsetDefault=None, contBtnFn=None, 
+    def __init__(self, resultsModeList, masterChannelList, parent=None, resultsModeDefault=None, resultsModeFn=None, 
                  viewAllFn=None,infoBtnFn=None):
         QtGui.QWidget.__init__(self,parent)
 
         self.setWindowTitle('Results Navigation')
         self.masterChannelList = masterChannelList
-        self.fileList = fileList
-        self.transformList = transformList
-        self.compensationList = compensationList
 
         vbox = QtGui.QVBoxLayout()
         hbox1 = QtGui.QVBoxLayout()
         hbox2 = QtGui.QVBoxLayout()
         hbox3 = QtGui.QVBoxLayout()
-        hbox4 = QtGui.QVBoxLayout()
 
+        ## results mode selector      
+        hbox1.addWidget(QtGui.QLabel('Results Mode Selector'))
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        self.resultsModeSelector = QtGui.QComboBox(self)
+        self.resultsModeSelector.setMaximumWidth(150)
+        for resultsMode in resultsModeList:
+            self.resultsModeSelector.addItem(resultsMode)
+
+        hbox1.addWidget(self.resultsModeSelector)
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+
+        if resultsModeDefault != None:
+            if resultsModeList.__contains__(resultsModeDefault):
+                self.resultsModeSelector.setCurrentIndex(resultsModeList.index(resultsModeDefault))
+            else:
+                print "ERROR: in results mode selector - bad specified resultsModeDefault"
+
+        if resultsModeFn == None:
+            resultsModeFn = self.generic_callback
+        self.connect(self.resultsModeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), resultsModeFn)
+        
         ## message 
         viewAllBtn = QtGui.QPushButton("View All")
         viewAllBtn.setMaximumWidth(80)
@@ -47,7 +64,7 @@ class ResultsNavigationDock(QtGui.QWidget):
 
         ## finalize layout
         vbox.setAlignment(QtCore.Qt.AlignCenter)
-        #vbox.addLayout(hbox1)
+        vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         vbox.addLayout(hbox3)
         self.setLayout(vbox)
@@ -58,14 +75,21 @@ class ResultsNavigationDock(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor('white'))
         self.setPalette(palette)
 
+    def get_selected_results_mode(self):
+        rmInd = self.resultsModeSelector.currentIndex()
+        rm = str(self.resultsModeSelector.currentText())
+
+        return rm, rmInd
+
+    def generic_callback(self):
+        print 'callback does not do anything yet'
+
+
 ### Run the tests                                                                                                                                                       
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
-    fileList = ['file1', 'file2']
-    transformList = ['transform1', 'transform2', 'transform3']
-    compensationList = ['compensation1', 'compensation2']
-    subsetList = ["1e3", "1e4","5e4","All Data"]
-    rn = ResultsNavigationDock(fileList,masterChannelList, transformList, compensationList, subsetList)
+    resultsModeList = ['results mode 1', 'results mode 2']
+    rn = ResultsNavigationDock(resultsModeList,masterChannelList)
     rn.show()
     sys.exit(app.exec_())

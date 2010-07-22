@@ -91,6 +91,9 @@ class Controller:
             ## within file comparisions
             fileSpecificIndices = range(len(fileChannels))
         
+            ## specify model type to show as thumbnails
+            modelType = 'components'
+
             ## make all pairwise comparisons
             for i in range(len(fileSpecificIndices)):
                 indexI = fileSpecificIndices[i]
@@ -105,7 +108,8 @@ class Controller:
                     
                     script = os.path.join(self.homeDir,"..","..","RunMakeFigures.py")
                     subset = self.log.log['subsample']
-                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,imgDir,longModelName),
+                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
+                                                                                                     imgDir,longModelName,modelType),
                                             shell=True,
                                             stdout=subprocess.PIPE,
                                             stdin=subprocess.PIPE)
@@ -219,7 +223,8 @@ class Controller:
 
         ## create projects dir if necssary
         if os.path.isdir(os.path.join('.','projects')) == False:
-            os.path.mkdir(os.path.join('.','projects'))
+            print "INFO: projects dir did not exist. creating..."
+            os.mkdir(os.path.join('.','projects'))
 
         ## get project id
         if view == None:
