@@ -77,8 +77,10 @@ class ScatterPlotter(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
     def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None,centroids=None):
-        
-        markerSize = 5
+        if float(subset) < 1e4:
+            markerSize = 5
+        else:
+            markerSize = 4
         fontName = 'arial'
         fontSize = 12
         plotType = 'png'
@@ -107,6 +109,7 @@ class ScatterPlotter(FigureCanvas):
             
 
             #for l in np.sort(np.unique(labels)):
+            print np.argsort(np.unique(labels))
             for labInd in np.argsort(np.unique(labels)):
                 l = np.unique(labels)[labInd]
 
@@ -125,6 +128,7 @@ class ScatterPlotter(FigureCanvas):
                 
                 ## add means if specified
                 #print l, rgbVal,centroids[labInd]
+                print np.shape(centroids)
                 xPos = centroids[labInd][index1]
                 yPos = centroids[labInd][index2]
                 ax.text(xPos, yPos, 'c%s'%l, color='white',
