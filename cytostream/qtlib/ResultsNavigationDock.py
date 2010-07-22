@@ -112,12 +112,18 @@ class ResultsNavigationDock(QtGui.QWidget):
         return self.resultsMode
 
     def disable_all(self):
+        self.toggleLabel.setText('')
         self.toggleBtn.setEnabled(False)
         self.viewAllBtn.setEnabled(False)
 
     def enable_all(self):
         self.toggleBtn.setEnabled(True)
         self.viewAllBtn.setEnabled(True)
+
+        if self.resultsMode == 'components':
+            self.toggleLabel.setText('Showing components')
+        elif self.resultsMode == 'modes':
+            self.toggleLabel.setText('Showing modes')
 
 ### Run the tests                                                                                                                                                       
 if __name__ == '__main__':
