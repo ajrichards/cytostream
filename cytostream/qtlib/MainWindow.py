@@ -82,7 +82,10 @@ class MainWindow(QMainWindow):
         self.dockWidget = None
         self.fileSelector = None
         self.pDock = None        
+        self.dock = None
         self.tv = None
+        self.lastChanI = None
+        self.lastChanJ = None
 
     #################################################
     #
@@ -418,7 +421,7 @@ class MainWindow(QMainWindow):
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             self.refresh_main_widget()
             self.add_dock()
-        
+
         self.track_highest_state()
         self.controller.save()
         if self.pDock != None:
@@ -465,6 +468,10 @@ class MainWindow(QMainWindow):
             return False
         
         self.add_dock()
+
+        ## disable buttons
+        self.dock.disable_all()
+
         self.track_highest_state()
         self.controller.save()
         if self.pDock != None:
@@ -706,12 +713,19 @@ class MainWindow(QMainWindow):
         vbl.addLayout(hbl)
         self.mainWidget.setLayout(vbl)
         self.refresh_main_widget()
+        
+        if self.dock != None:
+            ## disable buttons
+            self.dock.disable_all()
+
         QtCore.QCoreApplication.processEvents()
         return True
 
     def set_selected_results_mode(self):
-        selectedMode, selectedModeInd = self.dock.get_selected_results_mode() 
+        #selectedMode, selectedModeInd = self.dock.get_selected_results_mode() 
+        selectedMode = self.dock.get_results_mode()
         self.log.log['resultsMode'] = selectedMode
+        self.handle_show_scatter(img=None)
 
     def set_selected_file(self):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
@@ -734,10 +748,9 @@ class MainWindow(QMainWindow):
 
     def handle_show_scatter(self,img=None):
         mode = self.log.log['currentState']
-        #print 'handling show scatter',mode
         self.set_selected_file()
         
-        # thumbs do no disappear fix
+        ## layout and widget setup
         self.mainWidget = QtGui.QWidget(self)
         bp = BlankPage(parent=self.mainWidget)
         vbl = QtGui.QVBoxLayout()
@@ -755,11 +768,17 @@ class MainWindow(QMainWindow):
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
+            self.lastChanI = chanI
+            self.lastChanJ = chanJ
+            
+        if self.lastChanI == None or self.lastChanJ == None:
+            print "ERROR: lastChanI or lastChanJ not defined"
+            return False
 
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,parent=self.mainWidget,subset=self.log.log['subsample'])
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,parent=self.mainWidget,subset=self.log.log['subsample'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
@@ -767,13 +786,17 @@ class MainWindow(QMainWindow):
             self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],chanI,chanJ,subset=self.log.log['subsample'],
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
                                 modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'],
                                 modelType=self.log.log['resultsMode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
         
+            ## enable buttons
+            self.dock.enable_all()
+
+
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
 

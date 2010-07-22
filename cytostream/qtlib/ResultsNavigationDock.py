@@ -9,61 +9,72 @@ class ResultsNavigationDock(QtGui.QWidget):
 
         self.setWindowTitle('Results Navigation')
         self.masterChannelList = masterChannelList
+        self.resultsMode = 'components'
 
         vbox = QtGui.QVBoxLayout()
-        hbox1 = QtGui.QVBoxLayout()
-        hbox2 = QtGui.QVBoxLayout()
-        hbox3 = QtGui.QVBoxLayout()
+        hbox0 = QtGui.QHBoxLayout()
+        hbox1 = QtGui.QHBoxLayout()
+        hbox2 = QtGui.QHBoxLayout()
+        hbox3 = QtGui.QHBoxLayout()
 
         ## results mode selector      
-        hbox1.addWidget(QtGui.QLabel('Results Mode Selector'))
-        hbox1.setAlignment(QtCore.Qt.AlignCenter)
-        self.resultsModeSelector = QtGui.QComboBox(self)
-        self.resultsModeSelector.setMaximumWidth(150)
-        for resultsMode in resultsModeList:
-            self.resultsModeSelector.addItem(resultsMode)
+        #hbox1.addWidget(QtGui.QLabel('Results Mode Selector'))
+        #hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        #self.resultsModeSelector = QtGui.QComboBox(self)
+        #self.resultsModeSelector.setMaximumWidth(150)
+        #for resultsMode in resultsModeList:
+        #    self.resultsModeSelector.addItem(resultsMode)
 
-        hbox1.addWidget(self.resultsModeSelector)
-        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        #hbox1.addWidget(self.resultsModeSelector)
+        #hbox1.setAlignment(QtCore.Qt.AlignCenter)
 
-        if resultsModeDefault != None:
-            if resultsModeList.__contains__(resultsModeDefault):
-                self.resultsModeSelector.setCurrentIndex(resultsModeList.index(resultsModeDefault))
-            else:
-                print "ERROR: in results mode selector - bad specified resultsModeDefault"
+        #if resultsModeDefault != None:
+        #    if resultsModeList.__contains__(resultsModeDefault):
+        #        self.resultsModeSelector.setCurrentIndex(resultsModeList.index(resultsModeDefault))
+        #    else:
+        #        print "ERROR: in results mode selector - bad specified resultsModeDefault"
+        
+        #if resultsModeFn == None:
+        #    resultsModeFn = self.generic_callback
+        #self.connect(self.resultsModeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), resultsModeFn)
+        
+        hbox0.setAlignment(QtCore.Qt.AlignCenter)
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        self.toggleLabel = QtGui.QLabel('Showing components')
+        hbox0.addWidget(self.toggleLabel)
+        self.toggleBtn = QtGui.QPushButton("Show modes",self)
+        self.toggleBtn.setMaximumWidth(150)
+        self.toggleBtn.setMinimumWidth(150)
+        hbox1.addWidget(self.toggleBtn)
 
         if resultsModeFn == None:
             resultsModeFn = self.generic_callback
-        self.connect(self.resultsModeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), resultsModeFn)
-        
-        ## message 
-        viewAllBtn = QtGui.QPushButton("View All")
-        viewAllBtn.setMaximumWidth(80)
-        hbox2.addWidget(viewAllBtn)
+
+        self.connect(self.toggleBtn, QtCore.SIGNAL('clicked()'),self.update_toggle_btn)
+        self.connect(self.toggleBtn, QtCore.SIGNAL('clicked()'), resultsModeFn)
+
+        ## view all btn 
+        self.viewAllBtn = QtGui.QPushButton("View All",self)
+        self.viewAllBtn.setMaximumWidth(150)
+        self.viewAllBtn.setMinimumWidth(150)
+        hbox2.addWidget(self.viewAllBtn)
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
         
         if viewAllFn != None:
-            self.connect(viewAllBtn, QtCore.SIGNAL('clicked()'),viewAllFn)
+            self.connect(self.viewAllBtn, QtCore.SIGNAL('clicked()'),viewAllFn)
 
+        ## info button
         infoBtn = QtGui.QPushButton("Show model info", self)
-        infoBtn.setMaximumWidth(180)
-        infoBtn.setMinimumWidth(180)
+        infoBtn.setMaximumWidth(150)
+        infoBtn.setMinimumWidth(150)
         hbox3.addWidget(infoBtn)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
         if infoBtnFn != None:
             self.connect(infoBtn, QtCore.SIGNAL('clicked()'),infoBtnFn)
 
-        ### cont button
-        #contBtn = QtGui.QPushButton("Continue")
-        #contBtn.setMaximumWidth(80)
-        #hbox4.addWidget(contBtn)
-        #hbox4.setAlignment(QtCore.Qt.AlignCenter)
-        #vbox.addLayout(hbox4)
-        #if contBtnFn != None:
-        #    self.connect(contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
-
         ## finalize layout
         vbox.setAlignment(QtCore.Qt.AlignCenter)
+        vbox.addLayout(hbox0)
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         vbox.addLayout(hbox3)
@@ -82,8 +93,31 @@ class ResultsNavigationDock(QtGui.QWidget):
         return rm, rmInd
 
     def generic_callback(self):
-        print 'callback does not do anything yet'
+        print 'callback does not do anything'
 
+    def update_toggle_btn(self):
+        if self.resultsMode == 'components':
+            self.resultsMode = 'modes'
+            self.toggleBtn.setText('Show components')
+            self.toggleLabel.setText('Showing modes')
+
+        elif self.resultsMode == 'modes':
+            self.resultsMode = 'components'
+            self.toggleBtn.setText('Show modes')
+            self.toggleLabel.setText('Showing components')
+
+        print 'should be updating toggle btn'
+
+    def get_results_mode(self):
+        return self.resultsMode
+
+    def disable_all(self):
+        self.toggleBtn.setEnabled(False)
+        self.viewAllBtn.setEnabled(False)
+
+    def enable_all(self):
+        self.toggleBtn.setEnabled(True)
+        self.viewAllBtn.setEnabled(True)
 
 ### Run the tests                                                                                                                                                       
 if __name__ == '__main__':
