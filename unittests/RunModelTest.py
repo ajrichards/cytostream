@@ -25,10 +25,11 @@ class RunModelTest(unittest.TestCase):
         self.controller.log.log['subsample'] = '1e3'
         self.controller.handle_subsampling()
 
+        # check image creation
         self.controller.process_images('qa')
 
-    def verifyModelRun(self,modelName):
-       statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName)    
+    def verifyModelRun(self,modelName,modelType):
+       statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName,modelType)    
        return statModelClasses
 
     def testRunSelectedModel(self):
@@ -36,14 +37,15 @@ class RunModelTest(unittest.TestCase):
         self.controller.log.log['numComponents'] = 16
         self.controller.log.log['modelToRun'] = 'dpmm-cpu'
         self.controller.run_selected_model()
-        modelName = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
-        classes = self.verifyModelRun(modelName)
-        #self.assertEqual(np.unique(classes).size,self.controller.log.log['numComponents'])
-        self.assertEqual(len(classes),1000)
+        modelComponents = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
+        modelModes = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
+        classesComponents = self.verifyModelRun(modelComponents,'components')
+        classesModes = self.verifyModelRun(modelModes,'modes')
+        self.assertEqual(len(classesComponents),1000)
+        self.assertEqual(len(classesModes),1000)
 
+        # check image creation
         self.controller.process_images('results')
-
-
 
 ### Run the tests 
 if __name__ == '__main__':

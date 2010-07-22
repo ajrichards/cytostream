@@ -2,7 +2,18 @@ import sys,os,time,re
 from PyQt4 import QtGui, QtCore
 
 class FileSelector(QtGui.QWidget):
+    '''
+    Class that handles the users selection of files and models. Upon selection variables corresponding to the
+    selected files are changed.  These actions are carried out by functions in the MainWindow widget.
+
+    '''
+
+
     def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
+        '''
+        class constructor used to initialize this Qwidget child class
+        '''
+
         QtGui.QWidget.__init__(self,parent)
         self.modelSelector = None
         self.modelsRun = modelsRun
@@ -39,7 +50,9 @@ class FileSelector(QtGui.QWidget):
         if showModelSelector != False:
             ## model selector label
             self.modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in self.modelsRun]
+            self.modelsRun = [re.sub('_components|_modes|_classify','',mr) for mr in self.modelsRun]
             self.modelsRun = list(set([re.split("_",mr)[-2] + "_" + re.split("_",mr)[-1] for mr in self.modelsRun]))
+
             hbox3 = QtGui.QHBoxLayout()
             hbox4 = QtGui.QHBoxLayout()
             hbox3.addWidget(QtGui.QLabel('Model Selector'))
@@ -106,7 +119,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
     fileList = ['file1', 'file2']
-    modelsRun = ['model1', 'model2']
-    fs = FileSelector(fileList,modelsRun = modelsRun, showModelSelector=True)
+    modelsRun = ['fileName_sampleID_modelID1', 'fileName_sampleID_modelID2']
+    fs = FileSelector(fileList,modelsRun=modelsRun, showModelSelector=True)
     fs.show()
     sys.exit(app.exec_())

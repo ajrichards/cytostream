@@ -1,4 +1,4 @@
-import sys,os
+import sys,os,re
 sys.path.append(os.path.join(".."))
 from PyQt4 import QtGui
 import numpy as np
@@ -9,8 +9,34 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as Naviga
 from Model import Model
 
 class ScatterPlotter(FigureCanvas):
+    '''
+    class to carry out the creation of a matplotlib figure embedded into the cytostream application
+    projectID - The str associated with the project name
+    selectedFile - The currently selected file associated with the project -- see FileSelector class
+    channel1 - File specific channel name to be plotted on the x-axis
+    channel2 - File specific channel name to be plotted on the y-axis
+    parent (optional) - A QtGui.QWidget() instance
+    subset (optional) - Specifies the number of samples in a subset
+    altDir (optional) - Used when data should be saved in a non-default directory
+    modelName (optional) - The currently selected model -- see FileSelector class
+    modelType (optional) - The mode or type associated with a model (i.e. components, modes)
+    background (optional) - for saving the figure a backgound should be rendered during plot generation
+    
+    Testing: this function may be tested by first running the unit tests provided with cytostream then moving into
+    the directory containing ScatterPlotter and running 'python ScatterPlotter'.
 
-    def __init__(self, parent, projectID, selectedFile, channel1, channel2, subset="All Data",altDir=None, modelName=None):
+    '''
+
+    def __init__(self, projectID, selectedFile, channel1, channel2, parent=None, subset="All Data",altDir=None, modelName=None, background=False, modelType=None):
+
+        ## error checking
+        if modelName != None and modelType == None:
+            print "ERROR: if model name specified must specify model type as well"
+            return False
+
+        if modelType != None and modelName == None:
+            print "ERROR: if model type specified must specify model name as well"
+            return False
 
         ## variables
         if os.path.isdir(os.path.join(".","projects",projectID)) == True:
@@ -21,14 +47,20 @@ class ScatterPlotter(FigureCanvas):
         # plot definition   
         self.fig = Figure()
         ax = self.fig.add_subplot(111)
-        self.fig.set_frameon(False)
+        self.fig.set_frameon(background)
         
         model = Model()
         model.initialize(projectID,homeDir)
         if modelName != None:
-            statModel,statModelClasses = model.load_model_results_pickle(modelName)
-            centroids = statModel.mus()
-            #print np.shape(statModel.mus()), np.shape(statModel.mus()[0])  
+            print 'modelName', modelName
+            print 'modelType', modelType
+            statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType)
+            print np.shape(statModel),np.shape(statModelClasses)
+            
+            if modelType == 'components':
+                centroids = statModel.mus()
+            elif modelType == 'modes':
+                centroids = statModel.modes()
         else:
             statModel,statModelClasses = None, None
             centroids = None
@@ -117,16 +149,30 @@ class ScatterPlotter(FigureCanvas):
         ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-    parent =  QtGui.QWidget()
-    projectID = "Demo"
+    # check that unittests were run and necessary data is present
+    if os.path.isfile(os.path.join('..','projects','Demo','models','3FITC_4PE_004_sub1000_dpmm-cpu.pickle')) == False:
+        print "ERROR: Model not present - (Re)run unit tests" 
+        sys.exit()
+
+    mode = 'results'
+    homeDir = os.path.join('..','projects','Demo')
+    projectID = 'Demo'
     selectedFile = "3FITC_4PE_004.fcs"
+    selectedModel = 'sub1000_dpmm-cpu'
+    subsample = '1e3'
     channel1 = 'FL1-H' 
     channel2 = 'FL2-H'
-    sp = ScatterPlotter(parent, projectID, selectedFile, channel1, channel2)
+
+    app = QtGui.QApplication(sys.argv)
+    parent =  QtGui.QWidget()
+
+    if mode == 'qa':
+        sp = ScatterPlotter(projectID,selectedFile,channel1,channel2,subset=subsample,background=True)
+    if mode == 'results':
+        sp = ScatterPlotter(projectID,selectedFile,channel1,channel2,subset=subsample,background=True,
+                            modelName=re.sub("\.pickle|\.fcs","",selectedFile) + "_" + selectedModel)
     sp.show()
     sys.exit(app.exec_())
-
 
 
 
