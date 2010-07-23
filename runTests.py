@@ -5,5 +5,5 @@ import unittest,sys,os,getopt
 os.chdir(os.path.join(".","cytostream"))
 sys.path.append(os.path.join("..","unittests","data"))
 
-from unittests import *
+from unitests import *
 unittest.main()
