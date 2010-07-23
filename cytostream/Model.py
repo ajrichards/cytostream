@@ -9,9 +9,9 @@ import numpy as np
 from FileControls import  *
 
 ## this prevents windows from popping up for each figure generation
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg')
+#if sys.platform == 'darwin':
+#    import matplotlib
+#    matplotlib.use('Agg')
 
 import matplotlib as mpl
 from matplotlib import pyplot

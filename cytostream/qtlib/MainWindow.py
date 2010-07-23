@@ -10,6 +10,10 @@
 
 import os,sys,time
 import platform
+if sys.platform == 'darwin':
+    import matplotlib
+    matplotlib.use('Agg')
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4 import QtCore
@@ -34,7 +38,6 @@ from ModelDock import ModelDock
 from PipelineDock import PipelineDock
 from BlankPage import BlankPage
 from ResultsNavigationDock import ResultsNavigationDock
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 __version__ = "0.1"
 
