@@ -47,6 +47,13 @@ class QualityAssuranceDock(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor('white'))
         self.setPalette(palette)
 
+    def disable_all(self):
+        pass
+
+    def enable_all(self):
+        pass
+
+
 ### Run the tests                                                                                                                                                       
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

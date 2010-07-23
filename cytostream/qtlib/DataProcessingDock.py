@@ -64,6 +64,13 @@ class DataProcessingDock(QtGui.QWidget):
         ss = str(self.subsetSelector.currentText())
         return ss, ssInd
 
+    def disable_all(self):
+        pass
+
+    def enable_all(self):
+        pass
+
+
 ### Run the tests                                                                                                                                                       
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
