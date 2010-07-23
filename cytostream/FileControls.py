@@ -47,6 +47,11 @@ def get_models_run(homeDir):
 #
 def get_project_names():    
     projectNamesList = []
+    projectDir = os.path.join(".","projects")
+    if os.path.isdir(projectDir) == False:
+        print "INFO: making project dir"
+        os.mkdir(projectDir)
+
     for dirName in os.listdir(os.path.join(".","projects")):  
         if os.path.isdir(os.path.join(".","projects",dirName)) == True:
             projectNamesList.append(dirName)

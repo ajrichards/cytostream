@@ -86,6 +86,13 @@ class ModelDock(QtGui.QWidget):
     def generic_callback(self,value):
         print 'thing does not do anything',value
 
+    def disable_all(self):
+        pass
+
+    def enable_all(self):
+        pass
+
+
 ### Run the tests                                                                           
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

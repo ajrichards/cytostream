@@ -152,8 +152,6 @@ class Model:
         if modelType not in ['components','modes']:
             print "ERROR: invalide model type specified in load_model_results"
             return False
-        
-        print 'from model loading...', modelType
 
         tmp1 = open(os.path.join(self.homeDir,'models',modelName+"_%s.pickle"%modelType),'r')
         tmp2 = open(os.path.join(self.homeDir,'models',modelName+"_classify_%s.pickle"%modelType),'r')
