@@ -56,16 +56,21 @@ class ScatterPlotter(FigureCanvas):
             print 'modelType', modelType
             statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType)
             print np.shape(statModel),np.shape(statModelClasses)
-            
+        
             if modelType == 'components':
                 centroids = statModel.mus()
             elif modelType == 'modes':
+                #centroids = {}
+                #n,d = np.shape(statModel.modes())
+                #for i in range(n):
+                #    centroids[i] = statModel.modes()[statModel.cmap[i]][:]
+                
                 centroids = statModel.modes()
         else:
             statModel,statModelClasses = None, None
             centroids = None
 
-        self.make_scatter_plot(ax,model,selectedFile,channel1,channel2,subset,labels=statModelClasses,centroids=centroids)
+        self.make_scatter_plot(ax,model,selectedFile,channel1,channel2,subset,labels=statModelClasses,centroids=centroids,statModel=statModel,modelType=modelType)
         
         # initialization of the canvas 
         FigureCanvas.__init__(self, self.fig)
@@ -76,7 +81,7 @@ class ScatterPlotter(FigureCanvas):
         # notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
-    def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None,centroids=None):
+    def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None,centroids=None,statModel=None,modelType=None):
         if float(subset) < 1e4:
             markerSize = 5
         else:
@@ -109,7 +114,6 @@ class ScatterPlotter(FigureCanvas):
             
 
             #for l in np.sort(np.unique(labels)):
-            print np.argsort(np.unique(labels))
             for labInd in np.argsort(np.unique(labels)):
                 l = np.unique(labels)[labInd]
 
@@ -128,10 +132,19 @@ class ScatterPlotter(FigureCanvas):
                 
                 ## add means if specified
                 #print l, rgbVal,centroids[labInd]
-                print np.shape(centroids)
+                if modelType == 'modes':
+                    #print labInd
+                    #labInd = statModel.cmap[labInd][0]
+                    #print labInd, np.shape(centroids)
+                    prefix = ''
+                    hexColor = 'black'
+                else:
+                    prefix = ''
+
+
                 xPos = centroids[labInd][index1]
                 yPos = centroids[labInd][index2]
-                ax.text(xPos, yPos, 'c%s'%l, color='white',
+                ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white',
                         ha="center", va="center",
                         bbox = dict(boxstyle="round",facecolor=hexColor)
                         )
