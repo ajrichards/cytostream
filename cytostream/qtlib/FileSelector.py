@@ -1,4 +1,4 @@
-import sys,os,time,re
+import sys,re
 from PyQt4 import QtGui, QtCore
 
 class FileSelector(QtGui.QWidget):
@@ -7,7 +7,6 @@ class FileSelector(QtGui.QWidget):
     selected files are changed.  These actions are carried out by functions in the MainWindow widget.
 
     '''
-
 
     def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
         '''

@@ -1,4 +1,4 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
 
 

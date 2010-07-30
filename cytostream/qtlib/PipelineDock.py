@@ -1,6 +1,5 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
 import numpy as np
 
 class PipelineDock(QtGui.QWidget):

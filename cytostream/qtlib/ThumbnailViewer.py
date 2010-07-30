@@ -83,7 +83,7 @@ class ImgButton(QtGui.QAbstractButton):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    if os.path.isdir(os.path.join("..","projects","Demo","figs")):
+    if os.path.isdir(os.path.join("..,"projects","Demo","figs")):
         imgDir = os.path.join("..","projects","Demo","figs")
     elif os.path.isdir(os.path.join(".","projects","Demo","figs")):
         imgDir = os.path.join(".","projects","Demo","figs")

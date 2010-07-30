@@ -38,3 +38,15 @@ default = https://<username>%%40gmail.com:<generated.passkey@cytostream.googleco
 username = <username>@gmail.com
 
 ****************************
+GETTING_STARTED
+
+$ python setup.py install
+$ python
+> from cytostream import Main
+> Main()
+
+or
+$ cd ~/.../cytostream/cytostream/
+$ python Main.py
+
+****************************

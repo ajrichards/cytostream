@@ -1,4 +1,4 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
 
 
@@ -7,37 +7,19 @@ class ResultsNavigationDock(QtGui.QWidget):
                  viewAllFn=None,infoBtnFn=None):
         QtGui.QWidget.__init__(self,parent)
 
+        ## declare variables
         self.setWindowTitle('Results Navigation')
         self.masterChannelList = masterChannelList
         self.resultsMode = 'components'
 
+        ## setup layouts
         vbox = QtGui.QVBoxLayout()
         hbox0 = QtGui.QHBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
         hbox2 = QtGui.QHBoxLayout()
         hbox3 = QtGui.QHBoxLayout()
 
-        ## results mode selector      
-        #hbox1.addWidget(QtGui.QLabel('Results Mode Selector'))
-        #hbox1.setAlignment(QtCore.Qt.AlignCenter)
-        #self.resultsModeSelector = QtGui.QComboBox(self)
-        #self.resultsModeSelector.setMaximumWidth(150)
-        #for resultsMode in resultsModeList:
-        #    self.resultsModeSelector.addItem(resultsMode)
-
-        #hbox1.addWidget(self.resultsModeSelector)
-        #hbox1.setAlignment(QtCore.Qt.AlignCenter)
-
-        #if resultsModeDefault != None:
-        #    if resultsModeList.__contains__(resultsModeDefault):
-        #        self.resultsModeSelector.setCurrentIndex(resultsModeList.index(resultsModeDefault))
-        #    else:
-        #        print "ERROR: in results mode selector - bad specified resultsModeDefault"
-        
-        #if resultsModeFn == None:
-        #    resultsModeFn = self.generic_callback
-        #self.connect(self.resultsModeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), resultsModeFn)
-        
+        ## mode/component toggle button
         hbox0.setAlignment(QtCore.Qt.AlignCenter)
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
         self.toggleLabel = QtGui.QLabel('Showing components')

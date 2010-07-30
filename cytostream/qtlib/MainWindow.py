@@ -10,38 +10,37 @@
 
 import os,sys,time
 import platform
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg')
+#if sys.platform == 'darwin':
+#    import matplotlib
+#    matplotlib.use('Agg')
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 #import helpform
 #import qrc_resources
 
 sys.path.append("..")
-from Controller import Controller
-from BasicWidgets import *
-from FileControls import *
-from BulkNewProject import BulkNewProject
-from OpenExistingProject import OpenExistingProject
-from ScatterPlotter import ScatterPlotter
-from FileSelector import FileSelector
-from DataProcessingCenter import DataProcessingCenter
-from DataProcessingDock import DataProcessingDock
-from QualityAssuranceDock import QualityAssuranceDock
-from ThumbnailViewer import ThumbnailViewer
-from ModelCenter import ModelCenter
-from ModelDock import ModelDock
-from PipelineDock import PipelineDock
-from BlankPage import BlankPage
-from ResultsNavigationDock import ResultsNavigationDock
+from cytostream import *
+#from Controller import Controller
+#from BasicWidgets import *
+#from FileControls import *
+#from BulkNewProject import BulkNewProject
+#from OpenExistingProject import OpenExistingProject
+#from ScatterPlotter import ScatterPlotter
+#from FileSelector import FileSelector
+#from DataProcessingCenter import DataProcessingCenter
+#from DataProcessingDock import DataProcessingDock
+#from QualityAssuranceDock import QualityAssuranceDock
+#from ThumbnailViewer import ThumbnailViewer
+#from ModelCenter import ModelCenter
+#from ModelDock import ModelDock
+#from PipelineDock import PipelineDock
+#from BlankPage import BlankPage
+#from ResultsNavigationDock import ResultsNavigationDock
 
 __version__ = "0.1"
 
-class MainWindow(QMainWindow):
+class MainWindow(QtGui.QMainWindow):
 
     def __init__(self):
 
@@ -59,8 +58,8 @@ class MainWindow(QMainWindow):
         
         self.move_to_initial()
         self.printer = None
-        self.sizeLabel = QLabel()
-        self.sizeLabel.setFrameStyle(QFrame.StyledPanel|QFrame.Sunken)
+        self.sizeLabel = QtGui.QLabel()
+        self.sizeLabel.setFrameStyle(QtGui.QFrame.StyledPanel|QtGui.QFrame.Sunken)
         self.create_statusbar()
         self.create_menubar_toolbar()
 
@@ -79,7 +78,7 @@ class MainWindow(QMainWindow):
     def reset_view_workspace(self):
         self.log = self.controller.log
         self.model = self.controller.model
-        self.image = QImage()
+        self.image = QtGui.QImage()
         self.dirty = False
         self.filename = None
         self.dockWidget = None
@@ -110,17 +109,17 @@ class MainWindow(QMainWindow):
     
     def create_menubar_toolbar(self):
         fileNewBulkAction = self.create_action("New...", self.create_new_project_bulk,
-                QKeySequence.New, "filenew", "Create a new project with mulitple files")
+                QtGui.QKeySequence.New, "filenew", "Create a new project with mulitple files")
         fileOpenAction = self.create_action("&Open...", self.open_existing_project,
-                QKeySequence.Open, "fileopen",
+                QtGui.QKeySequence.Open, "fileopen",
                 "Open an existing project")
         fileSaveAction = self.create_action("&Save", self.fileSave,
-                QKeySequence.Save, "filesave", "Save the image")
+                QtGui.QKeySequence.Save, "filesave", "Save the image")
         fileSaveAsAction = self.create_action("Save &As...",
                 self.fileSaveAs, icon="filesaveas",
                 tip="Save the project using a new name")
         filePrintAction = self.create_action("&Print", self.filePrint,
-                QKeySequence.Print, "fileprint", "Print the current image")
+                QtGui.QKeySequence.Print, "fileprint", "Print the current image")
         fileQuitAction = self.create_action("&Quit", self.close,
                 "Ctrl+Q", "filequit", "Close the application")
         editDataProcessing= self.create_action("&Data Processing", self.move_to_data_processing, 
@@ -135,7 +134,7 @@ class MainWindow(QMainWindow):
         helpAboutAction = self.create_action("&About %s"%self.controller.appName,
                 self.helpAbout)
         helpHelpAction = self.create_action("&Help", self.helpHelp,
-                QKeySequence.HelpContents)
+                QtGui.QKeySequence.HelpContents)
 
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenuActions = (fileNewBulkAction,fileOpenAction,
@@ -145,7 +144,7 @@ class MainWindow(QMainWindow):
 
         editMenu = self.menuBar().addMenu("&Edit")
         
-        mirrorMenu = editMenu.addMenu(QIcon(":/editmirror.png"),"&Go to")
+        mirrorMenu = editMenu.addMenu(QtGui.QIcon(":/editmirror.png"),"&Go to")
         self.addActions(mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
         helpMenu = self.menuBar().addMenu("&Help")
         self.addActions(helpMenu, (helpAboutAction, helpHelpAction))
@@ -153,9 +152,9 @@ class MainWindow(QMainWindow):
                                          editQualityAssurance,editModel,
                                          editResultsNavigation))
     def add_pipeline_dock(self):
-        self.pipelineDock = QDockWidget(self)
+        self.pipelineDock = QtGui.QDockWidget(self)
         self.pipelineDock.setObjectName("PipelineDockWidget")
-        self.pipelineDock.setAllowedAreas(Qt.TopDockWidgetArea|Qt.BottomDockWidgetArea)
+        self.pipelineDock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea|QtCore.Qt.BottomDockWidgetArea)
  
         self.pipelineDockWidget = QtGui.QWidget(self)
         btnCallBacks = [self.move_to_data_processing, self.move_to_quality_assurance, self.move_to_model, self.move_to_results_navigation]
@@ -173,25 +172,25 @@ class MainWindow(QMainWindow):
         vbl.setAlignment(QtCore.Qt.AlignCenter)
         
         self.pipelineDock.setWidget(self.pDock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.pipelineDock)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.pipelineDock)
         self.pipelineDock.setMinimumWidth(0.10 * self.screenWidth)
         self.pipelineDock.setMaximumWidth(0.10 * self.screenWidth)
 
     def create_action(self, text, slot=None, shortcut=None, icon=None,
                      tip=None, checkable=False, signal="triggered()"):
-        action = QAction(text, self)
+        action = QtGui.QAction(text, self)
 
         if icon is not None:
-            if os.path.isfile(os.path.join(".","qtlib","images",icon+".png")) == False:
+            if os.path.isfile(os.path.join(self.controller.baseDir,"qtlib","images",icon+".png")) == False:
                 print "WARNING: bad icon specified", icon + ".png"
-            action.setIcon(QIcon(os.path.join("qtlib","images","%s.png"%icon)))
+            action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"qtlib","images","%s.png"%icon)))
         if shortcut is not None:
             action.setShortcut(shortcut)
         if tip is not None:
             action.setToolTip(tip)
             action.setStatusTip(tip)
         if slot is not None:
-            self.connect(action, SIGNAL(signal), slot)
+            self.connect(action, QtCore.SIGNAL(signal), slot)
         if checkable:
             action.setCheckable(True)
         return action
@@ -210,7 +209,7 @@ class MainWindow(QMainWindow):
                                            "Are you sure you want to completely remove '%s'?"%projectID, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
         if reply == QtGui.QMessageBox.Yes:
-            homeDir = os.path.join("projects",projectID)
+            homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
             self.controller.remove_project(homeDir)
             self.open_existing_project()
         else:
@@ -299,7 +298,7 @@ class MainWindow(QMainWindow):
             painter = QPainter(self.printer)
             rect = painter.viewport()
             size = self.image.size()
-            size.scale(rect.size(), Qt.KeepAspectRatio)
+            size.scale(rect.size(), QtCore.Qt.KeepAspectRatio)
             painter.setViewport(rect.x(), rect.y(), size.width(),
                                 size.height())
             painter.drawImage(0, 0, self.image)
@@ -309,7 +308,7 @@ class MainWindow(QMainWindow):
             return
         
         image = self.image
-        self.pngViewer.setPixmap(QPixmap.fromImage(image))
+        self.pngViewer.setPixmap(QtGui.QPixmap.fromImage(image))
 
     def helpAbout(self):
         QMessageBox.about(self, "About %s"%self.controller.appName,
@@ -353,13 +352,13 @@ class MainWindow(QMainWindow):
         if self.dockWidget != None:
             self.clear_dock()
       
-        self.pngViewer = QLabel(self.mainWidget)
-        self.pngViewer.setAlignment(Qt.AlignCenter)
-        self.pngViewer.setContextMenuPolicy(Qt.ActionsContextMenu)
+        self.pngViewer = QtGui.QLabel(self.mainWidget)
+        self.pngViewer.setAlignment(QtCore.Qt.AlignCenter)
+        self.pngViewer.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         self.mainWidget = self.pngViewer
         self.refresh_main_widget()
         self.setCentralWidget(self.mainWidget)
-        self.image = QImage("applications-science.png")
+        self.image = QtGui.QImage(os.path.join(self.controller.baseDir,"applications-science.png"))
         self.show_image()
 
     def move_to_data_processing(self):
@@ -503,9 +502,9 @@ class MainWindow(QMainWindow):
         compensationList = ['compensation1', 'compensation2']
         subsetList = ["1e3", "1e4","5e4","All Data"]
 
-        self.mainDockWidget = QDockWidget(self.controller.projectID, self)
+        self.mainDockWidget = QtGui.QDockWidget(self.controller.projectID, self)
         self.mainDockWidget.setObjectName("MainDockWidget")
-        self.mainDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
+        self.mainDockWidget.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
 
         self.dockWidget = QtGui.QWidget(self)
         palette = self.dockWidget.palette()
@@ -558,7 +557,7 @@ class MainWindow(QMainWindow):
         vbl.addLayout(hbl1)
         
         self.mainDockWidget.setWidget(self.dockWidget)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.mainDockWidget)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.mainDockWidget)
 
     def clear_dock(self):
         self.removeDockWidget(self.mainDockWidget)
@@ -826,13 +825,13 @@ class MainWindow(QMainWindow):
         #QtCore.QCoreApplication.processEvents()
 
 
-def main():
-    app = QApplication(sys.argv)
-    app.setOrganizationName("Duke University")
-    app.setOrganizationDomain("duke.edu")
-    app.setApplicationName("cytostream")
-    form = MainWindow()
-    form.show()
-    app.exec_()
-
-main()
+#def main():
+#    app = QApplication(sys.argv)
+#    app.setOrganizationName("Duke University")
+#    app.setOrganizationDomain("duke.edu")
+#    app.setApplicationName("cytostream")
+#    form = MainWindow()
+#    form.show()
+#    app.exec_()
+#
+#main()
