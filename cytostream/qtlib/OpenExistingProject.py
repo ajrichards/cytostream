@@ -1,7 +1,5 @@
-import sys,os,time,re
+import sys
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
-from random import randint
 
 class OpenExistingProject(QtGui.QWidget):
     def __init__(self, projectList, parent=None, openBtnFn=None,closeBtnFn=None,rmBtnFn=None):
@@ -25,20 +23,6 @@ class OpenExistingProject(QtGui.QWidget):
         self.hbl5.setAlignment(QtCore.Qt.AlignCenter)
 
         self.hbl1.addWidget(QtGui.QLabel('Choose an existing project'))
-        #model = QtGui.QStandardItemModel()
-        # 
-        #for n in range(10):
-        #    print n
-        #    item = QtGui.QStandardItem('Item %s' % randint(1, 100))
-        #    check = QtCore.Qt.Checked if randint(0, 1) == 1 else QtCore.Qt.Unchecked
-        #    item.setCheckState(check)
-        #    item.setCheckable(True)
-        #    model.appendRow(item)
-        # 
-        #view = QtGui.QListView(self)
-        #view.setModel(model)
-        #self.vbl.addWidget(view)
-        
 
         self.projectSelector = QtGui.QComboBox(self)
         self.projectSelector.setMaximumWidth(200)

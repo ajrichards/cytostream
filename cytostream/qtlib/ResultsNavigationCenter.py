@@ -1,6 +1,5 @@
-import sys,os,time,re
+import sys,re
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
 
 class ResultsNavigationCenter(QtGui.QWidget):
     def __init__(self, modelsRun, parent=None, infoBtnFn=None):

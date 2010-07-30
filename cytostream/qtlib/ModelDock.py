@@ -1,6 +1,6 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
+from cytostream import Slider
 
 class ModelDock(QtGui.QWidget):
     def __init__(self,modelList, parent=None, subsetDefault=None, contBtnFn=None, componentsFn=None):

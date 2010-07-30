@@ -2,10 +2,12 @@
 
 import os,re
 
-# returns a list of file names associated with the project
-#
-#
 def get_fcs_file_names(homeDir,getPickles=False):
+    '''
+    returns a list of file names associated with the project
+    
+    '''
+
     fileList = []
     for fileName in os.listdir(os.path.join(homeDir,"data")):
         if re.search("\.fcs",fileName) and getPickles == False:
@@ -15,10 +17,12 @@ def get_fcs_file_names(homeDir,getPickles=False):
 
     return fileList
 
-# return the file names for images 
-#
-#
 def get_img_file_names(homeDir):
+    '''
+    return the file names for images 
+
+    '''
+
     fileList = []
     for fileName in os.listdir(os.path.join(homeDir,"figs")):
         if re.search("\.png",fileName):
@@ -26,10 +30,11 @@ def get_img_file_names(homeDir):
             
     return fileList
 
-# returns the models run
-#
-#
 def get_models_run(homeDir):
+    '''
+    returns the models run
+    
+    '''
     modelList = []
 
     for fileName in os.listdir(os.path.join(homeDir,"models")):
@@ -42,10 +47,12 @@ def get_models_run(homeDir):
 
     return modelList
 
-# returnss all the different projects on computer
-#
-#
 def get_project_names():    
+    '''
+    returns all the projects on local computer
+    
+    '''
+
     projectNamesList = []
     projectDir = os.path.join(".","projects")
     if os.path.isdir(projectDir) == False:

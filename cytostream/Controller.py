@@ -20,17 +20,17 @@ except:
     pythonPath = 'python'
 
 import re,os,sys,csv,webbrowser,cPickle
-from Model import Model
-from Logging import Logger
+from cytostream import Model
 import subprocess
-from FileControls import *
+from cytostream import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from cytostream import Logger
 
-### get base directory 
-BASEDIR = os.path.abspath('')
 
 class Controller:
     def __init__(self,viewType=None):
         #self.viewType=viewType
+        self.baseDir = os.path.dirname(__file__) #if hasattr(sys, 'frozen'):application_path = os.path.dirname(sys.executable)
+        print 'basedir', self.baseDir
         self.viewType = viewType
         self.appName = "cytostream"
         self.fontName = 'Arial' #'Helvetica'
@@ -48,7 +48,7 @@ class Controller:
 
     def initialize_project(self,projectID,loadExisting=False):
         self.projectID = projectID
-        self.homeDir = os.path.join("..","cytostream","projects",self.projectID)
+        self.homeDir = os.path.join(self.baseDir,"projects",self.projectID)
         self.log.initialize(self.projectID,self.homeDir,load=loadExisting) 
         self.model.initialize(self.projectID,self.homeDir)
 
@@ -106,7 +106,7 @@ class Controller:
                     channelJ = fileChannels[indexJ]
                     subset = self.log.log['subsample']
                     
-                    script = os.path.join(self.homeDir,"..","..","RunMakeFigures.py")
+                    script = os.path.join(self.baseDir,"RunMakeFigures.py")
                     subset = self.log.log['subsample']
                     proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
                                                                                                      imgDir,longModelName,modelType),
@@ -222,9 +222,9 @@ class Controller:
             createNew = False
 
         ## create projects dir if necssary
-        if os.path.isdir(os.path.join('.','projects')) == False:
+        if os.path.isdir(os.path.join(self.baseDir,'projects')) == False:
             print "INFO: projects dir did not exist. creating..."
-            os.mkdir(os.path.join('.','projects'))
+            os.mkdir(os.path.join(self.baseDir,'projects'))
 
         ## get project id
         if view == None:

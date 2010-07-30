@@ -1,6 +1,6 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
+from cytostream import ProgressBar
 
 class ModelCenter(QtGui.QWidget):
     def __init__(self, parent=None, runModelFn=None):

@@ -1,6 +1,5 @@
-import sys,os,time,re
+import sys
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
 
 class BulkNewProject(QtGui.QWidget):
     def __init__(self, projectList, parent=None, openBtnFn=None,closeBtnFn=None):

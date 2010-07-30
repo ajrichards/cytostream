@@ -1,6 +1,5 @@
-import sys,os,time
+import sys
 from PyQt4 import QtGui, QtCore
-
 
 class DataProcessingDock(QtGui.QWidget):
     def __init__(self, fileList, masterChannelList, transformList, compensationList, subsetList, parent=None, subsetDefault=None, contBtnFn=None, subsetFn=None):

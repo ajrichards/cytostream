@@ -1,6 +1,5 @@
 import sys,os,time,re
 from PyQt4 import QtGui, QtCore
-from BasicWidgets import *
 from random import randint
 
 class BlankPage(QtGui.QWidget):
