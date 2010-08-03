@@ -5,15 +5,15 @@ import fcm
 import fcm.statistics
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters"
+    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:p:k:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:n:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
-    print "Note: fileName (-s) must be the full path"
-    print "      projName (-p) can be any existing proj name"
+    print "Note: fileName (-f) must be the full" 
+    print "      homeDir  (-h) home directory for current project"
     print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
     print "          name (-n) user given name for model run"
@@ -24,8 +24,8 @@ name = None
 for o, a in optlist:
     if o == '-f':
         fileName = a
-    if o == '-p':
-        projName = a
+    if o == '-h':
+        homeDir = a
     if o == '-k':
         k = a
     if o == '-n':
@@ -33,15 +33,16 @@ for o, a in optlist:
 
 print 'running dpmm with %s'%k
 
-longModelName = "Dirichlet Process Mixture Model - CPU Version"
-longProjName = os.path.join(".","projects",projName)
-longFileName = os.path.join(longProjName,"data",fileName)
-
-## error checking
-if os.path.isdir(longProjName) == False:
-    print "INPUT ERROR: not a valid project", os.path.join(".","projects",longProjName)
+## initial error checking
+if os.path.isdir(homeDir) == False:
+    print "INPUT ERROR: not a valid project", homeDir
     sys.exit()
 
+longModelName = "Dirichlet Process Mixture Model - CPU Version"
+projName = os.path.split(homeDir)[-1]
+longFileName = os.path.join(homeDir,"data",fileName)
+
+## more error checking
 if os.path.isfile(longFileName) == False:
     print "INPUT ERROR: not a valid file name", longFileName
     sys.exit()
@@ -70,11 +71,11 @@ full = mod.get_results()
 classifyComponents = full.classify(data)
 print 'dumping components fit'
 if name == None:
-    tmp1 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_components.pickle"),'w')
-    tmp2 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_components.pickle"),'w')
+    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_components.pickle"),'w')
+    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_components.pickle"),'w')
 else:
-    tmp1 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_components.pickle"),'w')
-    tmp2 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_components.pickle"),'w')
+    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_components.pickle"),'w')
+    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_components.pickle"),'w')
 
 cPickle.dump(full,tmp1)
 cPickle.dump(classifyComponents,tmp2)
@@ -86,11 +87,11 @@ modes = full.make_modal()
 classifyModes = modes.classify(data)
 print 'dumping modes fit'
 if name == None:
-    tmp3 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_modes.pickle"),'w')
-    tmp4 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_modes.pickle"),'w')
+    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_modes.pickle"),'w')
+    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_modes.pickle"),'w')
 else:
-    tmp3 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_modes.pickle"),'w')
-    tmp4 = open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_modes.pickle"),'w')
+    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_modes.pickle"),'w')
+    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_modes.pickle"),'w')
 
 cPickle.dump(modes,tmp3)
 cPickle.dump(classifyModes,tmp4)
@@ -99,9 +100,9 @@ tmp4.close()
 
 ## write a log file
 if name == None:
-    writer = csv.writer(open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu.log"),'w'))
+    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu.log"),'w'))
 else:
-    writer = csv.writer(open(os.path.join(".","projects",projName,'models',re.sub("\.fcs|\.pickle","",fileName)+name+".log"),'w'))
+    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+".log"),'w'))
 
 runTime = modelRunStop - modelRunStart
 writer.writerow(["timestamp", time.asctime()])

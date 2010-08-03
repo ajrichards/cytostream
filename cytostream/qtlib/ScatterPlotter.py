@@ -14,6 +14,7 @@ class ScatterPlotter(FigureCanvas):
     selectedFile - The currently selected file associated with the project -- see FileSelector class
     channel1 - File specific channel name to be plotted on the x-axis
     channel2 - File specific channel name to be plotted on the y-axis
+    homeDir - home directory of the project i.e. '/.../cytostream/projects/foo'
     parent (optional) - A QtGui.QWidget() instance
     subset (optional) - Specifies the number of samples in a subset
     altDir (optional) - Used when data should be saved in a non-default directory
@@ -26,9 +27,13 @@ class ScatterPlotter(FigureCanvas):
 
     '''
 
-    def __init__(self, projectID, selectedFile, channel1, channel2, parent=None, subset="All Data",altDir=None, modelName=None, background=False, modelType=None):
+    def __init__(self, projectID, selectedFile, channel1, channel2,homeDir, parent=None, subset="All Data",altDir=None, modelName=None, background=False, modelType=None):
 
         ## error checking
+        if os.path.isdir(homeDir) == False:
+            print "ERROR: specified homedir is not a directory:", homeDir
+            return False
+
         if modelName != None and modelType == None:
             print "ERROR: if model name specified must specify model type as well"
             return False

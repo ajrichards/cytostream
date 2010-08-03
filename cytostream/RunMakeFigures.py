@@ -6,7 +6,7 @@
 
 import getopt,sys,os
 import numpy as np
-from Model import Model
+from cytostream import Model
 import matplotlib.pyplot as pyplot
 
 ## parse inputs
@@ -25,7 +25,7 @@ def bad_input():
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:],'i:j:s:a:p:f:m:t:')
+    optlist, args = getopt.getopt(sys.argv[1:],'i:j:s:a:p:f:m:t:h:')
 except getopt.GetoptError:
     print getopt.GetoptError
     bad_input()
@@ -55,7 +55,8 @@ for o, a in optlist:
         modelName = a
     if o == '-t':
         modelType = a
-        
+    if o == '-h':
+        homeDir = a
 
 def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
     fig = pyplot.figure(figsize=(7,7))
@@ -127,23 +128,28 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
         fig.savefig(fileName,transparent=True)
 
 
-## error checking 
+## error checking
+if altDir == 'None':
+    altDir = None
+if homeDir == 'None':
+    homeDir = None
+if modelName == 'None':
+    modelName = None
+    statModel,statModelClasses = None,None
+
+if altDir == None and homeDir == None:
+    bad_input()
+    run = False
+    print "WARNING: RunMakeFigures failed errorchecking"
+ 
 if projectID == None or channel1 == None or channel2 == None or selectedFile == None:
     bad_input()
     run = False
-else:
-    homeDir = os.path.join(".","projects",projectID)
+    print "WARNING: RunMakeFigures failed errorchecking"
 
 if os.path.isdir(homeDir) == False:
     print "ERROR: homedir does not exist -- bad project name", projectID, homeDir
     run = False
-
-if altDir == 'None':
-    altDir = None
-
-if modelName == 'None':
-    modelName = None
-    statModel,statModelClasses = None,None
 
 if altDir != None and os.path.isdir(altDir) == False:
     print "ERROR: specified alternative dir does not exist\n", altDir
