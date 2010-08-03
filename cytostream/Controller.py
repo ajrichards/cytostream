@@ -20,17 +20,16 @@ except:
     pythonPath = 'python'
 
 import re,os,sys,csv,webbrowser,cPickle
-from cytostream import Model
+from Model import Model
 import subprocess
-from cytostream import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
-from cytostream import Logger
+from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from Logging import Logger
 
 
 class Controller:
     def __init__(self,viewType=None):
         #self.viewType=viewType
         self.baseDir = os.path.dirname(__file__) #if hasattr(sys, 'frozen'):application_path = os.path.dirname(sys.executable)
-        print 'basedir', self.baseDir
         self.viewType = viewType
         self.appName = "cytostream"
         self.fontName = 'Arial' #'Helvetica'
@@ -108,8 +107,8 @@ class Controller:
                     
                     script = os.path.join(self.baseDir,"RunMakeFigures.py")
                     subset = self.log.log['subsample']
-                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
-                                                                                                     imgDir,longModelName,modelType),
+                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
+                                                                                                           imgDir,longModelName,modelType,self.homeDir),
                                             shell=True,
                                             stdout=subprocess.PIPE,
                                             stdin=subprocess.PIPE)
@@ -344,8 +343,12 @@ class Controller:
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
         for fileName in fileList:
+
             if selectedModel == 'dpmm-cpu':
-                proc = subprocess.Popen("%s RunDPM-CPU.py -p %s -f %s -k %s"%(pythonPath, self.projectID,fileName,numComponents), 
+                script = os.path.join(self.baseDir,"RunDPM-CPU.py")
+                if os.path.isfile(script) == False:
+                    print "ERROR: Invalid model run file path ", script 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s"%(pythonPath,script,self.homeDir,fileName,numComponents), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
@@ -354,7 +357,9 @@ class Controller:
                         next_line = proc.stdout.readline()
                         if next_line == '' and proc.poll() != None:
                             break
-                        #print next_line
+                       
+                        ## to debug uncomment the following line
+                        print next_line
 
                         if re.search("it =",next_line):
                             progress = 1.0 / totalIters
@@ -365,24 +370,29 @@ class Controller:
                         break
 
             elif selectedModel == 'dpmm-gpu':
-               proc = subprocess.Popen("%s RunDPM-GPU.py -p %s -f %s -k %s"%(pythonPath,self.projectID,fileName,numComponents), 
-                                       shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stdin=subprocess.PIPE)
-               while True:
-                   try:
-                       next_line = proc.stdout.readline()
-                       if next_line == '' and proc.poll() != None:
-                           break
-                       #print next_line
+                script = os.path.join(self.baseDir,"RunDPM-GPU.py")
+                if os.path.isfile(script) == False:
+                    print "ERROR: Invalid model run file path ", script 
 
-                       if re.search("it =",next_line):
-                           progress = 1.0 / totalIters *100.0
-                           percentDone+=progress
-                           if progressBar != None:
-                               proc.wait()
-                               progressBar.move_bar(int(round(percentDone)))
-                   except:
-                       break
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s"%(pythonPath,script,self.homeDir,fileName,numComponents), 
+                                        shell=True,
+                                        stdout=subprocess.PIPE,
+                                        stdin=subprocess.PIPE)
+                while True:
+                    try:
+                        next_line = proc.stdout.readline()
+                        if next_line == '' and proc.poll() != None:
+                            break
+
+                        ## to debug uncomment the following line
+                        #print next_line
+
+                        if re.search("it =",next_line):
+                            progress = 1.0 / totalIters
+                            percentDone+=progress * 100.0
+                            if progressBar != None:
+                                progressBar.move_bar(int(round(percentDone)))
+                    except:
+                        break
             else:
                 print "ERROR: invalid selected model", selectedModel

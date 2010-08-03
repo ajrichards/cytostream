@@ -9,7 +9,7 @@ import sys,csv,os,re,cPickle
 import fcm
 import fcm.statistics
 import numpy as np
-from cytostream import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
 #if sys.platform == 'darwin':
 #    import matplotlib
 #    matplotlib.use('Agg')

@@ -47,19 +47,21 @@ def get_models_run(homeDir):
 
     return modelList
 
-def get_project_names():    
+def get_project_names(baseDir):    
     '''
     returns all the projects on local computer
     
     '''
+    if os.path.isdir(baseDir) == False:
+        print "ERROR: bad base dir specified in get_project_names"
 
     projectNamesList = []
-    projectDir = os.path.join(".","projects")
+    projectDir = os.path.join(baseDir,"projects")
     if os.path.isdir(projectDir) == False:
         print "INFO: making project dir"
         os.mkdir(projectDir)
 
-    for dirName in os.listdir(os.path.join(".","projects")):  
-        if os.path.isdir(os.path.join(".","projects",dirName)) == True:
+    for dirName in os.listdir(os.path.join(baseDir,"projects")):  
+        if os.path.isdir(os.path.join(baseDir,"projects",dirName)) == True:
             projectNamesList.append(dirName)
     return projectNamesList

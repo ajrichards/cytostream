@@ -8,7 +8,7 @@
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public License for more details.
 
-import os,sys,time
+import os,sys,time,re
 import platform
 #if sys.platform == 'darwin':
 #    import matplotlib
@@ -21,22 +21,6 @@ from PyQt4 import QtGui
 
 sys.path.append("..")
 from cytostream import *
-#from Controller import Controller
-#from BasicWidgets import *
-#from FileControls import *
-#from BulkNewProject import BulkNewProject
-#from OpenExistingProject import OpenExistingProject
-#from ScatterPlotter import ScatterPlotter
-#from FileSelector import FileSelector
-#from DataProcessingCenter import DataProcessingCenter
-#from DataProcessingDock import DataProcessingDock
-#from QualityAssuranceDock import QualityAssuranceDock
-#from ThumbnailViewer import ThumbnailViewer
-#from ModelCenter import ModelCenter
-#from ModelDock import ModelDock
-#from PipelineDock import PipelineDock
-#from BlankPage import BlankPage
-#from ResultsNavigationDock import ResultsNavigationDock
 
 __version__ = "0.1"
 
@@ -261,7 +245,7 @@ class MainWindow(QtGui.QMainWindow):
             self.clear_dock()
 
         self.mainWidget = QtGui.QWidget(self)
-        projectList = get_project_names()
+        projectList = get_project_names(self.controller.baseDir)
         self.existingProjectOpener = OpenExistingProject(projectList,parent=self.mainWidget,openBtnFn=self.open_existing_project_handler,
                                                          closeBtnFn=self.move_to_initial,rmBtnFn=self.remove_project)
         hbl = QtGui.QHBoxLayout(self.mainWidget)
@@ -270,7 +254,7 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_main_widget()
 
     def open_existing_project_handler(self):
-        existingProjects = get_project_names()
+        #existingProjects = get_project_names(self.controller.baseDir)
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
@@ -311,7 +295,7 @@ class MainWindow(QtGui.QMainWindow):
         self.pngViewer.setPixmap(QtGui.QPixmap.fromImage(image))
 
     def helpAbout(self):
-        QMessageBox.about(self, "About %s"%self.controller.appName,
+        QtGui.QMessageBox.about(self, "About %s"%self.controller.appName,
                 """<b>%s</b> v %s
                 <p>Copyright &copy; 2010 Duke University. 
                 All rights reserved.
@@ -328,7 +312,7 @@ class MainWindow(QtGui.QMainWindow):
         fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']) + "_" + selectedModel
 
         modelLogFile = self.log.read_model_log(fullModelName) 
-        QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
+        QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
                           """<br><b>Project ID</b> - %s
                              <br><b>Model name</b> - %s
                              <br><b>Date time</b>  - %s
@@ -780,7 +764,7 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,parent=self.mainWidget,subset=self.log.log['subsample'])
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,self.controller.homeDir,parent=self.mainWidget,subset=self.log.log['subsample'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
@@ -788,7 +772,7 @@ class MainWindow(QtGui.QMainWindow):
             self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
+            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,self.controller.homeDir,subset=self.log.log['subsample'],
                                 modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'],
                                 modelType=self.log.log['resultsMode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
@@ -802,18 +786,18 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
 
-    '''
-    display info
-    generic function to display info to user
-    '''
     def display_info(self,msg):
+        '''
+        display info
+        generic function to display info to user
+        '''
         reply = QtGui.QMessageBox.information(self, 'Information',msg)
 
-    '''
-    display warning
-    generic function to display a warning to user
-    '''
     def display_warning(self,msg):
+        '''
+        display warning
+        generic function to display a warning to user
+        '''
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
 
@@ -823,15 +807,3 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.update()
         self.show()
         #QtCore.QCoreApplication.processEvents()
-
-
-#def main():
-#    app = QApplication(sys.argv)
-#    app.setOrganizationName("Duke University")
-#    app.setOrganizationDomain("duke.edu")
-#    app.setApplicationName("cytostream")
-#    form = MainWindow()
-#    form.show()
-#    app.exec_()
-#
-#main()

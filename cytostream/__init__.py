@@ -9,7 +9,7 @@ adam.richards@stat.duke.edu
 '''
 
 import sys,os
-sys.path.append(os.path.join(".","qtlib"))
+sys.path.append(os.path.join(os.path.dirname(__file__),"qtlib"))
 
 ## general classes
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
@@ -18,22 +18,22 @@ from Model import Model
 from Controller import Controller
 
 ### qtlib classes
-from qtlib.BasicWidgets import Slider, ProgressBar, DisplayImage
-from qtlib.BulkNewProject import BulkNewProject
-from qtlib.OpenExistingProject import OpenExistingProject
-from qtlib.ScatterPlotter import ScatterPlotter
-from qtlib.FileSelector import FileSelector
-from qtlib.DataProcessingCenter import DataProcessingCenter
-from qtlib.DataProcessingDock import DataProcessingDock
-from qtlib.QualityAssuranceDock import QualityAssuranceDock
-from qtlib.ThumbnailViewer import ThumbnailViewer
-from qtlib.ModelCenter import ModelCenter
-from qtlib.ModelDock import ModelDock
-from qtlib.PipelineDock import PipelineDock
-from qtlib.BlankPage import BlankPage
-from qtlib.ResultsNavigationDock import ResultsNavigationDock
+from BasicWidgets import Slider, ProgressBar, DisplayImage
+from BulkNewProject import BulkNewProject
+from OpenExistingProject import OpenExistingProject
+from ScatterPlotter import ScatterPlotter
+from FileSelector import FileSelector
+from DataProcessingCenter import DataProcessingCenter
+from DataProcessingDock import DataProcessingDock
+from QualityAssuranceDock import QualityAssuranceDock
+from ThumbnailViewer import ThumbnailViewer
+from ModelCenter import ModelCenter
+from ModelDock import ModelDock
+from PipelineDock import PipelineDock
+from BlankPage import BlankPage
+from ResultsNavigationDock import ResultsNavigationDock
 
 ## main classes
-from qtlib.MainWindow import MainWindow
+from MainWindow import MainWindow
 from Main import Main
 
