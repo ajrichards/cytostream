@@ -26,6 +26,10 @@ A good start for the .hginore file would be somthing like
 .*~
 config_cs.py
 ./.hg/hgrc
+./dist/*
+./build/*
+fcm.log
+
 *****************************
 
 hgrc file
