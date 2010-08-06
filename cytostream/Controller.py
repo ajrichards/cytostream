@@ -4,7 +4,7 @@ A.Richards
 
 '''
 
-import csv,sys,time
+import csv,sys,time,re
 import numpy as np
 
 try:
@@ -28,8 +28,17 @@ from Logging import Logger
 
 class Controller:
     def __init__(self,viewType=None):
-        #self.viewType=viewType
-        self.baseDir = os.path.dirname(__file__) #if hasattr(sys, 'frozen'):application_path = os.path.dirname(sys.executable)
+        '''
+        construct an instance of the controller class
+        to use invoke the method initialize
+        '''
+        ## get base directory
+        if hasattr(sys, 'frozen'):
+            self.baseDir = os.path.dirname(sys.executable)
+            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
+        else:
+            self.baseDir = os.path.dirname(__file__)
+        ## basic application wide variables 
         self.viewType = viewType
         self.appName = "cytostream"
         self.fontName = 'Arial' #'Helvetica'
@@ -79,6 +88,7 @@ class Controller:
                     imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)            
 
                 if os.path.isdir(imgDir) == False:
+                    print 'making img dir', imgDir
                     os.mkdir(imgDir)
             else:
                 imgDir = 'None'
@@ -106,6 +116,8 @@ class Controller:
                     subset = self.log.log['subsample']
                     
                     script = os.path.join(self.baseDir,"RunMakeFigures.py")
+                    if os.path.isfile(script) == False:
+                        print 'ERROR: cannot find RunMakeFigures'
                     subset = self.log.log['subsample']
                     proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
                                                                                                            imgDir,longModelName,modelType,self.homeDir),
@@ -359,7 +371,7 @@ class Controller:
                             break
                        
                         ## to debug uncomment the following line
-                        print next_line
+                        #print next_line
 
                         if re.search("it =",next_line):
                             progress = 1.0 / totalIters

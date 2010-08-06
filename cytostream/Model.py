@@ -6,6 +6,7 @@ Adam Richards
 adam.richards@stat.duke.edu
 """
 import sys,csv,os,re,cPickle
+sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import fcm
 import fcm.statistics
 import numpy as np

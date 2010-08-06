@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 # to run an example
-# python RunMakeFigures.py -p Demo -i 0 -j 1 -f 3FITC_4PE_004.fcs
+# python RunMakeFigures.py -p Demo -i 0 -j 1 -f 3FITC_4PE_004.fcs -h ./projects/Demo
 #
 
 import getopt,sys,os
@@ -9,13 +9,15 @@ import numpy as np
 from cytostream import Model
 import matplotlib.pyplot as pyplot
 
+
 ## parse inputs
 def bad_input():
     print "\nERROR: incorrect args"
-    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subset -t modelType"
+    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subset -t modelType -h homeDir"
     print "     projectID (-p) project name"
     print "     channel1 (-i) channel 1 name"
     print "      channel2 (-j) channel 2 name"
+    print "      homeDir  (-h) home directory of current project"
     print "  selectedFile (-f) name of selected file"
     print "        altDir (-a) alternative directory (optional)"
     print "        subset (-s) subsampling number (optional)"
@@ -36,6 +38,7 @@ channel2 = None
 selectedFile = None
 altDir = None
 modelType = None
+modelName = None
 subset = "All Data"
 run = True
 for o, a in optlist:

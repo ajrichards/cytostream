@@ -1,10 +1,15 @@
+#!/usr/bin/env python
+
 import sys,os,unittest,time,re
-sys.path.append(os.path.join("..","cytostream"))
-sys.path.append(os.path.join("..", "cytostream","qtlib"))
 from PyQt4 import QtGui, QtCore
 import subprocess
-from Controller import Controller
+#from Controller import Controller
+from cytostream import Controller
 import numpy as np
+BASEDIR = os.path.dirname(__file__)
+
+import fcm
+print 'BASEDIR', BASEDIR,os.path.dirname(__file__), 'hello'
 
 ## test class for the main window function
 class RunModelTest(unittest.TestCase):
@@ -17,7 +22,10 @@ class RunModelTest(unittest.TestCase):
     def _initialize(self):
         self.controller = Controller()
         self.controller.initialize_project("Demo") 
-        self.fcsFileName = os.path.join("..","cytostream","example_data", "3FITC_4PE_004.fcs") 
+        self.fcsFileName = os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs") 
+        if os.path.isfile(self.fcsFileName) == False:
+            print "ERROR: fcsFileName is not true"
+
         self.controller.log.log['selectedFile'] = os.path.split(self.fcsFileName)[-1]
         self.controller.create_new_project(self.fcsFileName)
         
