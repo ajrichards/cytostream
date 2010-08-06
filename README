@@ -26,8 +26,8 @@ A good start for the .hginore file would be somthing like
 .*~
 config_cs.py
 ./.hg/hgrc
-./dist/*
-./build/*
+dist/*
+build/*
 fcm.log
 
 *****************************
@@ -40,17 +40,3 @@ default = https://<username>%%40gmail.com:<generated.passkey@cytostream.googleco
 
 [ui]
 username = <username>@gmail.com
-
-****************************
-GETTING_STARTED
-
-$ python setup.py install
-$ python
-> from cytostream import Main
-> Main()
-
-or
-$ cd ~/.../cytostream/cytostream/
-$ python Main.py
-
-****************************

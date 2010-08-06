@@ -165,9 +165,17 @@ class MainWindow(QtGui.QMainWindow):
         action = QtGui.QAction(text, self)
 
         if icon is not None:
-            if os.path.isfile(os.path.join(self.controller.baseDir,"qtlib","images",icon+".png")) == False:
+            pathPass = False
+            if os.path.isfile(os.path.join(self.controller.baseDir,"qtlib","images",icon+".png")) == True:
+                action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"qtlib","images","%s.png"%icon)))
+                pathPass = True
+            elif os.path.isfile(os.path.join(self.controller.baseDir,"lib","python2.6","images",icon+".png")) == True:
+                action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"lib", "python2.6","images","%s.png"%icon)))
+                pathPass = True
+
+            if pathPass == False:
                 print "WARNING: bad icon specified", icon + ".png"
-            action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"qtlib","images","%s.png"%icon)))
+            
         if shortcut is not None:
             action.setShortcut(shortcut)
         if tip is not None:
