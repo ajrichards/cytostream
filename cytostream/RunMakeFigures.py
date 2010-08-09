@@ -6,13 +6,13 @@
 
 import getopt,sys,os
 import numpy as np
+import matplotlib
+
+## important line to fix popup error in mac osx
+matplotlib.use('Agg')
 from cytostream import Model
 
-#if sys.platform == 'darwin':
-#    import matplotlib
-#    matplotlib.use('Agg')
-    
-import matplotlib.pyplot as pyplot
+import matplotlib.pyplot as plt
 
 ## parse inputs
 def bad_input():
@@ -66,10 +66,10 @@ for o, a in optlist:
         homeDir = a
 
 def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
-    fig = pyplot.figure(figsize=(7,7))
+    #fig = pyplot.figure(figsize=(7,7))
     markerSize = 5
     alphaVal = 0.5
-    ax = fig.add_subplot(111)
+    #ax = fig.add_subplot(111)
 
     fontName = 'arial'
     fontSize = 12
@@ -92,7 +92,7 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
     ## make plot 
     totalPoints = 0
     if labels == None:
-        ax.scatter([data[:,index1]],[data[:,index2]],color='blue',s=markerSize)
+        plt.scatter([data[:,index1]],[data[:,index2]],color='blue',s=markerSize)
     else:
         if type(np.array([])) != type(labels):
             labels = np.array(labels)
@@ -112,27 +112,27 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
 
             if x.size == 0:
                 continue
-            
-            ax.scatter(x,y,color=hexColor,s=markerSize)
+            plt.scatter(x,y,color=hexColor,s=markerSize)
+            #ax.scatter(x,y,color=hexColor,s=markerSize)
 
     ## handle data edge buffers                                                                                                                                              
     bufferX = buff * (data[:,index1].max() - data[:,index1].min())
     bufferY = buff * (data[:,index2].max() - data[:,index2].min())
-    ax.set_xlim([data[:,index1].min()-bufferX,data[:,index1].max()+bufferX])
-    ax.set_ylim([data[:,index2].min()-bufferY,data[:,index2].max()+bufferY])
+    plt.xlim([data[:,index1].min()-bufferX,data[:,index1].max()+bufferX])
+    plt.ylim([data[:,index2].min()-bufferY,data[:,index2].max()+bufferY])
 
     ## save file
     fileName = selectedFile
-    ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
-    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+    plt.title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
+    plt.xlabel(channel1,fontname=fontName,fontsize=fontSize)
+    plt.ylabel(channel2,fontname=fontName,fontsize=fontSize)
     
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName,transparent=True)
+        plt.savefig(fileName,transparent=True)
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName,transparent=True)
+        plt.savefig(fileName,transparent=True)
 
 
 ## error checking
