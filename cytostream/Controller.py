@@ -6,6 +6,7 @@ A.Richards
 
 import csv,sys,time,re
 import numpy as np
+from PIL import Image
 
 try:
     from PyQt4 import QtGui, QtCore
@@ -186,7 +187,13 @@ class Controller:
           
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
             thumbFile = os.path.join(thumbDir,thumbFile)
-            os.system("convert -trim " + imgFile + "[%sx%s] "%(thumbSize,thumbSize) + thumbFile)
+
+
+            ## use PIL to create thumb
+            size = thumbSize,thumbSize
+            im = Image.open(imgFile)
+            im.thumbnail(size, Image.ANTIALIAS)
+            im.save(thumbFile)
         else:
             print "ERROR: bad file name specified",fileName
 

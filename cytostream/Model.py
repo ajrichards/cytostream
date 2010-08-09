@@ -14,7 +14,10 @@ from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,ge
 #if sys.platform == 'darwin':
 #    import matplotlib
 #    matplotlib.use('Agg')
-import matplotlib as mpl
+
+
+import matplotlib
+matplotlib.interactive(False)
 from matplotlib import pyplot
 from matplotlib import rc
 import matplotlib.cm as cm

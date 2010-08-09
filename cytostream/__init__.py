@@ -8,8 +8,14 @@ adam.richards@stat.duke.edu
 
 '''
 
-import sys,os
-sys.path.append(os.path.join(os.path.dirname(__file__),"qtlib"))
+import sys,os,re
+
+if hasattr(sys, 'frozen'):
+    baseDir = os.path.dirname(sys.executable)
+    baseDir = re.sub("MacOS","Resources",baseDir)
+else:
+    baseDir = os.path.dirname(__file__)
+sys.path.append(os.path.join(baseDir,'qtlib'))
 
 ## general classes
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names

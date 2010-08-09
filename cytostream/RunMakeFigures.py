@@ -7,8 +7,12 @@
 import getopt,sys,os
 import numpy as np
 from cytostream import Model
-import matplotlib.pyplot as pyplot
 
+#if sys.platform == 'darwin':
+#    import matplotlib
+#    matplotlib.use('Agg')
+    
+import matplotlib.pyplot as pyplot
 
 ## parse inputs
 def bad_input():
