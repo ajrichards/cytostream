@@ -18,3 +18,8 @@ open -a Console
 
 ## finally make a dmg installer
 hdiutil create -srcfolder dist/Cytostream.app Cytostream.dmg
+
+## to run on a new version of 10.6
+rm -rf ~/.matplotlib
+cd /Applications/Vistrails.app/Contents/Resources/lib/python2.6
+DYLD_LIBRARY_PATH=/usr/lib /System/Library/Frameworks/ Python.framework/Versions/2.6/bin/python
