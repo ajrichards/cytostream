@@ -6,9 +6,9 @@
 
 import getopt,sys,os
 import numpy as np
-import matplotlib
 
 ## important line to fix popup error in mac osx
+import matplotlib
 matplotlib.use('Agg')
 from cytostream import Model
 

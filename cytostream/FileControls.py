@@ -4,7 +4,7 @@ import os,re
 
 def get_fcs_file_names(homeDir,getPickles=False):
     '''
-    returns a list of file names associated with the project
+    returns a sorted list of file names associated with the project
     
     '''
 
@@ -14,6 +14,8 @@ def get_fcs_file_names(homeDir,getPickles=False):
             fileList.append(fileName)
         if re.search("\.pickle",fileName) and getPickles == True:
             fileList.append(fileName)
+
+    fileList.sort()
 
     return fileList
 

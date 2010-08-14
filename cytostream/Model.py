@@ -1,6 +1,22 @@
 #!/usr/bin/env python
 """
+The Model class is a interactive layer between cytostream, fcm and outside packages like fcm.
+It also handles reusable data manipulation functions, project initialization and other functions.
+The class can be used alone for example to interface with fcm.
 
+> import numpy as np
+> from cytostream import Model
+> projectID = 'utest'
+> homeDir = os.path.join("..","cytostream","projects",projectID)
+> model = Model()
+> model.initialize(projectID, homeDir)
+> fcsPathName = os.path.join("..","cytostream","example_data", "3FITC_4PE_004.fcs")
+> fcsFileName ="3FITC_4PE_004.fcs"
+> data = model.pyfcm_load_fcs_file(fcsFileName)
+> events,channels = np.shape(data)
+> fileChannelList = model.get_file_channel_list(fcsFileName)
+> allChannels = model.get_master_channel_list()
+> indices = model.get_subsample_indices('1e3')
 
 Adam Richards
 adam.richards@stat.duke.edu
@@ -11,14 +27,7 @@ import fcm
 import fcm.statistics
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
-#if sys.platform == 'darwin':
-#    import matplotlib
-#    matplotlib.use('Agg')
 
-
-import matplotlib
-matplotlib.interactive(False)
-from matplotlib import pyplot
 from matplotlib import rc
 import matplotlib.cm as cm
 rc('font',family = 'sans-serif')

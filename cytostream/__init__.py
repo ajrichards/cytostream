@@ -25,6 +25,7 @@ from Controller import Controller
 
 ### qtlib classes
 from BasicWidgets import Slider, ProgressBar, DisplayImage
+from MenuFunctions import create_menubar_toolbar
 from BulkNewProject import BulkNewProject
 from OpenExistingProject import OpenExistingProject
 from ScatterPlotter import ScatterPlotter
@@ -38,8 +39,9 @@ from ModelDock import ModelDock
 from PipelineDock import PipelineDock
 from BlankPage import BlankPage
 from ResultsNavigationDock import ResultsNavigationDock
+from OneDimViewer import OneDimViewer
+from OneDimViewerDock import OneDimViewerDock
 
 ## main classes
 from MainWindow import MainWindow
 from Main import Main
-

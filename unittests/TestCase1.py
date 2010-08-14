@@ -14,7 +14,7 @@ import numpy as np
 BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
-class RunModelTest(unittest.TestCase):
+class TestCase1(unittest.TestCase):
     def setUp(self):
         try:
             self.controller
@@ -23,11 +23,9 @@ class RunModelTest(unittest.TestCase):
     
     def _initialize(self):
         self.controller = Controller()
-        self.controller.initialize_project("Demo") 
-        if os.path.isfile(os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs")) == True:
-            self.fcsFileName = os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs")
-        else:
-            self.fcsFileName = os.path.join(BASEDIR,".","cytostream","example_data", "3FITC_4PE_004.fcs") 
+        self.controller.initialize_project("utest") 
+        self.failIf(os.path.isfile(os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs")) == False)
+        self.fcsFileName = os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs")
 
         if os.path.isfile(self.fcsFileName) == False:
             print "ERROR: fcsFileName is not true"

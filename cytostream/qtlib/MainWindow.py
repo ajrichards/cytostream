@@ -7,12 +7,13 @@
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public License for more details.
+#
+# Adam Richards
+# adam.richards@stat.duke.edu
+#
 
 import os,sys,time,re
 import platform
-#if sys.platform == 'darwin':
-#    import matplotlib
-#    matplotlib.use('Agg')
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -45,8 +46,7 @@ class MainWindow(QtGui.QMainWindow):
         self.sizeLabel = QtGui.QLabel()
         self.sizeLabel.setFrameStyle(QtGui.QFrame.StyledPanel|QtGui.QFrame.Sunken)
         self.create_statusbar()
-        self.create_menubar_toolbar()
-
+        create_menubar_toolbar(self)
 
         ## settings
         self.showMaximized()
@@ -54,10 +54,7 @@ class MainWindow(QtGui.QMainWindow):
         screen = QtGui.QDesktopWidget().screenGeometry()
         self.screenWidth = screen.width()
         self.screenHeight = screen.height()
-        #if os.name == 'posix':
         self.eSize = 0.04 * self.screenWidth
-        #else:
-        #    self.eSize = 0.03 * self.screenWidth
             
     def reset_view_workspace(self):
         self.log = self.controller.log
@@ -91,50 +88,6 @@ class MainWindow(QtGui.QMainWindow):
     #
     #################################################
     
-    def create_menubar_toolbar(self):
-        fileNewBulkAction = self.create_action("New...", self.create_new_project_bulk,
-                QtGui.QKeySequence.New, "filenew", "Create a new project with mulitple files")
-        fileOpenAction = self.create_action("&Open...", self.open_existing_project,
-                QtGui.QKeySequence.Open, "fileopen",
-                "Open an existing project")
-        fileSaveAction = self.create_action("&Save", self.fileSave,
-                QtGui.QKeySequence.Save, "filesave", "Save the image")
-        fileSaveAsAction = self.create_action("Save &As...",
-                self.fileSaveAs, icon="filesaveas",
-                tip="Save the project using a new name")
-        filePrintAction = self.create_action("&Print", self.filePrint,
-                QtGui.QKeySequence.Print, "fileprint", "Print the current image")
-        fileQuitAction = self.create_action("&Quit", self.close,
-                "Ctrl+Q", "filequit", "Close the application")
-        editDataProcessing= self.create_action("&Data Processing", self.move_to_data_processing, 
-                                              "Ctrl+D", "dataprocessing", "Move to Data Processing") 
-        editQualityAssurance= self.create_action("Quality &Assurance", self.move_to_quality_assurance, 
-                                              "Ctrl+A", "qualityassurance", "Move to Quality Assurance") 
-        editModel= self.create_action("&Model", self.move_to_model, 
-                                      "Ctrl+M", "model", "Move to Model") 
-        editResultsNavigation = self.create_action("&Results Navigation", self.move_to_results_navigation, 
-                                                   "Ctrl+R", "resultsnavigation", "Move to Results Navigation")
-
-        helpAboutAction = self.create_action("&About %s"%self.controller.appName,
-                self.helpAbout)
-        helpHelpAction = self.create_action("&Help", self.helpHelp,
-                QtGui.QKeySequence.HelpContents)
-
-        self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenuActions = (fileNewBulkAction,fileOpenAction,
-                fileSaveAction, fileSaveAsAction, None,
-                filePrintAction, fileQuitAction)
-        self.addActions(self.fileMenu,self.fileMenuActions)
-
-        editMenu = self.menuBar().addMenu("&Edit")
-        
-        mirrorMenu = editMenu.addMenu(QtGui.QIcon(":/editmirror.png"),"&Go to")
-        self.addActions(mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
-        helpMenu = self.menuBar().addMenu("&Help")
-        self.addActions(helpMenu, (helpAboutAction, helpHelpAction))
-        self.addActions(self.mainWidget,(editDataProcessing,
-                                         editQualityAssurance,editModel,
-                                         editResultsNavigation))
     def add_pipeline_dock(self):
         self.pipelineDock = QtGui.QDockWidget(self)
         self.pipelineDock.setObjectName("PipelineDockWidget")
@@ -262,7 +215,6 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_main_widget()
 
     def open_existing_project_handler(self):
-        #existingProjects = get_project_names(self.controller.baseDir)
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
@@ -338,6 +290,39 @@ class MainWindow(QtGui.QMainWindow):
         #form.show()
 
     ################################################################################################3
+    def move_to_one_dim_viewer(self):
+        if self.controller.homeDir == None:
+            self.display_info('To begin either load an existing project or create a new one')
+            return False
+
+        self.mainWidget = QtGui.QWidget(self)
+        bp = BlankPage(parent=self.mainWidget)
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.addWidget(bp)
+        vbl.addLayout(hbl)
+        self.mainWidget.setLayout(vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
+
+        if self.dockWidget != None:
+            self.clear_dock()
+
+        if self.pDock != None:
+            self.pDock.unset_all_highlights()
+
+        self.mainWidget = QtGui.QWidget(self)
+        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=False,parent=self.mainWidget)
+        bp.change_label('1D Data Viewer')
+        vbl.addWidget(self.odv)
+        self.mainWidget.setLayout(vbl)
+        QtCore.QCoreApplication.processEvents()
+        self.log.log['currentState'] = "OneDimViewer"
+        self.refresh_main_widget()
+        self.add_dock()
+
     def move_to_initial(self):
         if self.pDock != None:
             self.pDock.unset_all_highlights()
@@ -471,6 +456,18 @@ class MainWindow(QtGui.QMainWindow):
         if self.pDock != None:
             self.pDock.set_btn_highlight('results navigation')
         return True
+
+    def move_transition(self):
+        bp = BlankPage(parent=self.mainWidget)
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.addWidget(bp)
+        vbl.addLayout(hbl)
+        self.mainWidget.setLayout(vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
         
     def generic_callback(self):
         print "this button/widget does not do anything yet"
@@ -516,7 +513,7 @@ class MainWindow(QtGui.QMainWindow):
             showModelSelector = False
             modelsRun = None
 
-        if self.log.log['currentState'] not in ['Model']:
+        if self.log.log['currentState'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
             self.fileSelector = FileSelector(fileList,parent=self.dockWidget,selectionFn=self.set_selected_file,fileDefault=self.log.log['selectedFile'],
                                              showModelSelector=showModelSelector,modelsRun=modelsRun)
             self.fileSelector.setAutoFillBackground(True)
@@ -540,9 +537,17 @@ class MainWindow(QtGui.QMainWindow):
         if self.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
             self.fileSelector.set_refresh_thumbs_fn(self.display_thumbnails)
 
+        if self.log.log['currentState'] == 'OneDimViewer':
+            self.dock = OneDimViewerDock(fileList,masterChannelList,callBack=self.odv.paint)
+
         self.dock.setAutoFillBackground(True)
         hbl1 = QtGui.QHBoxLayout()
-        hbl1.setAlignment(QtCore.Qt.AlignBottom)
+        
+        ## finalize dock layout
+        if self.log.log['currentState'] == 'OneDimViewer':
+            hbl1.setAlignment(QtCore.Qt.AlignTop)
+        else:
+            hbl1.setAlignment(QtCore.Qt.AlignBottom)
         hbl1.addWidget(self.dock)
         vbl = QtGui.QVBoxLayout(self.dockWidget)
         vbl.addLayout(hbl2)
@@ -772,7 +777,8 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,self.controller.homeDir,parent=self.mainWidget,subset=self.log.log['subsample'])
+            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,
+                                parent=self.mainWidget,subset=self.log.log['subsample'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
@@ -780,7 +786,7 @@ class MainWindow(QtGui.QMainWindow):
             self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.projectID,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,self.controller.homeDir,subset=self.log.log['subsample'],
+            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
                                 modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'],
                                 modelType=self.log.log['resultsMode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
@@ -789,7 +795,6 @@ class MainWindow(QtGui.QMainWindow):
         
             ## enable buttons
             self.dock.enable_all()
-
 
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
