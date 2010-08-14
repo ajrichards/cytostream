@@ -8,12 +8,6 @@ A. Ricahrds
 
 import sys, getopt, os
 from PyQt4 import QtGui
-#sys.path.append(os.path.join(os.path.dirname(__file__),"qtlib"))
-
-#if sys.platform == 'darwin':
-#    import matplotlib
-#    matplotlib.use('Agg')
-
 from cytostream import MainWindow
 
 class Main():

@@ -9,7 +9,12 @@ adam.richards@stat.duke.edu
 import sys
 if sys.platform == 'darwin':
     import matplotlib
-    matplotlib.use('Agg')
+    matplotlib.use('Agg') 
+
+#import matplotlib
+#matplotlib.use("Qt4Agg")
+
+
 
 from cytostream import Main
 

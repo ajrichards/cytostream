@@ -9,7 +9,7 @@ import numpy as np
 class ModelTest(unittest.TestCase):
        
     def setUp(self):
-        self.projectID = 'Demo'
+        self.projectID = 'utest'
         self.homeDir = os.path.join("..","cytostream","projects",self.projectID)
         self.model = Model()
         self.model.initialize(self.projectID, self.homeDir)

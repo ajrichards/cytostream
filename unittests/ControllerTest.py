@@ -16,7 +16,7 @@ class ControllerTest(unittest.TestCase):
     
     def _initialize(self):
         self.controller = Controller()
-        self.controller.initialize_project("Demo") 
+        self.controller.initialize_project("utest") 
         self.fcsFileName = os.path.join("..","cytostream","example_data", "3FITC_4PE_004.fcs") 
         self.controller.log.log['selectedFile'] = os.path.split(self.fcsFileName)[-1]
 

@@ -49,6 +49,6 @@ from ModelTest import *
 ModelTestSuite = unittest.TestLoader().loadTestsFromTestCase(ModelTest)
 modelSuite = unittest.TestSuite([ModelTestSuite])
 
-from RunModelTest import *
-RunModelTestSuite = unittest.TestLoader().loadTestsFromTestCase(RunModelTest)
-runSuite = unittest.TestSuite([RunModelTestSuite])
+from TestCase1 import *
+TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
+runSuite = unittest.TestSuite([TestCase1Suite])

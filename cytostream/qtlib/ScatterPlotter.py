@@ -10,7 +10,6 @@ from cytostream import Model
 class ScatterPlotter(FigureCanvas):
     '''
     class to carry out the creation of a matplotlib figure embedded into the cytostream application
-    projectID - The str associated with the project name
     selectedFile - The currently selected file associated with the project -- see FileSelector class
     channel1 - File specific channel name to be plotted on the x-axis
     channel2 - File specific channel name to be plotted on the y-axis
@@ -27,7 +26,7 @@ class ScatterPlotter(FigureCanvas):
 
     '''
 
-    def __init__(self, projectID, selectedFile, channel1, channel2,homeDir, parent=None, subset="All Data",altDir=None, modelName=None, background=False, modelType=None):
+    def __init__(self,homeDir,selectedFile,channel1,channel2,parent=None,subset="All Data",altDir=None,modelName=None,background=False,modelType=None):
 
         ## error checking
         if os.path.isdir(homeDir) == False:
@@ -42,19 +41,17 @@ class ScatterPlotter(FigureCanvas):
             print "ERROR: if model type specified must specify model name as well"
             return False
 
-        ## variables
-        if os.path.isdir(os.path.join(".","projects",projectID)) == True:
-            homeDir = os.path.join(".","projects",projectID)
-        elif os.path.isdir(os.path.join("..","projects",projectID)) == True:
-            homeDir = os.path.join("..","projects",projectID)
-
-        # plot definition   
+        ## prepare plot environment   
         self.fig = Figure()
         ax = self.fig.add_subplot(111)
         self.fig.set_frameon(background)
         
+
+        ## prepare model
+        projectID = os.path.split(homeDir)[-1]
         model = Model()
         model.initialize(projectID,homeDir)
+        
         if modelName != None:
             print 'modelName', modelName
             print 'modelType', modelType
@@ -86,7 +83,9 @@ class ScatterPlotter(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
     def make_scatter_plot(self,ax,model,selectedFile,channel1,channel2,subset,labels=None,buff=0.02,altDir=None,centroids=None,statModel=None,modelType=None):
-        if float(subset) < 1e4:
+        if subset == 'All Data':
+            markerSize = 4
+        elif float(subset) < 1e4:
             markerSize = 5
         else:
             markerSize = 4
@@ -169,16 +168,20 @@ class ScatterPlotter(FigureCanvas):
 
 if __name__ == '__main__':
     # check that unittests were run and necessary data is present
-    if os.path.isfile(os.path.join('..','projects','Demo','models','3FITC_4PE_004_sub1000_dpmm-cpu.pickle')) == False:
-        print "ERROR: Model not present - (Re)run unit tests" 
+    baseDir = os.path.dirname(__file__)
+    modelType = 'components'
+    modelChk = os.path.join(baseDir,'..','projects','utest','models','3FITC_4PE_004_sub1000_dpmm-cpu_%s.pickle'%modelType) 
+    if os.path.isfile(modelChk) == False:
+        print "ERROR: Model not present - (Re)run unit tests"
+        print modelChk
         sys.exit()
 
     mode = 'results'
-    homeDir = os.path.join('..','projects','Demo')
-    projectID = 'Demo'
+    homeDir = os.path.join(baseDir,'..','projects','utest')
+    projectID = 'utest'
     selectedFile = "3FITC_4PE_004.fcs"
     selectedModel = 'sub1000_dpmm-cpu'
-    subsample = '1e3'
+    subsample = 'All Data' #'1e3'
     channel1 = 'FL1-H' 
     channel2 = 'FL2-H'
 
@@ -186,9 +189,9 @@ if __name__ == '__main__':
     parent =  QtGui.QWidget()
 
     if mode == 'qa':
-        sp = ScatterPlotter(projectID,selectedFile,channel1,channel2,subset=subsample,background=True)
+        sp = ScatterPlotter(homeDir,selectedFile,channel1,channel2,subset=subsample,background=True)
     if mode == 'results':
-        sp = ScatterPlotter(projectID,selectedFile,channel1,channel2,subset=subsample,background=True,
-                            modelName=re.sub("\.pickle|\.fcs","",selectedFile) + "_" + selectedModel)
+        sp = ScatterPlotter(homeDir,selectedFile,channel1,channel2,subset=subsample,background=True,
+                            modelName=re.sub("\.pickle|\.fcs","",selectedFile) + "_" + selectedModel, modelType='components')
     sp.show()
     sys.exit(app.exec_())

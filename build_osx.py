@@ -66,6 +66,8 @@ if os.name == 'posix':
                        os.path.join(CYTODIR,'qtlib','PipelineDock.py'),
                        os.path.join(CYTODIR,'qtlib','BlankPage.py'),
                        os.path.join(CYTODIR,'qtlib','ResultsNavigationDock.py'),
+                       os.path.join(CYTODIR,'qtlib','OneDimViewer.py'),
+                       os.path.join(CYTODIR,'qtlib','OneDimViewerDock.py'),
                        os.path.join(CYTODIR,'qtlib','MainWindow.py'),
                        os.path.join(CYTODIR,'RunMakeFigures.py'),
                        os.path.join(CYTODIR,'RunDPM-CPU.py'),
