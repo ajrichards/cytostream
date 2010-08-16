@@ -314,9 +314,11 @@ class MainWindow(QtGui.QMainWindow):
             self.pDock.unset_all_highlights()
 
         self.mainWidget = QtGui.QWidget(self)
-        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=False,parent=self.mainWidget)
+        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=True,parent=self.mainWidget)
         bp.change_label('1D Data Viewer')
+        ntb = NavigationToolbar(self.odv,self.mainWidget)
         vbl.addWidget(self.odv)
+        vbl.addWidget(ntb)
         self.mainWidget.setLayout(vbl)
         QtCore.QCoreApplication.processEvents()
         self.log.log['currentState'] = "OneDimViewer"

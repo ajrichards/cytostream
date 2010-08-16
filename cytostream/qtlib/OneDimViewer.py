@@ -49,6 +49,8 @@ class OneDimViewer(FigureCanvas):
         self.fig.set_frameon(background)
         self.selectedChannelInd = 0
         self.selectedFileIndices = [0]
+        self.colors = ['b','orange','k','g','r','c','m','y']
+        self.lines = ['-','.','--','-.','o','d','s','^']
 
         ## initialize model
         projectID = os.path.split(homeDir)[-1]
@@ -67,9 +69,21 @@ class OneDimViewer(FigureCanvas):
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
-        
+
+        ## draw one line on the plot
+        #self.paint(channel=self.masterChannelList[0],fcsIndices=[0])
+
+
         ## notify the system of updated policy
         FigureCanvas.updateGeometry(self)
+
+
+
+    def get_line_attrs(self,fcsFileInd):
+        line = int(np.floor(float(fcsFileInd) / float(len(self.colors))))
+        color = fcsFileInd % len(self.colors)
+
+        return self.colors[color],self.lines[line]
 
     def make_plot(self,model,subset,buff=0.02):
         
@@ -118,7 +132,7 @@ class OneDimViewer(FigureCanvas):
         #n, bins, patches = self.ax.hist(events, 50, normed=True,facecolor='blue', alpha=0.75)
 
         ## find the kernel density function
-        self.pdfX = np.linspace(np.min(events), np.max(events),200)
+        self.pdfX = np.linspace(np.min(events), np.max(events),300)
         approxPdf = gaussian_kde(events)
         if self.plotDict.has_key(str(fcsFileInd)) == False:
             self.plotDict[str(fcsFileInd)] = {}
@@ -126,23 +140,27 @@ class OneDimViewer(FigureCanvas):
         self.plotDict[str(fcsFileInd)][str(channelInd)] = approxPdf
 
         if visible == True:
-            self.ax.plot(self.pdfX,approxPdf(self.pdfX),color='r',linewidth=2.0)
+            color,lineStyle  = self.get_line_attrs(fcsFileInd)
+            self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
+            #self.draw()
         
     def paint(self,channel=None,fcsIndices=None):
         if channel != None:
-            print 'changing channel shown', channel, self.masterChannelList.index(channel)
+            if self.masterChannelList.__contains__(channel) == False:
+                print 'ERROR: master channel list does not contain', channel
+    
             self.selectedChannelInd = self.masterChannelList.index(channel)
 
         if fcsIndices != None:
-            print 'changing fcs files shown', fcsIndices
+            self.selectedFileIndices = np.where(np.array(fcsIndices) == 1)[0]
 
         self.ax.clear()
 
         for fcsIndex in self.selectedFileIndices:
             approxPdf = self.plotDict[str(fcsIndex)][str(self.selectedChannelInd)]
-            self.ax.plot(self.pdfX,approxPdf(self.pdfX),color='r',linewidth=2.0)
-            
-        print 'clearing axis'
+            color,lineStyle  = self.get_line_attrs(fcsIndex)
+            self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
+
         self.draw()
         
 
@@ -158,5 +176,6 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     #parent =  QtGui.QWidget()
     odv = OneDimViewer(homeDir,subset=subsample,background=True)
+
     odv.show()
     sys.exit(app.exec_())
