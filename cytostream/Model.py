@@ -208,7 +208,7 @@ class Model:
     
     def get_n_color_colorbar(self,n,cmapName='jet'):# Spectral #gist_rainbow
         "breaks any matplotlib cmap into n colors" 
-        cmap = cm.get_cmap('jet',n) 
+        cmap = cm.get_cmap(cmapName,n) 
         return cmap(np.arange(n))
 
     def rgb_to_hex(self,rgb):
