@@ -290,6 +290,41 @@ class MainWindow(QtGui.QMainWindow):
         #form.show()
 
     ################################################################################################3
+    def move_to_results_heatmap_summary(self):
+        if self.controller.homeDir == None:
+            self.display_info('To begin either load an existing project or create a new one')
+            return False
+
+        self.mainWidget = QtGui.QWidget(self)
+        bp = BlankPage(parent=self.mainWidget)
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.addWidget(bp)
+        vbl.addLayout(hbl)
+        self.mainWidget.setLayout(vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
+
+        if self.dockWidget != None:
+            self.clear_dock()
+
+        if self.pDock != None:
+            self.pDock.unset_all_highlights()
+
+        self.mainWidget = QtGui.QWidget(self)
+        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=True,parent=self.mainWidget)
+        bp.change_label('1D Data Viewer')
+        ntb = NavigationToolbar(self.odv,self.mainWidget)
+        vbl.addWidget(self.odv)
+        vbl.addWidget(ntb)
+        self.mainWidget.setLayout(vbl)
+        QtCore.QCoreApplication.processEvents()
+        self.log.log['currentState'] = "OneDimViewer"
+        self.refresh_main_widget()
+        add_left_dock(self)
+
     def move_to_one_dim_viewer(self):
         if self.controller.homeDir == None:
             self.display_info('To begin either load an existing project or create a new one')
@@ -323,7 +358,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         self.log.log['currentState'] = "OneDimViewer"
         self.refresh_main_widget()
-        self.add_dock()
+        add_left_dock(self)
 
     def move_to_initial(self):
         if self.pDock != None:
@@ -359,7 +394,7 @@ class MainWindow(QtGui.QMainWindow):
         hbl.setAlignment(QtCore.Qt.AlignTop)
         hbl.addWidget(dpc)
         self.refresh_main_widget()
-        self.add_dock()
+        add_left_dock(self)
         self.track_highest_state()
         self.controller.save()
         if self.pDock != None:
@@ -392,7 +427,7 @@ class MainWindow(QtGui.QMainWindow):
                 print "WARNING: failed to display thumbnails not moving to results navigation"
                 return False
 
-            self.add_dock()
+            add_left_dock(self)
         else:
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
@@ -401,7 +436,7 @@ class MainWindow(QtGui.QMainWindow):
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             self.refresh_main_widget()
-            self.add_dock()
+            add_left_dock(self)
 
         self.track_highest_state()
         self.controller.save()
@@ -424,7 +459,7 @@ class MainWindow(QtGui.QMainWindow):
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl.addWidget(self.mc)
         self.refresh_main_widget()
-        self.add_dock()
+        add_left_dock(self)
         self.track_highest_state()
         self.controller.save()
         if self.pDock != None:
@@ -448,7 +483,7 @@ class MainWindow(QtGui.QMainWindow):
             print "WARNING: failed to display thumbnails not moving to results navigation"
             return False
         
-        self.add_dock()
+        add_left_dock(self)
 
         ## disable buttons
         self.dock.disable_all()
@@ -480,6 +515,7 @@ class MainWindow(QtGui.QMainWindow):
     #
     #################################################
 
+    '''
     def add_dock(self):
         if self.dockWidget != None:
             self.clear_dock()
@@ -557,6 +593,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.mainDockWidget.setWidget(self.dockWidget)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.mainDockWidget)
+        '''
 
     def clear_dock(self):
         self.removeDockWidget(self.mainDockWidget)
@@ -639,7 +676,7 @@ class MainWindow(QtGui.QMainWindow):
             hbl.addWidget(self.progressBar)
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             self.refresh_main_widget()
-            self.add_dock()
+            add_left_dock(self)
 
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
