@@ -2,13 +2,7 @@ import sys,os,re
 from PyQt4 import QtGui
 import numpy as np
 
-
-#import matplotlib
-#matplotlib.use('QT4Agg')
-
 from matplotlib.figure import Figure
-#import matplotlib.pyplot as plt
-
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from scipy.stats import gaussian_kde
@@ -70,14 +64,8 @@ class OneDimViewer(FigureCanvas):
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 
-        ## draw one line on the plot
-        #self.paint(channel=self.masterChannelList[0],fcsIndices=[0])
-
-
         ## notify the system of updated policy
         FigureCanvas.updateGeometry(self)
-
-
 
     def get_line_attrs(self,fcsFileInd):
         line = int(np.floor(float(fcsFileInd) / float(len(self.colors))))
@@ -132,7 +120,7 @@ class OneDimViewer(FigureCanvas):
         #n, bins, patches = self.ax.hist(events, 50, normed=True,facecolor='blue', alpha=0.75)
 
         ## find the kernel density function
-        self.pdfX = np.linspace(np.min(events), np.max(events),300)
+        self.pdfX = np.linspace(-200, np.max(events),300) #np.min(events)
         approxPdf = gaussian_kde(events)
         if self.plotDict.has_key(str(fcsFileInd)) == False:
             self.plotDict[str(fcsFileInd)] = {}
@@ -142,6 +130,8 @@ class OneDimViewer(FigureCanvas):
         if visible == True:
             color,lineStyle  = self.get_line_attrs(fcsFileInd)
             self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
+            
+
             #self.draw()
         
     def paint(self,channel=None,fcsIndices=None):
@@ -155,12 +145,16 @@ class OneDimViewer(FigureCanvas):
             self.selectedFileIndices = np.where(np.array(fcsIndices) == 1)[0]
 
         self.ax.clear()
-
+        currentPlts = []
+        currentLabs = []
         for fcsIndex in self.selectedFileIndices:
             approxPdf = self.plotDict[str(fcsIndex)][str(self.selectedChannelInd)]
             color,lineStyle  = self.get_line_attrs(fcsIndex)
-            self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
-
+            pt = self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
+            currentPlts.append(pt)
+            currentLabs.append(self.fcsFileLabels[fcsIndex])
+            
+        self.fig.legend( currentPlts, currentLabs, 'upper right', shadow=True)
         self.draw()
         
 

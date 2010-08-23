@@ -1,22 +1,40 @@
 #!/usr/bin/env python
 
-import os
+import os,time
 import fcmgpu
 import fcmgpu.statistics
 import pickle
 import numpy as np
 
+print 'listing shared library depens.'
+os.system("ldd /home/clemmys/research/py-fcm-gpu/src/statistics/_cdp.so")
+
 print 'loading data'
 fileNameFCS = os.path.join("..","cytostream","example_data","3FITC_4PE_004.fcs")
-file = fcmgpu.loadFCS(fileNameFCS)
+fileFCS = fcmgpu.loadFCS(fileNameFCS)
+
+print 'get subsample'
+subsample = 1e4
+np.random.seed(99)
+n,d = np.shape(fileFCS)
+subsampleIndices = np.random.random_integers(0,n-1,subsample)
+data = fileFCS[subsampleIndices,:]
+
 print 'loading model'
-mod = fcmgpu.statistics.DPMixtureModel(file, 16)
-mod.fit(verbose=True)
+mod = fcmgpu.statistics.DPMixtureModel(data, 16)
+print 'cuda device:', mod.cdp.getdevice()
 
+print 'running model'
+modelRunStart = time.time()
+mod.fit(verbose=False)
+modelRunStop = time.time()
+print "model run time: %s"%(modelRunStop - modelRunStart)
 
-full = mod.get_results()
-
-print full.pis
+#full = mod.get_results()
+#print full.pis
+#classifyComponents = full.classify(data)
+#modes = full.make_modal()
+#classifyModes = modes.classify(data)
 
 
 #print 'dumping fit'
