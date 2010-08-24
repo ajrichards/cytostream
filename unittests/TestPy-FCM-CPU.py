@@ -6,16 +6,17 @@ import fcm.statistics
 import pickle
 import numpy as np
 
-print 'listing shared library depens.'
-os.system("ldd /home/clemmys/research/py-fcm-cpu/src/statistics/_cdp.so")
+#print 'listing shared library depens.'
+#os.system("ldd /home/clemmys/research/py-fcm-cpu/src/statistics/_cdp.so")
 
 
 print 'loading data'
-fileNameFCS = os.path.join("..","cytostream","example_data","3FITC_4PE_004.fcs")
+#fileNameFCS = os.path.join("..","cytostream","example_data","3FITC_4PE_004.fcs")
+fileNameFCS = os.path.join("/","home","clemmys","research","analyses","angina","raw","normal","ACS-T-Pt 5_SEB.fcs")
 fileFCS = fcm.loadFCS(fileNameFCS)
 
 print 'get subsample'
-subsample = 1e6
+subsample = 1e4
 np.random.seed(99)
 n,d = np.shape(fileFCS)
 subsampleIndices = np.random.random_integers(0,n-1,subsample)

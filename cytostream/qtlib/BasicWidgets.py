@@ -104,4 +104,10 @@ class DisplayImage(QtGui.QWidget):
         self.setLayout(hbox)
 
         if self.imgTitle != None:
-            self.setWindowTitle(self.imgTitle)            
+            self.setWindowTitle(self.imgTitle)
+
+class Tooltip(QtGui.QWidget):
+    def __init__(self, msg='This is a tooltip', parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.setToolTip(msg)
+        QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))

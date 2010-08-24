@@ -1,12 +1,39 @@
 #!/usr/bin/python
 
+'''
+Cytostream
+LeftDock        
+Adam Richards
+adam.richards@stat.duke.edu
+                   
+'''
+
+import sys,os
 from PyQt4 import QtGui,QtCore
-from cytostream import *
-from cytostream import FileSelector
+
+if hasattr(sys,'frozen'):
+    baseDir = os.path.dirname(sys.executable)
+    baseDir = re.sub("MacOS","Resources",baseDir)
+else:
+    baseDir = os.path.dirname(__file__)
+
+sys.path.append(os.path.join(baseDir,'..'))
+
+from FileControls import *
+from FileSelector import FileSelector
+#from StageTransitions import move_to_data_processing
+#from StageTransitions import move_to_quality_assurance
+from DataProcessingDock import DataProcessingDock
+from QualityAssuranceDock import QualityAssuranceDock
+from ModelDock import ModelDock
+from ResultsNavigationDock import ResultsNavigationDock
+
+def remove_left_dock(mainWindow):
+    mainWindow.removeDockWidget(mainWindow.mainDockWidget)
 
 def add_left_dock(mainWindow):
     if mainWindow.dockWidget != None:
-        mainWindow.clear_dock()
+        remove_left_dock(mainWindow)
 
     if mainWindow.fileSelector != None and mainWindow.log.log['selectedFile'] == None:
         mainWindow.set_selected_file()
@@ -40,8 +67,10 @@ def add_left_dock(mainWindow):
         modelsRun = None
 
     if mainWindow.log.log['currentState'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
-        mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,selectionFn=mainWindow.set_selected_file,fileDefault=mainWindow.log.log['selectedFile'],
-                                             showModelSelector=showModelSelector,modelsRun=modelsRun)
+        mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
+                                               selectionFn=mainWindow.set_selected_file,
+                                               fileDefault=mainWindow.log.log['selectedFile'],
+                                               showModelSelector=showModelSelector,modelsRun=modelsRun)
         mainWindow.fileSelector.setAutoFillBackground(True)
         hbl2.addWidget(mainWindow.fileSelector)
 
@@ -49,17 +78,19 @@ def add_left_dock(mainWindow):
 
     if mainWindow.log.log['currentState'] == "Data Processing":
         mainWindow.dock = DataProcessingDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                           contBtnFn=lambda runNew=True: mainWindow.move_to_quality_assurance(runNew),subsetDefault=subsamplingDefault)
+                                             contBtnFn=None,subsetDefault=subsamplingDefault)
+        #contBtnFn=lambda a=mainWindow: move_to_quality_assurance(a)
     elif mainWindow.log.log['currentState'] == "Quality Assurance":
         mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                             contBtnFn=mainWindow.move_to_model,subsetDefault=subsamplingDefault,viewAllFn=mainWindow.display_thumbnails)
+                                             contBtnFn=None,subsetDefault=subsamplingDefault,viewAllFn=mainWindow.display_thumbnails)
     elif mainWindow.log.log['currentState'] == "Model":
         modelList = ['DPMM','K-means']
-        mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,contBtnFn=mainWindow.move_to_results_navigation,componentsFn=mainWindow.set_num_components)
+        mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,contBtnFn=None,componentsFn=mainWindow.set_num_components)
     elif mainWindow.log.log['currentState'] == "Results Navigation":
-        mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,resultsModeFn=mainWindow.set_selected_results_mode,
-                                          resultsModeDefault=mainWindow.log.log['resultsMode'],viewAllFn=mainWindow.display_thumbnails,
-                                          infoBtnFn=mainWindow.show_model_log_info)
+        mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
+                                                resultsModeFn=mainWindow.set_selected_results_mode,
+                                                resultsModeDefault=mainWindow.log.log['resultsMode'],viewAllFn=mainWindow.display_thumbnails,
+                                                infoBtnFn=mainWindow.show_model_log_info)
     if mainWindow.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
         mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)
 

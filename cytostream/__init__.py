@@ -2,6 +2,7 @@
 
 '''
 Cytostream
+__init__.py
 
 Adam Richards
 adam.richards@stat.duke.edu
@@ -42,6 +43,7 @@ from ResultsNavigationDock import ResultsNavigationDock
 from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock
+from StageTransitions import *
 
 ## main classes
 from MainWindow import MainWindow
