@@ -34,6 +34,8 @@ class Logger():
         log['resultsMode'] = 'modes'
         log['componentStates'] = None
         log['numComponents'] = 16
+        log['dataProcessingAction'] = 'channel select'
+        log['checksArray'] = None
 
         return log
 
