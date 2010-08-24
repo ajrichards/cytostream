@@ -47,10 +47,10 @@ class TestCase1(unittest.TestCase):
     def testRunSelectedModel(self):
         # numcomponents
         self.controller.log.log['numComponents'] = 16
-        self.controller.log.log['modelToRun'] = 'dpmm-cpu'
+        self.controller.log.log['modelToRun'] = 'dpmm'
         self.controller.run_selected_model()
-        modelComponents = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
-        modelModes = "%s_sub1000_dpmm-cpu"%os.path.split(self.fcsFileName)[-1][:-4]
+        modelComponents = "%s_sub1000_dpmm"%os.path.split(self.fcsFileName)[-1][:-4]
+        modelModes = "%s_sub1000_dpmm"%os.path.split(self.fcsFileName)[-1][:-4]
         classesComponents = self.verifyModelRun(modelComponents,'components')
         classesModes = self.verifyModelRun(modelModes,'modes')
         self.assertEqual(len(classesComponents),1000)

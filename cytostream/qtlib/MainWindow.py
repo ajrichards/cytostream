@@ -23,6 +23,9 @@ from PyQt4 import QtGui
 sys.path.append("..")
 from cytostream import *
 
+
+from StageTransitions import *
+
 __version__ = "0.1"
 
 class MainWindow(QtGui.QMainWindow):
@@ -37,11 +40,11 @@ class MainWindow(QtGui.QMainWindow):
         self.controller = Controller()
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation']
+        self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation','Summary and Reports']
         self.possibleModels = ['dpmm']
         self.resultsModeList = ['modes','components']
         
-        self.move_to_initial()
+        move_to_initial(self)
         self.printer = None
         self.sizeLabel = QtGui.QLabel()
         self.sizeLabel.setFrameStyle(QtGui.QFrame.StyledPanel|QtGui.QFrame.Sunken)
@@ -94,7 +97,11 @@ class MainWindow(QtGui.QMainWindow):
         self.pipelineDock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea|QtCore.Qt.BottomDockWidgetArea)
  
         self.pipelineDockWidget = QtGui.QWidget(self)
-        btnCallBacks = [self.move_to_data_processing, self.move_to_quality_assurance, self.move_to_model, self.move_to_results_navigation]
+        btnCallBacks = [lambda a=self:move_to_data_processing(a), 
+                        lambda a=self:move_to_quality_assurance(a), 
+                        lambda a=self:move_to_model(a), 
+                        lambda a=self:move_to_results_navigation(a), 
+                        lambda a=self:move_to_results_summary(a)]
         self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize,btnCallBacks=btnCallBacks)
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
@@ -188,7 +195,7 @@ class MainWindow(QtGui.QMainWindow):
             if self.controller.homeDir != None:
                 self.add_pipeline_dock()
                 self.pDock.set_btn_highlight('data processing')
-                self.move_to_data_processing()
+                move_to_data_processing(self)
    
         else:
             print "ERROR: not moving to data processing bad goflag"
@@ -203,12 +210,13 @@ class MainWindow(QtGui.QMainWindow):
             
         self.controller.reset_workspace()
         if self.dockWidget != None:
-            self.clear_dock()
+            remove_left_dock(self)
 
+        closBtnFn = lambda a=self: move_to_initial(a)
         self.mainWidget = QtGui.QWidget(self)
         projectList = get_project_names(self.controller.baseDir)
         self.existingProjectOpener = OpenExistingProject(projectList,parent=self.mainWidget,openBtnFn=self.open_existing_project_handler,
-                                                         closeBtnFn=self.move_to_initial,rmBtnFn=self.remove_project)
+                                                         closeBtnFn=self.closeBtnFn,rmBtnFn=self.remove_project)
         hbl = QtGui.QHBoxLayout(self.mainWidget)
         hbl.setAlignment(QtCore.Qt.AlignTop)
         hbl.addWidget(self.existingProjectOpener)
@@ -290,209 +298,6 @@ class MainWindow(QtGui.QMainWindow):
         #form.show()
 
     ################################################################################################3
-    def move_to_results_heatmap_summary(self):
-        if self.controller.homeDir == None:
-            self.display_info('To begin either load an existing project or create a new one')
-            return False
-
-        self.mainWidget = QtGui.QWidget(self)
-        bp = BlankPage(parent=self.mainWidget)
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(bp)
-        vbl.addLayout(hbl)
-        self.mainWidget.setLayout(vbl)
-        self.refresh_main_widget()
-        QtCore.QCoreApplication.processEvents()
-
-        if self.dockWidget != None:
-            self.clear_dock()
-
-        if self.pDock != None:
-            self.pDock.unset_all_highlights()
-
-        self.mainWidget = QtGui.QWidget(self)
-        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=True,parent=self.mainWidget)
-        bp.change_label('1D Data Viewer')
-        ntb = NavigationToolbar(self.odv,self.mainWidget)
-        vbl.addWidget(self.odv)
-        vbl.addWidget(ntb)
-        self.mainWidget.setLayout(vbl)
-        QtCore.QCoreApplication.processEvents()
-        self.log.log['currentState'] = "OneDimViewer"
-        self.refresh_main_widget()
-        add_left_dock(self)
-
-    def move_to_one_dim_viewer(self):
-        if self.controller.homeDir == None:
-            self.display_info('To begin either load an existing project or create a new one')
-            return False
-
-        self.mainWidget = QtGui.QWidget(self)
-        bp = BlankPage(parent=self.mainWidget)
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(bp)
-        vbl.addLayout(hbl)
-        self.mainWidget.setLayout(vbl)
-        self.refresh_main_widget()
-        QtCore.QCoreApplication.processEvents()
-
-        if self.dockWidget != None:
-            self.clear_dock()
-
-        if self.pDock != None:
-            self.pDock.unset_all_highlights()
-
-        self.mainWidget = QtGui.QWidget(self)
-        self.odv = OneDimViewer(self.controller.homeDir,subset=self.log.log['subsample'],background=True,parent=self.mainWidget)
-        bp.change_label('1D Data Viewer')
-        ntb = NavigationToolbar(self.odv,self.mainWidget)
-        vbl.addWidget(self.odv)
-        vbl.addWidget(ntb)
-        self.mainWidget.setLayout(vbl)
-        QtCore.QCoreApplication.processEvents()
-        self.log.log['currentState'] = "OneDimViewer"
-        self.refresh_main_widget()
-        add_left_dock(self)
-
-    def move_to_initial(self):
-        if self.pDock != None:
-            self.pDock.unset_all_highlights()
-        if self.dockWidget != None:
-            self.clear_dock()
-      
-        self.pngViewer = QtGui.QLabel(self.mainWidget)
-        self.pngViewer.setAlignment(QtCore.Qt.AlignCenter)
-        self.pngViewer.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        self.mainWidget = self.pngViewer
-        self.refresh_main_widget()
-        self.setCentralWidget(self.mainWidget)
-        self.image = QtGui.QImage(os.path.join(self.controller.baseDir,"applications-science.png"))
-        self.show_image()
-
-    def move_to_data_processing(self):
-        if self.controller.homeDir == None:
-            self.display_info('To begin either load an existing project or create a new one')
-            return False
-
-        if self.dockWidget != None:
-            self.clear_dock()
-
-        self.log.log['currentState'] = "Data Processing"
-        masterChannelList = self.model.get_master_channel_list()
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        transformList = ['transform1', 'transform2', 'transform3']
-        compensationList = ['compensation1', 'compensation2']
-        self.mainWidget = QtGui.QWidget(self)
-        dpc = DataProcessingCenter(fileList,masterChannelList,transformList,compensationList, parent=self.mainWidget)
-        hbl = QtGui.QHBoxLayout(self.mainWidget)
-        hbl.setAlignment(QtCore.Qt.AlignTop)
-        hbl.addWidget(dpc)
-        self.refresh_main_widget()
-        add_left_dock(self)
-        self.track_highest_state()
-        self.controller.save()
-        if self.pDock != None:
-            self.pDock.set_btn_highlight('data processing')
-
-        return True
-    
-    def move_to_quality_assurance(self,runNew=False):
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        if len(fileList) == 0:
-            self.display_info("No files have been loaded -- so quality assurance cannot be carried out")
-            return False
-
-        ## set the subsample
-        goFlag = self.set_subsample()
-        if goFlag == False:
-            self.display_info("The number of subsamples that you have selected is greater than the total events in at least one file -- to continue select another value")
-            return False
-
-        if self.dockWidget != None:
-            self.clear_dock()
-        self.mainWidget = QtGui.QWidget(self)
-        self.log.log['currentState'] = "Quality Assurance"
-        thumbDir = os.path.join(self.controller.homeDir,"figs",self.log.log['selectedFile'][:-4]+"_thumbs")
-
-        if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
-            goFlag = self.display_thumbnails()
-
-            if goFlag == False:
-                print "WARNING: failed to display thumbnails not moving to results navigation"
-                return False
-
-            add_left_dock(self)
-        else:
-            self.mainWidget = QtGui.QWidget(self)
-            self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
-            self.progressBar.set_callback(self.run_progress_bar)
-            hbl = QtGui.QHBoxLayout(self.mainWidget)
-            hbl.addWidget(self.progressBar)
-            hbl.setAlignment(QtCore.Qt.AlignCenter)
-            self.refresh_main_widget()
-            add_left_dock(self)
-
-        self.track_highest_state()
-        self.controller.save()
-        if self.pDock != None:
-            self.pDock.set_btn_highlight('quality assurance')
-        return True
-
-    def move_to_model(self):
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        if len(fileList) == 0:
-            self.display_info("No files have been loaded -- so no models can yet be run")
-            return False
-
-        if self.dockWidget != None:
-            self.clear_dock()
-        self.mainWidget = QtGui.QWidget(self)
-        self.log.log['currentState'] = "Model"
-        self.mc = ModelCenter(parent=self.mainWidget, runModelFn=self.run_progress_bar)
-        hbl = QtGui.QHBoxLayout(self.mainWidget)
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(self.mc)
-        self.refresh_main_widget()
-        add_left_dock(self)
-        self.track_highest_state()
-        self.controller.save()
-        if self.pDock != None:
-            self.pDock.set_btn_highlight('model')
-        return True
-
-    def move_to_results_navigation(self,runNew=False):
-        ## error checking
-        modelsRun = get_models_run(self.controller.homeDir,self.possibleModels)
-        if len(modelsRun) == 0:
-            self.display_info("No models have been run yet -- so results cannot be viewed")
-            return False
-
-        if self.dockWidget != None:
-            self.clear_dock()
-
-        self.log.log['currentState'] = "Results Navigation"
-        goFlag = self.display_thumbnails(runNew)
-
-        if goFlag == False:
-            print "WARNING: failed to display thumbnails not moving to results navigation"
-            return False
-        
-        add_left_dock(self)
-
-        ## disable buttons
-        self.dock.disable_all()
-
-        self.track_highest_state()
-        self.controller.save()
-        if self.pDock != None:
-            self.pDock.set_btn_highlight('results navigation')
-        return True
 
     def move_transition(self):
         bp = BlankPage(parent=self.mainWidget)
@@ -509,14 +314,6 @@ class MainWindow(QtGui.QMainWindow):
     def generic_callback(self):
         print "this button/widget does not do anything yet"
 
-    #################################################
-    #
-    # Dock functions
-    #
-    #################################################
-
-    def clear_dock(self):
-        self.removeDockWidget(self.mainDockWidget)
 
     #################################################
     #
@@ -588,7 +385,7 @@ class MainWindow(QtGui.QMainWindow):
         if mode == 'Model':
             self.set_model_to_run()
             self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
-            self.clear_dock()
+            remove_left_dock(self)
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
             self.progressBar.set_callback(self.create_results_thumbs)
@@ -600,7 +397,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
-        self.move_to_results_navigation(runNew=True)
+        move_to_results_navigation(self,runNew=True)
  
     def display_thumbnails(self,runNew=False):
         mode = self.log.log['currentState']
@@ -676,13 +473,16 @@ class MainWindow(QtGui.QMainWindow):
 
     def refresh_state(self):
         if self.log.log['currentState'] == "Data Processing":
-            self.move_to_data_processing()
+            move_to_data_processing(self)
         elif self.log.log['currentState'] == "Quality Assurance":
-            self.move_to_quality_assurance()
+            move_to_quality_assurance(self)
         elif self.log.log['currentState'] == "Model":
-            self.move_to_model()
+            move_to_model(self)
         elif self.log.log['currentState'] == "Results Navigation":
-            self.move_to_results_navigation()
+            move_to_results_navigation(self)
+        elif self.log.log['currentState'] == "Results Summary":
+            move_to_results_summary(self)
+
         QtCore.QCoreApplication.processEvents()
 
     def handle_show_scatter(self,img=None):

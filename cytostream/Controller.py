@@ -4,7 +4,7 @@ A.Richards
 
 '''
 
-import csv,sys,time,re
+import csv,sys,time,re,shutil
 import numpy as np
 from PIL import Image
 
@@ -316,11 +316,15 @@ class Controller:
 
     def load_fcs_file(self,fcsFileName):
         shortFileName = fcsFileName.split(os.path.sep)[-1]
-        shortFileName = re.sub('\s','',shortFileName)        
+        shortFileName = re.sub('\s+','',shortFileName)
+        fcsFileName = re.sub('\s+','\ ',fcsFileName)
         newFcsFile = os.path.join(self.homeDir,"data",shortFileName)
  
         ## save copy of original
         os.system ("cp %s %s" % (fcsFileName,newFcsFile))
+        #
+        #shutil.copy(fcsFileName, os.path.join(self.homeDir,"data"))
+
         if os.path.isfile(newFcsFile) == False:
             print "ERROR: could not make a copy of the orig matrix file"
       
