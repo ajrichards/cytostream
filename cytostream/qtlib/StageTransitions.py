@@ -10,6 +10,7 @@ adam.richards@stat.duke.edu
 '''
 
 import os,sys
+import numpy as np
 from PyQt4 import QtGui,QtCore
 
 if hasattr(sys,'frozen'):
@@ -49,13 +50,22 @@ def move_to_data_processing(mainWindow):
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
+    ## prepare variables
     mainWindow.log.log['currentState'] = "Data Processing"
     masterChannelList = mainWindow.model.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     transformList = ['transform1', 'transform2', 'transform3']
     compensationList = ['compensation1', 'compensation2']
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    dpc = DataProcessingCenter(fileList,masterChannelList,transformList,compensationList, parent=mainWindow.mainWidget)
+    currentAction = mainWindow.log.log['dataProcessingAction']
+
+    if mainWindow.log.log['checksArray'] == None:
+        mainWindow.log.log['checksArray'] = np.zeros([len(fileList),len(masterChannelList)],)
+    checksArray = mainWindow.log.log['checksArray']
+
+    ## ready a DataProcessingCenter class
+    print 'creating data processing center'
+    dpc = DataProcessingCenter(fileList,masterChannelList,transformList,compensationList,currentAction,parent=mainWindow.mainWidget,checksArray=checksArray)
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
     hbl.setAlignment(QtCore.Qt.AlignTop)
     hbl.addWidget(dpc)

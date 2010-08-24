@@ -31,6 +31,7 @@ class FileSelector(QtGui.QWidget):
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
         self.fileSelector = QtGui.QComboBox(self)
         self.fileSelector.setMaximumWidth(150)
+        fileList = [re.sub("\.fcs","",f) for f in fileList]
         for fileName in fileList:
             self.fileSelector.addItem(fileName)
 
@@ -38,6 +39,7 @@ class FileSelector(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
 
         if fileDefault != None:
+            fileDefault = re.sub("\.fcs","",fileDefault)
             if fileList.__contains__(fileDefault):
                 self.fileSelector.setCurrentIndex(fileList.index(fileDefault))
             else:
@@ -98,7 +100,7 @@ class FileSelector(QtGui.QWidget):
         sfInd = self.fileSelector.currentIndex()
         sf = str(self.fileSelector.currentText())
 
-        return sf, sfInd
+        return sf+".fcs", sfInd
 
     def get_selected_model(self):
         smInd = self.modelSelector.currentIndex()
