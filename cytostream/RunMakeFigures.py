@@ -11,7 +11,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from cytostream import Model
-
 import matplotlib.pyplot as plt
 
 ## parse inputs
@@ -41,9 +40,10 @@ channel1 = None
 channel2 = None
 selectedFile = None
 altDir = None
+homeDir = None
 modelType = None
 modelName = None
-subset = "All Data"
+subset = "all"
 run = True
 for o, a in optlist:
     if o == '-i':
@@ -65,15 +65,18 @@ for o, a in optlist:
     if o == '-h':
         homeDir = a
 
-def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buff=0.02,altDir=None):
+def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subset='all',labels=None,buff=0.02,altDir=None):
     #fig = pyplot.figure(figsize=(7,7))
     markerSize = 5
     alphaVal = 0.5
-    #ax = fig.add_subplot(111)
 
     fontName = 'arial'
     fontSize = 12
     plotType = 'png'
+
+    ## prepare figure
+    fig = plt.figure(figsize=(7,7))
+    ax = fig.add_subplot(111)
 
     ## specify channels
     fileChannels = model.get_file_channel_list(selectedFile)
@@ -85,14 +88,14 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
     data = model.pyfcm_load_fcs_file(selectedFile)
     
     ## subset give an numpy array of indices
-    if subset != "All Data":
+    if subset != "all":
         subsampleIndices = model.get_subsample_indices(subset)
         data = data[subsampleIndices,:]
 
     ## make plot 
     totalPoints = 0
     if labels == None:
-        plt.scatter([data[:,index1]],[data[:,index2]],color='blue',s=markerSize)
+        ax.scatter([data[:,index1]],[data[:,index2]],color='blue',s=markerSize)
     else:
         if type(np.array([])) != type(labels):
             labels = np.array(labels)
@@ -112,27 +115,27 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,labels=None,buf
 
             if x.size == 0:
                 continue
-            plt.scatter(x,y,color=hexColor,s=markerSize)
+            ax.scatter(x,y,color=hexColor,s=markerSize)
             #ax.scatter(x,y,color=hexColor,s=markerSize)
 
     ## handle data edge buffers                                                                                                                                              
     bufferX = buff * (data[:,index1].max() - data[:,index1].min())
     bufferY = buff * (data[:,index2].max() - data[:,index2].min())
-    plt.xlim([data[:,index1].min()-bufferX,data[:,index1].max()+bufferX])
-    plt.ylim([data[:,index2].min()-bufferY,data[:,index2].max()+bufferY])
+    ax.set_xlim([data[:,index1].min()-bufferX,data[:,index1].max()+bufferX])
+    ax.set_ylim([data[:,index2].min()-bufferY,data[:,index2].max()+bufferY])
 
     ## save file
     fileName = selectedFile
-    plt.title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
-    plt.xlabel(channel1,fontname=fontName,fontsize=fontSize)
-    plt.ylabel(channel2,fontname=fontName,fontsize=fontSize)
+    ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
+    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
     
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        plt.savefig(fileName,transparent=True)
+        fig.savefig(fileName,transparent=False)
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        plt.savefig(fileName,transparent=True)
+        fig.savefig(fileName,transparent=False)
 
 
 ## error checking
@@ -167,7 +170,7 @@ if run == True:
     model.initialize(projectID,homeDir)
 
     if modelName == None:
-        make_scatter_plot(model,selectedFile,channel1,channel2,altDir=altDir)
+        make_scatter_plot(model,selectedFile,channel1,channel2,subset=subset,altDir=altDir)
     else:
         statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType) 
-        make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,altDir=altDir)
+        make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,subset=subset,altDir=altDir)

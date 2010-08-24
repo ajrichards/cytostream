@@ -102,7 +102,7 @@ class Controller:
             fileSpecificIndices = range(len(fileChannels))
         
             ## specify model type to show as thumbnails
-            modelType = 'components'
+            modelType = 'modes'
 
             ## make all pairwise comparisons
             for i in range(len(fileSpecificIndices)):
@@ -114,14 +114,18 @@ class Controller:
 
                     indexJ = fileSpecificIndices[j]
                     channelJ = fileChannels[indexJ]
-                    subset = self.log.log['subsample']
+                    if self.log.log['subsample'] == 'All Data':
+                        subset = 'all'
+                    else:
+                        subset = self.log.log['subsample']
                     
                     script = os.path.join(self.baseDir,"RunMakeFigures.py")
                     if os.path.isfile(script) == False:
                         print 'ERROR: cannot find RunMakeFigures'
-                    subset = self.log.log['subsample']
-                    proc = subprocess.Popen("%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
-                                                                                                           imgDir,longModelName,modelType,self.homeDir),
+                    
+                    pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
+                                                                                            imgDir,longModelName,modelType,self.homeDir)
+                    proc = subprocess.Popen(pltCmd,
                                             shell=True,
                                             stdout=subprocess.PIPE,
                                             stdin=subprocess.PIPE)
@@ -149,7 +153,10 @@ class Controller:
             if mode == 'qa':
                 imgDir = os.path.join(self.homeDir,"figs")
             elif mode == 'results':
-                imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
+                if self.log.log['subsample'] == "All Data":
+                    imgDir = os.path.join(self.homeDir,'figs',"%s"%(modelName))
+                else:
+                    imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
 
             thumbDir = os.path.join(imgDir,fileName[:-4]+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
@@ -188,7 +195,6 @@ class Controller:
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
             thumbFile = os.path.join(thumbDir,thumbFile)
 
-
             ## use PIL to create thumb
             size = thumbSize,thumbSize
             im = Image.open(imgFile)
@@ -199,7 +205,6 @@ class Controller:
 
     def handle_subsampling(self):
         if self.log.log['subsample'] != "All Data":
-            print "using subsampling....", self.log.log['subsample']
             self.subsampleIndices = self.model.get_subsample_indices(self.log.log['subsample'])
             
             if type(self.subsampleIndices) == type(np.array([])):
@@ -220,6 +225,8 @@ class Controller:
                 outfile = os.path.join(self.homeDir,'data',"%s_sub%s.pickle"%(file[:-4],n))
                 tmp = open(outfile,'w')
                 cPickle.dump(data,tmp)
+            return True
+        else:
             return True
 
     ##################################################################################################
@@ -363,8 +370,8 @@ class Controller:
         totalIters = float(len(fileList)) * numItersMCMC
         for fileName in fileList:
 
-            if selectedModel == 'dpmm-cpu':
-                script = os.path.join(self.baseDir,"RunDPM-CPU.py")
+            if selectedModel == 'dpmm':
+                script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
                 proc = subprocess.Popen("%s %s -h %s -f %s -k %s"%(pythonPath,script,self.homeDir,fileName,numComponents), 
@@ -388,30 +395,5 @@ class Controller:
                     except:
                         break
 
-            elif selectedModel == 'dpmm-gpu':
-                script = os.path.join(self.baseDir,"RunDPM-GPU.py")
-                if os.path.isfile(script) == False:
-                    print "ERROR: Invalid model run file path ", script 
-
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s"%(pythonPath,script,self.homeDir,fileName,numComponents), 
-                                        shell=True,
-                                        stdout=subprocess.PIPE,
-                                        stdin=subprocess.PIPE)
-                while True:
-                    try:
-                        next_line = proc.stdout.readline()
-                        if next_line == '' and proc.poll() != None:
-                            break
-
-                        ## to debug uncomment the following line
-                        #print next_line
-
-                        if re.search("it =",next_line):
-                            progress = 1.0 / totalIters
-                            percentDone+=progress * 100.0
-                            if progressBar != None:
-                                progressBar.move_bar(int(round(percentDone)))
-                    except:
-                        break
             else:
                 print "ERROR: invalid selected model", selectedModel

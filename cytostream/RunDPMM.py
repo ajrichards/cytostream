@@ -38,7 +38,7 @@ if os.path.isdir(homeDir) == False:
     print "INPUT ERROR: not a valid project", homeDir
     sys.exit()
 
-longModelName = "Dirichlet Process Mixture Model - CPU Version"
+longModelName = "Dirichlet Process Mixture Model"
 projName = os.path.split(homeDir)[-1]
 longFileName = os.path.join(homeDir,"data",fileName)
 
@@ -71,8 +71,8 @@ full = mod.get_results()
 classifyComponents = full.classify(data)
 print 'dumping components fit'
 if name == None:
-    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_components.pickle"),'w')
-    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_components.pickle"),'w')
+    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_components.pickle"),'w')
+    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_classify_components.pickle"),'w')
 else:
     tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_components.pickle"),'w')
     tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_components.pickle"),'w')
@@ -87,8 +87,8 @@ modes = full.make_modal()
 classifyModes = modes.classify(data)
 print 'dumping modes fit'
 if name == None:
-    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_modes.pickle"),'w')
-    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu_classify_modes.pickle"),'w')
+    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_modes.pickle"),'w')
+    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_classify_modes.pickle"),'w')
 else:
     tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_modes.pickle"),'w')
     tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_modes.pickle"),'w')
@@ -100,7 +100,7 @@ tmp4.close()
 
 ## write a log file
 if name == None:
-    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm-cpu.log"),'w'))
+    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm.log"),'w'))
 else:
     writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+".log"),'w'))
 

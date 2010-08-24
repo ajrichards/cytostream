@@ -34,7 +34,7 @@ def add_left_dock(mainWindow):
 
     if mainWindow.log.log['currentState'] in ['Results Navigation']:
         showModelSelector = True
-        modelsRun = get_models_run(mainWindow.controller.homeDir)
+        modelsRun = get_models_run(mainWindow.controller.homeDir,mainWindow.possibleModels)
     else:
         showModelSelector = False
         modelsRun = None
@@ -54,7 +54,7 @@ def add_left_dock(mainWindow):
         mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
                                              contBtnFn=mainWindow.move_to_model,subsetDefault=subsamplingDefault,viewAllFn=mainWindow.display_thumbnails)
     elif mainWindow.log.log['currentState'] == "Model":
-        modelList = ['DPMM-CPU','DPMM-GPU']
+        modelList = ['DPMM','K-means']
         mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,contBtnFn=mainWindow.move_to_results_navigation,componentsFn=mainWindow.set_num_components)
     elif mainWindow.log.log['currentState'] == "Results Navigation":
         mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,resultsModeFn=mainWindow.set_selected_results_mode,

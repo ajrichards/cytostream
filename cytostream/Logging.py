@@ -31,7 +31,7 @@ class Logger():
         log['selectedFile'] = None
         log['selectedModel'] = None
         log['modelToRun'] = None
-        log['resultsMode'] = 'components'
+        log['resultsMode'] = 'modes'
         log['componentStates'] = None
         log['numComponents'] = 16
 
