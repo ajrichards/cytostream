@@ -8,7 +8,8 @@ class FileSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, showModelSelector=False, modelDefault=None):
+    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, 
+                 showModelSelector=False, modelDefault=None,possibleModels=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -47,11 +48,6 @@ class FileSelector(QtGui.QWidget):
         self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
 
         if showModelSelector != False:
-            ## model selector label
-            self.modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in self.modelsRun]
-            self.modelsRun = [re.sub('_components|_modes|_classify','',mr) for mr in self.modelsRun]
-            self.modelsRun = list(set([re.split("_",mr)[-2] + "_" + re.split("_",mr)[-1] for mr in self.modelsRun]))
-
             hbox3 = QtGui.QHBoxLayout()
             hbox4 = QtGui.QHBoxLayout()
             hbox3.addWidget(QtGui.QLabel('Model Selector'))

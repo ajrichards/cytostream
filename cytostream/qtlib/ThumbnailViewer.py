@@ -1,6 +1,7 @@
 import sys,os,time,re
 from PyQt4 import QtGui, QtCore
 
+
 class ThumbnailViewer(QtGui.QWidget):
     def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None):
         QtGui.QWidget.__init__(self,parent)
@@ -18,6 +19,10 @@ class ThumbnailViewer(QtGui.QWidget):
             self.thumbSize = 90
         elif len(fileChannels) > 7:
             self.thumbSize = 70
+
+
+        #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
+        #print self.thumbSize
 
         self.fileChannels = fileChannels
         self.btns = {}
@@ -60,7 +65,10 @@ class ThumbnailViewer(QtGui.QWidget):
                 imgBtn.setMinimumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
                 imgBtn.setMaximumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
                 imgBtn.setIcon(QtGui.QIcon(os.path.join(self.thumbDir,img)))
-                imgBtn.setIconSize(QtCore.QSize(self.thumbSize, self.thumbSize))
+                
+                ## use icon size to add a small border around the button
+                iconSize = int(round(self.thumbSize - (0.05 * float(self.thumbSize))))
+                imgBtn.setIconSize(QtCore.QSize(iconSize, iconSize))
                 if viewScatterFn != None:
                     self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: viewScatterFn(img=x))
         
@@ -68,28 +76,19 @@ class ThumbnailViewer(QtGui.QWidget):
         
         self.setLayout(grid)
 
-class ImgButton(QtGui.QAbstractButton):
-    def __init__(self, pixmap, parent=None):
-        super(ImgButton, self).__init__(parent)
-        self.pixmap = pixmap
-
-    def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
-        painter.drawPixmap(event.rect(), self.pixmap)
-
-    def sizeHint(self):
-        return self.pixmap.size()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    if os.path.isdir(os.path.join("..","projects","Demo","figs")):
-        imgDir = os.path.join("..","projects","Demo","figs")
-    elif os.path.isdir(os.path.join(".","projects","Demo","figs")):
-        imgDir = os.path.join(".","projects","Demo","figs")
-    elif os.path.isdir(os.path.join("..","Flow-GCMC","projects","Demo","figs")):
-        imgDir = os.path.join(".","projects","Demo","figs")
-    else:
+    baseDir = os.path.dirname(__file__)
+    mode = 'results'
+    homeDir = os.path.join(baseDir,'..','projects','utest')
+    imgDir = os.path.join(homeDir,'figs')
+    
+    if os.path.isdir(homeDir) == False:
+        print "ERROR:  home dir not available"
+
+    if os.path.isdir(imgDir) == False:
         print "ERROR: demo image dir not available"
 
     print imgDir

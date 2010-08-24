@@ -38,7 +38,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
         self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation']
-        self.modelList = ['dpmm-cpu','dpmm-gpu']
+        self.possibleModels = ['dpmm']
         self.resultsModeList = ['modes','components']
         
         self.move_to_initial()
@@ -468,7 +468,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def move_to_results_navigation(self,runNew=False):
         ## error checking
-        modelsRun = get_models_run(self.controller.homeDir)
+        modelsRun = get_models_run(self.controller.homeDir,self.possibleModels)
         if len(modelsRun) == 0:
             self.display_info("No models have been run yet -- so results cannot be viewed")
             return False
@@ -514,86 +514,6 @@ class MainWindow(QtGui.QMainWindow):
     # Dock functions
     #
     #################################################
-
-    '''
-    def add_dock(self):
-        if self.dockWidget != None:
-            self.clear_dock()
-
-        if self.fileSelector != None and self.log.log['selectedFile'] == None:
-            self.set_selected_file()
-
-        masterChannelList = self.model.get_master_channel_list()
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        transformList = ['transform1', 'transform2', 'transform3']
-        compensationList = ['compensation1', 'compensation2']
-        subsetList = ["1e3", "1e4","5e4","All Data"]
-
-        self.mainDockWidget = QtGui.QDockWidget(self.controller.projectID, self)
-        self.mainDockWidget.setObjectName("MainDockWidget")
-        self.mainDockWidget.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
-
-        self.dockWidget = QtGui.QWidget(self)
-        palette = self.dockWidget.palette()
-        role = self.dockWidget.backgroundRole()
-        palette.setColor(role, QtGui.QColor('black'))
-        self.dockWidget.setPalette(palette)
-        self.dockWidget.setAutoFillBackground(True)
-        hbl2 = QtGui.QHBoxLayout()
-        hbl2.setAlignment(QtCore.Qt.AlignTop)
-        self.dockWidget.setMaximumWidth(0.15 * self.screenWidth)
-        self.dockWidget.setMinimumWidth(0.15 * self.screenWidth)
-
-        if self.log.log['currentState'] in ['Results Navigation']:
-            showModelSelector = True
-            modelsRun = get_models_run(self.controller.homeDir)
-        else:
-            showModelSelector = False
-            modelsRun = None
-
-        if self.log.log['currentState'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
-            self.fileSelector = FileSelector(fileList,parent=self.dockWidget,selectionFn=self.set_selected_file,fileDefault=self.log.log['selectedFile'],
-                                             showModelSelector=showModelSelector,modelsRun=modelsRun)
-            self.fileSelector.setAutoFillBackground(True)
-            hbl2.addWidget(self.fileSelector)
-
-            subsamplingDefault = self.log.log['subsample']
-
-        if self.log.log['currentState'] == "Data Processing":
-            self.dock = DataProcessingDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=self.dockWidget,
-                                           contBtnFn=lambda runNew=True: self.move_to_quality_assurance(runNew),subsetDefault=subsamplingDefault)
-        elif self.log.log['currentState'] == "Quality Assurance":
-            self.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=self.dockWidget,
-                                             contBtnFn=self.move_to_model,subsetDefault=subsamplingDefault,viewAllFn=self.display_thumbnails)
-        elif self.log.log['currentState'] == "Model":
-            modelList = ['DPMM-CPU','DPMM-GPU']
-            self.dock = ModelDock(modelList,parent=self.dockWidget,contBtnFn=self.move_to_results_navigation,componentsFn=self.set_num_components)
-        elif self.log.log['currentState'] == "Results Navigation":
-            self.dock = ResultsNavigationDock(self.resultsModeList,masterChannelList,parent=self.dockWidget,resultsModeFn=self.set_selected_results_mode,
-                                              resultsModeDefault=self.log.log['resultsMode'],viewAllFn=self.display_thumbnails,
-                                              infoBtnFn=self.show_model_log_info)
-        if self.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
-            self.fileSelector.set_refresh_thumbs_fn(self.display_thumbnails)
-
-        if self.log.log['currentState'] == 'OneDimViewer':
-            self.dock = OneDimViewerDock(fileList,masterChannelList,callBack=self.odv.paint)
-
-        self.dock.setAutoFillBackground(True)
-        hbl1 = QtGui.QHBoxLayout()
-        
-        ## finalize dock layout
-        if self.log.log['currentState'] == 'OneDimViewer':
-            hbl1.setAlignment(QtCore.Qt.AlignTop)
-        else:
-            hbl1.setAlignment(QtCore.Qt.AlignBottom)
-        hbl1.addWidget(self.dock)
-        vbl = QtGui.QVBoxLayout(self.dockWidget)
-        vbl.addLayout(hbl2)
-        vbl.addLayout(hbl1)
-        
-        self.mainDockWidget.setWidget(self.dockWidget)
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.mainDockWidget)
-        '''
 
     def clear_dock(self):
         self.removeDockWidget(self.mainDockWidget)
@@ -642,10 +562,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def set_model_to_run(self):
         sm, smInd = self.dock.get_model_to_run()
-        if sm == 'DPMM-CPU':
-            self.log.log['modelToRun'] = 'dpmm-cpu'
-        elif sm == 'DPMM-GPU':
-            self.log.log['modelToRun'] = 'dpmm-gpu'
+        if sm == 'DPMM':
+            self.log.log['modelToRun'] = 'dpmm'
+        elif sm == 'K-means':
+            self.log.log['modelToRun'] = 'kmeans'
         else:
             print "ERROR: invalid selection for modelToRun"
 
@@ -698,47 +618,28 @@ class MainWindow(QtGui.QMainWindow):
             
         elif mode == 'Results Navigation':
             ## error checking
-            modelsRun = get_models_run(self.controller.homeDir)
+            modelsRun = get_models_run(self.controller.homeDir,self.possibleModels)
             if len(modelsRun) == 0:
                 self.display_info("No models have been run yet -- so results cannot be viewed")
                 return False
 
-            ## set the selectedModel
-            try:
-                self.set_selected_model()
-            except:
-                modelsRun = [re.sub("\.pickle|\.csv","",mr) for mr in modelsRun]
-                modelsRun = [re.sub('_components|_modes|_classify','',mr) for mr in modelsRun]
-                self.log.log['selectedModel'] = modelsRun[0]
-                
-            ## set basic variables   
-            selectedModel = self.log.log['selectedModel']
-            fileList = get_fcs_file_names(self.controller.homeDir)
+            self.log.log['selectedModel'] = modelsRun[0] 
+
+            if self.log.log['selectedModel'] not in modelsRun:
+                print "ERROR selected model not in models run"
+
+            ## thumbs viewer
             self.mainWidget = QtGui.QWidget(self)
-
-            ## get the model name
-            modelName = None
-            for possibleModelUsed in self.modelList:
-                if re.search(possibleModelUsed,selectedModel):
-                    modelName = possibleModelUsed
-
-            ## get the number subsample size
-            match = re.search("sub\d+",selectedModel)
-            if match != None:
-                subsetSize = match.group(0)
-            else:
-                subsetSize = ''
-
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
-            if modelName == None:
-                print "ERROR: could not find model type used"
 
-            if subsetSize == '':
-                imgDir = os.path.join(self.controller.homeDir,'figs',modelName)
+            if self.log.log['subsample'] == 'All Data':
+                imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selectedModel'])
             else:
-                imgDir = os.path.join(self.controller.homeDir,'figs',"%s_%s"%(subsetSize,modelName))
+                subset = str(int(float(self.log.log['subsample'])))
+                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subset,self.log.log['selectedModel']))
+            
             if os.path.isdir(imgDir) == False:
-                print "ERROR: a bad imgDir has been specified"
+                print "ERROR: a bad imgDir has been specified", imgDir
 
             thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
@@ -825,9 +726,15 @@ class MainWindow(QtGui.QMainWindow):
             self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
+
+            if self.log.log['subsample'] == 'All Data':
+                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel']
+            else:
+                subset = str(int(float(self.log.log['subsample'])))
+                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
+
             sp = ScatterPlotter(self.controller.homeDir,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
-                                modelName=re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel'],
-                                modelType=self.log.log['resultsMode'],parent=self.mainWidget)
+                                modelName=modelName,modelType=self.log.log['resultsMode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)

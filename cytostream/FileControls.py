@@ -32,20 +32,31 @@ def get_img_file_names(homeDir):
             
     return fileList
 
-def get_models_run(homeDir):
+def get_models_run(homeDir, possibleModels):
     '''
     returns the models run
     
     '''
     modelList = []
-
     for fileName in os.listdir(os.path.join(homeDir,"models")):
         # ignore classifications
-        if re.search("classify\.pickle",fileName):
+        if re.search("classify|\.log",fileName):
             continue
         
-        if re.search("\.pickle",fileName):
-            modelList.append(fileName)
+        modelFound = None
+        for possibleModelUsed in possibleModels:
+            if modelFound != None:
+                continue
+
+            if re.search(possibleModelUsed,fileName):
+                modelList.append(re.sub("\_components\.pickle|\_modes\.pickle","",possibleModelUsed))
+        
+    modelList = list(set(modelList))
+
+    #if re.search("\.pickle",fileName):
+    #    modelList.append(fileName)
+
+    print "returning model list", modelList
 
     return modelList
 
@@ -65,5 +76,6 @@ def get_project_names(baseDir):
 
     for dirName in os.listdir(os.path.join(baseDir,"projects")):  
         if os.path.isdir(os.path.join(baseDir,"projects",dirName)) == True:
-            projectNamesList.append(dirName)
+            if dirName != 'utest':
+                projectNamesList.append(dirName)
     return projectNamesList

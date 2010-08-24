@@ -46,17 +46,13 @@ class ScatterPlotter(FigureCanvas):
         ax = self.fig.add_subplot(111)
         self.fig.set_frameon(background)
         
-
         ## prepare model
         projectID = os.path.split(homeDir)[-1]
         model = Model()
         model.initialize(projectID,homeDir)
         
         if modelName != None:
-            print 'modelName', modelName
-            print 'modelType', modelType
             statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType)
-            print np.shape(statModel),np.shape(statModelClasses)
         
             if modelType == 'components':
                 centroids = statModel.mus()
@@ -169,8 +165,8 @@ class ScatterPlotter(FigureCanvas):
 if __name__ == '__main__':
     # check that unittests were run and necessary data is present
     baseDir = os.path.dirname(__file__)
-    modelType = 'components'
-    modelChk = os.path.join(baseDir,'..','projects','utest','models','3FITC_4PE_004_sub1000_dpmm-cpu_%s.pickle'%modelType) 
+    modelType = 'modes'
+    modelChk = os.path.join(baseDir,'..','projects','utest','models','3FITC_4PE_004_sub1000_dpmm%s.pickle'%modelType) 
     if os.path.isfile(modelChk) == False:
         print "ERROR: Model not present - (Re)run unit tests"
         print modelChk
@@ -180,7 +176,7 @@ if __name__ == '__main__':
     homeDir = os.path.join(baseDir,'..','projects','utest')
     projectID = 'utest'
     selectedFile = "3FITC_4PE_004.fcs"
-    selectedModel = 'sub1000_dpmm-cpu'
+    selectedModel = 'sub1000_dpmm'
     subsample = 'All Data' #'1e3'
     channel1 = 'FL1-H' 
     channel2 = 'FL2-H'
@@ -192,6 +188,6 @@ if __name__ == '__main__':
         sp = ScatterPlotter(homeDir,selectedFile,channel1,channel2,subset=subsample,background=True)
     if mode == 'results':
         sp = ScatterPlotter(homeDir,selectedFile,channel1,channel2,subset=subsample,background=True,
-                            modelName=re.sub("\.pickle|\.fcs","",selectedFile) + "_" + selectedModel, modelType='components')
+                            modelName=re.sub("\.pickle|\.fcs","",selectedFile) + "_" + selectedModel, modelType='modes')
     sp.show()
     sys.exit(app.exec_())

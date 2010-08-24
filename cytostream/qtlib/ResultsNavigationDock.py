@@ -10,7 +10,7 @@ class ResultsNavigationDock(QtGui.QWidget):
         ## declare variables
         self.setWindowTitle('Results Navigation')
         self.masterChannelList = masterChannelList
-        self.resultsMode = 'components'
+        self.resultsMode = 'modes'
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
@@ -22,9 +22,9 @@ class ResultsNavigationDock(QtGui.QWidget):
         ## mode/component toggle button
         hbox0.setAlignment(QtCore.Qt.AlignCenter)
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
-        self.toggleLabel = QtGui.QLabel('Showing components')
+        self.toggleLabel = QtGui.QLabel('Showing modes')
         hbox0.addWidget(self.toggleLabel)
-        self.toggleBtn = QtGui.QPushButton("Show modes",self)
+        self.toggleBtn = QtGui.QPushButton("Show components",self)
         self.toggleBtn.setMaximumWidth(150)
         self.toggleBtn.setMinimumWidth(150)
         hbox1.addWidget(self.toggleBtn)
@@ -36,7 +36,7 @@ class ResultsNavigationDock(QtGui.QWidget):
         self.connect(self.toggleBtn, QtCore.SIGNAL('clicked()'), resultsModeFn)
 
         ## view all btn 
-        self.viewAllBtn = QtGui.QPushButton("View All",self)
+        self.viewAllBtn = QtGui.QPushButton("View all",self)
         self.viewAllBtn.setMaximumWidth(150)
         self.viewAllBtn.setMinimumWidth(150)
         hbox2.addWidget(self.viewAllBtn)
@@ -87,8 +87,6 @@ class ResultsNavigationDock(QtGui.QWidget):
             self.resultsMode = 'components'
             self.toggleBtn.setText('Show modes')
             self.toggleLabel.setText('Showing components')
-
-        print 'should be updating toggle btn'
 
     def get_results_mode(self):
         return self.resultsMode
