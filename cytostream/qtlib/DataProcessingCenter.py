@@ -153,8 +153,7 @@ class DataProcessingCenter(QtGui.QWidget):
                         grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
 
         ## handle the defaults
-        if self.checksArray != None:
-            print "handling defaults"
+        if self.checksArray != None and self.currentAction in ['channel select']:
 
             for row in range(len(self.fileList)):
                 for col in range(len(self.masterChannelList)):
@@ -185,8 +184,9 @@ class DataProcessingCenter(QtGui.QWidget):
         ## check and make sure the select all checks make sense
         self.select_all_channels_verify()
 
-        sc = self.get_selected_channels()
-        print sc, "\n"
+        ## for debugging
+        #sc = self.get_selected_channels()
+        #print sc, "\n"
 
     def select_all_channels(self,indices):
         row, col = indices

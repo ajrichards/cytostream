@@ -1,13 +1,12 @@
 import sys
 from PyQt4 import QtGui, QtCore
 
-class DataProcessingDock(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, transformList, compensationList, subsetList, parent=None, subsetDefault=None, contBtnFn=None, subsetFn=None):
+class DataProcessingDock1(QtGui.QWidget):
+    def __init__(self, masterChannelList, transformList, compensationList, subsetList, parent=None, subsetDefault=None, contBtnFn=None, subsetFn=None):
         QtGui.QWidget.__init__(self,parent)
 
         self.setWindowTitle('Data Processing')
         self.masterChannelList = masterChannelList
-        self.fileList = fileList
         self.transformList = transformList
         self.compensationList = compensationList
 
@@ -39,14 +38,14 @@ class DataProcessingDock(QtGui.QWidget):
             self.connect(self.subsetSelector,QtCore.SIGNAL('activated(QString)'), subsetFn)
 
         ## cont button
-        contBtn = QtGui.QPushButton("Continue")
-        contBtn.setMaximumWidth(80)
-        hbox3.addWidget(contBtn)
+        self.contBtn = QtGui.QPushButton("Continue")
+        self.contBtn.setMaximumWidth(100)
+        hbox3.addWidget(self.contBtn)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
         vbox.addLayout(hbox3)
 
         if contBtnFn != None:
-            self.connect(contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
+            self.connect(self.contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
 
         ## finalize layout
         vbox.setAlignment(QtCore.Qt.AlignCenter)
@@ -57,6 +56,9 @@ class DataProcessingDock(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor('white'))
         self.setPalette(palette)
+
+    def enable_continue_btn(self,fn):
+        self.connect(self.contBtn, QtCore.SIGNAL('clicked()'),fn)
 
     def get_subsample(self):
         ssInd = self.subsetSelector.currentIndex()
@@ -74,11 +76,10 @@ class DataProcessingDock(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
-    fileList = ['file1', 'file2']
     transformList = ['transform1', 'transform2', 'transform3']
     compensationList = ['compensation1', 'compensation2']
     subsetList = ["1e3", "1e4","5e4","All Data"]
-    dpc = DataProcessingDock(fileList,masterChannelList, transformList, compensationList, subsetList)
+    dpc = DataProcessingDock1(masterChannelList, transformList, compensationList, subsetList)
     dpc.show()
     sys.exit(app.exec_())
     

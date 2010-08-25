@@ -1,8 +1,13 @@
 import os,csv,re
-## Logger class to handle the logging tasks of the pipline software
-# project logfile - main log file that holds project specific history and variable information
-# model logfiles - each run of a model results in a results pickle as well as a log file
-# figure logfiles - figures may be manipulated after the run of a model -- those manipulations are documented here
+import numpy as np
+
+'''
+Logger class to handle the logging tasks of the pipline software
+project logfile - main log file that holds project specific history and variable information
+model logfiles - each run of a model results in a results pickle as well as a log file
+figure logfiles - figures may be manipulated after the run of a model -- those manipulations are documented here
+
+'''
 
 class Logger():
     
@@ -57,6 +62,10 @@ class Logger():
             logFileDict = {}
             reader = csv.reader(open(projLog,'r'))
             for linja in reader:
+
+                if linja[0] == 'checksArray':
+                    linja[1] = self.str2array(linja[1])
+
                 logFileDict[linja[0]] = linja[1]
                 
             return logFileDict
@@ -74,3 +83,20 @@ class Logger():
                 logFileDict[linja[0]] = linja[1]
                   
             return logFileDict
+
+
+    def str2array(self,myStr):
+
+        if not re.search("^\[\[",myStr):
+            print "ERROR: input must be string in form"
+            return None
+
+        myStr = myStr[1:-1]
+        myStr = re.sub("\n", ",", myStr)
+        myList = myStr.split(",")
+        newList = []
+
+        for l in myList:
+            newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
+
+        return np.array(newList)
