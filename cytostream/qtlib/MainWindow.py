@@ -212,11 +212,11 @@ class MainWindow(QtGui.QMainWindow):
         if self.dockWidget != None:
             remove_left_dock(self)
 
-        closBtnFn = lambda a=self: move_to_initial(a)
+        closeBtnFn = lambda a=self: move_to_initial(a)
         self.mainWidget = QtGui.QWidget(self)
         projectList = get_project_names(self.controller.baseDir)
         self.existingProjectOpener = OpenExistingProject(projectList,parent=self.mainWidget,openBtnFn=self.open_existing_project_handler,
-                                                         closeBtnFn=self.closeBtnFn,rmBtnFn=self.remove_project)
+                                                         closeBtnFn=closeBtnFn,rmBtnFn=self.remove_project)
         hbl = QtGui.QHBoxLayout(self.mainWidget)
         hbl.setAlignment(QtCore.Qt.AlignTop)
         hbl.addWidget(self.existingProjectOpener)
@@ -323,7 +323,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def set_subsample(self):
         if self.log.log['currentState'] == "Data Processing":
-            ss, ssInd = self.dock.get_subsample()
+            ss, ssInd = self.dock1.get_subsample()
 
             # if changed remove old thumbs
             if ss != self.log.log['subsample']:
@@ -374,6 +374,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def run_progress_bar(self):
         mode = self.log.log['currentState']
+
+        self.set_widgets_enabled(False)
 
         if self.controller.subsampleIndices == None:
             self.controller.handle_subsampling()
@@ -456,6 +458,13 @@ class MainWindow(QtGui.QMainWindow):
 
         QtCore.QCoreApplication.processEvents()
         return True
+
+    def handle_data_processing_mode_callback(self,item=None):
+        if item != None:
+            self.log.log['dataProcessingAction'] = item
+            if item not in ['channel select']: 
+                self.display_info("This stage is in beta testing and is not yet suggested for general use")
+            move_to_data_processing(self)
 
     def set_selected_results_mode(self):
         #selectedMode, selectedModeInd = self.dock.get_selected_results_mode() 
@@ -566,3 +575,21 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.update()
         self.show()
         #QtCore.QCoreApplication.processEvents()
+
+    def set_widgets_enabled(self,flag):
+        if flag not in [True, False]:
+            print "ERROR: invalid flag sent to widgets_enable_all"
+            return None
+
+        
+
+        if self.log.log['currentState'] == 'Data Processing':
+            self.dock1.setEnabled(flag)
+            self.dock2.setEnabled(flag)
+            self.fileSelector.setEnabled(flag)
+            self.pDock.setEnabled(flag)
+        elif self.log.log['currentState'] == 'Quality Assurance':
+            self.dock.setEnabled(flag)
+            self.fileSelector.setEnabled(flag)
+            self.pDock.setEnabled(flag)
+       

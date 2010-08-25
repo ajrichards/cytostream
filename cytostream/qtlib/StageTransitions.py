@@ -42,41 +42,6 @@ def move_to_initial(mainWindow):
     mainWindow.image = QtGui.QImage(os.path.join(mainWindow.controller.baseDir,"applications-science.png"))
     mainWindow.show_image()
 
-def move_to_data_processing(mainWindow):
-    if mainWindow.controller.homeDir == None:
-        mainWindow.display_info('To begin either load an existing project or create a new one')
-        return False
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-
-    ## prepare variables
-    mainWindow.log.log['currentState'] = "Data Processing"
-    masterChannelList = mainWindow.model.get_master_channel_list()
-    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    transformList = ['transform1', 'transform2', 'transform3']
-    compensationList = ['compensation1', 'compensation2']
-    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    currentAction = mainWindow.log.log['dataProcessingAction']
-
-    if mainWindow.log.log['checksArray'] == None:
-        mainWindow.log.log['checksArray'] = np.zeros([len(fileList),len(masterChannelList)],)
-    checksArray = mainWindow.log.log['checksArray']
-
-    ## ready a DataProcessingCenter class
-    print 'creating data processing center'
-    dpc = DataProcessingCenter(fileList,masterChannelList,transformList,compensationList,currentAction,parent=mainWindow.mainWidget,checksArray=checksArray)
-    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    hbl.setAlignment(QtCore.Qt.AlignTop)
-    hbl.addWidget(dpc)
-    mainWindow.refresh_main_widget()
-    add_left_dock(mainWindow)
-    mainWindow.track_highest_state()
-    mainWindow.controller.save()
-    if mainWindow.pDock != None:
-        mainWindow.pDock.set_btn_highlight('data processing')
-
-    return True
 
 def move_to_quality_assurance(mainWindow,runNew=False):
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
@@ -119,6 +84,43 @@ def move_to_quality_assurance(mainWindow,runNew=False):
     if mainWindow.pDock != None:
         mainWindow.pDock.set_btn_highlight('quality assurance')
     return True
+
+def move_to_data_processing(mainWindow):
+    if mainWindow.controller.homeDir == None:
+        mainWindow.display_info('To begin either load an existing project or create a new one')
+        return False
+
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+
+    ## prepare variables
+    mainWindow.log.log['currentState'] = "Data Processing"
+    masterChannelList = mainWindow.model.get_master_channel_list()
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    transformList = ['transform1', 'transform2', 'transform3']
+    compensationList = ['compensation1', 'compensation2']
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    currentAction = mainWindow.log.log['dataProcessingAction']
+
+    if mainWindow.log.log['checksArray'] == None:
+        mainWindow.log.log['checksArray'] = np.zeros([len(fileList),len(masterChannelList)],)
+    checksArray = mainWindow.log.log['checksArray']
+
+    ## ready a DataProcessingCenter class
+    dpc = DataProcessingCenter(fileList,masterChannelList,transformList,compensationList,currentAction,parent=mainWindow.mainWidget,checksArray=checksArray)
+    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl.addWidget(dpc)
+    mainWindow.refresh_main_widget()
+    add_left_dock(mainWindow)
+    mainWindow.dock1.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+    mainWindow.track_highest_state()
+    mainWindow.controller.save()
+    if mainWindow.pDock != None:
+        mainWindow.pDock.set_btn_highlight('data processing')
+
+    return True
+
 
 def move_to_model(mainWindow):                                                                                                                                 
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)                                                                                               
