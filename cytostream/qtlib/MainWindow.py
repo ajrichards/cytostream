@@ -20,11 +20,23 @@ from PyQt4 import QtGui
 #import helpform
 #import qrc_resources
 
-sys.path.append("..")
-from cytostream import *
+if hasattr(sys, 'frozen'):
+    baseDir = os.path.dirname(sys.executable)
+    baseDir = re.sub("MacOS","Resources",baseDir)
+else:
+    baseDir = os.path.dirname(__file__)
+sys.path.append(os.path.join(baseDir,'qtlib'))
 
-
-from StageTransitions import *
+from OpenExistingProject import OpenExistingProject
+from BlankPage import BlankPage
+from PipelineDock import PipelineDock
+from Controller import Controller
+from MenuFunctions import *
+from LeftDock import *
+from FileControls import *
+from StateTransitions import *
+from ThumbnailViewer import ThumbnailViewer
+from ScatterPlotter import ScatterPlotter
 
 __version__ = "0.1"
 
@@ -119,40 +131,6 @@ class MainWindow(QtGui.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.pipelineDock)
         self.pipelineDock.setMinimumWidth(0.10 * self.screenWidth)
         self.pipelineDock.setMaximumWidth(0.10 * self.screenWidth)
-
-    def create_action(self, text, slot=None, shortcut=None, icon=None,
-                     tip=None, checkable=False, signal="triggered()"):
-        action = QtGui.QAction(text, self)
-
-        if icon is not None:
-            pathPass = False
-            if os.path.isfile(os.path.join(self.controller.baseDir,"qtlib","images",icon+".png")) == True:
-                action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"qtlib","images","%s.png"%icon)))
-                pathPass = True
-            elif os.path.isfile(os.path.join(self.controller.baseDir,"lib","python2.6","images",icon+".png")) == True:
-                action.setIcon(QtGui.QIcon(os.path.join(self.controller.baseDir,"lib", "python2.6","images","%s.png"%icon)))
-                pathPass = True
-
-            if pathPass == False:
-                print "WARNING: bad icon specified", icon + ".png"
-            
-        if shortcut is not None:
-            action.setShortcut(shortcut)
-        if tip is not None:
-            action.setToolTip(tip)
-            action.setStatusTip(tip)
-        if slot is not None:
-            self.connect(action, QtCore.SIGNAL(signal), slot)
-        if checkable:
-            action.setCheckable(True)
-        return action
-
-    def addActions(self, target, actions):
-        for action in actions:
-            if action is None:
-                target.addSeparator()
-            else:
-                target.addAction(action)
 
     def remove_project(self):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
@@ -344,7 +322,50 @@ class MainWindow(QtGui.QMainWindow):
                 return True
             else:
                 return False
-            
+    
+    def set_checks_array(self):
+        if self.log.log['currentState'] == "Data Processing":
+            checksArray = self.dpc.get_selected_channels()
+            if type(checksArray) != type(np.array([])):
+                print "ERROR in set_checks_array"
+                return False
+                                         
+            self.log.log['checksArray'] = checksArray
+
+            if self.log.log['checksArray'].sum() == 0:
+                return True
+
+            self.set_excluded_files_channels()
+
+        return True  
+
+    def set_excluded_files_channels(self):
+        if type(self.log.log['checksArray']) != type(np.array([])):
+            print "ERROR cannot set excluded files or channels bad checksArray"
+
+        excludedFiles = []
+        excludedChannels = []
+        masterChannelList = self.model.get_master_channel_list()
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        sumCols = self.log.log['checksArray'].sum(axis=0)
+        sumRows = self.log.log['checksArray'].sum(axis=1)
+        excludedChannels =  np.array(masterChannelList)[[int(i) for i in np.where(sumCols == 0)[0]]]
+        excludedFiles =  np.array(fileList)[[int(i) for i in np.where(sumRows == 0)[0]]]
+
+        self.log.log['excludedChannels'] = excludedChannels.tolist()
+        self.log.log['excludedFiles'] = excludedFiles.tolist()
+        
+        if self.controller.verbose == True:
+            print 'setting excluding channels', excludedChannels
+            print 'setting excluding files', excludedFiles
+
+        ## adjust the selected file
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
+            for f in self.log.log['excludedFiles']:
+                fileList.remove(f)
+            self.log.log['selectedFile'] == fileList[0]
+
     def set_num_components(self,value):
         diff = value % 8
         #print value, diff
@@ -397,6 +418,8 @@ class MainWindow(QtGui.QMainWindow):
             self.refresh_main_widget()
             add_left_dock(self)
 
+        self.set_widgets_enabled(True)
+
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
         move_to_results_navigation(self,runNew=True)
@@ -408,6 +431,14 @@ class MainWindow(QtGui.QMainWindow):
         vbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         
+        ## adjust the selected file
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
+            for f in self.log.log['excludedFiles']:
+                fileList.remove(f)
+                print 'removed in dtmw', f
+            self.log.log['selectedFile'] == fileList[0]
+
         if mode == 'Quality Assurance':
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")

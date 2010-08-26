@@ -1,8 +1,51 @@
 #!/usr/bin/python
 
-from PyQt4 import QtGui
+import sys,re,os
+from PyQt4 import QtGui,QtCore
+from StateTransitions import *
 
-from StageTransitions import *
+if hasattr(sys,'frozen'):
+    baseDir = os.path.dirname(sys.executable)
+    baseDir = re.sub("MacOS","Resources",baseDir)
+else:
+    baseDir = os.path.dirname(__file__)
+
+sys.path.append(os.path.join(baseDir,'..'))
+
+def add_actions(mainWindow, target, actions):
+    for action in actions:
+        if action is None:
+            target.addSeparator()
+        else:
+            target.addAction(action)
+
+def create_action(mainWindow, text, slot=None, shortcut=None, icon=None,
+                  tip=None, checkable=False, signal="triggered()"):
+    action = QtGui.QAction(text, mainWindow)
+
+    if icon is not None:
+        pathPass = False
+        if os.path.isfile(os.path.join(baseDir,"images",icon+".png")) == True:
+            action.setIcon(QtGui.QIcon(os.path.join(baseDir,"images",icon+".png")))
+            pathPass = True
+        elif os.path.isfile(os.path.join(mainWindow.controller.baseDir,"lib","python2.6","images",icon+".png")) == True:
+            action.setIcon(QtGui.QIcon(os.path.join(mainWindow.controller.baseDir,"lib", "python2.6","images","%s.png"%icon)))
+            pathPass = True
+
+        if pathPass == False:
+            print "WARNING: bad icon specified", icon + ".png"
+
+    if shortcut is not None:
+        action.setShortcut(shortcut)
+    if tip is not None:
+        action.setToolTip(tip)
+        action.setStatusTip(tip)
+    if slot is not None:
+        mainWindow.connect(action, QtCore.SIGNAL(signal), slot)
+    if checkable:
+        action.setCheckable(True)
+    return action
+
 
 def create_menubar_toolbar(mainWindow):
 
@@ -11,38 +54,38 @@ def create_menubar_toolbar(mainWindow):
     #################################
 
     ## file menu actions
-    fileNewBulkAction = mainWindow.create_action("New...", mainWindow.create_new_project_bulk,
-                                                 QtGui.QKeySequence.New, "filenew", "Create a new project with mulitple files")
-    fileOpenAction = mainWindow.create_action("&Open...", mainWindow.open_existing_project,
+    fileNewBulkAction = create_action(mainWindow,"New...", slot=mainWindow.create_new_project_bulk,
+                                      shortcut=QtGui.QKeySequence.New,icon="filenew", tip="Create a new project with mulitple files")
+    fileOpenAction = create_action(mainWindow,"&Open...", mainWindow.open_existing_project,
                                               QtGui.QKeySequence.Open, "fileopen",
                                               "Open an existing project")
-    fileSaveAction = mainWindow.create_action("&Save", mainWindow.fileSave,
+    fileSaveAction = create_action(mainWindow,"&Save", mainWindow.fileSave,
                                               QtGui.QKeySequence.Save, "filesave", "Save the image")
-    fileSaveAsAction = mainWindow.create_action("Save &As...",
+    fileSaveAsAction = create_action(mainWindow,"Save &As...",
                                                 mainWindow.fileSaveAs, icon="filesaveas",
                                                 tip="Save the project using a new name")
-    filePrintAction = mainWindow.create_action("&Print", mainWindow.filePrint,
-                                               QtGui.QKeySequence.Print, "fileprint", "Print the current image")
-    fileQuitAction = mainWindow.create_action("&Quit", mainWindow.close,
-                                              "Ctrl+Q", "filequit", "Close the application")
+    filePrintAction = create_action(mainWindow,"&Print", mainWindow.filePrint,
+                                    QtGui.QKeySequence.Print, "fileprint", "Print the current image")
+    fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
+                                   "Ctrl+Q", "filequit", "Close the application")
     ## edit menu actions
-    editDataProcessing= mainWindow.create_action("&Data Processing", lambda a=mainWindow: mainWindow.move_to_data_processing(a),
+    editDataProcessing= create_action(mainWindow,"&Data Processing", lambda a=mainWindow: mainWindow.move_to_data_processing(a),
                                                  "Ctrl+D", "dataprocessing", "Move to Data Processing")
-    editQualityAssurance= mainWindow.create_action("Quality &Assurance", lambda a=mainWindow: move_to_quality_assurance(a),
+    editQualityAssurance= create_action(mainWindow,"Quality &Assurance", lambda a=mainWindow: move_to_quality_assurance(a),
                                                    "Ctrl+A", "qualityassurance", "Move to Quality Assurance")
-    editModel= mainWindow.create_action("&Model", lambda a=mainWindow: move_to_model(a),
-                                        "Ctrl+M", "model", "Move to Model")
-    editResultsNavigation = mainWindow.create_action("&Results Navigation", lambda a=mainWindow: move_to_results_navigation(a),
-                                                     "Ctrl+R", "resultsnavigation", "Move to Results Navigation")
+    editModel= create_action(mainWindow,"&Model", lambda a=mainWindow: move_to_model(a),
+                             "Ctrl+M", "model", "Move to Model")
+    editResultsNavigation = create_action(mainWindow,"&Results Navigation", lambda a=mainWindow: move_to_results_navigation(a),
+                                          "Ctrl+R", "resultsnavigation", "Move to Results Navigation")
     ## tool menu actions
-    OneDimViewerAction = mainWindow.create_action("One Dimenstional Viewer ", lambda a=mainWindow: move_to_one_dim_viewer(a))
-    ResultsHeatmapSummary = mainWindow.create_action("Results Heatmap Summary ", lambda a=mainWindow: move_to_results_heatmap_summary(a))
+    OneDimViewerAction = create_action(mainWindow,"One Dimenstional Viewer ", lambda a=mainWindow: move_to_one_dim_viewer(a))
+    ResultsHeatmapSummary = create_action(mainWindow,"Results Heatmap Summary ", lambda a=mainWindow: move_to_results_heatmap_summary(a))
 
     ## help menu actions
-    helpAboutAction = mainWindow.create_action("&About %s"%mainWindow.controller.appName,
-                                         mainWindow.helpAbout)
-    helpHelpAction = mainWindow.create_action("&Help", mainWindow.helpHelp,
-                                        QtGui.QKeySequence.HelpContents)
+    helpAboutAction = create_action(mainWindow,"&About %s"%mainWindow.controller.appName,
+                                    mainWindow.helpAbout)
+    helpHelpAction = create_action(mainWindow,"&Help", mainWindow.helpHelp,
+                                   QtGui.QKeySequence.HelpContents)
 
     #################################
     # Menu definations
@@ -53,23 +96,21 @@ def create_menubar_toolbar(mainWindow):
     mainWindow.fileMenuActions = (fileNewBulkAction,fileOpenAction,
                                   fileSaveAction, fileSaveAsAction, None,
                                   filePrintAction, fileQuitAction)
-    mainWindow.addActions(mainWindow.fileMenu,mainWindow.fileMenuActions)
+    add_actions(mainWindow,mainWindow.fileMenu,mainWindow.fileMenuActions)
 
     ## define edit menu
     editMenu = mainWindow.menuBar().addMenu("&Edit")
     mirrorMenu = editMenu.addMenu(QtGui.QIcon(":/editmirror.png"),"&Go to")
-    mainWindow.addActions(mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
+    add_actions(mainWindow,mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
 
     ## define tool menu
     mainWindow.toolMenu = mainWindow.menuBar().addMenu("&Tools")
     mainWindow.toolMenuActions = (None,OneDimViewerAction, ResultsHeatmapSummary)
-    mainWindow.addActions(mainWindow.toolMenu,mainWindow.toolMenuActions)
+    add_actions(mainWindow,mainWindow.toolMenu,mainWindow.toolMenuActions)
 
     ## define help menu
     helpMenu = mainWindow.menuBar().addMenu("&Help")
-    mainWindow.addActions(helpMenu, (helpAboutAction, helpHelpAction))
-    mainWindow.addActions(mainWindow.mainWidget,(editDataProcessing,
-                                     editQualityAssurance,editModel,
-                                     editResultsNavigation))
-
-
+    add_actions(mainWindow,helpMenu, (helpAboutAction, helpHelpAction))
+    add_actions(mainWindow,mainWindow.mainWidget,(editDataProcessing,
+                                       editQualityAssurance,editModel,
+                                       editResultsNavigation))

@@ -28,9 +28,9 @@ class QualityAssuranceDock(QtGui.QWidget):
             self.connect(viewAllBtn, QtCore.SIGNAL('clicked()'),viewAllFn)
 
         ## cont button
-        contBtn = QtGui.QPushButton("Continue")
-        contBtn.setMaximumWidth(80)
-        hbox3.addWidget(contBtn)
+        self.contBtn = QtGui.QPushButton("Continue")
+        self.contBtn.setMaximumWidth(80)
+        hbox3.addWidget(self.contBtn)
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
         vbox.addLayout(hbox3)
 
@@ -46,6 +46,9 @@ class QualityAssuranceDock(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor('white'))
         self.setPalette(palette)
+
+    def enable_continue_btn(self,fn):
+        self.connect(self.contBtn, QtCore.SIGNAL('clicked()'),fn)
 
     def disable_all(self):
         pass

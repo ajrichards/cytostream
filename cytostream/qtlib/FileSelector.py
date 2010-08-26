@@ -30,7 +30,7 @@ class FileSelector(QtGui.QWidget):
         hbox1.addWidget(QtGui.QLabel('File Selector'))
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
         self.fileSelector = QtGui.QComboBox(self)
-        self.fileSelector.setMaximumWidth(150)
+        
         fileList = [re.sub("\.fcs","",f) for f in fileList]
         for fileName in fileList:
             self.fileSelector.addItem(fileName)
@@ -43,7 +43,7 @@ class FileSelector(QtGui.QWidget):
             if fileList.__contains__(fileDefault):
                 self.fileSelector.setCurrentIndex(fileList.index(fileDefault))
             else:
-                print "ERROR: in file selector - bad specified fileDefault"
+                print "ERROR: in file selector - bad specified fileDefault",fileDefault
 
         if selectionFn == None:
             selectionFn = self.generic_callback

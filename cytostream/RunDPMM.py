@@ -3,6 +3,7 @@
 import sys,getopt,os,re,cPickle,time,csv
 import fcm
 import fcm.statistics
+from cytostream import Logger
 
 if len(sys.argv) < 3:
     print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir"
@@ -51,6 +52,17 @@ if re.search('\D',str(k)):
     print "INPUT ERROR: k must be numeric"
 else:
     k = int(k)
+
+
+## initialize a logger to get specified files and channels
+print 'initializding logger'
+log = Logger()
+projectID = os.path.split(homeDir)[-1]
+log.initialize(projectID,homeDir,load=True)
+print "\n"
+print log.log
+print "\n"
+
 
 ## load the data into py-fcm
 if re.search("\.fcs",longFileName):

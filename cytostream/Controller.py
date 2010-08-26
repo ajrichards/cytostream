@@ -43,6 +43,7 @@ class Controller:
         self.viewType = viewType
         self.appName = "cytostream"
         self.fontName = 'Arial' #'Helvetica'
+        self.verbose = False
         self.reset_workspace()
 
     def reset_workspace(self):
@@ -78,8 +79,26 @@ class Controller:
         percentDone = 0
         imageCount = 0
         
+        ## prepare to check for excluded channels and files
+        excludedChannels = self.log.log['excludedChannels']
+        excludedFiles = self.log.log['excludedFiles']
+
+        if type(self.log.log['excludedFiles']) != type([]):
+            excludedFiles = []
+            print 'type is no good', type(self.log.log['excludedFiles'])
+
+
+        if type(self.log.log['excludedChannels']) != type([]):
+            excludedChannels = []
+            print 'type is no good', self.log.log['excludedChannels']
+
         for fileName in fileList:
-            # get model name
+            
+            ## check to see that file is not in excluded files
+            if fileName in excludedFiles:
+                continue
+
+            ## get model name
             if mode == 'results':
                 if self.log.log['subsample'] == None or self.log.log['subsample'] == 'All Data':
                     longModelName = re.sub('\.fcs|\.pickle','',fileName)+"_"+modelName
@@ -89,7 +108,8 @@ class Controller:
                     imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)            
 
                 if os.path.isdir(imgDir) == False:
-                    print 'making img dir', imgDir
+                    if self.verbose == True:
+                        print 'making img dir', imgDir
                     os.mkdir(imgDir)
             else:
                 imgDir = 'None'
@@ -114,6 +134,13 @@ class Controller:
 
                     indexJ = fileSpecificIndices[j]
                     channelJ = fileChannels[indexJ]
+
+                    ## check to see that channels are not in excluded channels
+                    if channelI in excludedChannels or channelJ in excludedChannels:
+                        continue
+                    
+
+
                     if self.log.log['subsample'] == 'All Data':
                         subset = 'all'
                     else:
@@ -388,8 +415,9 @@ class Controller:
                         if next_line == '' and proc.poll() != None:
                             break
                        
-                        ## to debug uncomment the following line
-                        #print next_line
+                        ## to debug uncomment the following 2 lines
+                        if not re.search("it =",next_line):
+                            print next_line
 
                         if re.search("it =",next_line):
                             progress = 1.0 / totalIters

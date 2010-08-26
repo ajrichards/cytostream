@@ -27,12 +27,13 @@ from Controller import Controller
 ### qtlib classes
 from BasicWidgets import Slider, ProgressBar, DisplayImage
 from FileSelector import FileSelector
-from MenuFunctions import create_menubar_toolbar
+from MenuFunctions import create_menubar_toolbar, create_action, add_actions
 from BulkNewProject import BulkNewProject
 from OpenExistingProject import OpenExistingProject
 from ScatterPlotter import ScatterPlotter
 from DataProcessingCenter import DataProcessingCenter
-from DataProcessingDock import DataProcessingDock
+from DataProcessingDock1 import DataProcessingDock1
+from DataProcessingDock2 import DataProcessingDock2
 from QualityAssuranceDock import QualityAssuranceDock
 from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter
@@ -43,7 +44,7 @@ from ResultsNavigationDock import ResultsNavigationDock
 from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock
-from StageTransitions import *
+from StateTransitions import *
 
 ## main classes
 from MainWindow import MainWindow
