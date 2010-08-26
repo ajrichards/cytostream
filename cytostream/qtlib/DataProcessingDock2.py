@@ -5,7 +5,6 @@ from BasicWidgets import RadioBtnWidget
 class DataProcessingDock2(QtGui.QWidget):
     def __init__(self, callBackFn,  parent=None, default=None):
         QtGui.QWidget.__init__(self,parent)
-
         
         self.setWindowTitle('Data Processing')
         self.possibleActions = ['editor','channel select', 'transformation', 'compensation','add remove']

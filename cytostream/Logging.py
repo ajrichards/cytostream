@@ -41,6 +41,8 @@ class Logger():
         log['numComponents'] = 16
         log['dataProcessingAction'] = 'channel select'
         log['checksArray'] = None
+        log['excludedFiles'] = None
+        log['excludedChannels'] = None
 
         return log
 
@@ -54,7 +56,7 @@ class Logger():
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
         projLog = os.path.join(self.homeDir,self.projectID+".log")
-        print 'i am in'
+
         if os.path.isfile(projLog) == False:
             print "ERROR: invalid model logfile specified",projLog
             return None
@@ -67,7 +69,10 @@ class Logger():
                     linja[1] = self.str2array(linja[1])
 
                 logFileDict[linja[0]] = linja[1]
-                
+            
+                if linja[0] == 'excludedFiles' or linja[0] == 'excludedChannels':
+                    linja[1] = re.sub("\s+|\[|\]|'","",linja[1]).split(",")
+
             return logFileDict
 
     ## given a model name read in a model log file and return a dictionary

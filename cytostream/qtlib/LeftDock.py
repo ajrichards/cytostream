@@ -79,12 +79,20 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget.setMaximumWidth(widgetWidth)
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
+    ## check to see if fileList needs adjusting
     if mainWindow.log.log['currentState'] in ['Results Navigation']:
         showModelSelector = True
         modelsRun = get_models_run(mainWindow.controller.homeDir,mainWindow.possibleModels)
     else:
         showModelSelector = False
         modelsRun = None
+
+    ## check to see if fileList needs adjusting
+    if type(mainWindow.log.log['excludedFiles']) == type([]) and len(mainWindow.log.log['excludedFiles']) > 0:
+        for f in mainWindow.log.log['excludedFiles']:
+            fileList.remove(f)
+
+        mainWindow.log.log['selectedFile'] = fileList[0]
 
     ## file selector
     if mainWindow.log.log['currentState'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
@@ -96,20 +104,26 @@ def add_left_dock(mainWindow):
         subsamplingDefault = mainWindow.log.log['subsample']
         vbl1.addWidget(mainWindow.fileSelector)
         
-
     ## data processing
     if mainWindow.log.log['currentState'] == "Data Processing":
         mainWindow.dock1 = DataProcessingDock1(masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
                                               contBtnFn=None,subsetDefault=subsamplingDefault)
         callBackfn = mainWindow.handle_data_processing_mode_callback
         mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['dataProcessingAction'])
-        hbl2.addWidget(mainWindow.dock2)
-        hbl3.addWidget(mainWindow.dock1)
         mainWindow.dock1.setAutoFillBackground(True)
         mainWindow.dock2.setAutoFillBackground(True)
+        hbl2.addWidget(mainWindow.dock2)
+        hbl3.addWidget(mainWindow.dock1)
 
     ## quality assurance
     elif mainWindow.log.log['currentState'] == "Quality Assurance":
+        
+        ### check to see if fileList needs adjusting
+        #if type(mainWindow.log.log['excludedFiles']) == type([]) and len(mainWindow.log.log['excludedFiles']) > 0:
+        #    for f in mainWindow.log.log['excludedFiles']:
+        #        fileList.remove(f)
+        #        print 'removeing file %s in leftdock'%f
+
         mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
                                                contBtnFn=None,subsetDefault=subsamplingDefault,viewAllFn=mainWindow.display_thumbnails)
         vbl3.addWidget(mainWindow.dock)
@@ -118,23 +132,25 @@ def add_left_dock(mainWindow):
     ## model
     elif mainWindow.log.log['currentState'] == "Model":
         modelList = ['DPMM','K-means']
-        mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,contBtnFn=None,componentsFn=mainWindow.set_num_components)
+        mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,componentsFn=mainWindow.set_num_components)
+        mainWindow.dock.setAutoFillBackground(True)
         vbl3.addWidget(mainWindow.dock)
+
     ## results navigation
     elif mainWindow.log.log['currentState'] == "Results Navigation":
         mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
                                                 resultsModeFn=mainWindow.set_selected_results_mode,
                                                 resultsModeDefault=mainWindow.log.log['resultsMode'],viewAllFn=mainWindow.display_thumbnails,
                                                 infoBtnFn=mainWindow.show_model_log_info)
-        vbl3.addWidget(mainWindow.dock)
         mainWindow.dock.setAutoFillBackground(True)
+        vbl3.addWidget(mainWindow.dock)
 
     ## one dimensional viewer
     if mainWindow.log.log['currentState'] == 'OneDimViewer':
         mainWindow.dock = OneDimViewerDock(fileList,masterChannelList,callBack=mainWindow.odv.paint)
-        vbl1.addWidget(mainWindow.dock)
         mainWindow.dock.setAutoFillBackground(True)
-
+        vbl1.addWidget(mainWindow.dock)
+        
     ## stages with thumbnails
     if mainWindow.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
         mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)

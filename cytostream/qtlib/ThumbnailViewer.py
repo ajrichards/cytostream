@@ -64,12 +64,17 @@ class ThumbnailViewer(QtGui.QWidget):
                 imgBtn = QtGui.QPushButton()
                 imgBtn.setMinimumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
                 imgBtn.setMaximumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
-                imgBtn.setIcon(QtGui.QIcon(os.path.join(self.thumbDir,img)))
+                
+                #if os.path.isfile(imgPath) == True:
+                if img != None:
+                    imgPath = os.path.join(self.thumbDir,img)
+                    imgBtn.setIcon(QtGui.QIcon(imgPath))
                 
                 ## use icon size to add a small border around the button
                 iconSize = int(round(self.thumbSize - (0.05 * float(self.thumbSize))))
+                
                 imgBtn.setIconSize(QtCore.QSize(iconSize, iconSize))
-                if viewScatterFn != None:
+                if viewScatterFn != None and img != None:
                     self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: viewScatterFn(img=x))
         
                 grid.addWidget(imgBtn,i+1,j+1)

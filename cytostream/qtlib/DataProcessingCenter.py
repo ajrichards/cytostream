@@ -54,7 +54,7 @@ class DataProcessingCenter(QtGui.QWidget):
                     
                     if row == 0:
                         self.gWidgets[len(self.fileList)+1] = {}
-                        self.gWidgets[len(self.fileList)+1][0] = QtGui.QLabel("select columns")
+                        self.gWidgets[len(self.fileList)+1][0] = QtGui.QLabel("select channels")
                         grid.addWidget(self.gWidgets[len(self.fileList)+1][0],len(self.fileList)+1,0)
                     
                 ## channel select
@@ -62,6 +62,7 @@ class DataProcessingCenter(QtGui.QWidget):
                     cBox = QtGui.QCheckBox(self)
                     self.gWidgets[row+1][col+1] = cBox
                     self.gWidgets[row+1][col+1].setFocusPolicy(QtCore.Qt.NoFocus)
+                    self.gWidgets[row+1][col+1].setEnabled(False)
                     grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
                     grid.setAlignment(self.gWidgets[row+1][col+1],QtCore.Qt.AlignCenter)
                     self.connect(self.gWidgets[row+1][col+1], QtCore.SIGNAL('clicked()'),
@@ -147,7 +148,7 @@ class DataProcessingCenter(QtGui.QWidget):
                         grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
 
                     if self.currentAction in ['channel select']:
-                        self.gWidgets[0][len(self.masterChannelList)+1] = QtGui.QLabel("select rows"+"  ")
+                        self.gWidgets[0][len(self.masterChannelList)+1] = QtGui.QLabel("select files"+"  ")
                         self.gWidgets[0][len(self.masterChannelList)+1].setAlignment(QtCore.Qt.AlignCenter)
                         grid.setAlignment(self.gWidgets[0][len(self.masterChannelList)+1],QtCore.Qt.AlignCenter)
                         grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
