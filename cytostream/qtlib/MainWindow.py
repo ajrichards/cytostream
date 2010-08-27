@@ -436,7 +436,7 @@ class MainWindow(QtGui.QMainWindow):
         if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
             for f in self.log.log['excludedFiles']:
                 fileList.remove(f)
-                print 'removed in dtmw', f
+                
             self.log.log['selectedFile'] == fileList[0]
 
         if mode == 'Quality Assurance':

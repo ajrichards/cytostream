@@ -93,7 +93,7 @@ class Logger():
     def str2array(self,myStr):
 
         if not re.search("^\[\[",myStr):
-            print "ERROR: input must be string in form"
+            #print "ERROR: input must be string in form"
             return None
 
         myStr = myStr[1:-1]

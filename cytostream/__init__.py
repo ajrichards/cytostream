@@ -45,6 +45,7 @@ from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock
 from StateTransitions import *
+from NoGuiAnalysis import NoGuiAnalysis
 
 ## main classes
 from MainWindow import MainWindow
