@@ -70,14 +70,6 @@ class Controller:
         modelName = self.log.log['modelToRun']
         fileList = get_fcs_file_names(self.homeDir)
         numImagesToCreate = 0
-                    
-        ## get num images to create
-        for fileName in fileList:
-            fileChannels = self.model.get_file_channel_list(fileName)
-            numImagesToCreate += (len(fileChannels) * (len(fileChannels) - 1.0)) / 2.0
-        
-        percentDone = 0
-        imageCount = 0
         
         ## prepare to check for excluded channels and files
         excludedChannels = self.log.log['excludedChannels']
@@ -85,13 +77,25 @@ class Controller:
 
         if type(self.log.log['excludedFiles']) != type([]):
             excludedFiles = []
-            print 'type is no good', type(self.log.log['excludedFiles'])
-
 
         if type(self.log.log['excludedChannels']) != type([]):
             excludedChannels = []
-            print 'type is no good', self.log.log['excludedChannels']
+   
+        ## recreate file list if there are excluded files
+        if excludedFiles > 0:
+            for f in excludedFiles:
+                fileList.remove(f)
+            self.log.log['selectedFile'] == fileList[0]
 
+        ## get num images to create
+        for fileName in fileList:
+            fileChannels = self.model.get_file_channel_list(fileName)
+            n = float(len(fileChannels) - len(excludedChannels))
+            numImagesToCreate += (n * (n - 1.0)) / 2.0
+        
+        percentDone = 0
+        imageCount = 0
+        
         for fileName in fileList:
             
             ## check to see that file is not in excluded files
@@ -399,6 +403,7 @@ class Controller:
 
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
+        percentagesReported = []
         for fileName in fileList:
 
             if selectedModel == 'dpmm':
@@ -424,8 +429,16 @@ class Controller:
                             percentDone+=progress * 100.0
                             if progressBar != None:
                                 progressBar.move_bar(int(round(percentDone)))
+                            else:
+                                if int(round(percentDone)) not in percentagesReported:
+                                    percentagesReported.append(int(round(percentDone)))
+                                    if int(round(percentDone)) != 100: 
+                                        print "\r",int(round(percentDone)),"percent complete",
+                                    else:
+                                        print "\r",int(round(percentDone)),"percent complete"
                     except:
                         break
-
             else:
                 print "ERROR: invalid selected model", selectedModel
+
+                

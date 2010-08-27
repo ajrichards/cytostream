@@ -3,7 +3,7 @@
 import sys,getopt,os,re,cPickle,time,csv
 import fcm
 import fcm.statistics
-from cytostream import Logger
+from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
     print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir"
@@ -42,6 +42,7 @@ if os.path.isdir(homeDir) == False:
 longModelName = "Dirichlet Process Mixture Model"
 projName = os.path.split(homeDir)[-1]
 longFileName = os.path.join(homeDir,"data",fileName)
+projectID = os.path.split(homeDir)[-1]
 
 ## more error checking
 if os.path.isfile(longFileName) == False:
@@ -53,23 +54,39 @@ if re.search('\D',str(k)):
 else:
     k = int(k)
 
-
-## initialize a logger to get specified files and channels
+## initialize a logger and a model to get specified files and channels
 print 'initializding logger'
 log = Logger()
-projectID = os.path.split(homeDir)[-1]
 log.initialize(projectID,homeDir,load=True)
-print "\n"
-print log.log
-print "\n"
 
+model = Model()
+model.initialize(projectID,homeDir)
 
 ## load the data into py-fcm
 if re.search("\.fcs",longFileName):
     data = fcm.loadFCS(longFileName)
 elif re.search("\.pickle",longFileName):
     data= cPickle.load(open(longFileName,'r'))
-    
+
+## account for excluded channels
+#excludedChannels = log.log['excludedChannels']
+#
+#if type(log.log['excludedChannels']) != type([]):
+#    excludedChannels = []
+#
+#fileChannels = model.get_file_channel_list(fileName)
+#allChannels = range(len(fileChannels))
+#excludedIndices = []
+
+#if len(excludedChannles) > 0:
+#    for chan in excludedChannels:
+#        excludedIndices.append(fileChannels.index(chan))
+
+#includedIndices = list(set(allChannels).difference(set(excludedIndices)))
+
+#print 'excludedIndices', excludedIndices
+#print 'includedIndices', includedIndices
+
 mod = fcm.statistics.DPMixtureModel(data,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)
