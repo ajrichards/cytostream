@@ -14,11 +14,11 @@ class OneDimViewerDock(QtGui.QWidget):
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
-        vbox.setAlignment(QtCore.Qt.AlignCenter)
+        #vbox.setAlignment(QtCore.Qt.AlignCenter)
         hbox1 = QtGui.QHBoxLayout()
-        hbox1.setAlignment(QtCore.Qt.AlignBottom)
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
         hbox2 = QtGui.QHBoxLayout()
-        hbox2.setAlignment(QtCore.Qt.AlignTop)
+        hbox2.setAlignment(QtCore.Qt.AlignCenter)
 
         ## create checkboxes for each file
         self.chkBoxes = {}
@@ -42,7 +42,9 @@ class OneDimViewerDock(QtGui.QWidget):
         
         for channel in self.masterChannelList:
             self.channelSelector.addItem(channel)
-            hbox2.addWidget(self.channelSelector)
+            
+        hbox2.addWidget(self.channelSelector)
+        hbox2.setAlignment(QtCore.Qt.AlignCenter)
 
         if channelDefault != None:
             if self.masterChannelL.__contains__(channelDefault):
