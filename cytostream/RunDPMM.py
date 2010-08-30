@@ -55,7 +55,7 @@ else:
     k = int(k)
 
 ## initialize a logger and a model to get specified files and channels
-print 'initializding logger'
+print 'initializing logger'
 log = Logger()
 log.initialize(projectID,homeDir,load=True)
 
@@ -67,6 +67,10 @@ if re.search("\.fcs",longFileName):
     data = fcm.loadFCS(longFileName)
 elif re.search("\.pickle",longFileName):
     data= cPickle.load(open(longFileName,'r'))
+
+
+
+print dir(data)
 
 ## account for excluded channels
 #excludedChannels = log.log['excludedChannels']
@@ -86,6 +90,8 @@ elif re.search("\.pickle",longFileName):
 
 #print 'excludedIndices', excludedIndices
 #print 'includedIndices', includedIndices
+
+
 
 mod = fcm.statistics.DPMixtureModel(data,k,last=1)
 modelRunStart = time.time()
