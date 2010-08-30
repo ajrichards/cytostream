@@ -26,6 +26,7 @@ from DataProcessingDock2 import DataProcessingDock2
 from QualityAssuranceDock import QualityAssuranceDock
 from ModelDock import ModelDock
 from ResultsNavigationDock import ResultsNavigationDock
+from OneDimViewerDock import OneDimViewerDock
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
