@@ -15,20 +15,29 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,allFiles,subsample='1e4'):
+    def __init__(self,projectID,allFiles,subsample='1e4',makeQaFigs=True,makeResultsFigs=True, numComponents=16):
+        ## error checking
+        if type(allFiles) != type([]):
+            print "ERROR:allFiles input must be of type list"
+            return None
+
         self.projectID = projectID
         self.allFiles = allFiles
         self.subsample = subsample
+        self.makeQaFigs = makeQaFigs
+        self.makeResultsFigs = makeResultsFigs
+        self.numComponents = numComponents
         self.initialize()
-        
+
         for fileName in self.allFiles:
             self.controller.log.log['selectedFile'] = os.path.split(fileName)[-1]
             print 'running model on', self.controller.log.log['selectedFile']
             self.run_selected_model()
 
         ## create figures
-        print 'creating results figures'
-        self.controller.process_images('results')
+        if self.makeResultsFigs == True:
+            print 'creating results figures'
+            self.controller.process_images('results')
 
     def initialize(self):
         self.controller = Controller()
@@ -62,12 +71,13 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling()
         self.controller.save()
         
-        # check image creation
-        #print 'processing qa images'
-        #self.controller.process_images('qa')
+        # qa image creation
+        if self.makeQaFigs == True:
+            print 'making qa images'
+            self.controller.process_images('qa')
 
     def run_selected_model(self):
-        self.controller.log.log['numComponents'] = 16
+        self.controller.log.log['numComponents'] = self.numComponents
         self.controller.log.log['modelToRun'] = 'dpmm'
         self.controller.run_selected_model()
         selectedFile = self.controller.log.log['selectedFile']

@@ -132,10 +132,10 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subset='all',la
     
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName,transparent=False)
+        fig.savefig(fileName,transparent=False,dpi=50)
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
-        fig.savefig(fileName,transparent=False)
+        fig.savefig(fileName,transparent=False,dpi=50)
 
 
 ## error checking

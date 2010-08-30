@@ -221,11 +221,11 @@ class MainWindow(QtGui.QMainWindow):
         if self.image.isNull():
             return
         if self.printer is None:
-            self.printer = QPrinter(QPrinter.HighResolution)
-            self.printer.setPageSize(QPrinter.Letter)
-        form = QPrintDialog(self.printer, self)
+            self.printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
+            self.printer.setPageSize(QtGui.QPrinter.Letter)
+        form = QtGui.QPrintDialog(self.printer, self)
         if form.exec_():
-            painter = QPainter(self.printer)
+            painter = QtGui.QPainter(self.printer)
             rect = painter.viewport()
             size = self.image.size()
             size.scale(rect.size(), QtCore.Qt.KeepAspectRatio)
