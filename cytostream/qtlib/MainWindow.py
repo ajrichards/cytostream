@@ -257,7 +257,8 @@ class MainWindow(QtGui.QMainWindow):
         selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
         fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']) + "_" + selectedModel
 
-        modelLogFile = self.log.read_model_log(fullModelName) 
+        modelLogFile = self.log.read_model_log('%s_sub%s_%s'%(re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']),
+                                                              int(float(self.log.log['subsample'])),self.log.log['selectedModel'])) 
         QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
                           """<br><b>Project ID</b> - %s
                              <br><b>Model name</b> - %s

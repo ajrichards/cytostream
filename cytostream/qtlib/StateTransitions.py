@@ -12,6 +12,7 @@ adam.richards@stat.duke.edu
 import os,sys
 import numpy as np
 from PyQt4 import QtGui,QtCore
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 if hasattr(sys,'frozen'):
     baseDir = os.path.dirname(sys.executable)
@@ -27,6 +28,7 @@ from BasicWidgets import ProgressBar
 from DataProcessingCenter import DataProcessingCenter
 from ModelCenter import ModelCenter
 from OneDimViewer import OneDimViewer
+from BlankPage import BlankPage
 
 def move_to_initial(mainWindow):
     if mainWindow.pDock != None:

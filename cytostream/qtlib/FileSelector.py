@@ -43,7 +43,7 @@ class FileSelector(QtGui.QWidget):
             if fileList.__contains__(fileDefault):
                 self.fileSelector.setCurrentIndex(fileList.index(fileDefault))
             else:
-                print "ERROR: in file selector - bad specified fileDefault",fileDefault
+                print "ERROR: in file selector - bad specified fileDefault", fileDefault
 
         if selectionFn == None:
             selectionFn = self.generic_callback
