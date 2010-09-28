@@ -68,10 +68,6 @@ if re.search("\.fcs",longFileName):
 elif re.search("\.pickle",longFileName):
     data= cPickle.load(open(longFileName,'r'))
 
-
-
-print dir(data)
-
 ## account for excluded channels
 #excludedChannels = log.log['excludedChannels']
 #
