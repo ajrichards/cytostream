@@ -17,6 +17,7 @@ if hasattr(sys, 'frozen'):
 else:
     baseDir = os.path.dirname(__file__)
 sys.path.append(os.path.join(baseDir,'qtlib'))
+sys.path.append(os.path.join(baseDir,'lib'))
 
 ## general classes
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
@@ -46,6 +47,7 @@ from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock
 from StateTransitions import *
 from NoGuiAnalysis import NoGuiAnalysis
+from FileAligner import FileAligner
 
 ## main classes
 from MainWindow import MainWindow
