@@ -8,7 +8,7 @@ A. Ricahrds
 
 import sys, getopt, os
 from PyQt4 import QtGui
-from cytostream import MainWindow
+from cytostream.qtlib import MainWindow
 
 class Main():
     def __init__(self):

@@ -9,6 +9,6 @@ A. Richards
 adam.richards@stat.duke.edu
 '''
 
-from cytostream import Main
+from cytostream.qtlib import Main
 
 Main()
