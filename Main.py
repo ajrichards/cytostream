@@ -16,6 +16,6 @@ if sys.platform == 'darwin':
 
 
 
-from cytostream import Main
+from cytostream.qtlib import Main
 
 Main()

@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from cytostream import FileAligner
+from cytostream.tools import FileAligner
 BASEDIR = os.path.dirname(__file__)
 
 from SimulatedData import case1, case2, case3, case4, case5, case6
