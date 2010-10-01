@@ -66,6 +66,9 @@ class FileAligner():
                 print "\tusing generated reference file name"
             self.refFile = self.get_reference_file()
 
+        ## merge clusters in reference
+        self._merge_clusters_in_reference(self.refFile)
+
         ## align files
         if self.verbose == True:
             print "performing file alignment"
@@ -163,8 +166,6 @@ class FileAligner():
 
         for c in range(len(self.expListNames)):
             expName = self.expListNames[c]
-            #expData = self.expListData[c]
-            #expLabels = expListLabels[c]
             expData = subsetExpData[c]
             expLabels = subsetExpLabels[c]
             silValuesElements[expName] = self._get_silhouette_values(expData,expLabels)
@@ -235,9 +236,23 @@ class FileAligner():
                 dataPatient2 = self.expListData[pIndex2]
                 labelsPatient1 = self.expListLabels[pIndex1]
                 labelsPatient2 = self.expListLabels[pIndex2]
+                
+                ## order the clusters such that the ones with the greatest number of elements are first
+                sortedLabelsPatient1 = np.sort(np.unique(labelsPatient1))
+                sortedLabelsPatient2 = np.sort(np.unique(labelsPatient2))
 
-                for cluster1 in np.sort(np.unique(labelsPatient1)):
-                    for cluster2 in np.sort(np.unique(labelsPatient2)):
+                sizesPatient1 = []
+                for clusterID in sortedLabelsPatient1:
+                    sizesPatient1.append(np.where(labelsPatient1 == clusterID)[0].size)
+                sizeOrderedLabelsPatient1 = sortedLabelsPatient1[np.argsort(sizesPatient1)]
+                
+                sizesPatient2 = []
+                for clusterID in sortedLabelsPatient2:
+                    sizesPatient2.append(np.where(labelsPatient2 == clusterID)[0].size)
+                sizeOrderedLabelsPatient2 = sortedLabelsPatient2[np.argsort(sizesPatient2)]
+            
+                for cluster1 in sizeOrderedLabelsPatient1:
+                    for cluster2 in sizeOrderedLabelsPatient2:
             
                         ## take events in the clusters and find their euclidean distance from their centers
                         eventsPatient1 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
@@ -272,14 +287,12 @@ class FileAligner():
 
                         ## save the results
                         #print patient1,patient2,pIndex1, pIndex2, cluster1,cluster2, (percentOverlap1, percentOverlap2), percentOverlap
-
                         results = np.array(([pIndex1, pIndex2, cluster1,cluster2, percentOverlap]))
 
                         if matchResults == None:
                             matchResults = results
                         else:
                             matchResults = np.vstack((matchResults, results))
-
 
         ## go through the results and keep only the results that have values >0
         numRows, numCols = np.shape(matchResults)
@@ -396,7 +409,106 @@ class FileAligner():
                 indicesToChange = np.where((self.newLabelsAll[fileInd]) == clusterInd)[0]
                 self.newLabelsAll[fileInd][indicesToChange] = newLabel
         self.newLabelsAll = [newLabels.tolist() for newLabels in self.newLabelsAll]
-        
+
+    def _merge_clusters_in_reference(self,refFile):
+        ## order the clusters such that the ones with the greatest number of elements are first
+        print refFile
+        print self.expListNames
+
+        refFileInd = self.expListNames.index(refFile)
+        refFileLabels = self.expListLabels[refFileInd]
+        refFileData = self.expListData[refFileInd]
+        sortedLabels = np.sort(np.unique(refFileLabels))
+
+        sizesRefFile = []
+        for clusterID in sortedLabels:
+            sizesRefFile.append(np.where(refFileLabels == clusterID)[0].size)
+        sizeOrderedLabels = sortedLabels[np.argsort(sizesRefFile)]
+                
+        criticalVals = {}
+        matchResults = None
+
+        for cluster1 in sizeOrderedLabels:
+            for cluster2 in sizeOrderedLabels:
+
+                if cluster1 == cluster2:
+                    continue
+
+                ## take events in the clusters and find their euclidean distance from their centers
+                eventsRefFile1 = refFileData[np.where(refFileLabels==cluster1)[0],:]
+                eventsRefFile2 = refFileData[np.where(refFileLabels==cluster2)[0],:]
+
+                euclidDist1 = (eventsRefFile1 - eventsRefFile1.mean(axis=0))**2.0
+                euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
+
+                euclidDist2 = (eventsRefFile2 - eventsRefFile2.mean(axis=0))**2.0
+                euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
+
+                ## determine the number of events that overlap
+                overlap1 = (eventsRefFile1 - eventsRefFile2.mean(axis=0))**2.0
+                overlap1 = np.sqrt(overlap1.sum(axis=1))
+
+                overlap2 = (eventsRefFile2 - eventsRefFile1.mean(axis=0))**2.0
+                overlap2 = np.sqrt(overlap2.sum(axis=1))
+                
+                threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
+                threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
+
+                if criticalVals.has_key(cluster1) == False:
+                    criticalVals[cluster1] = threshold1
+                if criticalVals.has_key(cluster2) == False:
+                    criticalVals[cluster2] = threshold2
+
+                overlappingInds1 = np.where(overlap1<threshold2)[0]
+                overlappingInds2 = np.where(overlap1<threshold1)[0]
+                percentOverlap1 = float(len(overlappingInds1)) / float(len(eventsRefFile1))
+                percentOverlap2 = float(len(overlappingInds2)) / float(len(eventsRefFile2))
+                percentOverlap = np.max([percentOverlap1, percentOverlap2])
+
+                if percentOverlap < 1.0:
+                    continue
+                
+                ## save the results
+                print cluster1,cluster2, (percentOverlap1, percentOverlap2), percentOverlap
+                results = np.array(([cluster1,cluster2, percentOverlap]))
+
+                if percentOverlap == 0.0:
+                    continue
+                 
+                if matchResults == None:
+                    matchResults = results
+                else:
+                    matchResults = np.vstack((matchResults, results))
+            
+        ## merge the specified clusters
+        print 'old ref file ids'
+        print sortedLabels
+        mRows, mCols = np.shape(matchResults)
+
+        merged = []
+        for label in sortedLabels:
+            matches = []
+
+            for row in range(mRows):
+                rowElements = matchResults[row,:]
+                if merged.__contains__(rowElements[0]) == True or merged.__contains__(rowElements[1]) == True:
+                    continue
+
+                if rowElements[0] == label and matches.__contains__(rowElements[1]) == False:
+                    matches.append(rowElements[1])
+                    merged.append(rowElements[1])
+                    
+                if rowElements[1] == label and matches.__contains__(rowElements[0]) == False:
+                    matches.append(rowElements[0])
+                    merged.append(rowElements[0])
+                    
+            for clustToChange in matches:
+                indicesToChange = np.where((self.expListLabels[refFileInd]) == clustToChange)[0]
+                print 'ref file changing %s to %s with %s elements '%(clustToChange,label,indicesToChange.size)
+                self.expListLabels[refFileInd] = np.array(self.expListLabels[refFileInd])
+                self.expListLabels[refFileInd][indicesToChange] = label
+                self.expListLabels[refFileInd] = self.expListLabels[refFileInd].tolist()
+
     def _make_reference_comparisons(self,refFile,filteredResults):
         ## given a reference cluster figure out which clusters match
         refFileInd = self.expListNames.index(refFile)
@@ -410,7 +522,7 @@ class FileAligner():
             results = filteredResults[rowNum,:]
             if results[0] != refFileInd and results[1] != refFileInd:
                 continue
-            
+    
             if results[0] == refFileInd:
                 refCluster = results[2]
                 altCluster = results[3]
@@ -462,9 +574,22 @@ class FileAligner():
 
                 self.newLabelsAll[altFile][indicesToChange] = key
 
-    def makePlotsAsSubplots(self,expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,showCentroids=True,figTitle=None,markerSize=5,axLimit=900):
+    def makePlotsAsSubplots(self,expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,showCentroids=True,figTitle=None,markerSize=5,saveas=None):
         fig = plt.figure(figsize=(6.5,9))
         subplotCount = 0
+
+        ## determin the ymax and xmax
+        xMaxList, yMaxList = [],[]
+        for c in range(len(expListNames)):
+            expData = expListData[c]
+            labels = expListLabels[c]
+            expName = expListNames[c]
+            xMaxList.append(expData[:,colInd1].max())
+            yMaxList.append(expData[:,colInd2].max())
+
+        xAxLimit = np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max()
+        yAxLimit = np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max()
+
         for c in range(len(expListNames)):
             expData = expListData[c]
             labels = expListLabels[c]
@@ -511,15 +636,21 @@ class FileAligner():
             if totalPoints != expData[:,0].size:
                 print "ERROR: the correct number of point were not plotted %s/%s"%(totalPoints,expData[:,0].size)
 
-            ax.set_title(expListNames[subplotCount-1])
-            ax.set_xlim([0,axLimit])
-            ax.set_ylim([0,axLimit])
+            if expListNames[subplotCount-1] == self.refFile:
+                ax.set_title(expListNames[subplotCount-1],fontweight='heavy')
+            else:
+                ax.set_title(expListNames[subplotCount-1])
+
+            ax.set_xlim([0,xAxLimit])
+            ax.set_ylim([0,yAxLimit])
         
         if figTitle != None:
             fig.suptitle(figTitle, fontsize=12)
 
         plt.subplots_adjust(wspace=0.3, hspace=0.3)
 
+        if saveas != None:
+            fig.savefig(saveas+".png",dpi=300)
 
     def makePlotsSameAxis(self,expListNames,expListData,expListLabels,colors,centroids,showCentroids=True):
         fig = plt.figure(figsize=(7,7))
