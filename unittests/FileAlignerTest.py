@@ -20,7 +20,7 @@ fa = FileAligner(expListNames,expListData,expListLabels,modelName,minPercentOver
 ## make plots
 expListLabels = [np.array(labs)+1 for labs in expListLabels]
 beforeStats = fa.get_sample_statistics(expListLabels)
-fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',axLimit=14)
+fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment')
 afterStats = fa.get_sample_statistics(fa.newLabelsAll)
-fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',axLimit=14)
+fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment')
 fa.show_plots()
