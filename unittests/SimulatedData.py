@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ## variables 
-largeN = 500
+largeN = 2000
 smallN = 50
 
 ## case 1

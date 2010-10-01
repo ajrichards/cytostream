@@ -15,12 +15,12 @@ expListData = [case1,case2,case3,case4,case5,case6]
 expListLabels = [case1Labels,case2Labels,case3Labels,case4Labels,case5Labels,case6Labels]
 
 ## run it
-fa = FileAligner(expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.50,refFile=None)
+fa = FileAligner(expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.20,minMergeSilValue=0.95,refFile=None)
 
 ## make plots
 expListLabels = [np.array(labs)+1 for labs in expListLabels]
 beforeStats = fa.get_sample_statistics(expListLabels)
-fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment')
+fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',axLimit=14)
 afterStats = fa.get_sample_statistics(fa.newLabelsAll)
-fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment')
+fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',axLimit=14)
 fa.show_plots()
