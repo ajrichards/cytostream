@@ -1,4 +1,4 @@
-import os
+import os,sys
 import numpy as np
 from cytostream.tools import FileAligner
 BASEDIR = os.path.dirname(__file__)
@@ -23,4 +23,32 @@ beforeStats = fa.get_sample_statistics(expListLabels)
 fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment')
 afterStats = fa.get_sample_statistics(fa.newLabelsAll)
 fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment')
-fa.show_plots()
+#fa.show_plots()
+
+newLabelsLists = fa.newLabelsAll
+
+## calculate a score
+#labelMasterList = set([])
+#for labelList in expListLabels:
+#    fileLabels = np.sort(np.unique(labelList))
+#    labelMasterList.update(fileLabels)
+#
+#sortedLabels = np.sort(np.unique(labelMasterList))
+
+#########################################################################
+# calculate intercluster distances
+#########################################################################
+
+from cytostream.tools import calculate_intercluster_score
+from cytostream.tools import PieChartCreator
+
+interClusterDistance = calculate_intercluster_score(expListNames,expListData,fa.newLabelsAll)
+print interClusterDistance
+
+pcc = PieChartCreator(fa.newLabelsAll,expListNames)
+import matplotlib.pyplot as plt
+plt.show()
+
+
+
+
