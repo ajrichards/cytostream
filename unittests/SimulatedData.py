@@ -115,9 +115,14 @@ case5Labels = np.hstack((case5Labels,np.array([np.random.randint(4,7)]).repeat(n
 #case6c1f2 = np.random.normal(10,0.5,largeN)
 #case6c1 = np.vstack((case6c1f1,case6c1f2)).T
 
+## noise cluster
 case6c1f1 = np.random.normal(3,5.0,smallN)
 case6c1f2 = np.random.normal(3,5.0,smallN)
 case6c1 = np.vstack((case6c1f1,case6c1f2)).T
+
+## remove negative numbers from noise
+case6c1 = case6c1[np.where(case6c1[:,0] > 0)[0]]
+case6c1 = case6c1[np.where(case6c1[:,1] > 0)[0]]
 
 case6c2f1 = np.random.normal(10,1.0,largeN)
 case6c2f2 = np.random.normal(10,0.5,largeN)

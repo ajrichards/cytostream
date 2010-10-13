@@ -9,20 +9,27 @@ import os, sys,cPickle
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
+from matplotlib.ticker import MaxNLocator
 from scipy.spatial.distance import pdist,cdist,squareform
 import scipy.stats as stats
 
 class FileAligner():
+    '''
+    expListNames -a list of the individual experiemnts
+    expListData - a list of np.arrays containing the (n x d) data for each experiment data set
+    expListLabels - a list of lists or np.arrays containing the labels for each data set 
+
+    '''
 
     def __init__(self,expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.15,minMergeSilValue=0.95,mkPlots=True,refFile=None,verbose=False,excludedChannels=None):
         self.expListNames = expListNames
         self.expListData = expListData
-        self.expListLabels = expListLabels
+        self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
         self.modelName = modelName
         self.mkPlots = mkPlots
         self.minPercentOverlap = minPercentOverlap
         self.minMergeSilValue = minMergeSilValue
-        self.verbose = True
+        self.verbose = verbose
         self.silValueEstimateSample = 1500
         
         #numChannels = np.shape(self.expListData[0])[1]
@@ -38,7 +45,12 @@ class FileAligner():
 
         ## figure variables
         self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-                       '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF','#FA58AC', '#8A0808','#D8D8D8']
+                       '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
+                       '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
+                       "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
+                       "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
+                       "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
+
         ## preprocessing of data
         if self.verbose == True:
             print "transforming labels"
@@ -139,7 +151,7 @@ class FileAligner():
         silValues = {}
         silValuesElements = {}
         for expName in self.expListNames:
-            silValues[expName] = []
+            silValues[expName] = {}
 
         ## create subset if data for large data sets 
         subsetExpData = []
@@ -175,7 +187,7 @@ class FileAligner():
             for clusterInd in fileClusters:
                 clusterElementInds = np.where(expLabels == clusterInd)[0]
                 clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
-                silValues[expName].append(clusterSilValue)
+                silValues[expName][clusterInd] = clusterSilValue
 
         return silValues
 
@@ -310,7 +322,7 @@ class FileAligner():
                     filteredResults = np.vstack((filteredResults,results))
 
         ## create variables for newLabels
-        self.newLabelsAll = []                                                                                     
+        self.newLabelsAll = []                    
         for labInd in range(len(self.expListLabels)):
             labels = self.expListLabels[labInd]
             self.newLabelsAll.append(-1.0 * np.array(labels).copy())
@@ -368,8 +380,7 @@ class FileAligner():
                         ## make sure match is over sil value threshold
                         uniqueLabels = np.sort(np.unique(self.expListLabels[int(bestMatch[0])])).tolist()
                         clusterInd = uniqueLabels.index(bestMatch[1])
-
-                        clusterSilValue = self.silValues[self.expListNames[int(bestMatch[0])]][clusterInd]
+                        clusterSilValue = self.silValues[self.expListNames[int(bestMatch[0])]][bestMatch[1]]
 
                         if clusterSilValue < self.minMergeSilValue:
                             continue
@@ -412,9 +423,6 @@ class FileAligner():
 
     def _merge_clusters_in_reference(self,refFile):
         ## order the clusters such that the ones with the greatest number of elements are first
-        print refFile
-        print self.expListNames
-
         refFileInd = self.expListNames.index(refFile)
         refFileLabels = self.expListLabels[refFileInd]
         refFileData = self.expListData[refFileInd]
@@ -465,24 +473,29 @@ class FileAligner():
                 percentOverlap2 = float(len(overlappingInds2)) / float(len(eventsRefFile2))
                 percentOverlap = np.max([percentOverlap1, percentOverlap2])
 
-                if percentOverlap < 1.0:
+                ## minimum percent overlap testing for merge
+                if  self.minPercentOverlap >= percentOverlap:
                     continue
-                
+
                 ## save the results
-                print cluster1,cluster2, (percentOverlap1, percentOverlap2), percentOverlap
                 results = np.array(([cluster1,cluster2, percentOverlap]))
 
-                if percentOverlap == 0.0:
-                    continue
-                 
+                ## silvalue testing for merge
+                clusterSilValue1 = self.silValues[self.expListNames[refFileInd]][cluster1]
+                clusterSilValue2 = self.silValues[self.expListNames[refFileInd]][cluster2]
+
+                if clusterSilValue1 < self.minMergeSilValue or clusterSilValue2 < self.minMergeSilValue:
+                     continue
+ 
                 if matchResults == None:
                     matchResults = results
                 else:
                     matchResults = np.vstack((matchResults, results))
             
         ## merge the specified clusters
-        print 'old ref file ids'
-        print sortedLabels
+        if matchResults == None:
+            return
+
         mRows, mCols = np.shape(matchResults)
 
         merged = []
@@ -501,10 +514,11 @@ class FileAligner():
                 if rowElements[1] == label and matches.__contains__(rowElements[0]) == False:
                     matches.append(rowElements[0])
                     merged.append(rowElements[0])
-                    
+
             for clustToChange in matches:
                 indicesToChange = np.where((self.expListLabels[refFileInd]) == clustToChange)[0]
-                print 'ref file changing %s to %s with %s elements '%(clustToChange,label,indicesToChange.size)
+                if self.verbose == True:
+                    print 'ref file changing %s to %s with %s elements '%(clustToChange,label,indicesToChange.size)
                 self.expListLabels[refFileInd] = np.array(self.expListLabels[refFileInd])
                 self.expListLabels[refFileInd][indicesToChange] = label
                 self.expListLabels[refFileInd] = self.expListLabels[refFileInd].tolist()
@@ -559,36 +573,39 @@ class FileAligner():
                 if  self.minPercentOverlap >= percentOverlap:
                     continue
 
-                if self.verbose == True:
-                    print '\t changing %s to %s in file %s'%(altCluster,key,altFile), percentOverlap
-
                 indicesToChange = np.where((self.newLabelsAll[altFile]) == altCluster)[0]
                 
                 ## before merging a cluster ensure the clusters silhouette value is > the minimum threshold
-                clusterSilValue = self.silValues[altFileName][altClusterInd]
+                clusterSilValue = self.silValues[altFileName][fileCluster[1]]  #altClusterInd
                 #print "\t\t sil val",altFile,altCluster,clusterSilValue, self.minMergeSilValue
                 if clusterSilValue < self.minMergeSilValue:
                     if self.verbose == True:
                         print '\t\tnot merging - cluster sil value < sil value threshold'
                     continue
 
+                if self.verbose == True:
+                    print '\t changing %s to %s in file %s'%(altCluster,key,altFile), percentOverlap
+
                 self.newLabelsAll[altFile][indicesToChange] = key
 
-    def makePlotsAsSubplots(self,expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,showCentroids=True,figTitle=None,markerSize=5,saveas=None):
+    def makePlotsAsSubplots(self,expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
+                            showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileExt=".png",fileChannels=None):
         fig = plt.figure(figsize=(6.5,9))
         subplotCount = 0
 
         ## determin the ymax and xmax
-        xMaxList, yMaxList = [],[]
+        xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
         for c in range(len(expListNames)):
             expData = expListData[c]
             labels = expListLabels[c]
             expName = expListNames[c]
             xMaxList.append(expData[:,colInd1].max())
             yMaxList.append(expData[:,colInd2].max())
+            xMinList.append(expData[:,colInd1].min())
+            yMinList.append(expData[:,colInd2].min())
 
-        xAxLimit = np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max()
-        yAxLimit = np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max()
+        xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
+        yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
 
         for c in range(len(expListNames)):
             expData = expListData[c]
@@ -596,7 +613,8 @@ class FileAligner():
             expName = expListNames[c]
             subplotCount += 1
             ax = fig.add_subplot(3,2,subplotCount)
-        
+            ax.clear()
+
             totalPoints = 0
             for l in np.sort(np.unique(labels)):
                 try:
@@ -610,6 +628,7 @@ class FileAligner():
 
                 if x.size == 0:
                     continue
+
                 ax.scatter(x,y,color=hexColor,s=markerSize)
 
                 totalPoints+=x.size
@@ -641,16 +660,31 @@ class FileAligner():
             else:
                 ax.set_title(expListNames[subplotCount-1])
 
-            ax.set_xlim([0,xAxLimit])
-            ax.set_ylim([0,yAxLimit])
+            ax.set_xlim([xAxLimit[0],xAxLimit[1]])
+            ax.set_ylim([yAxLimit[0],yAxLimit[1]])
+
+            ax.xaxis.set_major_locator(MaxNLocator(4))
+            ax.yaxis.set_major_locator(MaxNLocator(4))
         
+            if subplotCount not in [1,3,5]:
+                ax.set_yticks([])
+            else:
+                if colInd2Name != None:
+                    ax.set_ylabel(colInd2Name)
+
+            if subplotCount not in [5,6]:
+                ax.set_xticks([])
+            else:
+                if colInd1Name != None:
+                    ax.set_xlabel(colInd1Name)
+
         if figTitle != None:
             fig.suptitle(figTitle, fontsize=12)
 
-        plt.subplots_adjust(wspace=0.3, hspace=0.3)
+        plt.subplots_adjust(wspace=0.1, hspace=0.2)
 
         if saveas != None:
-            fig.savefig(saveas+".png",dpi=300)
+            fig.savefig(saveas+fileExt,dpi=300)
 
     def makePlotsSameAxis(self,expListNames,expListData,expListLabels,colors,centroids,showCentroids=True):
         fig = plt.figure(figsize=(7,7))
