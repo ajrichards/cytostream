@@ -1,6 +1,9 @@
 import os,sys
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 from cytostream.tools import FileAligner
+
 BASEDIR = os.path.dirname(__file__)
 
 from SimulatedData import case1, case2, case3, case4, case5, case6
@@ -27,14 +30,6 @@ fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterS
 
 newLabelsLists = fa.newLabelsAll
 
-## calculate a score
-#labelMasterList = set([])
-#for labelList in expListLabels:
-#    fileLabels = np.sort(np.unique(labelList))
-#    labelMasterList.update(fileLabels)
-#
-#sortedLabels = np.sort(np.unique(labelMasterList))
-
 #########################################################################
 # calculate intercluster distances
 #########################################################################
@@ -46,8 +41,8 @@ interClusterDistance = calculate_intercluster_score(expListNames,expListData,fa.
 print interClusterDistance
 
 pcc = PieChartCreator(fa.newLabelsAll,expListNames)
-import matplotlib.pyplot as plt
-plt.show()
+#import matplotlib.pyplot as plt
+#plt.show()
 
 
 
