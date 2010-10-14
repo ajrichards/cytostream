@@ -175,7 +175,6 @@ class FileAligner():
             subsetExpData.append(expData[newIndices,:])
             subsetExpLabels.append(np.array(expLabels)[newIndices])
 
-
         for c in range(len(self.expListNames)):
             expName = self.expListNames[c]
             expData = subsetExpData[c]
@@ -588,103 +587,6 @@ class FileAligner():
 
                 self.newLabelsAll[altFile][indicesToChange] = key
 
-    def makePlotsAsSubplots(self,expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
-                            showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileExt=".png",fileChannels=None):
-        fig = plt.figure(figsize=(6.5,9))
-        subplotCount = 0
-
-        ## determin the ymax and xmax
-        xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
-        for c in range(len(expListNames)):
-            expData = expListData[c]
-            labels = expListLabels[c]
-            expName = expListNames[c]
-            xMaxList.append(expData[:,colInd1].max())
-            yMaxList.append(expData[:,colInd2].max())
-            xMinList.append(expData[:,colInd1].min())
-            yMinList.append(expData[:,colInd2].min())
-
-        xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
-        yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
-
-        for c in range(len(expListNames)):
-            expData = expListData[c]
-            labels = expListLabels[c]
-            expName = expListNames[c]
-            subplotCount += 1
-            ax = fig.add_subplot(3,2,subplotCount)
-            ax.clear()
-
-            totalPoints = 0
-            for l in np.sort(np.unique(labels)):
-                try:
-                    hexColor = self.colors[l]
-                except:
-                    print 'WARNING not enough colors in self.colors looking for ', l
-                    hexColor = 'black'
-
-                x = expData[:,colInd1][np.where(labels==l)[0]]
-                y = expData[:,colInd2][np.where(labels==l)[0]]
-
-                if x.size == 0:
-                    continue
-
-                ax.scatter(x,y,color=hexColor,s=markerSize)
-
-                totalPoints+=x.size
-
-                ## handle centroids if present 
-                prefix = ''
-                if centroids != None and showCentroids == True:
-
-                    xPos = centroids[expName][l][colInd1]
-                    yPos = centroids[expName][l][colInd2]
-            
-                    if hexColor in ['#FFFFAA','y','#33FF77']:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=8.0,
-                                ha="center", va="center",
-                                bbox = dict(boxstyle="round",facecolor=hexColor,alpha=0.8)
-                                )
-                    else:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=8.0,
-                                ha="center", va="center",
-                                bbox = dict(boxstyle="round",facecolor=hexColor,alpha=0.8)
-                                )
-
-            ## error check that all point were plotted
-            if totalPoints != expData[:,0].size:
-                print "ERROR: the correct number of point were not plotted %s/%s"%(totalPoints,expData[:,0].size)
-
-            if expListNames[subplotCount-1] == self.refFile:
-                ax.set_title(expListNames[subplotCount-1],fontweight='heavy')
-            else:
-                ax.set_title(expListNames[subplotCount-1])
-
-            ax.set_xlim([xAxLimit[0],xAxLimit[1]])
-            ax.set_ylim([yAxLimit[0],yAxLimit[1]])
-
-            ax.xaxis.set_major_locator(MaxNLocator(4))
-            ax.yaxis.set_major_locator(MaxNLocator(4))
-        
-            if subplotCount not in [1,3,5]:
-                ax.set_yticks([])
-            else:
-                if colInd2Name != None:
-                    ax.set_ylabel(colInd2Name)
-
-            if subplotCount not in [5,6]:
-                ax.set_xticks([])
-            else:
-                if colInd1Name != None:
-                    ax.set_xlabel(colInd1Name)
-
-        if figTitle != None:
-            fig.suptitle(figTitle, fontsize=12)
-
-        plt.subplots_adjust(wspace=0.1, hspace=0.2)
-
-        if saveas != None:
-            fig.savefig(saveas+fileExt,dpi=300)
 
     def makePlotsSameAxis(self,expListNames,expListData,expListLabels,colors,centroids,showCentroids=True):
         fig = plt.figure(figsize=(7,7))

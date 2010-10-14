@@ -2,10 +2,9 @@ import os,sys
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-from cytostream.tools import FileAligner
+from cytostream.tools import FileAligner,make_plots_as_subplots
 
 BASEDIR = os.path.dirname(__file__)
-
 from SimulatedData import case1, case2, case3, case4, case5, case6
 from SimulatedData import case1Labels, case2Labels, case3Labels, case4Labels, case5Labels, case6Labels
 
@@ -23,9 +22,11 @@ fa = FileAligner(expListNames,expListData,expListLabels,modelName,minPercentOver
 ## make plots
 expListLabels = [np.array(labs)+1 for labs in expListLabels]
 beforeStats = fa.get_sample_statistics(expListLabels)
-fa.makePlotsAsSubplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment')
+make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',saveas="TestCasesBefore.png",
+                       refFile=fa.refFile,subplotRows=2,subplotCols=3)
 afterStats = fa.get_sample_statistics(fa.newLabelsAll)
-fa.makePlotsAsSubplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment')
+make_plots_as_subplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',saveas="TestCasesAfter.png",
+                       refFile=fa.refFile,subplotRows=2,subplotCols=3)
 #fa.show_plots()
 
 newLabelsLists = fa.newLabelsAll
