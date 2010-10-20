@@ -20,11 +20,13 @@ expListLabels = [case1Labels,case2Labels,case3Labels,case4Labels,case5Labels,cas
 fa = FileAligner(expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.20,minMergeSilValue=0.95,refFile=None)
 
 ## make plots
-expListLabels = [np.array(labs)+1 for labs in expListLabels]
+#expListLabels = [np.array(labs)+1 for labs in expListLabels]
 beforeStats = fa.get_sample_statistics(expListLabels)
+afterStats = fa.get_sample_statistics(fa.newLabelsAll)
+
 make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',saveas="TestCasesBefore.png",
                        refFile=fa.refFile,subplotRows=2,subplotCols=3)
-afterStats = fa.get_sample_statistics(fa.newLabelsAll)
+
 make_plots_as_subplots(expListNames,expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',saveas="TestCasesAfter.png",
                        refFile=fa.refFile,subplotRows=2,subplotCols=3)
 #fa.show_plots()
@@ -41,10 +43,6 @@ from cytostream.tools import PieChartCreator
 interClusterDistance = calculate_intercluster_score(expListNames,expListData,fa.newLabelsAll)
 print interClusterDistance
 
-pcc = PieChartCreator(fa.newLabelsAll,expListNames)
-#import matplotlib.pyplot as plt
-#plt.show()
-
-
-
-
+#pcc = PieChartCreator(fa.newLabelsAll,expListNames+["copied ref file"])
+import matplotlib.pyplot as plt
+plt.show()
