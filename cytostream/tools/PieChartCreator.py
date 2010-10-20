@@ -10,8 +10,11 @@ class PieChartCreator():
         self.expListNames = expListNames
         self.saveas = saveas
         self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-                  '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
-                  '#FA58AC', '#8A0808','#D8D8D8','#336666','#996633']
+                       '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
+                       '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
+                       "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
+                       "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
+                       "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
         self.masterLabelList = self.get_master_index_list()
         self.allClusterFractions = self.get_cluster_fractions()
         self.create_plot()
@@ -27,7 +30,6 @@ class PieChartCreator():
     def get_cluster_fractions(self):
         allClusterFractions = []
         for fileInd in range(len(self.newLabelsLists)):
-
             labelList = self.newLabelsLists[fileInd]
             clusterFractions = []
 
@@ -57,4 +59,4 @@ class PieChartCreator():
             ax.set_title(self.expListNames[fileInd], bbox={'facecolor':'0.8', 'pad':5})  
 
         if self.saveas != None:
-            fig.savefig(self.saveas+".pdf")
+            fig.savefig(self.saveas)

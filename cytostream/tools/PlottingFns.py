@@ -45,8 +45,15 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
     fontSize = 12
     plotType = 'png'
 
-    colors = ['b','g','r','c','m','y','b','orange','#AAAAAA','#FF6600','#FFCC00',
-              '#FFFFAA','#6622AA','#33FF77','#998800']
+    colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
+              '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
+              '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
+              "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
+              "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
+              "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
+
+    #colors = ['b','g','r','c','m','y','b','orange','#AAAAAA','#FF6600','#FFCC00',
+    #          '#FFFFAA','#6622AA','#33FF77','#998800']
 
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
@@ -91,8 +98,8 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
             ## handle centroids if present
             prefix = ''
             if centroids != None:
-                xPos = centroids[l][index1]
-                yPos = centroids[l][index2]
+                xPos = centroids[str(l)][index1]
+                yPos = centroids[str(l)][index2]
 
                 if colors[l] in ['#FFFFAA','y']:
                     ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',
@@ -133,8 +140,12 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
     else:
         fig = plt.figure(figsize=(9,8))
 
-    subplotCount = 0
+    
+    #for key,item in centroids.iteritems():
+    #    print "\t", key,item.keys()
 
+
+    subplotCount = 0
     colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
               '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
               '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
@@ -148,13 +159,20 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         expData = expListData[c]
         labels = expListLabels[c]
         expName = expListNames[c]
+        #if expName == "ACS-T-Pt_5_SEB":
+        #    continue
+
         xMaxList.append(expData[:,colInd1].max())
         yMaxList.append(expData[:,colInd2].max())
         xMinList.append(expData[:,colInd1].min())
         yMinList.append(expData[:,colInd2].min())
 
-    xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
-    yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
+    xAxLimit = (0 - 0.05, np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
+    yAxLimit = (0 - 0.05, np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
+
+
+    #xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
+    #yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
 
     for c in range(len(expListNames)):
         expData = expListData[c]
@@ -184,8 +202,8 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
             ## handle centroids if present
             prefix = ''
             if centroids != None and showCentroids == True:
-                xPos = centroids[expName][l][colInd1]
-                yPos = centroids[expName][l][colInd2]
+                xPos = centroids[expName][str(l)][colInd1]
+                yPos = centroids[expName][str(l)][colInd2]
                 
                 if clustColor in ['#FFFFAA','y','#33FF77']:
                     ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=8.0,
