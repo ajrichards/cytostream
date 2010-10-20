@@ -21,8 +21,8 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.15,minMergeSilValue=0.95,mkPlots=True,refFile=None,verbose=False,
-                 excludedChannels=None,logFile=None):
+    def __init__(self,expListNames,expListData,expListLabels,modelName,minPercentOverlap=0.15,minMergeSilValue=0.95,
+                 mkPlots=True,refFile=None,verbose=False,excludedChannels=None,logFile=None):
         self.expListNames = [expName for expName in expListNames]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
@@ -49,7 +49,7 @@ class FileAligner():
         if logFile != None:
             self.logFile = logFile
         else:
-            self.logFile = csv.writer(open(os.path.join(".","FileMerge.log"),'w'))
+            self.logFile = csv.writer(open(os.path.join(".","results","FileMerge_%s.log"%(self.minPercentOverlap)),'w'))
         
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
 
@@ -68,9 +68,6 @@ class FileAligner():
         if self.verbose == True:
             print "getting sample statistics"
         self.sampleStats = self.get_sample_statistics(self.expListLabels)
-        #if self.verbose == True:
-        #    print "getting silhouette values"
-        #self.silValues = self.get_silhouette_values(self.expListLabels)
         if self.verbose == True:
             self.print_cluster_info()
 
@@ -116,37 +113,9 @@ class FileAligner():
         self.perform_file_alignment(self.refFile)
 
         ## move the copied reference file labels to the reference labels
-        self.expListNames.pop()
-        self.expListData.pop()
-        self.expListLabels.pop()
-
-    def _get_silhouette_values(self,mat,labels):
-        
-        ## make sure labels are ints
-        labels = np.array([int(l) for l in labels])
-
-        values = pdist(mat,'sqeuclidean')
-        dMat = squareform(values)
-        silValList = []
-        n,d = np.shape(dMat)
-        
-        withinDist = np.zeros((n,1),)
-        minBetweenDist = np.zeros((n,1),)
-        silVals = np.zeros((n,1),)
-        uniqueLabs = np.sort(np.unique(labels))
-
-        for i in range(len(uniqueLabs)):
-            k = uniqueLabs[i]
-            notK =  np.array(list(set(labels[np.where(labels!=k)[0]])))
-            kInds = np.where(labels==k)[0]
-            withinDist[i] = dMat[i,kInds].mean()
-            minBetweenDist[i] = np.array([dMat[i,np.where(labels==j)[0]].mean() for j in notK]).min()
-        
-        ## adjust for zero division
-        minBetweenDist = minBetweenDist + 1e-08
-        silVals = (minBetweenDist - withinDist) / np.hstack([[minBetweenDist,withinDist]]).max(axis=0)
-        
-        return silVals
+        #self.expListNames.pop()
+        #self.expListData.pop()
+        #self.expListLabels.pop()
 
     def transform_labels(self):
         ## ensure that labels begin at 1 and not 0
@@ -160,17 +129,18 @@ class FileAligner():
     def get_sample_statistics(self,expListLabels):
 
         centroids, variances, numClusts, numDataPoints = {},{},{},{}
-        for expName in self.expListNames:
+        for expInd in range(len(expListLabels)):
+            expName = self.expListNames[expInd]
+            #for expName in self.expListNames:
             centroids[expName] = {}
             variances[expName] = {}
             numClusts[expName] = None
             numDataPoints[expName] = {}
 
-        for c in range(len(self.expListNames)):
-
-            expName = self.expListNames[c]
-            expData = self.expListData[c]
-            expLabels = expListLabels[c]
+        for expInd in range(len(expListLabels)):
+            expName = self.expListNames[expInd]
+            expData = self.expListData[expInd]
+            expLabels = expListLabels[expInd]
 
             for cluster in np.sort(np.unique(expLabels)):
                 centroids[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].mean(axis=0)
@@ -265,19 +235,18 @@ class FileAligner():
         
         '''
         matchResults = None
-        criticalVals = {}
-        for expName in self.expListNames:
-            criticalVals[expName] = {}
-        
         totalCompares = int((float(len(self.expListNames)) * float(len(self.expListNames))-1.0)/2.0)
         compareCount = 0
+
+        allAlignments = {}
         for pIndex1 in range(len(self.expListNames)):
             for pIndex2 in range(len(self.expListNames)):
                 if pIndex2 >= pIndex1:
                     continue
 
                 compareCount+=1
-                print "\t comparing %s and %s (%s/%s)"%(pIndex1,pIndex2,compareCount,totalCompares)
+                if self.verbose == True:
+                    print "\t comparing %s and %s (%s/%s)"%(pIndex1,pIndex2,compareCount,totalCompares)
 
                 patient1 = self.expListNames[pIndex1]
                 patient2 = self.expListNames[pIndex2]
@@ -294,50 +263,47 @@ class FileAligner():
                 for clusterID in sortedLabelsPatient1:
                     sizesPatient1.append(np.where(labelsPatient1 == clusterID)[0].size)
                 sizeOrderedLabelsPatient1 = sortedLabelsPatient1[np.argsort(sizesPatient1)]
-                sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
+                #sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
 
                 sizesPatient2 = []
                 for clusterID in sortedLabelsPatient2:
                     sizesPatient2.append(np.where(labelsPatient2 == clusterID)[0].size)
                 sizeOrderedLabelsPatient2 = sortedLabelsPatient2[np.argsort(sizesPatient2)]
-                sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
+                #sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
 
                 for cluster1 in sizeOrderedLabelsPatient1:
                     for cluster2 in sizeOrderedLabelsPatient2:
-            
+         
                         ## take events in the clusters and find their euclidean distance from their centers
                         eventsPatient1 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
                         eventsPatient2 = dataPatient2[np.where(labelsPatient2==cluster2)[0],:]
 
+                        ## calculate within cluster distances
                         euclidDist1 = (eventsPatient1 - eventsPatient1.mean(axis=0))**2.0
                         euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
-
                         euclidDist2 = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
                         euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
 
                         ## determine the number of events that overlap
                         overlap1 = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
                         overlap1 = np.sqrt(overlap1.sum(axis=1))
-
                         overlap2 = (eventsPatient2 - eventsPatient1.mean(axis=0))**2.0
                         overlap2 = np.sqrt(overlap2.sum(axis=1))
-                
+
                         threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
                         threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
 
-                        if criticalVals[patient1].has_key(cluster1) == False:
-                            criticalVals[patient1][cluster1] = threshold1
-                        if criticalVals[patient2].has_key(cluster2) == False:
-                            criticalVals[patient2][cluster2] = threshold2
-
                         overlappingInds1 = np.where(overlap1<threshold2)[0]
-                        overlappingInds2 = np.where(overlap1<threshold1)[0]
-                        percentOverlap1 = float(len(overlappingInds1)) / float(len(eventsPatient1))
-                        percentOverlap2 = float(len(overlappingInds2)) / float(len(eventsPatient2))
+                        overlappingInds2 = np.where(overlap2<threshold1)[0]
+                        percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
+                        percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
                         percentOverlap = np.max([percentOverlap1, percentOverlap2])
 
-                        ## discard results with 0
-                        if percentOverlap == 0.0:
+                        if percentOverlap > 1.0:
+                            print "ERROR: in calculation of percent overlap", percentOverlap
+
+                        ## discard results with withouth percent overlap
+                        if  self.minPercentOverlap >= percentOverlap:
                             continue
 
                         ## save the results
@@ -450,6 +416,36 @@ class FileAligner():
                 self.newLabelsAll[fileInd][indicesToChange] = newLabel
         self.newLabelsAll = [newLabels.tolist() for newLabels in self.newLabelsAll]
 
+
+    def _get_silhouette_values(self,mat,labels):
+        
+        ## make sure labels are ints
+        labels = np.array([int(l) for l in labels])
+
+        values = pdist(mat,'sqeuclidean')
+        dMat = squareform(values)
+        silValList = []
+        n,d = np.shape(dMat)
+        
+        withinDist = np.zeros((n,1),)
+        minBetweenDist = np.zeros((n,1),)
+        silVals = np.zeros((n,1),)
+        uniqueLabs = np.sort(np.unique(labels))
+
+        for i in range(len(uniqueLabs)):
+            k = uniqueLabs[i]
+            notK =  np.array(list(set(labels[np.where(labels!=k)[0]])))
+            kInds = np.where(labels==k)[0]
+            withinDist[i] = dMat[i,kInds].mean()
+            minBetweenDist[i] = np.array([dMat[i,np.where(labels==j)[0]].mean() for j in notK]).min()
+        
+        ## adjust for zero division
+        minBetweenDist = minBetweenDist + 1e-08
+        silVals = (minBetweenDist - withinDist) / np.hstack([[minBetweenDist,withinDist]]).max(axis=0)
+        
+        return silVals
+
+
     def _merge_clusters_in_reference(self,refFile):
         ## order the clusters such that the ones with the greatest number of elements are first
         refFileInd = self.expListNames.index(refFile)
@@ -463,7 +459,6 @@ class FileAligner():
         sizeOrderedLabels = sortedLabels[np.argsort(sizesRefFile)]
         #sizeOrderedLabels = sizeOrderedLabels[::-1]
 
-        criticalVals = {}
         matchResults = None
 
         alreadyRenamed = []
@@ -493,18 +488,11 @@ class FileAligner():
                 threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
                 threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
 
-                if criticalVals.has_key(cluster1) == False:
-                    criticalVals[cluster1] = threshold1
-                if criticalVals.has_key(cluster2) == False:
-                    criticalVals[cluster2] = threshold2
-
                 overlappingInds1 = np.where(overlap1<threshold2)[0]
-                overlappingInds2 = np.where(overlap1<threshold1)[0]
-                percentOverlap1 = float(len(overlappingInds1)) / float(len(eventsRefFile1))
-                percentOverlap2 = float(len(overlappingInds2)) / float(len(eventsRefFile2))
+                overlappingInds2 = np.where(overlap2<threshold1)[0]
+                percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsRefFile1)[0])
+                percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsRefFile2)[0])
                 percentOverlap = np.max([percentOverlap1, percentOverlap2])
-
-                #print cluster1,cluster2,percentOverlap
 
                 ## minimum percent overlap testing for merge
                 #if  self.minPercentOverlap >= percentOverlap:
@@ -515,7 +503,7 @@ class FileAligner():
                     continue
 
                 alreadyRenamed.append(str(cluster1))
-                if percentOverlap < 100:
+                if percentOverlap < 1.0:
                     continue
 
                 ## save the results
@@ -600,29 +588,6 @@ class FileAligner():
                 clusterCompares[refCluster]['values'].append(results[4])
                 clusterCompares[refCluster]['file-cluster'].append((int(altFile),int(altCluster)))
 
-        ## go through all overlaps and keep only the most overlapped per file
-        #newClusterCompares = {}
-        #for key, item in clusterCompares.iteritems():
-        #    key = int(key)
-        #    print key,item['file-cluster'],item['values']
-        #
-        #    fileIDs = np.array([fileCluster[0] for fileCluster in item['file-cluster']])
-        #    clusterIDs = np.array([fileCluster[1] for fileCluster in item['file-cluster']])
-        #    uniqueFiles = np.sort(np.unique(fileIDs))
-        #    print "\t", uniqueFiles  
-        
-            #for uFileID in uniqueFiles:
-            #    relevantInds = np.where(fileIDs == uFileID)[0]
-            #    silVals = np.array(item['values'])[relevantInds]
-            # 
-            #    highestInd = relevantInds[np.argmax(silVals)]
-            #    if newClusterCompares.has_key(key) == False:
-            #        newClusterCompares[key] = {'values': [silVals[np.argmax(silVals)]],'file-cluster':[(fileIDs[highestInd], clusterIDs[highestInd])]}
-            #    else:
-            #        newClusterCompares[key]['values'].append(silVals[np.argmax(silVals)])
-            #        newClusterCompares[key]['file-cluster'].append((fileIDs[highestInd], clusterIDs[highestInd]))
-        
-        #clusterCompares = newClusterCompares
         ## make decisions about merging for reference comparisons
         alreadyRenamed = []
         for key, item in clusterCompares.iteritems():
@@ -648,7 +613,7 @@ class FileAligner():
                 
                 ## before merging a cluster ensure the clusters silhouette value is > the minimum threshold
                 clusterSilValue = self.silValues[altFileName][str(fileCluster[1])]  #altClusterInd
-                #print "\t\t sil val",altFile,altCluster,clusterSilValue, self.minMergeSilValue
+                
                 if clusterSilValue < self.minMergeSilValue:
                     if self.verbose == True:
                         print '\t\tnot merging - cluster sil value < sil value threshold'
@@ -739,15 +704,21 @@ class FileAligner():
                 if  silVal < self.minMergeSilValue:
                     continue            
 
-            # discard results not above percent overlap
-            pOverlap = result[4]
-            if pOverlap < self.minPercentOverlap:
-                continue
+                # discard results not above percent overlap
+                pOverlap = result[4]
+                if pOverlap < self.minPercentOverlap:
+                    continue
             
-            # discard results not equal to maximal overlap
-            maximalOverlap = np.array(filteringDict[key]).max()
-            if pOverlap != maximalOverlap:
-                continue
+                # discard results not equal to maximal overlap
+                maximalOverlap = np.array(filteringDict[key]).max()
+                if pOverlap != maximalOverlap:
+                    continue
+            
+            else:
+                # discard results not above percent overlap
+                pOverlap = result[4]
+                if pOverlap < self.minPercentOverlap:
+                    continue
 
             # save non discarded results
             if filteredResults == None:
