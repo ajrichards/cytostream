@@ -29,11 +29,11 @@ print len(fa.expListNames)
 print len(expListLabels)
 print len(fa.newLabelsAll)
 
-make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',saveas="TestCasesBefore.png",
-                       refFile=fa.refFile,subplotRows=2,subplotCols=3)
+make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,figTitle='Before File Alignment',
+                       saveas="TestCasesBefore.png",refFile=fa.refFile,subplotRows=2,subplotCols=3)
 
-make_plots_as_subplots(fa.expListNames,fa.expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',saveas="TestCasesAfter.png",
-                       refFile=fa.refFile,subplotRows=2,subplotCols=4)
+make_plots_as_subplots(fa.expListNames,fa.expListData,fa.newLabelsAll,centroids=afterStats['mus'],showCentroids=True,figTitle='After File Alignment',
+                       saveas="TestCasesAfter.png", refFile=fa.refFile,subplotRows=2,subplotCols=4)
 #fa.show_plots()
 
 newLabelsLists = fa.newLabelsAll
@@ -48,6 +48,6 @@ from cytostream.tools import PieChartCreator
 interClusterDistance = calculate_intercluster_score(expListNames,expListData,fa.newLabelsAll)
 print interClusterDistance
 
-#pcc = PieChartCreator(fa.newLabelsAll,expListNames+["copied ref file"])
+pcc = PieChartCreator(fa.newLabelsAll,expListNames+["copied ref file"],saveas="piefigs.png")
 import matplotlib.pyplot as plt
 plt.show()

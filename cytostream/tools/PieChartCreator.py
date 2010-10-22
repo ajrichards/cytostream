@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 
 class PieChartCreator():
 
-    def __init__(self,newLabelsLists,expListNames,saveas=None):
+    def __init__(self,newLabelsLists,expListNames,saveas=None,subplotRows=3,subplotCols=4):
         self.newLabelsLists = newLabelsLists
         self.expListNames = expListNames
         self.saveas = saveas
+        self.subplotRows = subplotRows
+        self.subplotCols = subplotCols
         self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
                        '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
                        '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
@@ -42,11 +44,18 @@ class PieChartCreator():
         return allClusterFractions
 
     def create_plot(self):
-        fig = plt.figure(3,figsize=(6.0,9))
+
+        if self.subplotRows > self.subplotCols:
+            fig = plt.figure(figsize=(6.5,9))
+        elif self.subplotCols > self.subplotRows:
+            fig = plt.figure(figsize=(9,6.5))
+        else:
+            fig = plt.figure(figsize=(9,8))
+
         subplotCount = 0
         for fileInd in range(len(self.allClusterFractions)):
             subplotCount+=1
-            ax = fig.add_subplot(3,2,subplotCount)
+            ax = fig.add_subplot(self.subplotRows,self.subplotCols,subplotCount)
 
             labels = ['%s'%l for l in self.masterLabelList]
             fracs = self.allClusterFractions[fileInd]
