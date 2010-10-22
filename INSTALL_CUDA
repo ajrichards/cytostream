@@ -1,0 +1,62 @@
+The following notes detail how to install all necessary CUDA materials
+
+######################################
+### For Ubuntu  Lucid 64 bit       ###
+######################################
+
+## 260 on 10.04
+File Edit Options Buffers Tools Help                                                                                                                                                
+## cleanup first
+$ sudo apt-get --purge remove nvidia-kernel-common nvidia-settings
+$ sudo rm /etc/init.d/nvidia-*
+$ sudo update-rc.d nvidia-kernel remove
+$ sudo rm -rf /usr/local/cuda
+$ sudo rm -rf NVIDIA_CUDA/
+$ sudo rm -rf NVIDIA_GPU_Computing_SDK/
+$ sudo rm /usr/lib/libcuda*
+$ sudo rm /usr/lib32/libcuda*
+
+## Install the build tools we need
+sudo apt-get install build-essential libxext-dev libxi-dev x11proto-xext-dev libice-dev libsm-dev libxt-dev libxmu-headers libxmu-dev freeglut3-dev libglut3-dev
+sudo apt-get install linux-headers-`uname -r` build-essential nvidia-settings
+
+## DOWNLOADS (Nvidia)
+Download the Driver (260), toolkit (3.2) and examples (3.2) to ~/Downloads
+$ cd ~/Downloads
+# sudo chmod 755 *.run
+
+## DRIVER
+close all applications or reboot
+log into terminal using 'alt + ctl + f1'
+$ sudo gdm-stop
+$ cd ~/Downloads
+$ sudo ./devdriver_3.2_linux_64_260.24.run
+reboot
+
+## TOOLKIT
+$ cd ~/Downloads
+$ sudo ./cudatoolkit_3.2.9_linux_64_ubuntu10.04.run
+
+## SDK EXAMPLES
+$ cd ~/Downloads
+$ sudo ./gpucomputingsdk_3.2_linux.run
+$ cd ~/NVIDIA_GPU_Computing_SDK/C/
+$ sudo make
+$ ./bin/linux/release/smokeParticles
+
+Note: see troubleshooting if the examples do not run
+
+## TROUBLESHOOTING
+if you see the following error when running an example
+'error while loading shared libraries: libcudart.so.3: cannot open shared object file: No such file or directory'
+
+$ sudo emacs ~/NVIDIA_GPU_Computing_SDK/C/common/common.mk
+
+then under 'Compilers' add the flag -fPIC as follows
+
+  CXX := g++ -fPIC
+
+$ cd ~/NVIDIA_GPU_Computing_SDK/C/
+$ sudo make clean
+$ sudo make
+$ ./bin/linux/release/smokeParticles

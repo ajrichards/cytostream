@@ -1,0 +1,25 @@
+
+## to build the binaries
+/usr/local/bin/python build_osx.py py2app
+
+## make sure the app does not call the sys qt
+past the following into the shell
+
+cat > ./dist/Cytostream.app/Contents/Resources/qt.conf <<DELIM
+[Paths]
+Plugins = plugin
+DELIM
+
+## to test that it works
+open dist/Cytostream.app
+
+## to see the output for debugging
+open -a Console
+
+## finally make a dmg installer
+hdiutil create -srcfolder dist/Cytostream.app Cytostream.dmg
+
+## to run on a new version of 10.6
+rm -rf ~/.matplotlib
+cd /Applications/Vistrails.app/Contents/Resources/lib/python2.6
+DYLD_LIBRARY_PATH=/usr/lib /System/Library/Frameworks/ Python.framework/Versions/2.6/bin/python
