@@ -38,11 +38,11 @@ def get_file_channel_list(filePath):
     return channels
 
 def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all',labels=None,buff=0.02,altDir=None,centroids=None):
-    markerSize = 3
+    markerSize = 1
     alphaVal = 0.5
 
     fontName = 'arial'
-    fontSize = 12
+    fontSize = 9
     plotType = 'png'
 
     colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
@@ -140,10 +140,15 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
     else:
         fig = plt.figure(figsize=(9,8))
 
+    if subplotRows * subplotCols <=6:
+        fontSize = 10
+    else:
+        fontSize = 8
+
+    print len(expListNames), len(expListData), len(expListLabels)
     
     #for key,item in centroids.iteritems():
     #    print "\t", key,item.keys()
-
 
     subplotCount = 0
     colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
@@ -164,15 +169,14 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
 
         xMaxList.append(expData[:,colInd1].max())
         yMaxList.append(expData[:,colInd2].max())
-        xMinList.append(expData[:,colInd1].min())
-        yMinList.append(expData[:,colInd2].min())
 
-    xAxLimit = (0 - 0.05, np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
-    yAxLimit = (0 - 0.05, np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
+        ## use only non negative numbers for min
+        xMinList.append(expData[:,colInd1][np.where(expData[:,colInd1] >= 0)[0]].min())
+        yMinList.append(expData[:,colInd2][np.where(expData[:,colInd2] >= 0)[0]].min())
+        #yMinList.append(expData[:,colInd2].min())
 
-
-    #xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
-    #yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
+    xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
+    yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
 
     for c in range(len(expListNames)):
         expData = expListData[c]
@@ -206,12 +210,12 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
                 yPos = centroids[expName][str(l)][colInd2]
                 
                 if clustColor in ['#FFFFAA','y','#33FF77']:
-                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=8.0,
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize-2.0,
                             ha="center", va="center",
                             bbox = dict(boxstyle="round",facecolor=clustColor,alpha=0.8)
                             )
                 else:
-                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=8.0,
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize-2.0,
                             ha="center", va="center",
                             bbox = dict(boxstyle="round",facecolor=clustColor,alpha=0.8)
                             )
@@ -221,9 +225,9 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
             print "ERROR: the correct number of point were not plotted %s/%s"%(totalPoints,expData[:,0].size)
 
         if expListNames[subplotCount-1] == refFile:
-            ax.set_title(expListNames[subplotCount-1],fontweight='heavy')
+            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize,fontweight='heavy')
         else:
-            ax.set_title(expListNames[subplotCount-1])
+            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize)
 
         ax.set_xlim([xAxLimit[0],xAxLimit[1]])
         ax.set_ylim([yAxLimit[0],yAxLimit[1]])
