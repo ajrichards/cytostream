@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator
-
+import fcm
 
 def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow                                                                                                     
     "breaks any matplotlib cmap into n colors"
@@ -37,7 +37,7 @@ def get_file_channel_list(filePath):
     channels = [re.sub("\s","-",c) for c in channels]
     return channels
 
-def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all',labels=None,buff=0.02,altDir=None,centroids=None):
+def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChannels=[],subset='all',labels=None,buff=0.02,altDir=None,centroids=None,fcsType='binary'):
     markerSize = 1
     alphaVal = 0.5
 
@@ -52,12 +52,10 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
               "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
               "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
 
-    #colors = ['b','g','r','c','m','y','b','orange','#AAAAAA','#FF6600','#FFCC00',
-    #          '#FFFFAA','#6622AA','#33FF77','#998800']
-
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
     ax = fig.add_subplot(111)
+    ax.clear()
 
     ## specify channels
     index1 = int(channel1Ind)
@@ -67,8 +65,32 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
     channel2 = fileChannels[index2]
 
     ## exclude scatter
-    #data = pyfcm_load_fcs_file(filePath)
-    data = read_txt_into_array(filePath)
+    if fcsType == 'binary':
+        data = pyfcm_load_fcs_file(filePath)
+        fileChannels = data.channels
+    elif fcsType == 'text':
+        data = read_txt_into_array(filePath)
+        fileChannels = read_txt_to_file_channels(filePath)
+    else:
+        print "ERROR: invalid fcs data type"
+
+    ## specify data
+    if len(excludedChannels) > 0:
+        includedChannels = list(set(range(len(fileChannels))).difference(set(excludedChannels)))
+    else:
+        includedChannels = range(len(fileChannels))
+
+    if len(excludedChannels) != 0:
+        includedChannels = list(set(range(len(fileChannels))).difference(set(excludedChannels)))
+        includedChannelLabels = np.array(fileChannels)[includedChannels].tolist()
+        excludedChannelLabels = np.array(fileChannels)[excludedChannels].tolist()
+    else:
+        includedChannels = range(len(fileChannels))
+        includedChannelLabels = fileChannels
+        excludedChannelLabels = []
+
+    data = data[:,includedChannels]
+    fileChannels = np.array(fileChannels)[includedChannels]
 
     ## make plot
     totalPoints = 0
@@ -83,8 +105,14 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
 
         clustCount = -1
         for l in np.sort(np.unique(labels)):
-            hexColor = colors[l]
+            try:
+                selectedColor = colors[l]
+            except:
+                print 'WARNING not enough colors in self.colors looking for ', l
+                clustColor = 'black'
+
             clustCount += 1
+            print clustCount
 
             x = data[:,index1][np.where(labels==l)[0]]
             y = data[:,index2][np.where(labels==l)[0]]
@@ -93,23 +121,23 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,subset='all'
 
             if x.size == 0:
                 continue
-            ax.scatter(x,y,color=hexColor,s=markerSize)
+            ax.scatter(x,y,color=selectedColor,s=markerSize)
 
             ## handle centroids if present
             prefix = ''
             if centroids != None:
-                xPos = centroids[str(l)][index1]
-                yPos = centroids[str(l)][index2]
+                xPos = centroids[l][index1] # str(l)
+                yPos = centroids[l][index2] # str(l)
 
-                if colors[l] in ['#FFFFAA','y']:
+                if selectedColor in ['#FFFFAA','y']:
                     ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',
                             ha="center", va="center",
-                            bbox = dict(boxstyle="round",facecolor=hexColor)
+                            bbox = dict(boxstyle="round",facecolor=selectedColor)
                             )
                 else:
                     ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white',
                             ha="center", va="center",
-                            bbox = dict(boxstyle="round",facecolor=hexColor)
+                            bbox = dict(boxstyle="round",facecolor=selectedColor)
                             )
 
     ## handle data edge buffers
@@ -144,9 +172,12 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         fontSize = 10
     else:
         fontSize = 8
-
-    print len(expListNames), len(expListData), len(expListLabels)
     
+    if len(expListNames) != len(expListData) or len(expListNames) != len(expListLabels):
+        print "ERROR: cannot make_plots_as_subplots - bad input data",
+        print len(expListNames), len(expListData), len(expListLabels)
+        return 
+
     #for key,item in centroids.iteritems():
     #    print "\t", key,item.keys()
 
@@ -164,9 +195,7 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         expData = expListData[c]
         labels = expListLabels[c]
         expName = expListNames[c]
-        #if expName == "ACS-T-Pt_5_SEB":
-        #    continue
-
+ 
         xMaxList.append(expData[:,colInd1].max())
         yMaxList.append(expData[:,colInd2].max())
 
@@ -236,7 +265,7 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         ax.yaxis.set_major_locator(MaxNLocator(4))
 
         leftSidePanels = np.arange(1,subplotCols*subplotRows+1,subplotCols)
-        bottomPanels = np.arange(1,subplotCols*subplotRows+1)[-subplotCols:]
+        bottomPanels =   np.arange(1,subplotCols*subplotRows+1)[-subplotCols:]
 
         if subplotCount not in leftSidePanels:
             ax.set_yticks([])
