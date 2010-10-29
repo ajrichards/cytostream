@@ -6,6 +6,12 @@ import matplotlib.pyplot as plt
 class PieChartCreator():
 
     def __init__(self,newLabelsLists,expListNames,saveas=None,subplotRows=3,subplotCols=4):
+
+        ## error checking
+        if subplotRows * subplotCols < len(expListNames):
+            print "ERROR: bad subplot size specified - need %s only %s specified"%(len(expListNames), subplotRows*subplotCols)
+            return None
+
         self.newLabelsLists = newLabelsLists
         self.expListNames = expListNames
         self.saveas = saveas
@@ -16,7 +22,9 @@ class PieChartCreator():
                        '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
                        "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
                        "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-                       "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
+                       "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
+                       "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
+
         self.masterLabelList = self.get_master_index_list()
         self.allClusterFractions = self.get_cluster_fractions()
         self.create_plot()
@@ -46,9 +54,9 @@ class PieChartCreator():
     def create_plot(self):
 
         if self.subplotRows > self.subplotCols:
-            fig = plt.figure(figsize=(6.5,9))
+            fig = plt.figure(figsize=(6.5,10))
         elif self.subplotCols > self.subplotRows:
-            fig = plt.figure(figsize=(9,6.5))
+            fig = plt.figure(figsize=(10,6.5))
         else:
             fig = plt.figure(figsize=(9,8))
 
