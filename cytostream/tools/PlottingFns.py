@@ -50,7 +50,8 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
               '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
               "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
               "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-              "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
+              "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
+              "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
 
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
@@ -171,8 +172,10 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
     if subplotRows * subplotCols <=6:
         fontSize = 10
     else:
-        fontSize = 8
+        fontSize = 6
     
+    fontName = 'ariel'
+
     if len(expListNames) != len(expListData) or len(expListNames) != len(expListLabels):
         print "ERROR: cannot make_plots_as_subplots - bad input data",
         print len(expListNames), len(expListData), len(expListLabels)
@@ -187,7 +190,8 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
               '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
               "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
               "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-              "#003333","#66CCFF","#CCFFFF","#FFCCFF","#009999"]
+              "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
+              "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
 
     ## determin the ymax and xmax
     xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
@@ -264,23 +268,33 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         ax.xaxis.set_major_locator(MaxNLocator(4))
         ax.yaxis.set_major_locator(MaxNLocator(4))
 
+        lastFew = len(expListNames) % subplotCols
+        if lastFew == 0:
+            lastFew = subplotCols
         leftSidePanels = np.arange(1,subplotCols*subplotRows+1,subplotCols)
-        bottomPanels =   np.arange(1,subplotCols*subplotRows+1)[-subplotCols:]
+        bottomPanels = np.arange(1,subplotCols*subplotRows+1)[-lastFew:].tolist() + [len(expListNames)-1]
+
+        ## format ticklabels
+        xticklabels = plt.getp(plt.gca(), 'xticklabels')
+        plt.setp(xticklabels, fontsize=fontSize-1, fontname=fontName)
+        yticklabels = plt.getp(plt.gca(), 'yticklabels')
+        plt.setp(yticklabels, fontsize=fontSize-1, fontname=fontName)
+
 
         if subplotCount not in leftSidePanels:
             ax.set_yticks([])
         else:
             if colInd2Name != None:
-                ax.set_ylabel(colInd2Name)
+                ax.set_ylabel(colInd2Name,fontsize=fontSize-1,fontname=fontName)
 
         if subplotCount not in bottomPanels:
             ax.set_xticks([])
         else:
             if colInd1Name != None:
-                ax.set_xlabel(colInd1Name)
+                ax.set_xlabel(colInd1Name,fontsize=fontSize-1,fontname=fontName)
 
         if figTitle != None:
-            fig.suptitle(figTitle, fontsize=12)
+            fig.suptitle(figTitle, fontsize=12, fontname=fontName)
 
         plt.subplots_adjust(wspace=0.1, hspace=0.2)
 
