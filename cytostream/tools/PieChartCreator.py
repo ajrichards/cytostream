@@ -2,10 +2,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from cytostream.tools import get_all_colors
 
 class PieChartCreator():
 
-    def __init__(self,newLabelsLists,expListNames,saveas=None,subplotRows=3,subplotCols=4):
+    def __init__(self,newLabelsLists,expListNames,saveas=None,subplotRows=3,subplotCols=4,fontSize=9):
 
         ## error checking
         if subplotRows * subplotCols < len(expListNames):
@@ -15,17 +16,11 @@ class PieChartCreator():
         self.newLabelsLists = newLabelsLists
         self.expListNames = expListNames
         self.saveas = saveas
+        self.fontName = 'arial'
+        self.fontSize = fontSize
         self.subplotRows = subplotRows
         self.subplotCols = subplotCols
-
-        self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-                       '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
-                       '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
-                       "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
-                       "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-                       "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
-                       "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
-
+        self.colors = get_all_colors()
         self.masterLabelList = self.get_master_index_list()
         self.allClusterFractions = self.get_cluster_fractions()
         self.create_plot()
@@ -74,7 +69,7 @@ class PieChartCreator():
             colorList = [self.colors[int(l)] for l in labels]
             explode = [0 for l in labels]
             ax.pie(fracs, explode=explode, labels=None, colors=colorList, shadow=True) #  autopct='%1.1f%%'
-            ax.set_title(self.expListNames[fileInd], bbox={'facecolor':'0.8', 'pad':5})  
+            ax.set_title(self.expListNames[fileInd], bbox={'facecolor':'0.8', 'pad':5},fontsize=self.fontSize,fontname=self.fontName)  
 
         if self.saveas != None:
             fig.savefig(self.saveas)

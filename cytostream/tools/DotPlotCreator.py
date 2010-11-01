@@ -2,6 +2,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from cytostream.tools import get_all_colors
+from matplotlib.ticker import MaxNLocator
 
 class DotPlotCreator():
 
@@ -12,14 +14,9 @@ class DotPlotCreator():
         self.saveas = saveas
         #self.subplotRows = subplotRows
         #self.subplotCols = subplotCols
-        
-        self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-                       '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
-                       '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
-                       "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
-                       "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-                       "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
-                       "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
+        self.fontSize = 10
+        self.fontName = 'arial'
+        self.colors = get_all_colors()
 
         self.masterLabelList = self.get_master_index_list()
         #self.allClusterFractions = self.get_cluster_fractions()
@@ -32,7 +29,6 @@ class DotPlotCreator():
             labelMasterList.update(fileLabels)
  
         return np.sort(list(labelMasterList))
-
 
     def create_plot(self):
 
@@ -52,13 +48,22 @@ class DotPlotCreator():
                 else:
                     colToPlot.append(0)
             
-            colToPlot = np.array(colToPlot) * 500
+            colToPlot = np.array(colToPlot) * 400
             ax.scatter(np.array([i+1]).repeat(len(self.masterLabelList)),range(1,len(self.masterLabelList)+1),marker='o',s=colToPlot,alpha=0.7)
 
         ax.set_ylim([0,len(self.masterLabelList) + 1])
         ax.set_xlim([0,len(self.newLabelLists) + 1])
-        xtickNames = plt.setp(ax, xticklabels=[' ']+self.expListNames)
-        plt.setp(xtickNames, rotation=45, fontsize=8)
+        xticklabels = plt.getp(plt.gca(), 'xticklabels')
+        plt.setp(xticklabels, fontsize=self.fontSize-1, fontname=self.fontName)
+        yticklabels = plt.getp(plt.gca(), 'yticklabels')
+        plt.setp(yticklabels, fontsize=self.fontSize-1, fontname=self.fontName)
+       
+
+        #ax.xaxis.set_major_locator(MaxNLocator(len(self.masterLabelList)+1))
+        #ax.yaxis.set_major_locator(MaxNLocator(len(self.newLabelLists)+1))
+         #
+        #xtickNames = plt.setp(ax, xticklabels=[' ']+self.expListNames)
+        #plt.setp(xtickNames, rotation=45, fontsize=8)
 
         if self.saveas != None:
             fig.savefig(self.saveas)
