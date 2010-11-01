@@ -13,9 +13,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator
+from cytostream.tools import read_txt_to_file_channels,read_txt_into_array
 import fcm
 
-def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow                                                                                                     
+def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow                                                       
     "breaks any matplotlib cmap into n colors"
     cmap = cm.get_cmap(cmapName,n)
     return cmap(np.arange(n))
@@ -37,6 +38,16 @@ def get_file_channel_list(filePath):
     channels = [re.sub("\s","-",c) for c in channels]
     return channels
 
+def get_all_colors():
+    colors =  ['b','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188",'#AAAAAA','#FF6600',"#CCCCCC","#660033",
+               '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",
+               '#FA58AC','#8A0808','#D8D8D8',"#CC2277",'#336666','#996633',"#FFCCCC","#CC0011","#FFBB33","#DDDDDD",
+               "#FF9966","#009999","#FF0099","#996633","#990000","#660000","#9900BB","#330033","#FF5544","#9966CC",
+               "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900","#99DD22","#3322BB","#663399","#002255",
+               "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF","#00EE33","#337722","#CCBBFF","#FF3300",
+               "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB","#00EE88","#66AA22","#99FFEE","#660022"]
+    return colors
+
 def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChannels=[],subset='all',labels=None,buff=0.02,altDir=None,centroids=None,fcsType='binary'):
     markerSize = 1
     alphaVal = 0.5
@@ -45,13 +56,7 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
     fontSize = 9
     plotType = 'png'
 
-    colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-              '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
-              '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
-              "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
-              "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-              "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
-              "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
+    colors = get_all_colors()
 
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
@@ -160,8 +165,24 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
         fig.savefig(fileName,transparent=False,dpi=200)
 
 
-def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
-                           showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileChannels=None,subplotRows=3,subplotCols=2,refFile=None):
+def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
+                           showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileChannels=None,subplotRows=3,subplotCols=2,refFile=None,
+                           dataType='fcs'):
+
+    def get_file_data(dataPath,dataType):
+        if os.path.isfile(dataPath) == False:
+            print "WARNING: cannot get fcs data bad file path"
+            return None,None
+
+        if dataType == 'fcs':
+            fcsData = fcm.loadFCS(dataPath)
+            fileChannels = fcsData.channels
+        else:
+            fcsData = read_txt_into_array(dataPath)
+            fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
+
+        return fcsData, fileChannels
+
     if subplotRows > subplotCols:
         fig = plt.figure(figsize=(6.5,9))
     elif subplotCols > subplotRows:
@@ -176,27 +197,18 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
     
     fontName = 'ariel'
 
-    if len(expListNames) != len(expListData) or len(expListNames) != len(expListLabels):
+    if len(expListNames) != len(expListDataPaths) or len(expListNames) != len(expListLabels):
         print "ERROR: cannot make_plots_as_subplots - bad input data",
-        print len(expListNames), len(expListData), len(expListLabels)
+        print len(expListNames), len(expListDataPaths), len(expListLabels)
         return 
 
-    #for key,item in centroids.iteritems():
-    #    print "\t", key,item.keys()
-
     subplotCount = 0
-    colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
-              '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
-              '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",
-              "#FF9966","#009999","#FF0099","#996633","#990000","#660000",
-              "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900",
-              "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF",
-              "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB"]
+    colors = get_all_colors()
 
     ## determin the ymax and xmax
     xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
     for c in range(len(expListNames)):
-        expData = expListData[c]
+        expData,fileChannels = get_file_data(expListDataPaths[c],dataType)
         labels = expListLabels[c]
         expName = expListNames[c]
  
@@ -206,13 +218,12 @@ def make_plots_as_subplots(expListNames,expListData,expListLabels,colInd1=0,colI
         ## use only non negative numbers for min
         xMinList.append(expData[:,colInd1][np.where(expData[:,colInd1] >= 0)[0]].min())
         yMinList.append(expData[:,colInd2][np.where(expData[:,colInd2] >= 0)[0]].min())
-        #yMinList.append(expData[:,colInd2].min())
 
     xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
     yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
 
     for c in range(len(expListNames)):
-        expData = expListData[c]
+        expData, fileChannels = get_file_data(expListDataPaths[c],dataType)
         labels = expListLabels[c]
         expName = expListNames[c]
         subplotCount += 1
