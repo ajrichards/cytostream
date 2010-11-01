@@ -1,4 +1,5 @@
 from FileAligner import FileAligner
 from PieChartCreator import PieChartCreator
+from DotPlotCreator import DotPlotCreator
 from MiscFns import calculate_intercluster_score
 from PlottingFns import make_plots_as_subplots, make_scatter_plot
