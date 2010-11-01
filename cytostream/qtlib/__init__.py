@@ -16,6 +16,8 @@ from BlankPage import BlankPage
 from ResultsNavigationDock import ResultsNavigationDock
 from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
+from FourWayViewer import FourWayViewer
+from FourWayViewerDock import FourWayViewerDock
 from LeftDock import add_left_dock
 from StateTransitions import *
 from MainWindow import MainWindow

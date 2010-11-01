@@ -17,6 +17,7 @@ class PieChartCreator():
         self.saveas = saveas
         self.subplotRows = subplotRows
         self.subplotCols = subplotCols
+
         self.colors = ['b','g','r','c','m','y','k','orange','#AAAAAA','#FF6600',
                        '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',
                        '#FA58AC','#8A0808','#D8D8D8','#336666','#996633',"#FFCCCC",

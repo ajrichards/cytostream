@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # check that unittests were run and necessary data is present
     baseDir = os.path.dirname(__file__)
     modelType = 'modes'
-    modelChk = os.path.join(baseDir,'..','projects','utest','models','3FITC_4PE_004_sub1000_dpmm%s.pickle'%modelType) 
+    modelChk = os.path.join(baseDir,'..','projects','utest','models','3FITC_4PE_004_sub1000_dpmm_%s.pickle'%modelType) 
     if os.path.isfile(modelChk) == False:
         print "ERROR: Model not present - (Re)run unit tests"
         print modelChk
