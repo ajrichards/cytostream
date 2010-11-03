@@ -1,4 +1,4 @@
-from MiscFns import calculate_intercluster_score,read_txt_to_file_channels,read_txt_into_array
+from MiscFns import calculate_intercluster_score,get_file_data,read_txt_to_file_channels,read_txt_into_array,get_sample_statistics
 from PlottingFns import make_plots_as_subplots, make_scatter_plot, get_all_colors
 from FileAligner import FileAligner
 from PieChartCreator import PieChartCreator
