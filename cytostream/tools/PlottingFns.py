@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator
-from cytostream.tools import read_txt_to_file_channels,read_txt_into_array
+from cytostream.tools import read_txt_to_file_channels,read_txt_into_array,get_file_data
 import fcm
 
 def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow                                                       
@@ -169,19 +169,19 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
                            showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileChannels=None,subplotRows=3,subplotCols=2,refFile=None,
                            dataType='fcs'):
 
-    def get_file_data(dataPath,dataType):
-        if os.path.isfile(dataPath) == False:
-            print "WARNING: cannot get fcs data bad file path"
-            return None,None
-
-        if dataType == 'fcs':
-            fcsData = fcm.loadFCS(dataPath)
-            fileChannels = fcsData.channels
-        else:
-            fcsData = read_txt_into_array(dataPath)
-            fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
-
-        return fcsData, fileChannels
+    #def get_file_data(dataPath,dataType):
+    #    if os.path.isfile(dataPath) == False:
+    #        print "WARNING: cannot get fcs data bad file path"
+    #        return None,None
+    #
+    #    if dataType == 'fcs':
+    #        fcsData = fcm.loadFCS(dataPath)
+    #        fileChannels = fcsData.channels
+    #    else:
+    #        fcsData = read_txt_into_array(dataPath)
+    #        fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
+    #
+    #    return fcsData, fileChannels
 
     if subplotRows > subplotCols:
         fig = plt.figure(figsize=(6.5,9))
@@ -231,6 +231,8 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
         ax.clear()
 
         totalPoints = 0
+        print np.unique(labels), centroids[expName].keys()
+
         for l in np.sort(np.unique(labels)):
             try:
                 clustColor = colors[l]

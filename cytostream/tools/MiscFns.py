@@ -1,5 +1,6 @@
 import sys,os,re,csv
 import numpy as np
+import fcm
 
 def calculate_intercluster_score(expListNames,expListData,expListLabels):
     '''
@@ -38,6 +39,50 @@ def calculate_intercluster_score(expListNames,expListData,expListLabels):
     
     return goodnessScore
 
+
+def get_file_data(dataPath,dataType='fcs'):
+
+    if dataType not in ['fcs','txt']:
+        print "ERROR in tools.get_file_data -- bad data type ", dataType
+        return None, None
+
+    if os.path.isfile(dataPath) == False:
+        print "WARNING in tools.get_file_data -- cannot get fcs data bad file path"
+        return None,None
+
+    if dataType == 'fcs':
+        fcsData = fcm.loadFCS(dataPath)
+        fileChannels = fcsData.channels
+    else:
+        fcsData = read_txt_into_array(dataPath)
+        fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
+
+    return fcsData, fileChannels
+
+
+def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='fcs'):
+
+    centroids, variances, numClusts, numDataPoints = {},{},{},{}
+    for expInd in range(len(expListLabels)):
+        expName = expListNames[expInd]
+        centroids[expName] = {}
+        variances[expName] = {}
+        numClusts[expName] = None
+        numDataPoints[expName] = {}
+
+    for expInd in range(len(expListLabels)):
+        expName = expListNames[expInd]
+        expData,fileChannels = get_file_data(expListDataPaths[expInd],dataType=dataType)
+        expLabels = expListLabels[expInd]
+
+        for cluster in np.sort(np.unique(expLabels)):
+            centroids[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].mean(axis=0)
+            variances[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].var(axis=0)
+            numDataPoints[expName][str(cluster)] = len(np.where(expLabels==cluster)[0])
+
+        numClusts[expName] = len(np.unique(expLabels))
+
+    return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints}
 
 def get_master_label_list(expListLabels):
 
