@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 from matplotlib.ticker import MaxNLocator
 from scipy.spatial.distance import pdist,cdist,squareform
+from scipy.cluster.vq import whiten
 import scipy.stats as stats
+
 
 class FileAligner():
     '''
@@ -26,6 +28,7 @@ class FileAligner():
     def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minMergeSilValue=0.95,
                  mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",phi0=0.10):
         self.expListNames = [expName for expName in expListNames]
+        #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
         self.phiRange = phiRange
@@ -107,13 +110,13 @@ class FileAligner():
                 self._save_clusters(phi)
 
         ## move the copied reference file labels to the reference labels
-        for phi in self.phiRange:
-            self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
-            self.newLabelsAll[str(round(phi,4))].pop()
+        #for phi in self.phiRange:
+         #   self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
+         #   self.newLabelsAll[str(round(phi,4))].pop()
 
-        self.expListNames.pop()
-        self.expListData.pop()
-        self.expListLabels.pop()
+        #self.expListNames.pop()
+        #self.expListData.pop()
+        #self.expListLabels.pop()
 
     def create_log_file(self):
         ''' 
