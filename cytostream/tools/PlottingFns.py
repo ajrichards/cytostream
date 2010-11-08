@@ -39,15 +39,17 @@ def get_file_channel_list(filePath):
     return channels
 
 def get_all_colors():
-    colors =  ['b','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188",'#AAAAAA','#FF6600',"#CCCCCC","#660033",
+    colors =  ['b','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188","#990033",'#FF6600',"#CCCCCC","#660033",
                '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",
                '#FA58AC','#8A0808','#D8D8D8',"#CC2277",'#336666','#996633',"#FFCCCC","#CC0011","#FFBB33","#DDDDDD",
                "#FF9966","#009999","#FF0099","#996633","#990000","#660000","#9900BB","#330033","#FF5544","#9966CC",
                "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900","#99DD22","#3322BB","#663399","#002255",
                "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF","#00EE33","#337722","#CCBBFF","#FF3300",
-               "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB","#00EE88","#66AA22","#99FFEE","#660022"]
+               "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB","#00EE88","#66AA22","#99FFEE","#660022",
+               "#FFFF33","#00CCFF","#990066","#006600","#00CCFF",'#AAAAAA',"#33FF00","#0066FF","#FF9900","#FFCC00"]
     return colors
 
+'''
 def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChannels=[],subset='all',labels=None,buff=0.02,altDir=None,centroids=None,fcsType='binary'):
     markerSize = 1
     alphaVal = 0.5
@@ -118,7 +120,6 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
                 clustColor = 'black'
 
             clustCount += 1
-            print clustCount
 
             x = data[:,index1][np.where(labels==l)[0]]
             y = data[:,index2][np.where(labels==l)[0]]
@@ -163,55 +164,59 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(re.sub("\.fcs|\.out","",fileName),channel1,channel2,plotType))
         fig.savefig(fileName,transparent=False,dpi=200)
-
+'''
 
 def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
-                           showCentroids=True,figTitle=None,markerSize=5,saveas=None,fileChannels=None,subplotRows=3,subplotCols=2,refFile=None,
-                           dataType='fcs'):
-
-    #def get_file_data(dataPath,dataType):
-    #    if os.path.isfile(dataPath) == False:
-    #        print "WARNING: cannot get fcs data bad file path"
-    #        return None,None
-    #
-    #    if dataType == 'fcs':
-    #        fcsData = fcm.loadFCS(dataPath)
-    #        fileChannels = fcsData.channels
-    #    else:
-    #        fcsData = read_txt_into_array(dataPath)
-    #        fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
-    #
-    #    return fcsData, fileChannels
+                           showCentroids=True,figTitle=None,markerSize=1,saveas=None,subplotRows=3,subplotCols=2,refFile=None,
+                           dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10):
 
     if subplotRows > subplotCols:
         fig = plt.figure(figsize=(6.5,9))
     elif subplotCols > subplotRows:
-        fig = plt.figure(figsize=(9,6.5))
+        fig = plt.figure(figsize=(10,7))
     else:
         fig = plt.figure(figsize=(9,8))
-
-    if subplotRows * subplotCols <=6:
-        fontSize = 10
-    else:
-        fontSize = 6
     
     fontName = 'ariel'
 
+    ## error checking
     if len(expListNames) != len(expListDataPaths) or len(expListNames) != len(expListLabels):
         print "ERROR: cannot make_plots_as_subplots - bad input data",
         print len(expListNames), len(expListDataPaths), len(expListLabels)
         return 
-
+    
     subplotCount = 0
     colors = get_all_colors()
 
+    ## handle subsetting
+    if subsample != None:
+        numObs = None
+        minNumObs = np.inf
+        
+        # get minimum number of observations out of all files considered 
+        for filePath in expListDataPaths:
+            expData, fChannels = get_file_data(filePath,dataType)
+            n,d = np.shape(expData)
+        
+            if n < minNumObs:
+                minNumObs = n
+
+        subsampleIndices = np.random.random_integers(0,minNumObs-1,subsample)
+        print np.shape(subsampleIndices)
+    else:
+        subsampleIndices = None
+        
     ## determin the ymax and xmax
     xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
     for c in range(len(expListNames)):
-        expData,fileChannels = get_file_data(expListDataPaths[c],dataType)
+        expData,fChannels = get_file_data(expListDataPaths[c],dataType)
         labels = expListLabels[c]
         expName = expListNames[c]
  
+        if subsampleIndices != None:
+            expData = expData[subsampleIndices,:]
+            labels = np.array(labels)[subsampleIndices].tolist()
+
         xMaxList.append(expData[:,colInd1].max())
         yMaxList.append(expData[:,colInd2].max())
 
@@ -219,19 +224,24 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
         xMinList.append(expData[:,colInd1][np.where(expData[:,colInd1] >= 0)[0]].min())
         yMinList.append(expData[:,colInd2][np.where(expData[:,colInd2] >= 0)[0]].min())
 
-    xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.05 * np.array(xMaxList).max())
-    yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.05 * np.array(yMaxList).max())
+    xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.01 * np.array(xMaxList).max())
+    yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.01 * np.array(yMaxList).max())
 
+    ## loop through files and create the scatter plots
     for c in range(len(expListNames)):
-        expData, fileChannels = get_file_data(expListDataPaths[c],dataType)
+        expData, fChannels = get_file_data(expListDataPaths[c],dataType)
         labels = expListLabels[c]
         expName = expListNames[c]
+
+        if subsampleIndices != None:
+            expData = expData[subsampleIndices,:]
+            labels = np.array(labels)[subsampleIndices].tolist()
+
         subplotCount += 1
         ax = fig.add_subplot(subplotRows,subplotCols,subplotCount)
         ax.clear()
 
         totalPoints = 0
-        print np.unique(labels), centroids[expName].keys()
 
         for l in np.sort(np.unique(labels)):
             try:
@@ -246,8 +256,20 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
             if x.size == 0:
                 continue
 
-            ax.scatter(x,y,color=clustColor,s=markerSize)
+            ## handle highlighted clusters
+            if highlight != None and str(int(highlight)) == str(int(l)):
+                alphaVal = 0.8
+            elif highlight !=None and str(int(highlight)) != str(int(l)):
+                alphaVal = 0.5
+                clustColor = "#CCCCCC"
+            else:
+                alphaVal=0.8
+
+            ax.scatter(x,y,color=clustColor,s=markerSize,alpha=alphaVal)
             totalPoints+=x.size
+
+            if highlight != None and str(int(highlight)) != str(int(l)):
+                continue
 
             ## handle centroids if present
             prefix = ''
@@ -255,15 +277,18 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
                 xPos = centroids[expName][str(l)][colInd1]
                 yPos = centroids[expName][str(l)][colInd2]
                 
+                if xPos < 0 or yPos <0:
+                    continue
+
                 if clustColor in ['#FFFFAA','y','#33FF77']:
-                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize-2.0,
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize,
                             ha="center", va="center",
-                            bbox = dict(boxstyle="round",facecolor=clustColor,alpha=0.8)
+                            bbox = dict(boxstyle="round",facecolor=clustColor,alpha=alphaVal)
                             )
                 else:
-                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize-2.0,
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize,
                             ha="center", va="center",
-                            bbox = dict(boxstyle="round",facecolor=clustColor,alpha=0.8)
+                            bbox = dict(boxstyle="round",facecolor=clustColor,alpha=alphaVal)
                             )
 
         ## error check that all point were plotted 
@@ -307,7 +332,7 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
                 ax.set_xlabel(colInd1Name,fontsize=fontSize-1,fontname=fontName)
 
         if figTitle != None:
-            fig.suptitle(figTitle, fontsize=12, fontname=fontName)
+            fig.suptitle(figTitle, fontsize=fontSize, fontname=fontName)
 
         plt.subplots_adjust(wspace=0.1, hspace=0.2)
 

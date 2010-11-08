@@ -73,10 +73,12 @@ class DotPlotCreator():
 
         if self.covariates != None:
             print 'creating line for ', self.covariates
+            actualLineBreak = 0
             for group in np.unique(self.covariates):
                 lineBreak = len(np.where(np.array(self.covariates) == group)[0]) - 0.5
+                actualLineBreak += lineBreak
                 if group != np.unique(self.covariates)[-1]:
-                    ax.plot(np.array([lineBreak+1]).repeat(len(usedLabels)+2),range(0,len(usedLabels)+2),color='k')
+                    ax.plot(np.array([actualLineBreak+1]).repeat(len(usedLabels)+2),range(0,len(usedLabels)+2),color='k')
 
         ## format x axis
         ax.set_xlim([0,len(self.newLabelLists) + 1])

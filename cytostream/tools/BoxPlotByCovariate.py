@@ -102,6 +102,7 @@ class BoxPlotByCovariate():
             plt.setp(bp['fliers'], color='red', marker='*')
             
             # Now fill the boxes with desired colors
+            '''
             boxColors = ['darkkhaki','royalblue']
             numBoxes = 2
             medians = range(numBoxes)
@@ -165,7 +166,7 @@ class BoxPlotByCovariate():
                     ax.text(pos[tick], top, upperLabels[tick],
                             horizontalalignment='center', fontsize=self.fontSize, weight=weights[k],
                             color=boxColors[k])
-
+            '''
             ## handle axes
             ## format axis and title
             #faceColor = self.colors[lab]
