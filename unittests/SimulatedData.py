@@ -140,7 +140,7 @@ case6 = np.vstack((case6c1,case6c2))
 case6 = np.vstack((case6,case6c3))
 case6 = np.vstack((case6,case6c4))
 
-case6Labels = np.hstack((np.array([0]).repeat(np.shape(case6c1)[0]),np.array([np.random.randint(1,3)]).repeat(np.shape(case6c2)[0])))
+case6Labels = np.hstack((np.array([42]).repeat(np.shape(case6c1)[0]),np.array([np.random.randint(1,3)]).repeat(np.shape(case6c2)[0])))
 case6Labels = np.hstack((case6Labels,np.array([np.random.randint(4,7)]).repeat(np.shape(case6c3)[0])))
 case6Labels = np.hstack((case6Labels,np.array([np.random.randint(12,15)]).repeat(np.shape(case6c4)[0])))
 

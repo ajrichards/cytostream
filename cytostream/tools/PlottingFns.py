@@ -39,7 +39,7 @@ def get_file_channel_list(filePath):
     return channels
 
 def get_all_colors():
-    colors =  ['b','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188","#990033",'#FF6600',"#CCCCCC","#660033",
+    colors =  ['#990066','b','#CC6600','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188","#990033",'#FF6600',"#CCCCCC","#660033",
                '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",
                '#FA58AC','#8A0808','#D8D8D8',"#CC2277",'#336666','#996633',"#FFCCCC","#CC0011","#FFBB33","#DDDDDD",
                "#FF9966","#009999","#FF0099","#996633","#990000","#660000","#9900BB","#330033","#FF5544","#9966CC",
@@ -168,7 +168,7 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
 
 def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
                            showCentroids=True,figTitle=None,markerSize=1,saveas=None,subplotRows=3,subplotCols=2,refFile=None,
-                           dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10):
+                           dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10,asData=False):
 
     if subplotRows > subplotCols:
         fig = plt.figure(figsize=(6.5,9))
@@ -195,21 +195,27 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
         
         # get minimum number of observations out of all files considered 
         for filePath in expListDataPaths:
-            expData, fChannels = get_file_data(filePath,dataType)
+            if asData == False:
+                expData, fChannels = get_file_data(filePath,dataType)
+            else:
+                expData = filePath
             n,d = np.shape(expData)
         
             if n < minNumObs:
                 minNumObs = n
 
         subsampleIndices = np.random.random_integers(0,minNumObs-1,subsample)
-        print np.shape(subsampleIndices)
     else:
         subsampleIndices = None
         
     ## determin the ymax and xmax
     xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
     for c in range(len(expListNames)):
-        expData,fChannels = get_file_data(expListDataPaths[c],dataType)
+        if asData == False:
+            expData,fChannels = get_file_data(expListDataPaths[c],dataType)
+        else:
+            expData = expListDataPaths[c]
+
         labels = expListLabels[c]
         expName = expListNames[c]
  
@@ -229,7 +235,10 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
 
     ## loop through files and create the scatter plots
     for c in range(len(expListNames)):
-        expData, fChannels = get_file_data(expListDataPaths[c],dataType)
+        if asData == False:
+            expData, fChannels = get_file_data(expListDataPaths[c],dataType)
+        else:
+            expData = expListDataPaths[c]
         labels = expListLabels[c]
         expName = expListNames[c]
 

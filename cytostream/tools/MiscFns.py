@@ -61,7 +61,11 @@ def get_file_data(dataPath,dataType='fcs'):
 
 
 def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='fcs'):
-
+ 
+    if len(expListLabels) != len(expListNames) or len(expListLabels) != len(expListDataPaths):
+        print "ERROR: bad input data in get_sample_statistics", len(expListLabels), len(expListNames), len(expListDataPaths)
+        return None
+                                                                  
     centroids, variances, numClusts, numDataPoints = {},{},{},{}
     for expInd in range(len(expListLabels)):
         expName = expListNames[expInd]
@@ -76,8 +80,10 @@ def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='
         expLabels = expListLabels[expInd]
 
         for cluster in np.sort(np.unique(expLabels)):
-            centroids[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].mean(axis=0)
-            variances[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].var(axis=0)
+            clusterInds = np.where(expLabels==cluster)[0]
+            print cluster, np.shape(expData), clusterInds.max(), len(clusterInds)
+            centroids[expName][str(cluster)] = expData[clusterInds,:].mean(axis=0)
+            variances[expName][str(cluster)] = expData[clusterInds,:].var(axis=0)
             numDataPoints[expName][str(cluster)] = len(np.where(expLabels==cluster)[0])
 
         numClusts[expName] = len(np.unique(expLabels))
