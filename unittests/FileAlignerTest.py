@@ -35,7 +35,7 @@ fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRa
 beforeStats = fa.get_sample_statistics(expListLabels)
 beforeFig = os.path.join(".","figures","unaligned","TestCasesBefore.png")
 make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,
-                       figTitle='Before File Alignment',saveas=beforeFig,refFile=fa.refFile,subplotRows=2,subplotCols=3)
+                       figTitle='Before File Alignment',saveas=beforeFig,refFile=fa.refFile,subplotRows=2,subplotCols=3,asData=True)
 for phi in phiRange:
     afterStats = fa.get_sample_statistics(fa.newLabelsAll[str(round(phi,4))])
     interClusterDistance = calculate_intercluster_score(expListNames,expListData,fa.newLabelsAll[str(round(phi,4))])
@@ -44,4 +44,4 @@ for phi in phiRange:
     print phi, interClusterDistance
     afterFig = os.path.join(".","figures",str(phi),"TestCasesAfter.png")
     make_plots_as_subplots(fa.expListNames,fa.expListData,fa.newLabelsAll[str(round(phi,4))],centroids=afterStats['mus'],showCentroids=True,
-                           figTitle='After File Alignment',saveas=afterFig,refFile=fa.refFile,subplotRows=2,subplotCols=3)
+                           figTitle='After File Alignment',saveas=afterFig,refFile=fa.refFile,subplotRows=2,subplotCols=3,asData=True)

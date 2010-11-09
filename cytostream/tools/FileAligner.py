@@ -25,7 +25,7 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minMergeSilValue=0.95,
+    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minMergeSilValue=0.3,
                  mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",phi0=0.10):
         self.expListNames = [expName for expName in expListNames]
         #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
@@ -102,21 +102,22 @@ class FileAligner():
         self._merge_clusters_in_reference(self.refFile,self.phi0)
         matchResults = self.make_overlap_comparisons(self.refFile)
         
+        ## align files
         for phi in self.phiRange:
-            ## align files
             if self.verbose == True:
-                print "performing file alignment"
-                self.perform_file_alignment(self.refFile,matchResults,phi)
-                self._save_clusters(phi)
+                print "performing file alignment -- ", phi
+            
+            self.perform_file_alignment(self.refFile,matchResults,phi)
+            self._save_clusters(phi)
 
         ## move the copied reference file labels to the reference labels
-        #for phi in self.phiRange:
-         #   self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
-         #   self.newLabelsAll[str(round(phi,4))].pop()
+        for phi in self.phiRange:
+            self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
+            self.newLabelsAll[str(round(phi,4))].pop()
 
-        #self.expListNames.pop()
-        #self.expListData.pop()
-        #self.expListLabels.pop()
+        self.expListNames.pop()
+        self.expListData.pop()
+        self.expListLabels.pop()
 
     def create_log_file(self):
         ''' 
@@ -126,12 +127,12 @@ class FileAligner():
         if os.path.isdir(os.path.join(self.basedir,"results")) == False:
             os.mkdir(os.path.join(self.basedir,"results"))
 
-        self.logFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge.log"),'w'))
+        self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
         self.logFile.writerow(["refFile",self.refFile])
         self.logFile.writerow(['phi0',self.phi0])
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
-        self.logFile.writerow(['phi','algorithmStep','file1','cluster1','file2','cluster2','numEventsChanged','percentoverlap']) 
+        self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
 
     def transform_labels(self):
         ## ensure that labels begin at 1 and not 0
@@ -177,7 +178,6 @@ class FileAligner():
         subsetExpData = []
         subsetExpLabels = []
 
-        print 'creating the data subsets'
         for c in range(len(self.expListNames)):
             expName = self.expListNames[c]
             expData = self.expListData[c]
@@ -200,6 +200,7 @@ class FileAligner():
             expName = self.expListNames[c]
             expData = subsetExpData[c]
             expLabels = subsetExpLabels[c]
+
             if self.verbose == True:
                 print '\tgetting silhouette values %s/%s'%(c+1,len(self.expListNames))
             silValuesElements[expName] = self._get_silhouette_values(expData,expLabels)
@@ -211,16 +212,56 @@ class FileAligner():
                 clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
                 silValues[expName][str(clusterID)] = clusterSilValue
                 del clusterElementInds
-
+           
         return silValues
 
-    def print_cluster_info(self):
-        '''
-        This function is mean for debugging
-        '''
+    def _get_silhouette_values(self,mat,labels):
         
-        for fileName, silVals in self.silValues.iteritems():
-            print fileName, silVals
+        ## make sure labels are ints
+        labels = np.array([float(l) for l in labels])
+
+        euclideanWithin = {}
+        euclideanBetween = {}
+        for lab in  np.sort(np.unique(labels)):
+            indices = np.where(labels==lab)[0]
+            elements = mat[indices,:]
+            euclidDistWithin = (elements - elements.mean(axis=0))**2.0
+            euclidDistWithin = np.sqrt(euclidDistWithin.sum(axis=1))
+            
+            minEuclidDistBetween = 1e08
+            for nLab in np.sort(np.unique(labels)):
+                if nLab == lab:
+                    continue
+                
+                nIndices = np.where(labels==nLab)[0]
+                nElements = mat[nIndices,:]
+                euclidDistBetween = (elements - nElements.mean(axis=0))**2.0
+                euclidDistBetween = np.sqrt(euclidDistBetween.sum(axis=1))
+                
+                if euclidDistBetween.mean() < minEuclidDistBetween:
+                    minEuclidDistBetween = euclidDistBetween.mean()
+
+            ## add to hash tables
+            euclideanWithin[str(lab)] = euclidDistWithin
+            euclideanBetween[str(lab)] = minEuclidDistBetween
+            
+        silVals = np.zeros((labels.size),)
+        for lab in np.sort(np.unique(labels)):
+            indices = np.where(labels==lab)[0]
+            a = euclideanWithin[str(lab)]
+            b = np.array(euclideanBetween[str(lab)]).repeat(a.size)
+            denom = b.copy()
+            useA = np.where(a > b)[0]
+
+            if len(useA) > 0:
+                denom[useA] = a[useA]
+                            
+            for i in range(len(a)):
+                idx = indices[i]
+                silVals[idx] = (b[i] - a[i]) / denom[i]
+                
+        return silVals
+
 
     def get_reference_file(self):
         '''
@@ -369,7 +410,7 @@ class FileAligner():
             uniqueLabels = np.sort(np.unique(labels))
             negClusters = uniqueLabels[np.where(uniqueLabels < 0)[0]]
             for negInd in negClusters:
-                clustersYetToLabel.append((altInd,negInd))
+                clustersYetToLabel.append((int(altInd),int(negInd)))
 
         ## label clusters that do not match a label
         clustersLeft = [clust for clust in clustersYetToLabel]
@@ -383,10 +424,10 @@ class FileAligner():
             bestMatchList = []
             for rowNum in range(frows):
                 results = filteredResults[rowNum,:]
-                if results[0] == fileInd and int(results[2]) == int(-1 * clusterInd):
+                if results[0] == fileInd and int(results[2]) == int(-1.0 * clusterInd):
                     bestMatch = (results[1],results[3],results[4])
                     bestMatchList.append(bestMatch)
-                elif results[1] == fileInd and int(results[3]) == int(-1 * clusterInd):
+                elif results[1] == fileInd and int(results[3]) == int(-1.0 * clusterInd):
                     bestMatch = (results[0],results[2],results[4])
                     bestMatchList.append(bestMatch)
 
@@ -406,18 +447,26 @@ class FileAligner():
                         clusterSilValue = self.silValues[self.expListNames[int(bestMatch[0])]][str(int(bestMatch[1]))]
 
                         if clusterSilValue < self.minMergeSilValue:
+                            if self.verbose == True:
+                                print "INFO: Skipping merge in nonref-match -- silhouette values" 
                             continue
 
                         self.newLabelsAll[str(round(phi,4))][int(bestMatch[0])][indicesToChange] = nextLabel
+                        self.logFile.writerow([phi,'nonref-match',self.expListNames[int(bestMatch[0])], int(-1.0*bestMatch[1]),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
                         clustersLeft.remove((bestMatch[0],-1*bestMatch[1]))                
-                        #self.logFile.writerow([,'origClustID','newClustID','numEventsChanged'])
+                        
                 nextLabel += 1
         
-        ## label cluster that had no match at all
+        ## label clusters that had no match at all
         for negCluster in clustersLeft:
             fileInd = negCluster[0]
             clusterInd = negCluster[1]
             indicesToChange = np.where((self.newLabelsAll[str(round(phi,4))][fileInd]) == clusterInd)[0]
+
+            ## log change
+            clusterSilValue = self.silValues[self.expListNames[int(fileInd)]][str(int(-1.0*clusterInd-1.0))]
+            self.logFile.writerow([phi,'no-match',self.expListNames[fileInd], int(-1.0*clusterInd-1.0),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
+
             self.newLabelsAll[str(round(phi,4))][fileInd][indicesToChange] = nextLabel
             nextLabel += 1
 
@@ -442,8 +491,21 @@ class FileAligner():
                 newLabel = normalizedLabels[uniqueLabels.index(clusterInd)]
                 indicesToChange = np.where((self.newLabelsAll[str(round(phi,4))][fileInd]) == clusterInd)[0]
                 self.newLabelsAll[str(round(phi,4))][fileInd][indicesToChange] = newLabel
-        self.newLabelsAll[str(round(phi,4))] = [newLabels.tolist() for newLabels in self.newLabelsAll[str(round(phi,4))]]
 
+        ## finalize labels and log file
+        self.newLabelsAll[str(round(phi,4))] = [newLabels.tolist() for newLabels in self.newLabelsAll[str(round(phi,4))]]
+        self._recreate_log_file(uniqueLabels,normalizedLabels)
+
+    def _recreate_log_file(self,uniqueLabels,normalizedLabels):
+        newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge.log"),'w'))
+        reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log"),'r'))
+
+        for linja in reader:
+            if len(linja) > 6:
+                newLabel = 5
+                normalizedLabel = normalizedLabels[uniqueLabels.index(newLabel)]
+                linja[5] = normalizedLabel
+            newLogFile.writerow(linja)
 
     def _save_clusters(self,phi):
         '''
@@ -458,41 +520,16 @@ class FileAligner():
             os.mkdir(os.path.join(self.basedir,'results','alignments'))
 
         for fileName in self.expListNames:
-            labelsFile = os.path.join(self.basedir,'results','alignments',"%s_%s.csv"%(fileName,re.sub("\.","",str(phi))))
+            if re.search("copied_ref_file",fileName):
+                  labelsFile = os.path.join(self.basedir,'results','alignments',"%s_%s.csv"%(self.refFile,re.sub("\.","",str(phi))))
+            else:
+                labelsFile = os.path.join(self.basedir,'results','alignments',"%s_%s.csv"%(fileName,re.sub("\.","",str(phi))))
             labelsWriter = csv.writer(open(labelsFile,'w'))
         
             fileInd = self.expListNames.index(fileName)
             labels = self.newLabelsAll[str(round(phi,4))][fileInd]
             for lab in labels:
                 labelsWriter.writerow([lab])
-
-    def _get_silhouette_values(self,mat,labels):
-        
-        ## make sure labels are ints
-        labels = np.array([int(l) for l in labels])
-        values = pdist(mat,'sqeuclidean')
-        dMat = squareform(values)
-        silValList = []
-        n,d = np.shape(dMat)
-        
-        withinDist = np.zeros((n,1),)
-        minBetweenDist = np.zeros((n,1),)
-        silVals = np.zeros((n,1),)
-        uniqueLabs = np.sort(np.unique(labels))
-
-        for i in range(len(uniqueLabs)):
-            k = uniqueLabs[i]
-            notK =  np.array(list(set(labels[np.where(labels!=k)[0]])))
-            kInds = np.where(labels==k)[0]
-            withinDist[i] = dMat[i,kInds].mean()
-            minBetweenDist[i] = np.array([dMat[i,np.where(labels==j)[0]].mean() for j in notK]).min()
-        
-        ## adjust for zero division
-        minBetweenDist = minBetweenDist + 1e-08
-        silVals = (minBetweenDist - withinDist) / np.hstack([[minBetweenDist,withinDist]]).max(axis=0)
-        
-        return silVals
-
 
     def _merge_clusters_in_reference(self,refFile,phi0):
         ## order the clusters such that the ones with the greatest number of elements are first
@@ -560,6 +597,8 @@ class FileAligner():
                 clusterSilValue2 = self.silValues[self.expListNames[refFileInd]][str(cluster2)]
 
                 if clusterSilValue1 < self.minMergeSilValue or clusterSilValue2 < self.minMergeSilValue:
+                    if self.verbose == True:
+                        print "INFO: skipping merge in reference -- silvalue" 
                     continue
  
                 if matchResults == None:
@@ -577,7 +616,6 @@ class FileAligner():
         mRows, mCols = np.shape(matchResults)
         for row in range(mRows):
             fResult = matchResults[row,:]
-            print fResult
 
             # save results into dict
             cluster1 = int(fResult[0])
@@ -585,7 +623,6 @@ class FileAligner():
             silVal1 = self.silValues[self.expListNames[refFileInd]][str(cluster1)]
             silVal2 = self.silValues[self.expListNames[refFileInd]][str(cluster2)]
             pOverlap = fResult[2]
-
 
             orderedClusters = np.sort(np.array([cluster1,cluster2]))
 
@@ -595,15 +632,13 @@ class FileAligner():
             redundent.append((orderedClusters[0],orderedClusters[1]))
 
             if silVal1 < self.minMergeSilValue:
-                print silVal, 'passing'
                 pass
             elif filteringDict.has_key(cluster1):
                 filteringDict[cluster1].append(pOverlap)
             else:
                 filteringDict[cluster1] = [pOverlap]
 
-            if  silVal2 < self.minMergeSilValue:
-                print silVal, 'passing'
+            if silVal2 < self.minMergeSilValue:
                 pass
             elif filteringDict.has_key(cluster2):
                 filteringDict[cluster2].append(pOverlap)
@@ -641,7 +676,7 @@ class FileAligner():
                 if self.verbose == True:
                     print 'ref file changing %s to %s with %s elements and %s overlap'%(clustToChange,label,indicesToChange.size,rowElements[2])
                 
-                #self.logFile.writerow(["ref file change",int(clustToChange-1),label-1,indicesToChange.size,rowElements[2]])
+                self.logFile.writerow([phi0,'within-ref',self.refFile,clustToChange,self.refFile,label,indicesToChange.size,rowElements[2],"NA"])
                 self.expListLabels[refFileInd] = np.array(self.expListLabels[refFileInd])
                 self.expListLabels[refFileInd][indicesToChange] = label
                 self.expListLabels[refFileInd] = self.expListLabels[refFileInd].tolist()
@@ -652,10 +687,13 @@ class FileAligner():
         refFileLabels = self.expListLabels[refFileInd]
         refFileData = self.expListData[refFileInd]
         refLabels = np.sort(np.unique(refFileLabels))
+        
+        if filteredResults == None:
+            print "INFO: no files merged in reference comparisions"
+            return None
+
         frows, fcols = np.shape(filteredResults)
         clusterCompares = {}
-        #self.logFile.writerow(["reference comparisions"])
-        #self.logFile.writerow(['file name','origClustID','newClustID','numEventsChanged','clusterOverlap','clusterSilValue'])
       
         for rowNum in range(frows):
             results = filteredResults[rowNum,:]
@@ -692,7 +730,6 @@ class FileAligner():
                 altFileLabels = self.expListLabels[altFile]
                 altCluster = -1 * fileCluster[1]
                 percentOverlap = item['values'][count]
-                
                 altFileClusters = np.sort(np.unique(altFileLabels)).tolist()
                 altClusterInd = altFileClusters.index(fileCluster[1])
 
@@ -718,10 +755,10 @@ class FileAligner():
                 alreadyRenamed.append(fileClust)
                 
                 ## log the comparisons to the reference file
-                #self.logFile.writerow([altFileName,-1*altCluster-1,key,indicesToChange.size,percentOverlap,clusterSilValue])
+                self.logFile.writerow([phi,'between-ref',altFileName,int(-1.0*altCluster-1.0),self.refFile,key,indicesToChange.size,percentOverlap,clusterSilValue])
 
                 if self.verbose == True:
-                    print '\t changing %s to %s in file %s'%(altCluster,key,altFile), percentOverlap
+                    print '\t changing %s to %s in file %s'%(altCluster,key,altFile), percentOverlap,clusterSilValue
 
                 self.newLabelsAll[str(round(phi,4))][altFile][indicesToChange] = key
 
