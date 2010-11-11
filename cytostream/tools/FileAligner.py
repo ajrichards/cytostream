@@ -13,7 +13,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy.spatial.distance import pdist,cdist,squareform
 from scipy.cluster.vq import whiten
 import scipy.stats as stats
-
+from cytostream.tools import calculate_intercluster_score, SilValueGenerator
 
 class FileAligner():
     '''
@@ -78,6 +78,7 @@ class FileAligner():
 
         ## prepare log file
         self.create_log_file()
+        self.create_alignments_file()
 
         ## create a copy of the reference file
         refFileInd = self.expListNames.index(self.refFile)
@@ -116,6 +117,23 @@ class FileAligner():
             ## carry out file alignment
             self.perform_file_alignment(self.refFile,self.matchResults,phi)
             self._save_clusters(phi)
+            
+            ## write data to alignments file
+            interClusterDistance = calculate_intercluster_score(self.expListNames,self.expListData,self.newLabelsAll[str(round(phi,4))])
+            
+            allMeanSilValues = []
+            for en in range(len(self.expListNames)):
+                expName = self.expListNames[en]
+                if expName == refFile:
+                    continue
+
+                data =  self.expListData[en]
+                labels =  self.newLabelsAll[str(round(phi,4))][en]
+                svg = SilValueGenerator(data,labels)
+                silvalues = svg.silValues
+                allMeanSilValues.append(silvalues.mean())
+            
+            self.alignmentFile.writerow([phi,interClusterDistance,np.array(allMeanSilValues).mean()])
 
         ## move the copied reference file labels to the reference labels
         for phi in self.phiRange:
@@ -137,9 +155,21 @@ class FileAligner():
         self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
         self.logFile.writerow(["refFile",self.refFile])
-        #self.logFile.writerow(['phi0',self.phi0])
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
         self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
+
+
+    def create_alignments_file(self):
+        ''' 
+        create a log file to document  the alignments
+
+        '''
+        if os.path.isdir(os.path.join(self.basedir,"results")) == False:
+            os.mkdir(os.path.join(self.basedir,"results"))
+
+        self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments.log"),'wa'))
+        self.alignmentFile.writerow(["phi","alignment-score","average-silvalue"])
+
 
     def transform_labels(self):
         ## ensure that labels begin at 1 and not 0
@@ -270,10 +300,13 @@ class FileAligner():
         return silVals
 
 
-    def get_reference_file(self):
+    def get_reference_file(self,method='minimum'):
         '''
         get a reference data file or patient
         '''
+        if method not in ['minimum', 'median']:
+            print "ERROR: could not get reference file in get_reference_file -- bad method input"
+            return None
 
         modeClusters = int(stats.mode(np.array(self.sampleStats['k'].values()))[0][0])
         medianClusters = np.median(np.array(self.sampleStats['k'].values()))
@@ -282,19 +315,28 @@ class FileAligner():
         
         ## choose a cluster with the median for the number of clusters 
         refFile = None
-        minScore = 100
-        for c in range(len(self.expListNames)):
-            expName = self.expListNames[c]
-            k = self.sampleStats['k'][expName]
-            if k <= medianClusters:
-                score = medianClusters - k
-            if k > medianClusters:
-                score = k - medianClusters
-
-            if score < minScore:
-                minScore = score
-                refFile = expName
         
+        if method == 'median':
+            minScore = 100
+            for c in range(len(self.expListNames)):
+                expName = self.expListNames[c]
+                k = self.sampleStats['k'][expName]
+                if k <= medianClusters:
+                    score = medianClusters - k
+                if k > medianClusters:
+                    score = k - medianClusters
+
+                if score < minScore:
+                    minScore = score
+                    refFile = expName
+        elif method == 'minimum':
+            for c in range(len(self.expListNames)):
+                expName = self.expListNames[c]
+                k = self.sampleStats['k'][expName]
+                
+                if int(k) == minNumClusters and refFile == None:
+                    refFile = expName
+
         return refFile
 
     def make_overlap_comparisons(self,refFile):
@@ -732,7 +774,7 @@ class FileAligner():
         try:
             frows, fcols = np.shape(filteredResults)
         except:
-            frows = 1
+            frows = 0
 
         clusterCompares = {}
             

@@ -5,8 +5,8 @@ matplotlib.use('Agg')
 from cytostream.tools import FileAligner,make_plots_as_subplots,calculate_intercluster_score,PieChartCreator
 
 BASEDIR = os.path.dirname(__file__)
-from SimulatedData import case1, case2, case3, case4, case5, case6
-from SimulatedData import case1Labels, case2Labels, case3Labels, case4Labels, case5Labels, case6Labels
+from SimulatedData1 import case1, case2, case3, case4, case5, case6
+from SimulatedData1 import case1Labels, case2Labels, case3Labels, case4Labels, case5Labels, case6Labels
 
 ## declare variables 
 modelName = 'cdp'

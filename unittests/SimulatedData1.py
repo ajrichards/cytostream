@@ -111,9 +111,6 @@ case5Labels = np.hstack((case5Labels,np.array([np.random.randint(12,15)]).repeat
 case5Labels = np.hstack((case5Labels,np.array([np.random.randint(4,7)]).repeat(np.shape(case5c4)[0])))
 
 ## case 6
-#case6c1f1 = np.random.normal(3,0.5,largeN)
-#case6c1f2 = np.random.normal(10,0.5,largeN)
-#case6c1 = np.vstack((case6c1f1,case6c1f2)).T
 
 ## noise cluster
 case6c1f1 = np.random.normal(3,5.0,smallN)
@@ -148,27 +145,39 @@ case6Labels = np.hstack((case6Labels,np.array([np.random.randint(12,15)]).repeat
 if __name__=='__main__':
     
     fig = plt.figure()
-    ax = fig.add_subplot(221)
+    ax = fig.add_subplot(231)
     ax.scatter(case1[:,0], case1[:,1])
     ax.set_title("Case 1")
     ax.set_xlim([0,14])
     ax.set_ylim([0,14])
     
-    ax = fig.add_subplot(222)
+    ax = fig.add_subplot(232)
     ax.scatter(case2[:,0], case2[:,1])
     ax.set_title("Case 2")
     ax.set_xlim([0,14])
     ax.set_ylim([0,14])
 
-    ax = fig.add_subplot(223)
+    ax = fig.add_subplot(233)
     ax.scatter(case3[:,0], case3[:,1])
     ax.set_title("Case 3")
     ax.set_xlim([0,14])
     ax.set_ylim([0,14])
 
-    ax = fig.add_subplot(224)
+    ax = fig.add_subplot(234)
     ax.scatter(case4[:,0], case4[:,1])
     ax.set_title("Case 4")
+    ax.set_xlim([0,14])
+    ax.set_ylim([0,14])
+
+    ax = fig.add_subplot(235)
+    ax.scatter(case5[:,0], case5[:,1])
+    ax.set_title("Case 5")
+    ax.set_xlim([0,14])
+    ax.set_ylim([0,14])
+
+    ax = fig.add_subplot(236)
+    ax.scatter(case6[:,0], case6[:,1])
+    ax.set_title("Case 6")
     ax.set_xlim([0,14])
     ax.set_ylim([0,14])
 
