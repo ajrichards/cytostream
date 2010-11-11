@@ -5,3 +5,4 @@ from PieChartCreator import PieChartCreator
 from DotPlotCreator import DotPlotCreator
 from HtmlTableCreator import HtmlTableCreator
 from BoxPlotByCovariate import BoxPlotByCovariate
+from SilValueGenerator import SilValueGenerator
