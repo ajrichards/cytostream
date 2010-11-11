@@ -31,6 +31,9 @@ if os.path.isdir(os.path.join(".","figures",'pies')) == False:
 ## run it
 fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=True)
 
+print 'alignment complete.'
+print 'creating figures'
+
 ## make plots
 beforeStats = fa.get_sample_statistics(expListLabels)
 beforeFig = os.path.join(".","figures","unaligned","TestCasesBefore.png")

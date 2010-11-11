@@ -81,7 +81,6 @@ def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='
 
         for cluster in np.sort(np.unique(expLabels)):
             clusterInds = np.where(expLabels==cluster)[0]
-            print cluster, np.shape(expData), clusterInds.max(), len(clusterInds)
             centroids[expName][str(cluster)] = expData[clusterInds,:].mean(axis=0)
             variances[expName][str(cluster)] = expData[clusterInds,:].var(axis=0)
             numDataPoints[expName][str(cluster)] = len(np.where(expLabels==cluster)[0])

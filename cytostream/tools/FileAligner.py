@@ -21,21 +21,20 @@ class FileAligner():
     expListData    - a list of np.arrays containing the (n x d) data for each experiment data set
     expListLabels  - a list of lists or np.arrays containing the labels for each data set 
     phi            - percent overlap for between cluster comparison before align call
-    phi0           - percent overlap for within reference file cluster comparisions
 
     '''
 
-    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minMergeSilValue=0.3,
-                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",phi0=0.10):
+    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,
+                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir="."):
         self.expListNames = [expName for expName in expListNames]
         #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
         self.phiRange = phiRange
-        self.phi0 = phi0
+        self.matchResults = None
         self.modelName = modelName
         self.mkPlots = mkPlots
-        self.minMergeSilValue = minMergeSilValue
+        self.minMergeSilValue = minSilValue
         self.basedir = basedir
         self.verbose = verbose
         self.silValueEstimateSample = 500
@@ -83,6 +82,7 @@ class FileAligner():
         ## create a copy of the reference file
         refFileInd = self.expListNames.index(self.refFile)
         refFileLabels = [lab for lab in self.expListLabels[refFileInd]]
+        originalRefFileLabels = [lab for lab in refFileLabels]
         refFileData = self.expListData[refFileInd].copy()
         self.expListNames.append("copied_ref_file")
         self.expListLabels.append(refFileLabels)
@@ -99,15 +99,22 @@ class FileAligner():
         if self.verbose == True:
             print "making overlap comparisons"
         
-        self._merge_clusters_in_reference(self.refFile,self.phi0)
-        matchResults = self.make_overlap_comparisons(self.refFile)
-        
         ## align files
         for phi in self.phiRange:
             if self.verbose == True:
                 print "performing file alignment -- ", phi
+        
+            ## ensure ref file labels are originals
+            self.expListLabels[refFileInd] = [lab for lab in originalRefFileLabels]
             
-            self.perform_file_alignment(self.refFile,matchResults,phi)
+            ## merge clusters in reference
+            self._merge_clusters_in_reference(self.refFile,phi)
+
+            ## find overlaps
+            self.matchResults = self.make_overlap_comparisons(self.refFile)        
+            
+            ## carry out file alignment
+            self.perform_file_alignment(self.refFile,self.matchResults,phi)
             self._save_clusters(phi)
 
         ## move the copied reference file labels to the reference labels
@@ -130,7 +137,7 @@ class FileAligner():
         self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
         self.logFile.writerow(["refFile",self.refFile])
-        self.logFile.writerow(['phi0',self.phi0])
+        #self.logFile.writerow(['phi0',self.phi0])
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
         self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
 
@@ -299,10 +306,32 @@ class FileAligner():
         totalCompares = int((float(len(self.expListNames)) * float(len(self.expListNames))-1.0)/2.0)
         compareCount = 0
         self.clustersAligned = {}
+        shortVersion = False
+        refFileInd = self.expListNames.index(self.refFile)
+
+        if self.matchResults != None:
+            shortVersion = True
+            numRows, numCols = np.shape(self.matchResults)
+            totalCompares = len(self.expListNames) - 1
+
+            for row in range(numRows):
+                previousResult = self.matchResults[row,:]
+            
+                if int(previousResult[0]) == int(refFileInd) or int(previousResult[1]) == int(refFileInd):
+                    continue
+
+                if matchResults == None:
+                    matchResults = previousResult
+                else:
+                    matchResults = np.vstack((matchResults, previousResult))
 
         for pIndex1 in range(len(self.expListNames)):
             for pIndex2 in range(len(self.expListNames)):
                 if pIndex2 >= pIndex1:
+                    continue
+
+                ## if short version recalculate only ref file compares
+                if shortVersion == True and int(refFileInd) not in [int(pIndex1),int(pIndex2)]:
                     continue
 
                 compareCount+=1
@@ -325,13 +354,13 @@ class FileAligner():
                 for clusterID in sortedLabelsPatient1:
                     sizesPatient1.append(np.where(labelsPatient1 == clusterID)[0].size)
                 sizeOrderedLabelsPatient1 = sortedLabelsPatient1[np.argsort(sizesPatient1)]
-                #sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
+                sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
 
                 sizesPatient2 = []
                 for clusterID in sortedLabelsPatient2:
                     sizesPatient2.append(np.where(labelsPatient2 == clusterID)[0].size)
                 sizeOrderedLabelsPatient2 = sortedLabelsPatient2[np.argsort(sizesPatient2)]
-                #sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
+                sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
 
                 for cluster1 in sizeOrderedLabelsPatient1:
                     for cluster2 in sizeOrderedLabelsPatient2:
@@ -365,7 +394,7 @@ class FileAligner():
                             print "ERROR: in calculation of percent overlap", percentOverlap
 
                         ## discard results with withouth percent overlap
-                        if  percentOverlap < 1e-08:
+                        if  percentOverlap < 1e-16:
                             continue
 
                         ## save the results
@@ -384,12 +413,13 @@ class FileAligner():
         ## check that we have results
         if matchResults == None:
             print "WARNING: matchResults contains no results"
+            return None
 
         ## filter results by using only best matches and accounting for sil value and overlap thresholds
         filteredResults = self._filter_comparison_results(matchResults,refFile,phi,refComparison=True)
 
         ## create variables for newLabels
-        self.newLabelsAll[str(round(phi,4))] = []                    
+        self.newLabelsAll[str(round(phi,4))] = []      
         for labInd in range(len(self.expListLabels)):
             labels = self.expListLabels[labInd]
             self.newLabelsAll[str(round(phi,4))].append(-1.0 * np.array(labels).copy())
@@ -399,7 +429,12 @@ class FileAligner():
         
         ## make a collection of clusters without matches to ref file
         filteredResults = self._filter_comparison_results(matchResults,refFile,phi,refComparison=False)
-        frows, fcols = np.shape(filteredResults)
+        
+        try:
+            frows, fcols = np.shape(filteredResults)
+        except:
+            frows = 0
+
         refFileInd = self.expListNames.index(refFile)
         refFileLabels = self.expListLabels[refFileInd]
         clustersYetToLabel = []
@@ -464,7 +499,7 @@ class FileAligner():
             indicesToChange = np.where((self.newLabelsAll[str(round(phi,4))][fileInd]) == clusterInd)[0]
 
             ## log change
-            clusterSilValue = self.silValues[self.expListNames[int(fileInd)]][str(int(-1.0*clusterInd-1.0))]
+            clusterSilValue = self.silValues[self.expListNames[int(fileInd)]][str(int(-1.0*clusterInd))]
             self.logFile.writerow([phi,'no-match',self.expListNames[fileInd], int(-1.0*clusterInd-1.0),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
 
             self.newLabelsAll[str(round(phi,4))][fileInd][indicesToChange] = nextLabel
@@ -502,9 +537,10 @@ class FileAligner():
 
         for linja in reader:
             if len(linja) > 6:
-                newLabel = 5
-                normalizedLabel = normalizedLabels[uniqueLabels.index(newLabel)]
-                linja[5] = normalizedLabel
+                newLabel = linja[5]
+                if uniqueLabels.__contains__(newLabel):
+                    normalizedLabel = normalizedLabels[uniqueLabels.index(newLabel)]
+                    linja[5] = normalizedLabel
             newLogFile.writerow(linja)
 
     def _save_clusters(self,phi):
@@ -650,7 +686,7 @@ class FileAligner():
         for label in sortedLabels:
             matches = []
 
-            ## find all clusters whose maximal overlap correspond to label
+            ## find all clusters whose minimal overlap correspond to label
             for row in range(mRows):
                 rowElements = matchResults[row,:]
                 cluster1 = rowElements[0]
@@ -660,10 +696,10 @@ class FileAligner():
                 if cluster1 != int(label) and cluster2 != int(label):
                     continue
 
-                if cluster1 == int(label) and np.array(filteringDict[cluster1]).max() == pOverlap:
+                if cluster1 == int(label) and np.array(filteringDict[cluster1]).min() == pOverlap:
                     matches.append(cluster2)
                     
-                if cluster2 == int(label) and np.array(filteringDict[cluster2]).max() == pOverlap:
+                if cluster2 == int(label) and np.array(filteringDict[cluster2]).min() == pOverlap:
                     matches.append(cluster1)
 
             for clustToChange in matches:
@@ -687,14 +723,19 @@ class FileAligner():
         refFileLabels = self.expListLabels[refFileInd]
         refFileData = self.expListData[refFileInd]
         refLabels = np.sort(np.unique(refFileLabels))
-        
+  
+      
         if filteredResults == None:
             print "INFO: no files merged in reference comparisions"
             return None
 
-        frows, fcols = np.shape(filteredResults)
+        try:
+            frows, fcols = np.shape(filteredResults)
+        except:
+            frows = 1
+
         clusterCompares = {}
-      
+            
         for rowNum in range(frows):
             results = filteredResults[rowNum,:]
 
@@ -758,7 +799,7 @@ class FileAligner():
                 self.logFile.writerow([phi,'between-ref',altFileName,int(-1.0*altCluster-1.0),self.refFile,key,indicesToChange.size,percentOverlap,clusterSilValue])
 
                 if self.verbose == True:
-                    print '\t changing %s to %s in file %s'%(altCluster,key,altFile), percentOverlap,clusterSilValue
+                    print '\tchanging %s to %s in file %s'%(altCluster,key,altFile), percentOverlap,clusterSilValue
 
                 self.newLabelsAll[str(round(phi,4))][altFile][indicesToChange] = key
 
@@ -797,24 +838,49 @@ class FileAligner():
             silVal2 = self.silValues[self.expListNames[int(fResult[1])]][str(int(fResult[3]))]
             pOverlap = fResult[4]
 
-            if pOverlap < phi:
-                pass
-            elif  silVal1 < self.minMergeSilValue:
-                pass
-            elif filteringDict.has_key(key1):
-                filteringDict[key1].append(pOverlap)
-            else:
-                filteringDict[key1] = [pOverlap]
-            
-            if pOverlap < phi:
-                pass
-            elif silVal2 < self.minMergeSilValue:
-                pass
-            elif filteringDict.has_key(key2):
-                filteringDict[key2].append(pOverlap)
-            else:
-                filteringDict[key2] = [pOverlap]
+            ##if non-ref compare keep percent overlap
+            if refComparison == False:
+                if pOverlap < phi:
+                    pass
+                elif  silVal1 < self.minMergeSilValue:
+                    pass
+                elif filteringDict.has_key(key1):
+                    filteringDict[key1].append(pOverlap)
+                else:
+                    filteringDict[key1] = [pOverlap]
+                
+                if pOverlap < phi:
+                    pass
+                elif silVal2 < self.minMergeSilValue:
+                    pass
+                elif filteringDict.has_key(key2):
+                    filteringDict[key2].append(pOverlap)
+                else:
+                    filteringDict[key2] = [pOverlap]
 
+            if refComparison == True:
+                file1ClusterSize = self.sampleStats['n'][self.expListNames[int(fResult[0])]][str(int(fResult[2]))]
+                file2ClusterSize = self.sampleStats['n'][self.expListNames[int(fResult[1])]][str(int(fResult[3]))]
+                sizeSimilarity = np.abs(float(file1ClusterSize) - float(file2ClusterSize))
+
+                if pOverlap < phi:
+                    pass
+                elif  silVal1 < self.minMergeSilValue:
+                    pass
+                elif filteringDict.has_key(key1):
+                    filteringDict[key1].append(sizeSimilarity)
+                else:
+                    filteringDict[key1] = [sizeSimilarity]
+            
+                if pOverlap < phi:
+                    pass
+                elif silVal2 < self.minMergeSilValue:
+                    pass
+                elif filteringDict.has_key(key2):
+                    filteringDict[key2].append(sizeSimilarity)
+                else:
+                    filteringDict[key2] = [sizeSimilarity]
+            
         ## use filtering dictionary and threshold percent overlap to filter results    
         filteredResults = None
         for rowNum in range(numRows):
@@ -844,11 +910,18 @@ class FileAligner():
                 if pOverlap < phi:
                     continue
             
-                # discard results not equal to maximal overlap
-                maximalOverlap = np.array(filteringDict[key]).max()
-                if pOverlap != maximalOverlap:
-                    continue
+                # discard results not equal to mminimum overlap
+                #mimimalOverlap = np.array(filteringDict[key]).min()
+                #if pOverlap != mimimalOverlap:
+                #    continue
             
+                file1ClusterSize = self.sampleStats['n'][self.expListNames[int(result[0])]][str(int(result[2]))]
+                file2ClusterSize = self.sampleStats['n'][self.expListNames[int(result[1])]][str(int(result[3]))]
+                sizeSimilarity = np.abs(float(file1ClusterSize) - float(file2ClusterSize))
+
+                if sizeSimilarity != np.array(filteringDict[key]).min():
+                    continue
+                
             else:
                 # discard results not above percent overlap
                 pOverlap = result[4]
