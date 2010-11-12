@@ -13,7 +13,8 @@ from matplotlib.ticker import MaxNLocator
 from scipy.spatial.distance import pdist,cdist,squareform
 from scipy.cluster.vq import whiten
 import scipy.stats as stats
-from cytostream.tools import calculate_intercluster_score, SilValueGenerator
+from cytostream.tools import calculate_intercluster_score 
+from cytostream.stats import SilValueGenerator
 
 class FileAligner():
     '''
@@ -252,53 +253,9 @@ class FileAligner():
            
         return silValues
 
-    def _get_silhouette_values(self,mat,labels):
-        
-        ## make sure labels are ints
-        labels = np.array([float(l) for l in labels])
-
-        euclideanWithin = {}
-        euclideanBetween = {}
-        for lab in  np.sort(np.unique(labels)):
-            indices = np.where(labels==lab)[0]
-            elements = mat[indices,:]
-            euclidDistWithin = (elements - elements.mean(axis=0))**2.0
-            euclidDistWithin = np.sqrt(euclidDistWithin.sum(axis=1))
-            
-            minEuclidDistBetween = 1e08
-            for nLab in np.sort(np.unique(labels)):
-                if nLab == lab:
-                    continue
-                
-                nIndices = np.where(labels==nLab)[0]
-                nElements = mat[nIndices,:]
-                euclidDistBetween = (elements - nElements.mean(axis=0))**2.0
-                euclidDistBetween = np.sqrt(euclidDistBetween.sum(axis=1))
-                
-                if euclidDistBetween.mean() < minEuclidDistBetween:
-                    minEuclidDistBetween = euclidDistBetween.mean()
-
-            ## add to hash tables
-            euclideanWithin[str(lab)] = euclidDistWithin
-            euclideanBetween[str(lab)] = minEuclidDistBetween
-            
-        silVals = np.zeros((labels.size),)
-        for lab in np.sort(np.unique(labels)):
-            indices = np.where(labels==lab)[0]
-            a = euclideanWithin[str(lab)]
-            b = np.array(euclideanBetween[str(lab)]).repeat(a.size)
-            denom = b.copy()
-            useA = np.where(a > b)[0]
-
-            if len(useA) > 0:
-                denom[useA] = a[useA]
-                            
-            for i in range(len(a)):
-                idx = indices[i]
-                silVals[idx] = (b[i] - a[i]) / denom[i]
-                
-        return silVals
-
+    def _get_silhouette_values(self,mat,labels):        
+        svg = SilValueGenerator(mat,labels)
+        return svg.silValues
 
     def get_reference_file(self,method='minimum'):
         '''
