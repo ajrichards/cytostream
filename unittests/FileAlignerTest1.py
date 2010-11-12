@@ -2,7 +2,8 @@ import os,sys
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
-from cytostream.tools import FileAligner,make_plots_as_subplots,calculate_intercluster_score,PieChartCreator
+from cytostream.tools import make_plots_as_subplots,calculate_intercluster_score,PieChartCreator
+from cytostream.stats import FileAligner
 
 BASEDIR = os.path.dirname(__file__)
 from SimulatedData1 import case1, case2, case3, case4, case5, case6
