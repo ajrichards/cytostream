@@ -30,7 +30,7 @@ if os.path.isdir(os.path.join(".","figures",'pies')) == False:
     os.mkdir(os.path.join(".","figures",'pies'))
 
 ## run it
-fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=True)
+fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile='case1',excludedChannels=[],verbose=True,distanceMetric='mahalanobis')#'mahalanobis'
 
 print 'alignment complete.'
 print 'creating figures'
