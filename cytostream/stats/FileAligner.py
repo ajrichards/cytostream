@@ -14,7 +14,8 @@ from scipy.spatial.distance import pdist,cdist,squareform
 from scipy.cluster.vq import whiten
 import scipy.stats as stats
 from cytostream.tools import calculate_intercluster_score 
-from cytostream.stats import SilValueGenerator
+from cytostream.stats import SilValueGenerator,DistanceCalculator
+
 
 class FileAligner():
     '''
@@ -26,7 +27,7 @@ class FileAligner():
     '''
 
     def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,
-                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir="."):
+                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",distanceMetric='euclidean'):
         self.expListNames = [expName for expName in expListNames]
         #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
         self.expListData = [expData[:,:].copy() for expData in expListData]
@@ -38,6 +39,7 @@ class FileAligner():
         self.minMergeSilValue = minSilValue
         self.basedir = basedir
         self.verbose = verbose
+        self.distanceMetric = distanceMetric
         self.silValueEstimateSample = 500
         numChannels = np.shape(self.expListData[0])[1]
         self.newLabelsAll = {}
@@ -361,33 +363,81 @@ class FileAligner():
                 sizeOrderedLabelsPatient2 = sortedLabelsPatient2[np.argsort(sizesPatient2)]
                 sizeOrderedLabelsPatient1 = sizeOrderedLabelsPatient1[::-1]
 
-                for cluster1 in sizeOrderedLabelsPatient1:
-                    for cluster2 in sizeOrderedLabelsPatient2:
-         
+                for c1 in range(len(sizeOrderedLabelsPatient1)):
+                    cluster1 = sizeOrderedLabelsPatient1[c1]
+                    for c2 in range(len(sizeOrderedLabelsPatient2)):
+                        cluster2 = sizeOrderedLabelsPatient2[c2]
+                        
                         ## take events in the clusters and find their euclidean distance from their centers
                         eventsPatient1 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
                         eventsPatient2 = dataPatient2[np.where(labelsPatient2==cluster2)[0],:]
 
                         ## calculate within cluster distances
-                        euclidDist1 = (eventsPatient1 - eventsPatient1.mean(axis=0))**2.0
-                        euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
-                        euclidDist2 = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
-                        euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
+                        #print 'calculating within 1'
+                        #dc1 = DistanceCalculator(distType=self.distanceMetric)
+                        #dc1.calculate(eventsPatient1)
+                        #withinDistances1 = dc1.get_distances()
+                     
+                        print 'calculating within 2'
+                        dc2 = DistanceCalculator(distType=self.distanceMetric)
+                        dc2.calculate(eventsPatient2)
+                        withinDistances2 = dc2.get_distances()
+                        
+                        ## calculate between distances
+                        #print 'calculating between 1'
+                        dc3 = DistanceCalculator(distType=self.distanceMetric)
+                        matrixMeans3 = dc3.get_mean(eventsPatient2)
+                        if self.distanceMetric == 'mahalanobis':
+                            inverseCov3 = dc2.get_inverse_covariance(eventsPatient2)
+                            dc3.calculate(eventsPatient1,matrixMeans=matrixMeans3,inverseCov=inverseCov3)
+                        else:
+                            dc3.calculate(eventsPatient1,matrixMeans=eventsPatient2.mean(axis=0))
+                        btnDistances1 = dc3.get_distances()
+
+                        #print 'calculating between 2'
+                        #dc4 = DistanceCalculator(distType=self.distanceMetric)
+                        #matrixMeans4 = dc4.get_mean(eventsPatient1)
+                        #if self.distanceMetric == 'mahalanobis':
+                        #    inverseCov4 = dc4.get_inverse_covariance(eventsPatient1)         
+                        #    dc4.calculate(eventsPatient2,matrixMeans=matrixMeans4,inverseCov=inverseCov4)
+                        #else:
+                        #    dc4.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
+                        #btnDistances2 = dc4.get_distances()
+
+                        ## find credible intervals based on a Gaussian distributions
+                        #threshold1 = stats.norm.ppf(0.975,loc=withinDistances1.mean(),scale=withinDistances1.std())
+                        threshold2 = stats.norm.ppf(0.975,loc=withinDistances2.mean(),scale=withinDistances2.std())
+
+                        ## calculate percent overlap
+                        overlappingInds1 = np.where(btnDistances1<threshold2)[0]
+                        #overlappingInds2 = np.where(btnDistances2<threshold1)[0]
+
+                        percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
+                        #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
+                        #percentOverlap = np.max([percentOverlap1, percentOverlap2])
+                        percentOverlap = percentOverlap1
+
+                        ####################################################################################
+                        #euclidDist1 = (eventsPatient1 - eventsPatient1.mean(axis=0))**2.0
+                        #euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
+                        #euclidDist2 = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
+                        #euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
 
                         ## determine the number of events that overlap
-                        overlap1 = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
-                        overlap1 = np.sqrt(overlap1.sum(axis=1))
-                        overlap2 = (eventsPatient2 - eventsPatient1.mean(axis=0))**2.0
-                        overlap2 = np.sqrt(overlap2.sum(axis=1))
+                        #overlap1 = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
+                        #overlap1 = np.sqrt(overlap1.sum(axis=1))
+                        #overlap2 = (eventsPatient2 - eventsPatient1.mean(axis=0))**2.0
+                        #overlap2 = np.sqrt(overlap2.sum(axis=1))
 
-                        threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
-                        threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
+                        #threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
+                        #threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
 
-                        overlappingInds1 = np.where(overlap1<threshold2)[0]
-                        overlappingInds2 = np.where(overlap2<threshold1)[0]
-                        percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
-                        percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
-                        percentOverlap = np.max([percentOverlap1, percentOverlap2])
+                        #overlappingInds1 = np.where(overlap1<threshold2)[0]
+                        #overlappingInds2 = np.where(overlap2<threshold1)[0]
+                        #percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
+                        #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
+                        #percentOverlap = np.max([percentOverlap1, percentOverlap2])
+                        ####################################################################################
 
                         if percentOverlap > 1.0:
                             print "ERROR: in calculation of percent overlap", percentOverlap
