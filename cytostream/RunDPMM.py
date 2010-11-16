@@ -87,8 +87,6 @@ elif re.search("\.pickle",longFileName):
 #print 'excludedIndices', excludedIndices
 #print 'includedIndices', includedIndices
 
-
-
 mod = fcm.statistics.DPMixtureModel(data,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)

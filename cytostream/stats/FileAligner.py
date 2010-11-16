@@ -26,7 +26,7 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,
+    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,covariateID=None,
                  mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",distanceMetric='euclidean'):
         self.expListNames = [expName for expName in expListNames]
         #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
@@ -39,6 +39,7 @@ class FileAligner():
         self.minMergeSilValue = minSilValue
         self.basedir = basedir
         self.verbose = verbose
+        self.covariateID = covariateID
         self.distanceMetric = distanceMetric
         self.silValueEstimateSample = 500
         numChannels = np.shape(self.expListData[0])[1]
@@ -155,7 +156,10 @@ class FileAligner():
         if os.path.isdir(os.path.join(self.basedir,"results")) == False:
             os.mkdir(os.path.join(self.basedir,"results"))
 
-        self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
+        if self.covariateID == None:
+            self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
+        else:
+            self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
         self.logFile.writerow(["refFile",self.refFile])
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
@@ -170,7 +174,10 @@ class FileAligner():
         if os.path.isdir(os.path.join(self.basedir,"results")) == False:
             os.mkdir(os.path.join(self.basedir,"results"))
 
-        self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments.log"),'wa'))
+        if self.covariateID == None:
+            self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments.log"),'wa'))
+        else:
+            self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments_%s.log"%(self.covariateID)),'wa'))
         self.alignmentFile.writerow(["phi","alignment-score","average-silvalue"])
 
 
@@ -372,71 +379,45 @@ class FileAligner():
                         eventsPatient1 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
                         eventsPatient2 = dataPatient2[np.where(labelsPatient2==cluster2)[0],:]
 
-                        ## calculate within cluster distances
-                        #print 'calculating within 1'
-                        #dc1 = DistanceCalculator(distType=self.distanceMetric)
-                        #dc1.calculate(eventsPatient1)
-                        #withinDistances1 = dc1.get_distances()
-                     
-                        print 'calculating within 2'
-                        dc2 = DistanceCalculator(distType=self.distanceMetric)
-                        dc2.calculate(eventsPatient2)
-                        withinDistances2 = dc2.get_distances()
+                        ## calculate within cluster distances    
+                        dc1 = DistanceCalculator(distType=self.distanceMetric)
+                        dc1.calculate(eventsPatient1)
+                        withinDistances = dc1.get_distances()
+                        withinDistances = whiten(withinDistances)
                         
                         ## calculate between distances
-                        #print 'calculating between 1'
-                        dc3 = DistanceCalculator(distType=self.distanceMetric)
-                        matrixMeans3 = dc3.get_mean(eventsPatient2)
+                        dc2 = DistanceCalculator(distType=self.distanceMetric)
                         if self.distanceMetric == 'mahalanobis':
-                            inverseCov3 = dc2.get_inverse_covariance(eventsPatient2)
-                            dc3.calculate(eventsPatient1,matrixMeans=matrixMeans3,inverseCov=inverseCov3)
+                            inverseCov = dc2.get_inverse_covariance(eventsPatient1)
+                            dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0),inverseCov=inverseCov)
                         else:
-                            dc3.calculate(eventsPatient1,matrixMeans=eventsPatient2.mean(axis=0))
-                        btnDistances1 = dc3.get_distances()
-
-                        #print 'calculating between 2'
-                        #dc4 = DistanceCalculator(distType=self.distanceMetric)
-                        #matrixMeans4 = dc4.get_mean(eventsPatient1)
-                        #if self.distanceMetric == 'mahalanobis':
-                        #    inverseCov4 = dc4.get_inverse_covariance(eventsPatient1)         
-                        #    dc4.calculate(eventsPatient2,matrixMeans=matrixMeans4,inverseCov=inverseCov4)
-                        #else:
-                        #    dc4.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
-                        #btnDistances2 = dc4.get_distances()
+                            dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
+                        btnDistances = dc2.get_distances()
+                        btnDistances = whiten(btnDistances)
 
                         ## find credible intervals based on a Gaussian distributions
-                        #threshold1 = stats.norm.ppf(0.975,loc=withinDistances1.mean(),scale=withinDistances1.std())
-                        threshold2 = stats.norm.ppf(0.975,loc=withinDistances2.mean(),scale=withinDistances2.std())
+                        threshold = stats.norm.ppf(0.975,loc=withinDistances.mean(),scale=withinDistances.std())
 
                         ## calculate percent overlap
-                        overlappingInds1 = np.where(btnDistances1<threshold2)[0]
-                        #overlappingInds2 = np.where(btnDistances2<threshold1)[0]
-
-                        percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
-                        #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
-                        #percentOverlap = np.max([percentOverlap1, percentOverlap2])
-                        percentOverlap = percentOverlap1
-
+                        overlappingInds = np.where(btnDistances<threshold)[0]
+                        percentOverlap = float(len(overlappingInds)) / float(np.shape(eventsPatient2)[0])
+             
                         ####################################################################################
-                        #euclidDist1 = (eventsPatient1 - eventsPatient1.mean(axis=0))**2.0
-                        #euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
-                        #euclidDist2 = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
-                        #euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
-
+                        ## find the euclidean distances
+                        #euclidDist = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
+                        #euclidDist = np.sqrt(euclidDist.sum(axis=1))
+                        #
+                        #print 'within',euclidDist.sum(),withinDistances.sum()
+                        #
                         ## determine the number of events that overlap
-                        #overlap1 = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
-                        #overlap1 = np.sqrt(overlap1.sum(axis=1))
-                        #overlap2 = (eventsPatient2 - eventsPatient1.mean(axis=0))**2.0
-                        #overlap2 = np.sqrt(overlap2.sum(axis=1))
+                        #overlap = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
+                        #overlap = np.sqrt(overlap.sum(axis=1))
+                        # 
+                        #print 'between', overlap.sum(),btnDistances.sum()
+                        #threshold = stats.norm.ppf(0.975,loc=euclidDist.mean(),scale=euclidDist.std())
+                        #overlappingInds = np.where(overlap<threshold)[0]
+                        #percentOverlap = float(len(overlappingInds)) / float(np.shape(eventsPatient1)[0])
 
-                        #threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
-                        #threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
-
-                        #overlappingInds1 = np.where(overlap1<threshold2)[0]
-                        #overlappingInds2 = np.where(overlap2<threshold1)[0]
-                        #percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsPatient1)[0])
-                        #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsPatient2)[0])
-                        #percentOverlap = np.max([percentOverlap1, percentOverlap2])
                         ####################################################################################
 
                         if percentOverlap > 1.0:
@@ -581,8 +562,13 @@ class FileAligner():
         self._recreate_log_file(uniqueLabels,normalizedLabels)
 
     def _recreate_log_file(self,uniqueLabels,normalizedLabels):
-        newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge.log"),'w'))
-        reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log"),'r'))
+        if self.covariateID == None:
+            newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge.log"),'w'))
+            reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log"),'r'))
+        else:
+            newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge_%s.log"%(self.covariateID)),'w'))
+            reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log_%s"%(self.covariateID)),'r'))
+            
 
         for linja in reader:
             if len(linja) > 6:
@@ -644,17 +630,21 @@ class FileAligner():
 
                 euclidDist1 = (eventsRefFile1 - eventsRefFile1.mean(axis=0))**2.0
                 euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
+                euclidDist1 = whiten(euclidDist1)
 
                 euclidDist2 = (eventsRefFile2 - eventsRefFile2.mean(axis=0))**2.0
                 euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
+                eculidDist2 = whiten(euclidDist2)
 
                 ## determine the number of events that overlap
                 overlap1 = (eventsRefFile1 - eventsRefFile2.mean(axis=0))**2.0
                 overlap1 = np.sqrt(overlap1.sum(axis=1))
+                overlap1 = whiten(overlap1)
 
                 overlap2 = (eventsRefFile2 - eventsRefFile1.mean(axis=0))**2.0
                 overlap2 = np.sqrt(overlap2.sum(axis=1))
-                
+                overlap2 = whiten(overlap2)
+
                 threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
                 threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
 
