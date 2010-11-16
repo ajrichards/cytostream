@@ -30,3 +30,4 @@ from Controller import Controller
 from NoGuiAnalysis import NoGuiAnalysis
 import qtlib
 import tools
+import stats
