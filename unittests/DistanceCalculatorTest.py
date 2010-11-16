@@ -69,8 +69,6 @@ class DistanceCalculatorTest(unittest.TestCase):
          for d in range(len(distances1)):
              self.assertEqual(distances1[d],distances3[d])
 
-
-
 ### Run the tests                                                                                                                                                                    
 if __name__ == '__main__':
     unittest.main()

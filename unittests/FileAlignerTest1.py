@@ -1,4 +1,4 @@
-import os,sys
+import os,sys,time
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -16,7 +16,7 @@ showCentroids = True
 expListNames = ['case1','case2','case3','case4','case5','case6']
 expListData = [case1,case2,case3,case4,case5,case6]
 expListLabels = [case1Labels,case2Labels,case3Labels,case4Labels,case5Labels,case6Labels]
-phiRange = [0.2,0.6,0.8] 
+phiRange = [0.2]#[0.2,0.6,0.8] 
 
 ## ensure directories are present
 if os.path.isdir(os.path.join(".","figures")) == False:
@@ -30,9 +30,11 @@ if os.path.isdir(os.path.join(".","figures",'pies')) == False:
     os.mkdir(os.path.join(".","figures",'pies'))
 
 ## run it
-fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile='case1',excludedChannels=[],verbose=True,distanceMetric='mahalanobis')#'mahalanobis'
+timeBegin = time.time()
+fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=True,distanceMetric='mahalanobis')#'mahalanobis'
+timeEnd = time.time()
 
-print 'alignment complete.'
+print "time taken for alignment: ", timeEnd - timeBegin 
 print 'creating figures'
 
 ## make plots

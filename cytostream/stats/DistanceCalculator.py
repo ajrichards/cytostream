@@ -21,6 +21,36 @@ class DistanceCalculator():
             raise RuntimeError("ERROR in distance calculator - input distance type is invalid \nmust be in %s"%validMetrics)
             return None
     
+    def calculate_dev(self,mat,matrixMeans=None,inverseCov=None):
+        ## error checking
+        if type(np.array([])) != type(mat):
+            raise RuntimeError("ERROR in distance calculator - input matrix must be of type np.array()")
+            return None
+        
+        ## gather dimensions of the input matrix
+        dims = mat.shape
+        
+        if len(dims) == 1:
+            n = dims[0]
+            d = 1
+        elif len(dims) == 2:
+            n,d = dims
+        else:
+            raise RuntimeError("ERROR in distance calculator - input matrix does not have reasonable dimensions - %s"%dims)
+
+        if matrixMeans != None:
+            if matrixMeans.size != d:
+                raise RuntimeError("ERROR in distance calculator - badly formated matrix means - %s")
+        else:
+            matrixMeans = mat.mean(axis=0)
+
+        if self.distType == 'euclidean':
+            dists = (mat - matrixMeans)**2.0
+            dists = np.sqrt(dists.sum(axis=1))
+        
+        self.dists = dists
+
+
     def calculate(self,mat,matrixMeans=None,inverseCov=None):
         ## error checking
         if type(np.array([])) != type(mat):
@@ -47,7 +77,7 @@ class DistanceCalculator():
             matrixMeans = self.get_mean(mat)
 
         ## get distances using scipy 
-        matrixMeans = np.tile(matrixMeans,[n,1])
+        matrixMeans = matrixMeans.reshape((1,d))
 
         if self.distType == 'euclidean':
             self.dists = cdist(mat,matrixMeans,self.distType)
