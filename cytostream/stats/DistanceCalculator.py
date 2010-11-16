@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import time
 import numpy as np
 from scipy.spatial.distance import cdist, squareform
-
+from scipy.linalg import inv
 
 class DistanceCalculator():
     def __init__(self,matrixMeans=None,distType='euclidean'):
@@ -102,7 +103,9 @@ class DistanceCalculator():
         return matrixMeans
 
     def get_inverse_covariance(self,mat):
+
         ## get distances using scipy 
+
         dims = mat.shape
         if len(dims) == 1:
             n = dims[0]
@@ -112,11 +115,14 @@ class DistanceCalculator():
         else:
             raise RuntimeError("ERROR in distance calculator - input matrix does not have reasonable dimensions - %s"%dims)
         
-        #print '\tgetting covar'
-        cov = np.cov(mat)
-        #print '\tgetting inv covar'
+        a = mat.T
+
+        ## get the covariance matrix and its inverse
+        cov = np.cov(a)
         invCov = np.linalg.inv(cov)
-        return invCov
+
+        if invCov.shape[0] != d and invCov.shape[1] != d:
+            raise RuntimeError("ERROR in distance calculator - input matrix does not have reasonable dimensions - %s"%dims)
 
     def get_distances(self):
         return self.dists
