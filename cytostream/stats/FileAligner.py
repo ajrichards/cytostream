@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 from matplotlib.ticker import MaxNLocator
 from scipy.spatial.distance import pdist,cdist,squareform
-from scipy.cluster.vq import whiten
 import scipy.stats as stats
 from cytostream.tools import calculate_intercluster_score 
 from cytostream.stats import SilValueGenerator,DistanceCalculator
@@ -27,9 +26,8 @@ class FileAligner():
     '''
 
     def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,covariateID=None,
-                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",distanceMetric='euclidean'):
+                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",distanceMetric='mahalanobis'):
         self.expListNames = [expName for expName in expListNames]
-        #self.expListData = [whiten(expData[:,:].copy()) for expData in expListData]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
         self.phiRange = phiRange
@@ -383,7 +381,6 @@ class FileAligner():
                         dc1 = DistanceCalculator(distType=self.distanceMetric)
                         dc1.calculate(eventsPatient1)
                         withinDistances = dc1.get_distances()
-                        withinDistances = whiten(withinDistances)
                         
                         ## calculate between distances
                         dc2 = DistanceCalculator(distType=self.distanceMetric)
@@ -393,7 +390,6 @@ class FileAligner():
                         else:
                             dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
                         btnDistances = dc2.get_distances()
-                        btnDistances = whiten(btnDistances)
 
                         ## find credible intervals based on a Gaussian distributions
                         threshold = stats.norm.ppf(0.975,loc=withinDistances.mean(),scale=withinDistances.std())
@@ -627,32 +623,65 @@ class FileAligner():
                 ## take events in the clusters and find their euclidean distance from their centers
                 eventsRefFile1 = refFileData[np.where(refFileLabels==cluster1)[0],:]
                 eventsRefFile2 = refFileData[np.where(refFileLabels==cluster2)[0],:]
+                
+                ## calculate within cluster distances                                                                                                                                                                               
+                dc1 = DistanceCalculator(distType=self.distanceMetric)
+                dc1.calculate(eventsRefFile1)
+                withinDistances1 = dc1.get_distances()
 
-                euclidDist1 = (eventsRefFile1 - eventsRefFile1.mean(axis=0))**2.0
-                euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
-                euclidDist1 = whiten(euclidDist1)
+                dc2 = DistanceCalculator(distType=self.distanceMetric)
+                dc2.calculate(eventsRefFile2)
+                withinDistances2 = dc2.get_distances()
 
-                euclidDist2 = (eventsRefFile2 - eventsRefFile2.mean(axis=0))**2.0
-                euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
-                eculidDist2 = whiten(euclidDist2)
+                ## calculate between distances                                                                                                                                                                                      
+                dc3 = DistanceCalculator(distType=self.distanceMetric)
+                if self.distanceMetric == 'mahalanobis':
+                    inverseCov = dc3.get_inverse_covariance(eventsRefFile1)
+                    dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0),inverseCov=inverseCov)
+                else:
+                    dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0))
+                btnDistances2 = dc3.get_distances()
 
-                ## determine the number of events that overlap
-                overlap1 = (eventsRefFile1 - eventsRefFile2.mean(axis=0))**2.0
-                overlap1 = np.sqrt(overlap1.sum(axis=1))
-                overlap1 = whiten(overlap1)
+                dc4 = DistanceCalculator(distType=self.distanceMetric)
+                if self.distanceMetric == 'mahalanobis':
+                    inverseCov = dc4.get_inverse_covariance(eventsRefFile2)
+                    dc4.calculate(eventsRefFile1,matrixMeans=eventsRefFile2.mean(axis=0),inverseCov=inverseCov)
+                else:
+                    dc4.calculate(eventsReFile1,matrixMeans=eventsRefFile2.mean(axis=0))
+                btnDistances1 = dc4.get_distances()
 
-                overlap2 = (eventsRefFile2 - eventsRefFile1.mean(axis=0))**2.0
-                overlap2 = np.sqrt(overlap2.sum(axis=1))
-                overlap2 = whiten(overlap2)
+                threshold1 = stats.norm.ppf(0.975,loc=withinDistances1.mean(),scale=withinDistances1.std())
+                threshold2 = stats.norm.ppf(0.975,loc=withinDistances2.mean(),scale=withinDistances2.std())
 
-                threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
-                threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
-
-                overlappingInds1 = np.where(overlap1<threshold2)[0]
-                overlappingInds2 = np.where(overlap2<threshold1)[0]
+                overlappingInds1 = np.where(btnDistances1<threshold2)[0]
+                overlappingInds2 = np.where(btnDistances2<threshold1)[0]
+                
                 percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsRefFile1)[0])
                 percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsRefFile2)[0])
                 percentOverlap = np.max([percentOverlap1, percentOverlap2])
+
+                #euclidDist1 = (eventsRefFile1 - eventsRefFile1.mean(axis=0))**2.0
+                #euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
+
+                #euclidDist2 = (eventsRefFile2 - eventsRefFile2.mean(axis=0))**2.0
+                #euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
+                
+                ## determine the number of events that overlap
+                #overlap1 = (eventsRefFile1 - eventsRefFile2.mean(axis=0))**2.0
+                #overlap1 = np.sqrt(overlap1.sum(axis=1))
+                
+                #overlap2 = (eventsRefFile2 - eventsRefFile1.mean(axis=0))**2.0
+                #overlap2 = np.sqrt(overlap2.sum(axis=1))
+
+                #threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
+                #threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
+
+                
+                #overlappingInds1 = np.where(overlap1<threshold2)[0]
+                #overlappingInds2 = np.where(overlap2<threshold1)[0]
+                #percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsRefFile1)[0])
+                #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsRefFile2)[0])
+                #percentOverlap = np.max([percentOverlap1, percentOverlap2])
 
                 ## minimum percent overlap testing for merge
                 if phi0 >= percentOverlap:

@@ -168,7 +168,7 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
 
 def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
                            showCentroids=True,figTitle=None,markerSize=1,saveas=None,subplotRows=3,subplotCols=2,refFile=None,
-                           dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10,asData=False):
+                           dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10,asData=False,fontName='arial'):
 
     if subplotRows > subplotCols:
         fig = plt.figure(figsize=(6.5,9))
@@ -176,8 +176,6 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
         fig = plt.figure(figsize=(10,7))
     else:
         fig = plt.figure(figsize=(9,8))
-    
-    fontName = 'ariel'
 
     ## error checking
     if len(expListNames) != len(expListDataPaths) or len(expListNames) != len(expListLabels):
