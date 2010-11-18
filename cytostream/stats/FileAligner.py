@@ -14,7 +14,7 @@ from scipy.spatial.distance import pdist,cdist,squareform
 import scipy.stats as stats
 from cytostream.tools import calculate_intercluster_score 
 from cytostream.stats import SilValueGenerator,DistanceCalculator
-
+from scipy.cluster.vq import whiten
 
 class FileAligner():
     '''
@@ -386,10 +386,16 @@ class FileAligner():
                         dc2 = DistanceCalculator(distType=self.distanceMetric)
                         if self.distanceMetric == 'mahalanobis':
                             inverseCov = dc2.get_inverse_covariance(eventsPatient1)
-                            dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0),inverseCov=inverseCov)
+                            if inverseCov != None:
+                                dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0),inverseCov=inverseCov)
+                                btnDistances = dc2.get_distances()
+                            else:
+                                dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
+                                btnDistances = dc2.get_distances()
+                                btnDistances = whiten(btnDistances)
                         else:
                             dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
-                        btnDistances = dc2.get_distances()
+                            btnDistances = dc2.get_distances()
 
                         ## find credible intervals based on a Gaussian distributions
                         threshold = stats.norm.ppf(0.975,loc=withinDistances.mean(),scale=withinDistances.std())
@@ -637,18 +643,30 @@ class FileAligner():
                 dc3 = DistanceCalculator(distType=self.distanceMetric)
                 if self.distanceMetric == 'mahalanobis':
                     inverseCov = dc3.get_inverse_covariance(eventsRefFile1)
-                    dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0),inverseCov=inverseCov)
+                    if inverseCov != None:
+                        dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0),inverseCov=inverseCov)
+                        btnDistances2 = dc3.get_distances()
+                    else:
+                        dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0))
+                        btnDistances2 = dc3.get_distances()
+                        btnDistances2 = whiten(btnDistances2)
                 else:
                     dc3.calculate(eventsRefFile2,matrixMeans=eventsRefFile1.mean(axis=0))
-                btnDistances2 = dc3.get_distances()
+                    btnDistances2 = dc3.get_distances()
 
                 dc4 = DistanceCalculator(distType=self.distanceMetric)
                 if self.distanceMetric == 'mahalanobis':
                     inverseCov = dc4.get_inverse_covariance(eventsRefFile2)
-                    dc4.calculate(eventsRefFile1,matrixMeans=eventsRefFile2.mean(axis=0),inverseCov=inverseCov)
+                    if inverseCov != None:
+                        dc4.calculate(eventsRefFile1,matrixMeans=eventsRefFile2.mean(axis=0),inverseCov=inverseCov)
+                        btnDistances1 = dc4.get_distances()
+                    else:
+                        dc4.calculate(eventsReFile1,matrixMeans=eventsRefFile2.mean(axis=0))
+                        btnDistances1 = dc4.get_distances()
+                        btnDistances1 = whiten(btnDistances1)
                 else:
                     dc4.calculate(eventsReFile1,matrixMeans=eventsRefFile2.mean(axis=0))
-                btnDistances1 = dc4.get_distances()
+                    btnDistances1 = dc4.get_distances()
 
                 threshold1 = stats.norm.ppf(0.975,loc=withinDistances1.mean(),scale=withinDistances1.std())
                 threshold2 = stats.norm.ppf(0.975,loc=withinDistances2.mean(),scale=withinDistances2.std())

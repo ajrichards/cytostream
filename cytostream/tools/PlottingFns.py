@@ -167,7 +167,7 @@ def make_scatter_plot(filePath,channel1Ind,channel2Ind,fileChannels,excludedChan
 '''
 
 def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0,colInd2=1,centroids=None,colInd1Name=None, colInd2Name=None,
-                           showCentroids=True,figTitle=None,markerSize=1,saveas=None,subplotRows=3,subplotCols=2,refFile=None,
+                           showCentroids=True,figTitle=None,markerSize=1,saveas=None,subplotRows=3,subplotCols=2,refFile=None, covariateList=[],
                            dataType='fcs',subsample=None,highlight=None,excludedChannels=[],fontSize=10,asData=False,fontName='arial'):
 
     if subplotRows > subplotCols:
@@ -303,9 +303,14 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
             print "ERROR: the correct number of point were not plotted %s/%s"%(totalPoints,expData[:,0].size)
 
         if expListNames[subplotCount-1] == refFile:
-            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize,fontweight='heavy')
+            fontWeight = 'heavy'
         else:
-            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize)
+            fontWeight = 'normal'
+
+        if len(covariateList) > 0:
+            ax.set_title(expListNames[subplotCount-1]+"-"+covariateList[subplotCount-1],fontsize=fontSize,fontweight=fontWeight)
+        else:
+            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize,fontweight=fontWeight)
 
         ax.set_xlim([xAxLimit[0],xAxLimit[1]])
         ax.set_ylim([yAxLimit[0],yAxLimit[1]])
