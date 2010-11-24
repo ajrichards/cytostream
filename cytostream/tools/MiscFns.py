@@ -1,4 +1,4 @@
-import sys,os,re,csv
+import sys,os,re,csv,cPickle
 import numpy as np
 import fcm
 
@@ -42,7 +42,7 @@ def calculate_intercluster_score(expListNames,expListData,expListLabels):
 
 def get_file_data(dataPath,dataType='fcs'):
 
-    if dataType not in ['fcs','txt']:
+    if dataType not in ['fcs','txt','pickle']:
         print "ERROR in tools.get_file_data -- bad data type ", dataType
         return None, None
 
@@ -53,6 +53,11 @@ def get_file_data(dataPath,dataType='fcs'):
     if dataType == 'fcs':
         fcsData = fcm.loadFCS(dataPath)
         fileChannels = fcsData.channels
+    elif dataType == 'pickle':
+        fid = open(dataPath,'rb')
+        fcsData = cPickle.load(fid)
+        fid.close()
+        fileChannels = None
     else:
         fcsData = read_txt_into_array(dataPath)
         fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
