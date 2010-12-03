@@ -67,28 +67,12 @@ class Controller:
             print "ERROR: invalid mode specified"
 
         modelName = self.log.log['modelToRun']
-        fileList = get_fcs_file_names(self.homeDir)
+        fileList = get_fcs_file_names(self.homeDir,excludedFiles=self.log.log['excludedFilesQA'])
         numImagesToCreate = 0
         
-        ## prepare to check for excluded channels and files
-        excludedChannels = self.log.log['excludedChannels']
-        excludedFiles = self.log.log['excludedFiles']
-
-        if type(self.log.log['excludedFiles']) != type([]):
-            excludedFiles = []
-
-        if type(self.log.log['excludedChannels']) != type([]):
-            excludedChannels = []
-   
-        ## recreate file list if there are excluded files
-        if excludedFiles > 0:
-            for f in excludedFiles:
-                fileList.remove(f)
-            self.log.log['selectedFile'] == fileList[0]
-
         ## get num images to create
         for fileName in fileList:
-            fileChannels = self.model.get_file_channel_list(fileName)
+            fileChannels = self.model.get_file_channel_list(excludedChannels=ici)
             n = float(len(fileChannels) - len(excludedChannels))
             numImagesToCreate += (n * (n - 1.0)) / 2.0
         
@@ -103,7 +87,7 @@ class Controller:
 
             ## get model name
             if mode == 'results':
-                if self.log.log['subsample'] == None or self.log.log['subsample'] == 'All Data':
+                if self.log.log['subsample'] == None or self.log.log['subsample'] == 'original':
                     longModelName = re.sub('\.fcs|\.pickle','',fileName)+"_"+modelName
                     imgDir = os.path.join(self.homeDir,'figs',modelName)
                 else:
@@ -142,10 +126,8 @@ class Controller:
                     if channelI in excludedChannels or channelJ in excludedChannels:
                         continue
                     
-
-
-                    if self.log.log['subsample'] == 'All Data':
-                        subset = 'all'
+                    if self.log.log['subsample'] == 'original':
+                        subset = 'original'
                     else:
                         subset = self.log.log['subsample']
                     
@@ -183,7 +165,7 @@ class Controller:
             if mode == 'qa':
                 imgDir = os.path.join(self.homeDir,"figs")
             elif mode == 'results':
-                if self.log.log['subsample'] == "All Data":
+                if self.log.log['subsample'] == "original":
                     imgDir = os.path.join(self.homeDir,'figs',"%s"%(modelName))
                 else:
                     imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
@@ -235,29 +217,25 @@ class Controller:
 
     def handle_subsampling(self):
         if self.log.log['subsample'] != "original":
-            if os.path.isfile(os.path.join(self.homeDir,'data','subsample_%s.pickle'%self.log.log['subsample'])) == False:
-                self.model.get_subsample_indices(self.log.log['subsample'])
 
-            tmp = open(os.path.join(homeDir,'data','subsample_%s.pickle'%self.log.log['subsample']),'rb')
-            self.subsampleIndices = cPickle.load(tmp)
+            subsample = int(float(self.log.log['subsample']))            
+            self.subsampleIndices = self.model.get_subsample_indices(self.log.log['subsample'])
 
             if type(self.subsampleIndices) == type(np.array([])):
                 pass
-            elif self.subsampleIndices == False:
+            else:
                 print "WARNING: No subsample indices were returned to controller"
                 return False
 
-            n = len(self.subsampleIndices)
-
-            ## for each file associated with the project
+            # save pickle files of subsampled events
             fileList = get_fcs_file_names(self.homeDir)
             for fileName in fileList:
-                ## save a pickled copy of the data object
-                data = data[self.subsampleIndices,:]
-                outFileName = re.sub("\.pickle|.\fcs|\.txt","",fileName)
-                outfile = os.path.join(self.homeDir,'data',"%s_sub%s.pickle"%(outFileName,n))
-                tmp = open(outfile,'w')
+                events = self.model.get_events(fileName,subsample='original')
+                data = events[self.subsampleIndices,:]
+                newDataFileName = fileName + "_data_%s.pickle"%subsample
+                tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
                 cPickle.dump(data,tmp)
+                tmp.close()
             return True
         else:
             return True

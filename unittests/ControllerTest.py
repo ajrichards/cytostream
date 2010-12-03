@@ -50,16 +50,14 @@ class ControllerTest(unittest.TestCase):
         fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
         fileName = re.sub('\.fcs|\.txt|\.out','',fileName)
         events = self.controller.model.get_events(fileName,subsample=subsample)
-        print events.shape
+        self.assertEqual(events.shape[0], 1000)
     
-        
-    
-    #def testProcessImages(self):
-    #    self.controller.log.log['subsample'] = '1e3'
-    #    self.controller.handle_subsampling()
-    #    self.controller.process_images('qa')
-    #    self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs'))) != 7)
-    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','3FITC_4PE_004_thumbs')))
+    def testProcessImages(self):
+        self.controller.log.log['subsample'] = '1e3'
+        self.controller.handle_subsampling()
+        self.controller.process_images('qa')
+        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs'))) != 7)
+        self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','3FITC_4PE_004_thumbs')))
 
 ### Run the tests 
 if __name__ == '__main__':
