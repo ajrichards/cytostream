@@ -26,7 +26,6 @@ import subprocess
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
 from Logging import Logger
 
-
 class Controller:
     def __init__(self,viewType=None):
         '''
@@ -235,9 +234,13 @@ class Controller:
             print "ERROR: bad file name specified",fileName
 
     def handle_subsampling(self):
-        if self.log.log['subsample'] != "All Data":
-            self.subsampleIndices = self.model.get_subsample_indices(self.log.log['subsample'])
-            
+        if self.log.log['subsample'] != "original":
+            if os.path.isfile(os.path.join(self.homeDir,'data','subsample_%s.pickle'%self.log.log['subsample'])) == False:
+                self.model.get_subsample_indices(self.log.log['subsample'])
+
+            tmp = open(os.path.join(homeDir,'data','subsample_%s.pickle'%self.log.log['subsample']),'rb')
+            self.subsampleIndices = cPickle.load(tmp)
+
             if type(self.subsampleIndices) == type(np.array([])):
                 pass
             elif self.subsampleIndices == False:
@@ -248,12 +251,11 @@ class Controller:
 
             ## for each file associated with the project
             fileList = get_fcs_file_names(self.homeDir)
-            for file in fileList:
-                
+            for fileName in fileList:
                 ## save a pickled copy of the data object
-                data = self.model.pyfcm_load_fcs_file(file)
                 data = data[self.subsampleIndices,:]
-                outfile = os.path.join(self.homeDir,'data',"%s_sub%s.pickle"%(file[:-4],n))
+                outFileName = re.sub("\.pickle|.\fcs|\.txt","",fileName)
+                outfile = os.path.join(self.homeDir,'data',"%s_sub%s.pickle"%(outFileName,n))
                 tmp = open(outfile,'w')
                 cPickle.dump(data,tmp)
             return True
@@ -266,35 +268,29 @@ class Controller:
     #
     ##################################################################################################
            
-    def create_new_project(self,fcsFileName,view=None):
-        fcsFileName = str(fcsFileName)
+    def create_new_project(self,view=None,projectID=None):
+        #fcsFileName = str(fcsFileName)
         createNew = True
-
-        if fcsFileName == None or fcsFileName == "":
-            createNew = False
-        elif not re.search('\.fcs',fcsFileName):
-            view.display_warning("file is not of type fcs")
-            fcsFileName = None
-            createNew = False
-
+    
         ## create projects dir if necssary
         if os.path.isdir(os.path.join(self.baseDir,'projects')) == False:
             print "INFO: projects dir did not exist. creating..."
             os.mkdir(os.path.join(self.baseDir,'projects'))
 
         ## get project id
-        if view == None:
+        if projectID != None:
             pass
-        elif createNew == True:
+        elif createNew == True and projectID == None:
             projectID, ok = QtGui.QInputDialog.getText(view, self.appName, 'Enter the name of your new project:')
             projectID = str(projectID)
             
             if ok == False:
                 createNew = False
+        else:
+            createNew = False
+            print "ERROR: creating a new project"
 
-        if view == None:
-            pass
-        elif createNew == True:
+        if createNew == True:
             print 'initializing project...'
             self.initialize_project(projectID)
         else:
@@ -311,10 +307,11 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"data"))
             os.mkdir(os.path.join(self.homeDir,"figs"))
             os.mkdir(os.path.join(self.homeDir,"models"))
+            os.mkdir(os.path.join(self.homeDir,"results"))
 
-            if fcsFileName != None:
-                self.load_fcs_file(fcsFileName)
-                self.log.log['selectedFile'] = fcsFileName.split(os.path.sep)[-1]
+        #    if fcsFileName != None:
+        #        self.load_fcs_file(fcsFileName)
+        #        self.log.log['selectedFile'] = fcsFileName.split(os.path.sep)[-1]
 
         return True
 
@@ -345,38 +342,62 @@ class Controller:
             os.remove(fcsFileName)
             self.view.status.set("file removed")
 
-    def load_fcs_file(self,fcsFileName):
-        shortFileName = fcsFileName.split(os.path.sep)[-1]
-        shortFileName = re.sub('\s+','',shortFileName)
-        fcsFileName = re.sub('\s+','\ ',fcsFileName)
-        newFcsFile = os.path.join(self.homeDir,"data",shortFileName)
- 
-        ## save copy of original
-        os.system ("cp %s %s" % (fcsFileName,newFcsFile))
-        #
-        #shutil.copy(fcsFileName, os.path.join(self.homeDir,"data"))
+    def load_fcs_files(self,fileList,dataType='fcs',transform='log'):
+        if type(fileList) != type([]):
+            print "INPUT ERROR: load_fcs_files: takes as input a list of file paths"
 
-        if os.path.isfile(newFcsFile) == False:
-            print "ERROR: could not make a copy of the orig matrix file"
-      
-    def load_additional_fcs_files(self,fileName=None,view=None):
-        loadFile = True
-        fcsFileName = None
-        if fileName == None:
-            fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
+        script = os.path.join(self.baseDir,"LoadFile.py")
+        self.log.log['transform'] = transform
 
-        if not re.search('\.fcs',fileName):
-            fcsFileName = None
-            view.display_warning("File '%s' was not of type *.fcs"%fileName)
-        else:
-            fcsFileName = fileName
+        for filePath in fileList:
+            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(pythonPath,script,filePath,self.homeDir,dataType,transform),
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+            while True:
+                try:
+                    next_line = proc.stdout.readline()
+                    if next_line == '' and proc.poll() != None:
+                        break
 
-        if fcsFileName != None:
-            self.load_fcs_file(fcsFileName)
-            return True
-        else:
-            print "WARNING: bad attempt to load file name"
-            return False
+                    ## to debug uncomment the following line     
+                    print next_line
+
+                except:
+                    break
+
+            ## check to see that files were made
+            newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
+            newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
+            newDataFileName = newFileName +"_data_original.pickle"
+            newChanFileName = newFileName +"_channels_original.pickle"
+            newFileName = re.sub('\s+','_',filePath[-1])
+            if filePath == fileList[0]:
+                self.log.log['selectedFile'] = re.sub("\.pickle","",newDataFileName)
+
+            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
+                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
+
+    #def load_additional_fcs_files(self,fileName=None,view=None):
+    #    loadFile = True
+    #    fcsFileName = None
+    #    if fileName == None:
+    #        fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
+    #
+    #    if not re.search('\.fcs',fileName):
+    #        fcsFileName = None
+    #        view.display_warning("File '%s' was not of type *.fcs"%fileName)
+    #    else:
+    #        fcsFileName = fileName
+    #
+    #    if fcsFileName != None:
+    #        self.load_fcs_file(fcsFileName)
+    #        return True
+    #    else:
+    #        print "WARNING: bad attempt to load file name"
+    #        return False
 
     def get_component_states(self):
         try:

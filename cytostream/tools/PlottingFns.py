@@ -307,10 +307,16 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
         else:
             fontWeight = 'normal'
 
+        fileName = expListNames[subplotCount-1]
+        fileName = re.sub("ACS\-T\-Pt\_","",fileName)
+        print fileName
+
         if len(covariateList) > 0:
-            ax.set_title(expListNames[subplotCount-1]+"-"+covariateList[subplotCount-1],fontsize=fontSize,fontweight=fontWeight)
+            subplotTitle = fileName +"-"+covariateList[subplotCount-1]
         else:
-            ax.set_title(expListNames[subplotCount-1],fontsize=fontSize,fontweight=fontWeight)
+            subplotTitle = fileName
+        
+        ax.set_title(subplotTitle,fontsize=fontSize,fontweight=fontWeight)
 
         ax.set_xlim([xAxLimit[0],xAxLimit[1]])
         ax.set_ylim([yAxLimit[0],yAxLimit[1]])
@@ -350,3 +356,43 @@ def make_plots_as_subplots(expListNames,expListDataPaths,expListLabels,colInd1=0
 
         if saveas != None:
             fig.savefig(saveas,dpi=300)
+
+
+
+    def makePlotsSameAxis(self,expListNames,expListData,expListLabels,colors,centroids,showCentroids=True):
+        fig = plt.figure(figsize=(7,7))
+        ax = fig.add_subplot(111)
+        plotCount = -1
+        plotMarkers = ["o","+","^","s"]
+        plotDict = {}
+
+        for c in range(len(expListNames)):
+            plotCount += 1
+            expData = expListData[c]
+            labels = expListLabels[c]
+            expName = expListNames[c]
+
+            if plotCount == 0:
+                visible = True
+            else:
+                visible = False
+
+            x = expData[:,0]
+            y = expData[:,1]
+
+            plotDict[plotCount] = ax.scatter(x,y,color=colors[plotCount],s=self.markerSize,visible=visible)
+            #ax.set_title("Case %s"%subplotCount) 
+ 
+            ax.set_xlim([0,14])
+            ax.set_ylim([0,14])
+
+        rax = plt.axes([0.15, 0.12, 0.15, 0.15])
+        check = CheckButtons(rax, ('Case1', 'Case2', 'Case3','Case4'), (True, False, False, False))
+
+        def func(label):
+            if label == 'Case1': plotDict[0].set_visible(not plotDict[0].get_visible())
+            elif label == 'Case2': plotDict[1].set_visible(not plotDict[1].get_visible())
+            elif label == 'Case3': plotDict[2].set_visible(not plotDict[2].get_visible())
+            elif label == 'Case4': plotDict[3].set_visible(not plotDict[3].get_visible())
+            plt.draw()
+        check.on_clicked(func)

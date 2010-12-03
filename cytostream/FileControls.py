@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import os,re
+import os,re,cPickle
+import fcm
 
-def get_fcs_file_names(homeDir,getPickles=False):
+def get_fcs_file_names(homeDir):
     '''
     returns a sorted list of file names associated with the project
     
@@ -10,11 +11,16 @@ def get_fcs_file_names(homeDir,getPickles=False):
 
     fileList = []
     for fileName in os.listdir(os.path.join(homeDir,"data")):
-        if re.search("\.fcs",fileName) and getPickles == False:
-            fileList.append(fileName)
-        if re.search("\.pickle",fileName) and getPickles == True:
-            fileList.append(fileName)
+        if not re.search("data",fileName):
+            continue
+        if not re.search("\.pickle",fileName):
+            continue
+        if not re.search("original",fileName):
+            continue
 
+        fileList.append(fileName)
+
+    fileList = [re.sub("\_data_original.pickle","", fi) for fi in fileList]
     fileList.sort()
 
     return fileList

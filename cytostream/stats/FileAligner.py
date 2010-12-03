@@ -26,7 +26,7 @@ class FileAligner():
     '''
 
     def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,covariateID=None,
-                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],basedir=".",distanceMetric='mahalanobis'):
+                 mkPlots=True,refFile=None,verbose=False,excludedChannels=[],baseDir=".",distanceMetric='mahalanobis'):
         self.expListNames = [expName for expName in expListNames]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
@@ -35,11 +35,13 @@ class FileAligner():
         self.modelName = modelName
         self.mkPlots = mkPlots
         self.minMergeSilValue = minSilValue
-        self.basedir = basedir
+        self.baseDir = baseDir
         self.verbose = verbose
         self.covariateID = covariateID
         self.distanceMetric = distanceMetric
         self.silValueEstimateSample = 500
+        self.globalScoreDict = {}
+
         numChannels = np.shape(self.expListData[0])[1]
         self.newLabelsAll = {}
 
@@ -52,6 +54,13 @@ class FileAligner():
             self.includedChannels = list(set(range(numChannels)).difference(set(excludedChannels)))
         else:
             self.includedChannels = range(numChannels)
+
+        ## making dir tree
+        if os.path.isdir(self.baseDir) == False:
+            print "INPUT ERROR: FileAligner.py -- baseDir does not exist"
+            return None
+
+        self.make_dir_tree()
 
         ## use data only from included channels
         self.expListData = [expData[:,self.includedChannels] for expData in self.expListData]
@@ -120,9 +129,21 @@ class FileAligner():
             self.perform_file_alignment(self.refFile,self.matchResults,phi)
             self._save_clusters(phi)
             
-            ## write data to alignments file
+        ## move the copied reference file labels to the reference labels
+        for phi in self.phiRange:
+            self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
+            self.newLabelsAll[str(round(phi,4))].pop()
+
+        self.expListNames.pop()
+        self.expListData.pop()
+        self.expListLabels.pop()
+
+        ## calculate and save global alignment score 
+        for phi in self.phiRange:
             interClusterDistance = calculate_intercluster_score(self.expListNames,self.expListData,self.newLabelsAll[str(round(phi,4))])
-            
+            self.globalScoreDict[str(phi)] = interClusterDistance
+           
+            ## write data to alignments file 
             allMeanSilValues = []
             for en in range(len(self.expListNames)):
                 expName = self.expListNames[en]
@@ -137,27 +158,64 @@ class FileAligner():
             
             self.alignmentFile.writerow([phi,interClusterDistance,np.array(allMeanSilValues).mean()])
 
-        ## move the copied reference file labels to the reference labels
-        for phi in self.phiRange:
-            self.newLabelsAll[str(round(phi,4))][self.expListNames.index(self.refFile)] = [lab for lab in self.newLabelsAll[str(round(phi,4))][-1]]
-            self.newLabelsAll[str(round(phi,4))].pop()
+    def make_dir_tree(self):
+        if self.verbose == True and os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+            print "INFO: deleting old files for file aligner"
 
-        self.expListNames.pop()
-        self.expListData.pop()
-        self.expListLabels.pop()
+        dirs = ['results','figures']
+        for diry in dirs:
+            if os.path.isdir(os.path.join(self.baseDir,diry)) == False:
+                os.mkdir(os.path.join(self.baseDir,diry))
+            
+        if os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+            ## clean out figures dir
+            for item1 in os.listdir(os.path.join(self.baseDir,'alignfigs')):
+                if os.path.isdir(os.path.join(self.baseDir,'alignfigs',item1)) == True:
+                    for item2 in os.listdir(os.path.join(self.baseDir,'alignfigs',item1)):
+                        os.remove(os.path.join(self.baseDir,'alignfigs',item1,item2))
+                else:
+                    os.remove(os.path.join(self.baseDir,'alignfigs',item1))
+            
+            ## clean out relevant results
+            if os.path.isdir(os.path.join(self.baseDir,'results','alignments')) == True:
+                for item1 in os.listdir(os.path.join(self.baseDir,'results','alignments')):
+                    os.remove(os.path.join(self.baseDir,'results','alignments',item1))
+                
+            ## remove old log files 
+            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.baseDir,"results","alignments.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","alignments.log"))
+
+        ## ensure directories are present                                                                                                                                                                        
+
+        if os.path.isdir(os.path.join(self.baseDir,"results","alignments")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results","alignments"))
+        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results"))
+            
+        if os.path.isdir(os.path.join(self.baseDir,"alignfigs")) == False:
+            os.mkdir(os.path.join(self.baseDir,"alignfigs"))
+        for phi in self.phiRange:
+            if os.path.isdir(os.path.join(self.baseDir,"alignfigs",str(phi))) == False:
+                os.mkdir(os.path.join(self.baseDir,"alignfigs",str(phi)))
+        if os.path.isdir(os.path.join(self.baseDir,"alignfigs",'unaligned')) == False:
+            os.mkdir(os.path.join(self.baseDir,"alignfigs",'unaligned'))
+        if os.path.isdir(os.path.join(self.baseDir,"alignfigs",'pies')) == False:
+            os.mkdir(os.path.join(self.baseDir,"alignfigs",'pies'))
 
     def create_log_file(self):
         ''' 
         create a log file to document cluster changes
         each log is specific to a give phi
         '''
-        if os.path.isdir(os.path.join(self.basedir,"results")) == False:
-            os.mkdir(os.path.join(self.basedir,"results"))
 
         if self.covariateID == None:
-            self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge.log"),'wa'))
+            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge.log"),'wa'))
         else:
-            self.logFile = csv.writer(open(os.path.join(self.basedir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
+            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
         self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
         self.logFile.writerow(["refFile",self.refFile])
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
@@ -169,13 +227,13 @@ class FileAligner():
         create a log file to document  the alignments
 
         '''
-        if os.path.isdir(os.path.join(self.basedir,"results")) == False:
-            os.mkdir(os.path.join(self.basedir,"results"))
+        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results"))
 
         if self.covariateID == None:
-            self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments.log"),'wa'))
+            self.alignmentFile = csv.writer(open(os.path.join(self.baseDir,"results","alignments.log"),'wa'))
         else:
-            self.alignmentFile = csv.writer(open(os.path.join(self.basedir,"results","alignments_%s.log"%(self.covariateID)),'wa'))
+            self.alignmentFile = csv.writer(open(os.path.join(self.baseDir,"results","alignments_%s.log"%(self.covariateID)),'wa'))
         self.alignmentFile.writerow(["phi","alignment-score","average-silvalue"])
 
 
@@ -233,10 +291,15 @@ class FileAligner():
             for clusterInd in fileClusters:
                 clusterElementInds = np.where(expLabels == clusterInd)[0]
                 if clusterElementInds.size > self.silValueEstimateSample:
-                    randSelectedInds = clusterElementInds[np.random.randint(0,clusterElementInds.size,self.silValueEstimateSample)]
+                    randSelectedInds = clusterElementInds[np.random.randint(0,clusterElementInds.size ,self.silValueEstimateSample)]
+                    #print len(expLabels),clusterElementInds.size, clusterElementInds.shape, clusterElements
                     newIndices = newIndices + randSelectedInds.tolist()
                 else:
                     newIndices = newIndices + clusterElementInds.tolist() 
+            
+            if len(expLabels) == 0:
+                print "ERROR there is a problem with the labels for %s "%expName
+                sys.exit()
 
             subsetExpData.append(expData[newIndices,:])
             subsetExpLabels.append(np.array(expLabels)[newIndices])
@@ -373,11 +436,11 @@ class FileAligner():
                     for c2 in range(len(sizeOrderedLabelsPatient2)):
                         cluster2 = sizeOrderedLabelsPatient2[c2]
                         
-                        ## take events in the clusters and find their euclidean distance from their centers
+                        ## calculate percent overlap in first dirction
                         eventsPatient1 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
                         eventsPatient2 = dataPatient2[np.where(labelsPatient2==cluster2)[0],:]
 
-                        ## calculate within cluster distances    
+                        ## calculate within cluster distances
                         dc1 = DistanceCalculator(distType=self.distanceMetric)
                         dc1.calculate(eventsPatient1)
                         withinDistances = dc1.get_distances()
@@ -402,37 +465,53 @@ class FileAligner():
 
                         ## calculate percent overlap
                         overlappingInds = np.where(btnDistances<threshold)[0]
-                        percentOverlap = float(len(overlappingInds)) / float(np.shape(eventsPatient2)[0])
-             
-                        ####################################################################################
-                        ## find the euclidean distances
-                        #euclidDist = (eventsPatient2 - eventsPatient2.mean(axis=0))**2.0
-                        #euclidDist = np.sqrt(euclidDist.sum(axis=1))
-                        #
-                        #print 'within',euclidDist.sum(),withinDistances.sum()
-                        #
-                        ## determine the number of events that overlap
-                        #overlap = (eventsPatient1 - eventsPatient2.mean(axis=0))**2.0
-                        #overlap = np.sqrt(overlap.sum(axis=1))
-                        # 
-                        #print 'between', overlap.sum(),btnDistances.sum()
-                        #threshold = stats.norm.ppf(0.975,loc=euclidDist.mean(),scale=euclidDist.std())
-                        #overlappingInds = np.where(overlap<threshold)[0]
-                        #percentOverlap = float(len(overlappingInds)) / float(np.shape(eventsPatient1)[0])
+                        percentOverlap1 = float(len(overlappingInds)) / float(np.shape(eventsPatient2)[0])
 
-                        ####################################################################################
+                        if percentOverlap1 > 1.0:
+                            print "ERROR: in calculation of percent overlap", percentOverlap
 
-                        if percentOverlap > 1.0:
+                        ## calculate percent overlap in second direction
+                        eventsPatient2 = dataPatient1[np.where(labelsPatient1==cluster1)[0],:]
+                        eventsPatient1 = dataPatient2[np.where(labelsPatient2==cluster2)[0],:]
+
+                        ## calculate within cluster distances
+                        dc1 = DistanceCalculator(distType=self.distanceMetric)
+                        dc1.calculate(eventsPatient1)
+                        withinDistances = dc1.get_distances()
+                        
+                        ## calculate between distances
+                        dc2 = DistanceCalculator(distType=self.distanceMetric)
+                        if self.distanceMetric == 'mahalanobis':
+                            inverseCov = dc2.get_inverse_covariance(eventsPatient1)
+                            if inverseCov != None:
+                                dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0),inverseCov=inverseCov)
+                                btnDistances = dc2.get_distances()
+                            else:
+                                dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
+                                btnDistances = dc2.get_distances()
+                                btnDistances = whiten(btnDistances)
+                        else:
+                            dc2.calculate(eventsPatient2,matrixMeans=eventsPatient1.mean(axis=0))
+                            btnDistances = dc2.get_distances()
+
+                        ## find credible intervals based on a Gaussian distributions
+                        threshold = stats.norm.ppf(0.975,loc=withinDistances.mean(),scale=withinDistances.std())
+
+                        ## calculate percent overlap
+                        overlappingInds = np.where(btnDistances<threshold)[0]
+                        percentOverlap2 = float(len(overlappingInds)) / float(np.shape(eventsPatient2)[0])
+
+                        if percentOverlap2 > 1.0:
                             print "ERROR: in calculation of percent overlap", percentOverlap
 
                         ## discard results with withouth percent overlap
-                        if  percentOverlap < 1e-16:
+                        if  percentOverlap1 < 1e-16 and percentOverlap2 < 1e-16:
                             continue
 
-                        ## save the results
-                        #print patient1,patient2,pIndex1,pIndex2, cluster1,cluster2,(percentOverlap1,percentOverlap2),percentOverlap
+                        ## save the results DEBUG
+                        #print patient1,cluster1-1,patient2,cluster2-1,percentOverlap1, percentOverlap2
 
-                        results = np.array(([pIndex1, pIndex2, cluster1,cluster2, percentOverlap]))
+                        results = np.array(([pIndex1, pIndex2, cluster1,cluster2, np.max([percentOverlap1,percentOverlap2])]))
                         if matchResults == None:
                             matchResults = results
                         else:
@@ -519,7 +598,7 @@ class FileAligner():
                             continue
 
                         self.newLabelsAll[str(round(phi,4))][int(bestMatch[0])][indicesToChange] = nextLabel
-                        self.logFile.writerow([phi,'nonref-match',self.expListNames[int(bestMatch[0])], int(-1.0*bestMatch[1]),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
+                        self.logFile.writerow([phi,'nonref-match',self.expListNames[int(bestMatch[0])], int(bestMatch[1]),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
                         clustersLeft.remove((bestMatch[0],-1*bestMatch[1]))                
                         
                 nextLabel += 1
@@ -565,11 +644,11 @@ class FileAligner():
 
     def _recreate_log_file(self,uniqueLabels,normalizedLabels):
         if self.covariateID == None:
-            newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge.log"),'w'))
-            reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log"),'r'))
+            newLogFile = csv.writer(open(os.path.join(self.baseDir,"results","FileMerge.log"),'w'))
+            reader = csv.reader(open(os.path.join(self.baseDir,"results","_FileMerge.log"),'r'))
         else:
-            newLogFile = csv.writer(open(os.path.join(self.basedir,"results","FileMerge_%s.log"%(self.covariateID)),'w'))
-            reader = csv.reader(open(os.path.join(self.basedir,"results","_FileMerge.log_%s"%(self.covariateID)),'r'))
+            newLogFile = csv.writer(open(os.path.join(self.baseDir,"results","FileMerge_%s.log"%(self.covariateID)),'w'))
+            reader = csv.reader(open(os.path.join(self.baseDir,"results","_FileMerge.log_%s"%(self.covariateID)),'r'))
             
 
         for linja in reader:
@@ -587,16 +666,16 @@ class FileAligner():
 
         '''
 
-        if os.path.isdir(os.path.join(self.basedir,'results')) == False:
-            os.mkdir(os.path.join(self.basedir,'results'))
-        if os.path.isdir(os.path.join(self.basedir,'results','alignments')) == False:
-            os.mkdir(os.path.join(self.basedir,'results','alignments'))
+        if os.path.isdir(os.path.join(self.baseDir,'results')) == False:
+            os.mkdir(os.path.join(self.baseDir,'results'))
+        if os.path.isdir(os.path.join(self.baseDir,'results','alignments')) == False:
+            os.mkdir(os.path.join(self.baseDir,'results','alignments'))
 
         for fileName in self.expListNames:
             if re.search("copied_ref_file",fileName):
-                  labelsFile = os.path.join(self.basedir,'results','alignments',"%s_%s.csv"%(self.refFile,re.sub("\.","",str(phi))))
+                  labelsFile = os.path.join(self.baseDir,'results','alignments',"%s_%s.csv"%(self.refFile,re.sub("\.","",str(phi))))
             else:
-                labelsFile = os.path.join(self.basedir,'results','alignments',"%s_%s.csv"%(fileName,re.sub("\.","",str(phi))))
+                labelsFile = os.path.join(self.baseDir,'results','alignments',"%s_%s.csv"%(fileName,re.sub("\.","",str(phi))))
             labelsWriter = csv.writer(open(labelsFile,'w'))
         
             fileInd = self.expListNames.index(fileName)
@@ -677,29 +756,6 @@ class FileAligner():
                 percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsRefFile1)[0])
                 percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsRefFile2)[0])
                 percentOverlap = np.max([percentOverlap1, percentOverlap2])
-
-                #euclidDist1 = (eventsRefFile1 - eventsRefFile1.mean(axis=0))**2.0
-                #euclidDist1 = np.sqrt(euclidDist1.sum(axis=1))
-
-                #euclidDist2 = (eventsRefFile2 - eventsRefFile2.mean(axis=0))**2.0
-                #euclidDist2 = np.sqrt(euclidDist2.sum(axis=1))
-                
-                ## determine the number of events that overlap
-                #overlap1 = (eventsRefFile1 - eventsRefFile2.mean(axis=0))**2.0
-                #overlap1 = np.sqrt(overlap1.sum(axis=1))
-                
-                #overlap2 = (eventsRefFile2 - eventsRefFile1.mean(axis=0))**2.0
-                #overlap2 = np.sqrt(overlap2.sum(axis=1))
-
-                #threshold1 = stats.norm.ppf(0.975,loc=euclidDist1.mean(),scale=euclidDist1.std())
-                #threshold2 = stats.norm.ppf(0.975,loc=euclidDist2.mean(),scale=euclidDist2.std())
-
-                
-                #overlappingInds1 = np.where(overlap1<threshold2)[0]
-                #overlappingInds2 = np.where(overlap2<threshold1)[0]
-                #percentOverlap1 = float(len(overlappingInds1)) / float(np.shape(eventsRefFile1)[0])
-                #percentOverlap2 = float(len(overlappingInds2)) / float(np.shape(eventsRefFile2)[0])
-                #percentOverlap = np.max([percentOverlap1, percentOverlap2])
 
                 ## minimum percent overlap testing for merge
                 if phi0 >= percentOverlap:
@@ -882,7 +938,7 @@ class FileAligner():
                 alreadyRenamed.append(fileClust)
                 
                 ## log the comparisons to the reference file
-                self.logFile.writerow([phi,'between-ref',altFileName,int(-1.0*altCluster-1.0),self.refFile,key,indicesToChange.size,percentOverlap,clusterSilValue])
+                self.logFile.writerow([phi,'between-ref',altFileName,int(-1.0*altCluster-1.0),self.refFile,key-1.0,indicesToChange.size,percentOverlap,clusterSilValue])
 
                 if self.verbose == True:
                     print '\tchanging %s to %s in file %s'%(altCluster,key,altFile), percentOverlap,clusterSilValue
@@ -1022,44 +1078,17 @@ class FileAligner():
 
         return filteredResults
 
-
-    def makePlotsSameAxis(self,expListNames,expListData,expListLabels,colors,centroids,showCentroids=True):
-        fig = plt.figure(figsize=(7,7))
-        ax = fig.add_subplot(111)
-        plotCount = -1
-        plotMarkers = ["o","+","^","s"]
-        plotDict = {}
-
-        for c in range(len(expListNames)):
-            plotCount += 1
-            expData = expListData[c]
-            labels = expListLabels[c]
-            expName = expListNames[c]
-
-            if plotCount == 0:
-                visible = True
-            else:
-                visible = False
-
-            x = expData[:,0]
-            y = expData[:,1]
-
-            plotDict[plotCount] = ax.scatter(x,y,color=colors[plotCount],s=self.markerSize,visible=visible)
-            #ax.set_title("Case %s"%subplotCount)
-            ax.set_xlim([0,14])
-            ax.set_ylim([0,14])
-
-        rax = plt.axes([0.15, 0.12, 0.15, 0.15])
-        check = CheckButtons(rax, ('Case1', 'Case2', 'Case3','Case4'), (True, False, False, False))
-
-        def func(label):
-            if label == 'Case1': plotDict[0].set_visible(not plotDict[0].get_visible())
-            elif label == 'Case2': plotDict[1].set_visible(not plotDict[1].get_visible())
-            elif label == 'Case3': plotDict[2].set_visible(not plotDict[2].get_visible())
-            elif label == 'Case4': plotDict[3].set_visible(not plotDict[3].get_visible())
-            plt.draw()
-        check.on_clicked(func)
-
-
     def show_plots(self):
         plt.show()
+
+
+    def get_best_match(self):
+        result = (None, None)
+        maxScore = 0
+
+        for phi,score in self.globalScoreDict.iteritems():
+            if score > maxScore:
+                maxScore = score
+                result = (phi,score)
+
+        return result

@@ -58,32 +58,39 @@ class Model:
         """
         self.projectID = projectID
         self.homeDir = homeDir
-    
-    def pyfcm_load_fcs_file(self,fileName,compensationMatrix=None):
+
+    def get_events(self,fileName,subsample='original'):
         """
-        returns a fcm data object
-        fileName is a fcs file name associated with a project
-
-        """      
-        fullFileName = os.path.join(self.homeDir,"data",fileName)
-        data = fcm.loadFCS(fullFileName)
-        return data
-
+        returns a np.array of event data
+        
+        """
+        
+        fileName = fileName + "_data_" + subsample + ".pickle"
+        if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
+            print "INPUT ERROR: bad file name specified in model.get_events"
+            return None
+        
+        tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
+        events = cPickle.load(tmp)
+        tmp.close()
+        return events
+        
     def get_master_channel_list(self):
         """
         returns a unique, sorted set of channels for all files in a project
 
         """
 
-        allChannels = set()
+        allChannels = []
         fileList = get_fcs_file_names(self.homeDir)
         for fileName in fileList:
-            data = self.pyfcm_load_fcs_file(fileName)
-            allChannels.update(data.channels)
+            dataFilePath = os.path.join(self.homeDir,"data",fileName)
+            fcsData,fileChannels = get_file_data(dataFilePath,dataType=dataType)
+            allChannels+=fileChannels
+        allChannels = np.sort(np.unique(allChannels))
 
-        ## remove white space and sort
-        allChannels = [re.sub("\s","-",c) for c in allChannels]
-        allChannels.sort()
+        ## remove white space
+        allChannels = [re.sub("\s+","-",c) for c in allChannels]
 
         return allChannels
 
@@ -99,19 +106,25 @@ class Model:
         
         return channelInds
    
-    def get_file_channel_list(self,fileName):
+    def get_file_channel_list(self,fileName,subsample='original'):
         """
         returns the channels associated with a given file
         fileName is not the path but the fcs file name
 
         """
+                
+        fileName = fileName + "_channels_" + subsample + ".pickle"
+        if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
+            print "INPUT ERROR: bad file name specified in model.get_file_channel_list"
+            return None
+        
+        tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
+        fileChannels = cPickle.load(tmp)
+        tmp.close()
+        fileChannels = [re.sub("\s","_",c) for c in fileChannels]
+        return fileChannels
 
-        data = self.pyfcm_load_fcs_file(fileName)
-        channels = data.channels
-        channels = [re.sub("\s","-",c) for c in channels]
-        return channels
-
-    def get_subsample_indices(self,subsample):
+    def get_subsample_indices(self,subsample,dataType='fcs'):
         """
         get subsample indices
         subsample is a number smaller than the number of events in the smallest file
@@ -120,21 +133,22 @@ class Model:
    
         """
 
-        self.subsample = subsample
-
-        if self.subsample == "All Data":
+        if subsample == "original":
             return None
         
         subsample = int(float(subsample))
         fileList = get_fcs_file_names(self.homeDir)
+        print "fileList",fileList
         numObs = None
         minNumObs = np.inf
 
         ## get minimum number of observations out of all files considered
-        for file in fileList:
-            data = self.pyfcm_load_fcs_file(file)
-            n,d = np.shape(data)
-                
+        for fileName in fileList:
+            fcsData = self.get_events(fileName,subsample='original')
+            n,d = np.shape(fcsData)
+            print '......................',n,d
+
+
             ## curiousity check
             if numObs == None:
                 numObs = n
@@ -146,13 +160,15 @@ class Model:
                 minNumObs = n
 
             if subsample > minNumObs:
-                print "ERROR: subsample greater than minimum num events in file", file
+                print "ERROR: subsample greater than minimum num events in file", fileName
                 return False
 
-        ## get the random integers
-        np.random.seed(42)
-        return np.random.random_integers(0,minNumObs-1,subsample)
-             
+        ## get the random ints and save as a pickle
+        randEvents = np.random.random_integers(0,minNumObs-1,subsample)
+        tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
+        cPickle.dump(randEvents,tmp)
+        tmp.close()
+
     def load_model_results_pickle(self,modelName,modelType):
         """
         loads a pickled fcm file into the workspace

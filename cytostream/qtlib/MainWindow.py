@@ -37,6 +37,7 @@ from FileControls import *
 from StateTransitions import *
 from ThumbnailViewer import ThumbnailViewer
 from ScatterPlotter import ScatterPlotter
+#from ReadFileThreader import ReadFileThreader
 
 __version__ = "0.1"
 
@@ -145,22 +146,28 @@ class MainWindow(QtGui.QMainWindow):
         else:
             pass
 
+
+    def create_new_project(self):
+        self.controller.create_new_project(self)
+       
+
     def create_new_project_bulk(self):
         #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
         allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open file(s)')
+        
         firstFile = True
         goFlag = True
         for fileName in allFiles:
             fileName = str(fileName)
             if firstFile == True:
-                self.controller.create_new_project(fileName,self)
+                
                 firstFile = False
             else:
                 goFlag = self.controller.load_additional_fcs_files(fileName,self)
 
         if self.controller.homeDir == None:
             return
-
+   
         if goFlag == True:
             if self.model.homeDir == None:
                 self.model.initialize(self.controller.projectID,self.controller.homeDir) 
@@ -463,7 +470,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
 
-            if self.log.log['subsample'] == 'All Data':
+            if self.log.log['subsample'] == 'original':
                 imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selectedModel'])
             else:
                 subset = str(int(float(self.log.log['subsample'])))
@@ -568,7 +575,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
 
-            if self.log.log['subsample'] == 'All Data':
+            if self.log.log['subsample'] == 'original':
                 modelName = re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel']
             else:
                 subset = str(int(float(self.log.log['subsample'])))
