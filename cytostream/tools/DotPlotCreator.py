@@ -63,10 +63,10 @@ class DotPlotCreator():
                     colToPlot.append(0)
             
             colToPlot = np.array(colToPlot)[matchedIndices] * 200
-            if len(np.where(np.array(colToPlot)==0.0)[0]) <= 1:
-                dotColor = '#FF6600'
-            else:
-                dotColor = '#6600FF'
+            #if len(np.where(np.array(colToPlot)==0.0)[0]) <= 1:
+            #    dotColor = '#FF6600'
+            #else:
+            dotColor = '#6600FF'
 
             usedLabels = self.masterLabelList[matchedIndices]
             ax.scatter(np.array([i+1]).repeat(len(usedLabels)),range(1,len(usedLabels)+1),marker='o',s=colToPlot,alpha=0.7,color=dotColor)
@@ -93,8 +93,6 @@ class DotPlotCreator():
         yticklabels = plt.getp(plt.gca(), 'yticklabels')
         plt.setp(yticklabels, fontsize=self.fontSize-1, fontname=self.fontName)
         ax.yaxis.set_major_locator(MaxNLocator(len(usedLabels)+1))
-        
-
         
         #ax.yaxis.set_major_locator(MaxNLocator(len(self.newLabelLists)+1))
          #

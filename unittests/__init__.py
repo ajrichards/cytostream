@@ -17,26 +17,29 @@ RUNALL = False
 for o, a in optlist:
     if o == '-v':
         VERBOSE = True
-    #if o == '-a':
-    #    RUNALL = True
 
-if VERBOSE == True:
-    ### GUI Visual Tests
-    from MainWindowTest import *
-    MainWindowTestSuite = unittest.TestLoader().loadTestsFromTestCase(MainWindowTest)
-    mainWindowSuite = unittest.TestSuite([MainWindowTestSuite])
 
-    from DataProcessingCenterTest import *
-    DataProcessingCenterTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingCenterTest)
-    dataProcessingCenterSuite = unittest.TestSuite([DataProcessingCenterTestSuite])
 
-    from DataProcessingDockTest import *
-    DataProcessingDockTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingDockTest)
-    dataProcessingDockSuite = unittest.TestSuite([DataProcessingDockTestSuite])
+#if o == '-a':
+#    RUNALL = True
 
-    from ThumbnailViewerTest import *
-    ThumbnailViewerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ThumbnailViewerTest)
-    thumbnailViewerdataSuite = unittest.TestSuite([ThumbnailViewerTestSuite])
+#if VERBOSE == True:
+#    ### GUI Visual Tests
+#    from MainWindowTest import *
+#    MainWindowTestSuite = unittest.TestLoader().loadTestsFromTestCase(MainWindowTest)
+#    mainWindowSuite = unittest.TestSuite([MainWindowTestSuite])
+#
+#    from DataProcessingCenterTest import *
+#    DataProcessingCenterTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingCenterTest)
+#    dataProcessingCenterSuite = unittest.TestSuite([DataProcessingCenterTestSuite])
+#
+#    from DataProcessingDockTest import *
+#    DataProcessingDockTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingDockTest)
+#    dataProcessingDockSuite = unittest.TestSuite([DataProcessingDockTestSuite])
+#
+#    from ThumbnailViewerTest import *
+#    ThumbnailViewerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ThumbnailViewerTest)
+#   thumbnailViewerdataSuite = unittest.TestSuite([ThumbnailViewerTestSuite])
 
 
 
@@ -56,3 +59,10 @@ runSuite = unittest.TestSuite([TestCase1Suite])
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
 caculatorSuite = unittest.TestSuite([DistanceCalculatorSuite])
+
+from FileAlignerTest1 import FileAlignerTest1
+FileAlignerTestSuite1 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest1)
+from FileAlignerTest2 import FileAlignerTest2
+FileAlignerTestSuite2 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest2)
+
+fileAlignerSuite = unittest.TestSuite([FileAlignerTestSuite1,FileAlignerTestSuite2])

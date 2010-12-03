@@ -36,6 +36,7 @@ class Logger():
         log['selectedFile'] = None
         log['selectedModel'] = None
         log['modelToRun'] = None
+        log['transform'] = None
         log['resultsMode'] = 'modes'
         log['componentStates'] = None
         log['numComponents'] = 16
@@ -88,7 +89,6 @@ class Logger():
                 logFileDict[linja[0]] = linja[1]
                   
             return logFileDict
-
 
     def str2array(self,myStr):
 

@@ -40,7 +40,9 @@ def calculate_intercluster_score(expListNames,expListData,expListLabels):
     return goodnessScore
 
 
-def get_file_data(dataPath,dataType='fcs'):
+def get_file_data(dataPath,dataType='fcs',channelsOnly=False):
+
+    print 'data path', dataPath
 
     if dataType not in ['fcs','txt','pickle']:
         print "ERROR in tools.get_file_data -- bad data type ", dataType
@@ -50,16 +52,21 @@ def get_file_data(dataPath,dataType='fcs'):
         print "WARNING in tools.get_file_data -- cannot get fcs data bad file path"
         return None,None
 
+    fcsData,fileChannels = None, None
+
     if dataType == 'fcs':
-        fcsData = fcm.loadFCS(dataPath)
+        if channelsOnly == False:
+            fcsData = fcm.loadFCS(dataPath)
         fileChannels = fcsData.channels
     elif dataType == 'pickle':
-        fid = open(dataPath,'rb')
-        fcsData = cPickle.load(fid)
-        fid.close()
+        if channelsOnly == False:
+            fid = open(dataPath,'rb')
+            fcsData = cPickle.load(fid)
+            fid.close()
         fileChannels = None
     else:
-        fcsData = read_txt_into_array(dataPath)
+        if channelsOnly == False:
+            fcsData = read_txt_into_array(dataPath)
         fileChannels = fileChannels = read_txt_to_file_channels(re.sub("\.out",".txt",dataPath))
 
     return fcsData, fileChannels
