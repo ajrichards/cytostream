@@ -3,11 +3,15 @@
 import os,re,cPickle
 import fcm
 
-def get_fcs_file_names(homeDir):
+def get_fcs_file_names(homeDir,excludedFiles=[]):
     '''
     returns a sorted list of file names associated with the project
     
     '''
+
+    if type(excludedFiles) != type([]):
+        print "INPUT ERROR: bad type for excluded files in get_fcs_file_names"
+        return None
 
     fileList = []
     for fileName in os.listdir(os.path.join(homeDir,"data")):
@@ -18,7 +22,8 @@ def get_fcs_file_names(homeDir):
         if not re.search("original",fileName):
             continue
 
-        fileList.append(fileName)
+        if fileName not in excludedFiles:
+            fileList.append(fileName)
 
     fileList = [re.sub("\_data_original.pickle","", fi) for fi in fileList]
     fileList.sort()

@@ -42,8 +42,9 @@ class Logger():
         log['numComponents'] = 16
         log['dataProcessingAction'] = 'channel select'
         log['checksArray'] = None
-        log['excludedFiles'] = None
-        log['excludedChannels'] = None
+        log['excludedFilesQA'] = []
+        log['excludedFilesAnalysis'] = []
+        log['excludedChannels'] = []
 
         return log
 
@@ -71,7 +72,7 @@ class Logger():
 
                 logFileDict[linja[0]] = linja[1]
             
-                if linja[0] == 'excludedFiles' or linja[0] == 'excludedChannels':
+                if linja[0] == 'excludedFilesQA' or linja[0] == 'excludedChannels' or linja[0] == 'excludedFilesAnalysis':
                     linja[1] = re.sub("\s+|\[|\]|'","",linja[1]).split(",")
 
             return logFileDict
@@ -91,9 +92,7 @@ class Logger():
             return logFileDict
 
     def str2array(self,myStr):
-
         if not re.search("^\[\[",myStr):
-            #print "ERROR: input must be string in form"
             return None
 
         myStr = myStr[1:-1]
@@ -105,3 +104,18 @@ class Logger():
             newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
 
         return np.array(newList)
+
+    def str2list(self,myStr):
+        if not re.search("^\[\[",myStr):
+            return None
+
+        myStr = myStr[1:-1]
+        myStr = re.sub("\n", ",", myStr)
+        myList = myStr.split(",")
+        newList = []
+
+        for l in myList:
+            newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
+
+        return newList
+

@@ -16,7 +16,6 @@ The class can be used alone for example to interface with fcm.
 > events,channels = np.shape(data)
 > fileChannelList = model.get_file_channel_list(fcsFileName)
 > allChannels = model.get_master_channel_list()
-> indices = model.get_subsample_indices('1e3')
 
 Adam Richards
 adam.richards@stat.duke.edu
@@ -65,9 +64,13 @@ class Model:
         
         """
         
+        if subsample != 'original':
+            subsample = str(int(float(subsample)))
+
         fileName = fileName + "_data_" + subsample + ".pickle"
         if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
             print "INPUT ERROR: bad file name specified in model.get_events"
+            print "\t", os.path.join(self.homeDir,'data',fileName)
             return None
         
         tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
@@ -135,10 +138,18 @@ class Model:
 
         if subsample == "original":
             return None
-        
+
         subsample = int(float(subsample))
+
+        ## use pickle file if already created
+        if os.path.isfile(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample)) == True:
+            tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'rb')
+            subsampleIndices = cPickle.load(tmp)
+            tmp.close()
+            return subsampleIndices
+
+        ## otherwise create the pickle file
         fileList = get_fcs_file_names(self.homeDir)
-        print "fileList",fileList
         numObs = None
         minNumObs = np.inf
 
@@ -146,15 +157,12 @@ class Model:
         for fileName in fileList:
             fcsData = self.get_events(fileName,subsample='original')
             n,d = np.shape(fcsData)
-            print '......................',n,d
-
 
             ## curiousity check
             if numObs == None:
                 numObs = n
             elif numObs != n:
                 pass
-                #print "INFO: number of observations are not equal for at least two files"
                     
             if n < minNumObs:
                 minNumObs = n
@@ -168,6 +176,7 @@ class Model:
         tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
         cPickle.dump(randEvents,tmp)
         tmp.close()
+        return randEvents
 
     def load_model_results_pickle(self,modelName,modelType):
         """
