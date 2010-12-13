@@ -58,6 +58,45 @@ class Model:
         self.projectID = projectID
         self.homeDir = homeDir
 
+
+    def load_files(self,fileList,dataType='csv'):
+        if type(fileList) != type([]):
+            print "INPUT ERROR: load_files: takes as input a list of file paths"
+            return None
+
+        if os.path.isdir(self.homeDir) == False:
+            os.mkdir(self.homeDir)
+            os.mkdir(os.path.join(self.homeDir,"data"))
+            print "INFO: making home dir from Model"
+
+
+        script = os.path.join(self.homeDir,"..","..","LoadFile.py")
+        for filePath in fileList:
+            proc = subprocess.Popen("%s %s -f %s -h %s -d %s"%(pythonPath,script,filePath,self.homeDir,dataType),
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+            while True:
+                try:
+                    next_line = proc.stdout.readline()
+                    if next_line == '' and proc.poll() != None:
+                        break
+
+                    ## to debug uncomment the following line
+                    print next_line
+
+                except:
+                    break
+            
+            ## check to see that files were made             
+            newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
+            newFileName = re.sub('\.csv|\.txt','',newFileName)
+            newDataFileName = newFileName +"_data.pickle"
+
+            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+
+
     def get_events(self,fileName,subsample='original'):
         """
         returns a np.array of event data
@@ -78,7 +117,7 @@ class Model:
         tmp.close()
         return events
         
-    def get_master_channel_list(self):
+    def get_master_channel_list(self,excludedChannels=[]):
         """
         returns a unique, sorted set of channels for all files in a project
 
@@ -87,8 +126,8 @@ class Model:
         allChannels = []
         fileList = get_fcs_file_names(self.homeDir)
         for fileName in fileList:
-            dataFilePath = os.path.join(self.homeDir,"data",fileName)
-            fcsData,fileChannels = get_file_data(dataFilePath,dataType=dataType)
+            fileChannels = self.get_file_channel_list(fileName,subsample='original')
+
             allChannels+=fileChannels
         allChannels = np.sort(np.unique(allChannels))
 
@@ -109,11 +148,12 @@ class Model:
         
         return channelInds
    
-    def get_file_channel_list(self,fileName,subsample='original'):
+    def get_file_channel_list(self,fileName,subsample='original',excludedChannels=[]):
         """
         returns the channels associated with a given file
-        fileName is not the path but the fcs file name
-
+        fileName is not the path but the fcs file name without an extension
+        excludedChannels is a list of indices to be excluded
+        
         """
                 
         fileName = fileName + "_channels_" + subsample + ".pickle"
@@ -124,7 +164,14 @@ class Model:
         tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
         fileChannels = cPickle.load(tmp)
         tmp.close()
-        fileChannels = [re.sub("\s","_",c) for c in fileChannels]
+        fileChannels = np.array([re.sub("\s","_",c) for c in fileChannels])
+        fileChannelIndices = np.arange(len(fileChannels))
+        print 'filechanindices', fileChannelIndices
+        print 'fileChannels', fileChannels
+
+        fileChannels = fileChannels[np.array(list(set(np.arange(fileChannelIndices.size)).difference(set(excludedChannels))))]
+        print 'returning fileChannels',fileChannels
+
         return fileChannels
 
     def get_subsample_indices(self,subsample,dataType='fcs'):

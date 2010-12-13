@@ -3,17 +3,29 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 
 class DataProcessingCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, transformList, compensationList, currentAction, parent=None, checksArray=None):
+    def __init__(self, fileList, masterChannelList, transformList, compensationList, currentAction, alternateChannelList = None, parent=None, checksArray=None,fontSize=11):
         QtGui.QWidget.__init__(self,parent)
 
         self.setWindowTitle('Data Processing')
         self.masterChannelList = masterChannelList
+        self.alternateChannelList = alternateChannelList
         self.fileList = fileList
         self.transformList = transformList
         self.compensationList = compensationList
         self.currentAction = currentAction
         self.checksArray = checksArray
+        self.fontSize = fontSize
         grid = QtGui.QGridLayout()
+
+        ## verify or create alternate channel list
+        if self.alternateChannelList == None:
+            self.alternateChannelList = ['chan-%s'%(num) for num in range(len(self.masterChannelList))]
+        
+        ## prepare layout
+        vbox = QtGui.QVBoxLayout()
+        vbox.setAlignment(QtCore.Qt.AlignTop)
+        self.hbox = QtGui.QHBoxLayout()
+        self.hbox.setAlignment(QtCore.Qt.AlignTop)
 
         ## error checking
         if self.currentAction not in ['editor','channel select', 'transformation', 'compensation','add remove']:
@@ -30,164 +42,158 @@ class DataProcessingCenter(QtGui.QWidget):
                 return None
 
         ## checkbuttons
-        self.make_check_buttons(grid)
-        self.setLayout(grid)
+        self.make_check_buttons(grid,self.hbox)
+        self.make_chan_files_sheet(self.hbox)
+        vbox.addLayout(self.hbox)
+        self.setLayout(vbox)
 
-    def make_check_buttons(self,grid):
+    def make_chan_files_sheet(self,box):
+
+        ## create a data dict
+        dataDict = {}
+        self.colNames = ["Name", "Events", "Channels"]
+        
+        for fileName in self.fileList:
+            if dataDict.has_key('File name') == False:
+                dataDict['Name'] = [fileName]
+            else:
+                dataDict['Name'].append(fileName)
+
+            if dataDict.has_key('Events') == False:
+                dataDict['Events'] = ['x']
+            else:
+                dataDict['Events'].append('y')
+
+            if dataDict.has_key('Channels') == False:
+                dataDict['Channels'] = ['x']
+            else:
+                dataDict['Channels'].append('y')
+
+        hbox = QtGui.QHBoxLayout()
+        ## get row with maximum number of elements 
+        mostVals = 0
+        for valList in dataDict.itervalues():
+            if len(valList) > mostVals:
+                mostVals = len(valList)
+
+        model = QtGui.QStandardItemModel(mostVals,len(dataDict.keys()))
+
+        ## populate the model
+        for col in range(len(self.colNames)):
+            key = self.colNames[col]
+            items = dataDict[key]
+
+            ## set the header
+            model.setHeaderData(col, QtCore.Qt.Horizontal, QtCore.QVariant(key))
+
+            ## populate the rows
+            for row in range(len(items)):
+                item = items[row]
+                model.setData(model.index(row,col), QtCore.QVariant(item))
+                font = QtGui.QFont()
+                font.setPointSize(self.fontSize)
+                #font.setBold(True)
+                model.setData(model.index(row,col), QtCore.QVariant(font), QtCore.Qt.FontRole)
+
+        #tree = QtGui.QTreeView()
+        #tree.setModel(model)
+        table = QtGui.QTableView()
+        table.setModel(model)
+
+        ## finalize layout                                                                               
+        hbox.addWidget(table)
+        hbox.setAlignment(QtCore.Qt.AlignCenter)
+        box.addLayout(hbox)
+
+    def make_check_buttons(self,grid,box):
+        vbox = QtGui.QVBoxLayout()
+        vbox.setAlignment(QtCore.Qt.AlignTop)
+
+        hboxLabel = QtGui.QHBoxLayout()
+        hboxLabel.setAlignment(QtCore.Qt.AlignCenter)
+        hboxLabel.addWidget(QtGui.QLabel('Rename and excluded channels'))
+        vbox.addLayout(hboxLabel)
+        
         self.gWidgets = {}
+        for row in range(len(self.masterChannelList)):
+            channel = self.masterChannelList[row]
 
-        for col in range(len(self.masterChannelList)):
-            channel = self.masterChannelList[col]
-            self.gWidgets[0] = {}
-            self.gWidgets[0][col+1] = QtGui.QLabel(channel+"  ")
-            self.gWidgets[0][col+1].setAlignment(QtCore.Qt.AlignCenter)
-            grid.setAlignment(self.gWidgets[0][col+1],QtCore.Qt.AlignCenter)
-            grid.addWidget(self.gWidgets[0][col+1],0,col+1)
+            if row == 0:
+                self.gWidgets[0] = {}
+                self.gWidgets[0][0] = QtGui.QLabel(' ')
+                grid.addWidget(self.gWidgets[0][0],0,0)
 
-            for row in range(len(self.fileList)):
-                grid.setVerticalSpacing(1)
-                if col == 0:
-                    self.gWidgets[row+1] = {}
-                    fileName = self.fileList[row]
-                    self.gWidgets[row+1][0] = QtGui.QLabel(fileName)
-                    grid.addWidget(self.gWidgets[row+1][0],row+1,0)
+                self.gWidgets[row+1] = {}
+                self.gWidgets[row+1][0] = QtGui.QLabel("Original ID")
+                grid.addWidget(self.gWidgets[row+1][0],row+1,0)
+
+                self.gWidgets[row+1][1] = QtGui.QLabel("Alternate ID")
+                grid.addWidget(self.gWidgets[row+1][1],row+1,1)
+
+                self.gWidgets[row+1][1] = QtGui.QLabel("Exclude")
+                grid.addWidget(self.gWidgets[row+1][1],row+1,2)
+                grid.setAlignment(self.gWidgets[row+1][1],QtCore.Qt.AlignCenter)
+
+            self.gWidgets[row+2] = {}
+            self.gWidgets[row+2][0] = QtGui.QLabel(channel)
+            grid.addWidget(self.gWidgets[row+2][0],row+2,0)
+
+            self.gWidgets[row+2][1] = QtGui.QLabel(self.alternateChannelList[row])
+            grid.addWidget(self.gWidgets[row+2][1],row+2,1)
+
+            cBox = QtGui.QCheckBox(self)
+            self.gWidgets[row+2][2] = cBox
+            grid.addWidget(self.gWidgets[row+2][2],row+2,2)
+            grid.setAlignment(self.gWidgets[row+2][2],QtCore.Qt.AlignCenter)
+
+
+            #self.gWidgets[0] = {}
+            #self.gWidgets[0][col+1] = QtGui.QLabel(channel+"  ")
+            #self.gWidgets[0][col+1].setAlignment(QtCore.Qt.AlignCenter)
+            #grid.setAlignment(self.gWidgets[0][col+1],QtCore.Qt.AlignCenter)
+            #grid.addWidget(self.gWidgets[0][col+1],0,col+1)
+            #grid.setVerticalSpacing(1)
+            #row = 0
                     
-                    if row == 0:
-                        self.gWidgets[len(self.fileList)+1] = {}
-                        self.gWidgets[len(self.fileList)+1][0] = QtGui.QLabel("select channels")
-                        grid.addWidget(self.gWidgets[len(self.fileList)+1][0],len(self.fileList)+1,0)
-                    
-                ## channel select
-                if self.currentAction in ['channel select']:
-                    cBox = QtGui.QCheckBox(self)
-                    self.gWidgets[row+1][col+1] = cBox
-                    self.gWidgets[row+1][col+1].setFocusPolicy(QtCore.Qt.NoFocus)
-                    self.gWidgets[row+1][col+1].setEnabled(False)
-                    grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
-                    grid.setAlignment(self.gWidgets[row+1][col+1],QtCore.Qt.AlignCenter)
-                    self.connect(self.gWidgets[row+1][col+1], QtCore.SIGNAL('clicked()'),
-                                     lambda x=(row+1,col+1): self.callback_channel_select(indices=x))                    
+            #cBox = QtGui.QCheckBox(self)
+            #self.gWidgets[row+1][col+1] = cBox
+            ##self.gWidgets[row+1][col+1].setFocusPolicy(QtCore.Qt.NoFocus)
+            #grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
+            #grid.setAlignment(self.gWidgets[row+1][col+1],QtCore.Qt.AlignCenter)
+            #self.connect(self.gWidgets[row+1][col+1], QtCore.SIGNAL('clicked()'),
+            #             lambda x=(row+1,col+1): self.callback_channel_select(indices=x))
 
-                    if col == 0:
-                        cBox = QtGui.QCheckBox(self)
-                        self.gWidgets[row+1][len(self.masterChannelList)+1] = cBox
-                        self.gWidgets[row+1][len(self.masterChannelList)+1].setFocusPolicy(QtCore.Qt.NoFocus)
-                        grid.addWidget(self.gWidgets[row+1][len(self.masterChannelList)+1],row+1,len(self.masterChannelList)+1)
-                        grid.setAlignment(self.gWidgets[row+1][len(self.masterChannelList)+1],QtCore.Qt.AlignCenter)
-                        self.connect(self.gWidgets[row+1][len(self.masterChannelList)+1], QtCore.SIGNAL('clicked()'),
-                                     lambda x=(row+1,len(self.masterChannelList)+1): self.callback_channel_select(indices=x))
-                   
-                    if row == 0:
-                        cBox = QtGui.QCheckBox(self)
-                        self.gWidgets[len(self.fileList)+1][col+1] = cBox
-                        self.gWidgets[len(self.fileList)+1][col+1].setFocusPolicy(QtCore.Qt.NoFocus)
-                        grid.addWidget(self.gWidgets[len(self.fileList)+1][col+1],len(self.fileList)+1,col+1)
-                        grid.setAlignment(self.gWidgets[len(self.fileList)+1][col+1],QtCore.Qt.AlignCenter)
-                        self.connect(self.gWidgets[len(self.fileList)+1][col+1], QtCore.SIGNAL('clicked()'),
-                                     lambda x=(len(self.fileList)+1,col+1): self.callback_channel_select(indices=x))
+        ## add refresh and revert buttons
+        hbox = QtGui.QHBoxLayout()
+        self.refreshBtn = QtGui.QPushButton("Refresh")
+        self.refreshBtn.setMaximumWidth(100)
+        hbox.addWidget(self.refreshBtn)
 
-                ## transformation
-                if self.currentAction in ['transformation']: 
-                   
-                    transformSelector = QtGui.QComboBox(self)
-                    transformSelector.setMaximumWidth(150)
+        self.revertBtn = QtGui.QPushButton("Revert")
+        self.revertBtn.setMaximumWidth(100)
+        hbox.addWidget(self.revertBtn)
 
-                    for transform in self.transformList:
-                        transformSelector.addItem(transform)
-            
-                    self.gWidgets[row+1][col+1] = transformSelector
-                    grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
+        self.renameBtn = QtGui.QPushButton("Rename")
+        self.renameBtn.setMaximumWidth(100)
+        hbox.addWidget(self.renameBtn)
 
-                    if col == 0:
-                        transformSelector = QtGui.QComboBox(self)
-                        transformSelector.setMaximumWidth(150)
+        vbox.addLayout(hbox)
 
-                        for transform in ["    "]+self.transformList:
-                            transformSelector.addItem(transform)
-            
-                        self.gWidgets[row+1][len(self.masterChannelList)+1] = transformSelector
-                        grid.addWidget(self.gWidgets[row+1][len(self.masterChannelList)+1],row+1,len(self.masterChannelList)+1)
-
-                ## compensation  
-                if self.currentAction in ['compensation']:
-                    compsSelector = QtGui.QComboBox(self)
-                    compsSelector.setMaximumWidth(150)
-
-                    for comps in self.compensationList:
-                        compsSelector.addItem(comps)
-            
-                    self.gWidgets[row+1][col+1] = compsSelector
-                    grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
-                    
-                    if col == 0:
-                        compsSelector = QtGui.QComboBox(self)
-                        compsSelector.setMaximumWidth(150)
-                        
-                        for comps in ["    "] + self.compensationList:
-                            compsSelector.addItem(comps)
-            
-                        self.gWidgets[row+1][len(self.masterChannelList)+1] = compsSelector
-                        grid.addWidget(self.gWidgets[row+1][len(self.masterChannelList)+1],row+1,len(self.masterChannelList)+1)
-                
-                if col == 0 and row == 0:
-                    self.gWidgets[0][0] = QtGui.QLabel("File name"+"    ")
-                    self.gWidgets[0][0].setAlignment(QtCore.Qt.AlignCenter)
-                    grid.setAlignment(self.gWidgets[0][0],QtCore.Qt.AlignCenter)
-                    grid.addWidget(self.gWidgets[0][0],0,0)
-         
-                    if self.currentAction in ['transformation']:
-                        self.gWidgets[0][len(self.masterChannelList)+1] = QtGui.QLabel("transform all"+"  ")
-                        self.gWidgets[0][len(self.masterChannelList)+1].setAlignment(QtCore.Qt.AlignCenter)
-                        grid.setAlignment(self.gWidgets[0][len(self.masterChannelList)+1],QtCore.Qt.AlignCenter)
-                        grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
-                    
-                    if self.currentAction in ['compensation']:
-                        self.gWidgets[0][len(self.masterChannelList)+1] = QtGui.QLabel("tompensation all"+"  ")
-                        self.gWidgets[0][len(self.masterChannelList)+1].setAlignment(QtCore.Qt.AlignCenter)
-                        grid.setAlignment(self.gWidgets[0][len(self.masterChannelList)+1],QtCore.Qt.AlignCenter)
-                        grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
-
-                    if self.currentAction in ['channel select']:
-                        self.gWidgets[0][len(self.masterChannelList)+1] = QtGui.QLabel("select files"+"  ")
-                        self.gWidgets[0][len(self.masterChannelList)+1].setAlignment(QtCore.Qt.AlignCenter)
-                        grid.setAlignment(self.gWidgets[0][len(self.masterChannelList)+1],QtCore.Qt.AlignCenter)
-                        grid.addWidget(self.gWidgets[0][len(self.masterChannelList)+1],0,len(self.masterChannelList)+1)
-
-        ## handle the defaults
-        if self.checksArray != None and self.currentAction in ['channel select']:
-
-            for row in range(len(self.fileList)):
-                for col in range(len(self.masterChannelList)):
-                    if self.checksArray[row][col] == 1:
-                        self.gWidgets[row+1][col+1].setChecked(True)
-            
-            self.select_all_channels_verify()
-
+        vbox.addLayout(grid)
+        box.addLayout(vbox)
+        
 
     def generic_callback(self):
         print "generic callback"
 
     def callback_channel_select(self,indices=None):
+        print 'callback for channel select'
+
         if indices != None:
-            row, col = indices
-            if row == len(self.fileList)+1:
-                if self.gWidgets[row][col].checkState() == 2:
-                    self.select_all_channels((None,col))
-                else:
-                    self.unselect_all_channels((None,col))
+            print indices
 
-            if col == len(self.masterChannelList)+1:
-                if self.gWidgets[row][col].checkState() == 2:
-                    self.select_all_channels((row,None))
-                else:
-                    self.unselect_all_channels((row,None))
-
-        ## check and make sure the select all checks make sense
-        self.select_all_channels_verify()
-
-        ## for debugging
-        #sc = self.get_selected_channels()
-        #print sc, "\n"
+    def set_alternate_labels(self):
+        print 'setting alternate labels'
 
     def select_all_channels(self,indices):
         row, col = indices
