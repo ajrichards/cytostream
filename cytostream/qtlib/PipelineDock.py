@@ -98,6 +98,7 @@ class PipelineDock(QtGui.QWidget):
         self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % None)
+        self.resultsSummaryBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         QtCore.QCoreApplication.processEvents()
 
     def set_btn_highlight(self,btnName):

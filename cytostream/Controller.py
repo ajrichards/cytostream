@@ -349,7 +349,7 @@ class Controller:
             newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
             newDataFileName = newFileName +"_data_original.pickle"
             newChanFileName = newFileName +"_channels_original.pickle"
-            newFileName = re.sub('\s+','_',filePath[-1])
+            #newFileName = re.sub('\s+','_',filePath[-1])
             if filePath == fileList[0]:
                 self.log.log['selectedFile'] = re.sub("\.pickle","",newDataFileName)
 

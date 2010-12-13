@@ -1,22 +1,25 @@
 #!/usr/bin/env python
-# This program or module is free software: you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as published
-# by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
-# provided for educational purposes and is distributed in the hope that
-# it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-# the GNU General Public License for more details.
-#
-# Adam Richards
-# adam.richards@stat.duke.edu
-#
+
+'''
+  This program or module is free software: you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as published
+  by the Free Software Foundation, either version 2 of the License, or
+  version 3 of the License, or (at your option) any later version. It is
+  provided for educational purposes and is distributed in the hope that
+  it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+  the GNU General Public License for more details.
+
+  Adam Richards
+  adam.richards@stat.duke.edu
+'''
 
 import os,sys,time,re
 import platform
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from PyQt4.QtCore import  PYQT_VERSION_STR, QT_VERSION_STR
 #import helpform
 #import qrc_resources
 
@@ -39,7 +42,7 @@ from ThumbnailViewer import ThumbnailViewer
 from ScatterPlotter import ScatterPlotter
 #from ReadFileThreader import ReadFileThreader
 
-__version__ = "0.1"
+__version__ = "0.2"
 
 class MainWindow(QtGui.QMainWindow):
 
