@@ -1,5 +1,9 @@
+#!/usr/bin/env python
+
 '''
 The controller class
+
+
 A.Richards
 
 '''
@@ -63,16 +67,28 @@ class Controller:
 
     def process_images(self,mode,progressBar=None,modelName=None,view=None):
 
-        if mode not in ['qa','results']:
+        ## error check
+        if mode not in ['qa','analysis']:
             print "ERROR: invalid mode specified"
 
-        modelName = self.log.log['modelToRun']
-        fileList = get_fcs_file_names(self.homeDir,excludedFiles=self.log.log['excludedFilesQA'])
+        subsample = self.log.log['setting_max_scatter_display']
+        self.handle_subsampling(subsample)
+        
+        ## determine mode specific variables
+        if mode == 'qa':
+            excludedChannels = self.log.log['excluded_channels_qa']
+            excludedFiles = self.log.log['excluded_files_qa']
+        elif mode == 'analysis':
+            excludedChannels = self.log.log['excluded_channels_analysis']
+            excludedFiles = self.log.log['excluded_files_analysis']
+
+        modelName = self.log.log['model_to_run']
+        fileList = get_fcs_file_names(self.homeDir,excludedFiles=excludedFiles)
         numImagesToCreate = 0
         
         ## get num images to create
         for fileName in fileList:
-            fileChannels = self.model.get_file_channel_list(excludedChannels=ici)
+            fileChannels = self.model.get_file_channel_list(fileName)
             n = float(len(fileChannels) - len(excludedChannels))
             numImagesToCreate += (n * (n - 1.0)) / 2.0
         
@@ -80,14 +96,13 @@ class Controller:
         imageCount = 0
         
         for fileName in fileList:
-            
             ## check to see that file is not in excluded files
             if fileName in excludedFiles:
                 continue
 
             ## get model name
-            if mode == 'results':
-                if self.log.log['subsample'] == None or self.log.log['subsample'] == 'original':
+            if mode == 'analysis':
+                if subsample == None or subsample == 'original':
                     longModelName = re.sub('\.fcs|\.pickle','',fileName)+"_"+modelName
                     imgDir = os.path.join(self.homeDir,'figs',modelName)
                 else:
@@ -104,18 +119,16 @@ class Controller:
         
             ## progress point information 
             imageProgress = range(int(numImagesToCreate))
-        
-            ## within file comparisions
             fileSpecificIndices = range(len(fileChannels))
         
             ## specify model type to show as thumbnails
             modelType = 'modes'
 
             ## make all pairwise comparisons
-            for i in range(len(fileSpecificIndices)):
+            for i in fileSpecificIndices:
                 indexI = fileSpecificIndices[i]
                 channelI = fileChannels[indexI]
-                for j in range(len(fileSpecificIndices)):
+                for j in fileSpecificIndices:
                     if j >= i:
                         continue
 
@@ -125,34 +138,31 @@ class Controller:
                     ## check to see that channels are not in excluded channels
                     if channelI in excludedChannels or channelJ in excludedChannels:
                         continue
+                                        
+                    ###################################
+                    self.model.create_imgs_for_thumbnails(indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType)
+                    #script = os.path.join(self.baseDir,"RunMakeFigures.py")
+                    #if os.path.isfile(script) == False:
+                    #    print 'ERROR: cannot find RunMakeFigures'
+                    # 
+                    #pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
+                    #                                                                        imgDir,longModelName,modelType,self.homeDir)
+                    #proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                    #
+                    #while True:
+                    #    try:
+                    #        next_line = proc.stdout.readline()
+                    #        proc.wait()
+                    #        if next_line == '' and proc.poll() != None:
+                    #            break
+                    #        else:
+                    #            print next_line
+                    #    except:
+                    #        proc.wait()
+                    #        break
                     
-                    if self.log.log['subsample'] == 'original':
-                        subset = 'original'
-                    else:
-                        subset = self.log.log['subsample']
-                    
-                    script = os.path.join(self.baseDir,"RunMakeFigures.py")
-                    if os.path.isfile(script) == False:
-                        print 'ERROR: cannot find RunMakeFigures'
-                    
-                    pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subset,
-                                                                                            imgDir,longModelName,modelType,self.homeDir)
-                    proc = subprocess.Popen(pltCmd,
-                                            shell=True,
-                                            stdout=subprocess.PIPE,
-                                            stdin=subprocess.PIPE)
-                    while True:
-                        try:
-                            next_line = proc.stdout.readline()
-                            proc.wait()
-                            if next_line == '' and proc.poll() != None:
-                                break
-                            else:
-                                print next_line
-                        except:
-                            proc.wait()
-                            break
-                                         
+                    ####################################
+
                     imageCount += 1
                     progress = 1.0 / float(len(imageProgress)) *100.0
                     percentDone+=progress
@@ -164,13 +174,13 @@ class Controller:
             ## create the thumbnails
             if mode == 'qa':
                 imgDir = os.path.join(self.homeDir,"figs")
-            elif mode == 'results':
+            elif mode == 'analysis':
                 if self.log.log['subsample'] == "original":
                     imgDir = os.path.join(self.homeDir,'figs',"%s"%(modelName))
                 else:
                     imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
 
-            thumbDir = os.path.join(imgDir,fileName[:-4]+"_thumbs")
+            thumbDir = os.path.join(imgDir,fileName+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
             
     def create_thumbs(self,imgDir,thumbDir,fileName,thumbsClean=True):
@@ -215,11 +225,16 @@ class Controller:
         else:
             print "ERROR: bad file name specified",fileName
 
-    def handle_subsampling(self):
-        if self.log.log['subsample'] != "original":
+    def handle_subsampling(self,subsample):
+        '''
+        if subsampling is specified at the qa or analysis stage and the number is the same this function enables 
+        the use of only a single subsampling.
 
-            subsample = int(float(self.log.log['subsample']))            
-            self.subsampleIndices = self.model.get_subsample_indices(self.log.log['subsample'])
+        '''
+
+        if subsample != 'original':
+            subsample = int(float(subsample))           
+            self.subsampleIndices = self.model.get_subsample_indices(subsample)
 
             if type(self.subsampleIndices) == type(np.array([])):
                 pass
@@ -236,6 +251,10 @@ class Controller:
                 tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
                 cPickle.dump(data,tmp)
                 tmp.close()
+
+                if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                    print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+
             return True
         else:
             return True
@@ -320,62 +339,15 @@ class Controller:
             os.remove(fcsFileName)
             self.view.status.set("file removed")
 
-    def load_fcs_files(self,fileList,dataType='fcs',transform='log'):
+    def load_files_handler(self,fileList,dataType='fcs'):
         if type(fileList) != type([]):
-            print "INPUT ERROR: load_fcs_files: takes as input a list of file paths"
+            print "INPUT ERROR: load_files_handler: takes as input a list of file paths"
+  
+        if dataType not in ['fcs','txt']:
+            print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' or 'txt'"
 
-        script = os.path.join(self.baseDir,"LoadFile.py")
-        self.log.log['transform'] = transform
-
-        for filePath in fileList:
-            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(pythonPath,script,filePath,self.homeDir,dataType,transform),
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
-            while True:
-                try:
-                    next_line = proc.stdout.readline()
-                    if next_line == '' and proc.poll() != None:
-                        break
-
-                    ## to debug uncomment the following line     
-                    print next_line
-
-                except:
-                    break
-
-            ## check to see that files were made
-            newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
-            newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
-            newDataFileName = newFileName +"_data_original.pickle"
-            newChanFileName = newFileName +"_channels_original.pickle"
-            #newFileName = re.sub('\s+','_',filePath[-1])
-            if filePath == fileList[0]:
-                self.log.log['selectedFile'] = re.sub("\.pickle","",newDataFileName)
-
-            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
-                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
-
-    #def load_additional_fcs_files(self,fileName=None,view=None):
-    #    loadFile = True
-    #    fcsFileName = None
-    #    if fileName == None:
-    #        fileName = QtGui.QFileDialog.getOpenFileName(self, 'Open FCS file')
-    #
-    #    if not re.search('\.fcs',fileName):
-    #        fcsFileName = None
-    #        view.display_warning("File '%s' was not of type *.fcs"%fileName)
-    #    else:
-    #        fcsFileName = fileName
-    #
-    #    if fcsFileName != None:
-    #        self.load_fcs_file(fcsFileName)
-    #        return True
-    #    else:
-    #        print "WARNING: bad attempt to load file name"
-    #        return False
+        transform = self.log.log['selected_transform']
+        self.model.load_files(fileList)
 
     def get_component_states(self):
         try:
@@ -439,5 +411,3 @@ class Controller:
                         break
             else:
                 print "ERROR: invalid selected model", selectedModel
-
-                

@@ -7,6 +7,9 @@ project logfile - main log file that holds project specific history and variable
 model logfiles - each run of a model results in a results pickle as well as a log file
 figure logfiles - figures may be manipulated after the run of a model -- those manipulations are documented here
 
+log entries marked with 'setting' are not meant to be changed by the user
+
+
 '''
 
 class Logger():
@@ -29,22 +32,24 @@ class Logger():
 
     def set_var_defaults(self):
         log = {}
-        log['currentState'] = 'Data Processing'
-        log['highestState'] = 0
-        log['subsample'] = '1e3'
-        log['processingChannels'] = None
-        log['selectedFile'] = None
-        log['selectedModel'] = None
-        log['modelToRun'] = None
-        log['transform'] = None
-        log['resultsMode'] = 'modes'
-        log['componentStates'] = None
-        log['numComponents'] = 16
-        log['dataProcessingAction'] = 'channel select'
-        log['checksArray'] = None
-        log['excludedFilesQA'] = []
-        log['excludedFilesAnalysis'] = []
-        log['excludedChannels'] = []
+        log['current_state'] = 'Data Processing'
+        log['highest_State'] = 0
+        log['input_data_type'] = 'fcs'
+        log['subsample_qa'] = '1e3'
+        log['subsample_analysis'] = '1e3'
+        log['setting_max_scatter_display'] = '2e4'
+        log['selected_file'] = None
+        log['selected_model'] = None
+        log['selected_transform'] = 'log'
+        log['selected_k'] = 16
+        log['model_to_run'] = None
+        log['results_mode'] = 'modes'
+        log['data_processing_mode'] = 'channel select'
+        log['component_states'] = None
+        log['excluded_files_qa'] = []
+        log['excluded_files_analysis'] = []
+        log['excluded_channels_qa'] = []
+        log['excluded_channels_analysis'] = []
 
         return log
 

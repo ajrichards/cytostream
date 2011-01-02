@@ -20,17 +20,14 @@ The class can be used alone for example to interface with fcm.
 Adam Richards
 adam.richards@stat.duke.edu
 """
-import sys,csv,os,re,cPickle
+
+import sys,csv,os,re,cPickle,subprocess
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
-import fcm
-import fcm.statistics
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
-
 from matplotlib import rc
 import matplotlib.cm as cm
 rc('font',family = 'sans-serif')
-#rc('text', usetex = True)
 
 class Model:
     """ 
@@ -44,35 +41,69 @@ class Model:
 
     def __init__(self):
         """
-        Basic constructor method.  Class must be initialized before use. 
-
+        about:
+            Basic constructor method.  Class must be initialized before use. 
+        input:
+            None
+        return:
+            None
         """
         self.projectID = None
         self.homeDir = None
 
     def initialize(self,projectID,homeDir):
         """
-        Associates a class with a project and home directory
-
+        about:
+            Associates a class with a project and home directory. The function
+            also sets the python path.
+        input:
+            projectID - a string for the project name
+            homeDir - is the full path for the home dir including the projectID
+        return:
+            None
         """
+        ## initialize project
         self.projectID = projectID
         self.homeDir = homeDir
+        
+        ## get base directory 
+        if hasattr(sys, 'frozen'):
+            self.baseDir = os.path.dirname(sys.executable)
+            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
+        else:
+            self.baseDir = os.path.dirname(__file__)
 
+        ## set python path
+        self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
 
-    def load_files(self,fileList,dataType='csv'):
+    def load_files(self,fileList,dataType='fcs',transform='log'):
+        """
+        about: 
+            This is a handler function for the script LoadFile.py which loads an fcs
+            or txt file of flow cytometry data.  For the binary fcs normally this is 
+            carried out using the fcm python module.  This method is called by
+            controlller.load_files_handler.
+        input:
+            fileList - a list of full paths to fcs or txt files
+            dataType - may be any of the following: fcs,txt
+            transform - may be any of the follwing: log 
+        return:
+            None
+        """
+
+        ## error checking
         if type(fileList) != type([]):
             print "INPUT ERROR: load_files: takes as input a list of file paths"
             return None
-
         if os.path.isdir(self.homeDir) == False:
             os.mkdir(self.homeDir)
             os.mkdir(os.path.join(self.homeDir,"data"))
             print "INFO: making home dir from Model"
 
-
+        ## get python path
         script = os.path.join(self.homeDir,"..","..","LoadFile.py")
         for filePath in fileList:
-            proc = subprocess.Popen("%s %s -f %s -h %s -d %s"%(pythonPath,script,filePath,self.homeDir,dataType),
+            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,transform),
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
@@ -90,17 +121,26 @@ class Model:
             
             ## check to see that files were made             
             newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
-            newFileName = re.sub('\.csv|\.txt','',newFileName)
-            newDataFileName = newFileName +"_data.pickle"
+            newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
+            newDataFileName = newFileName +"_data_original.pickle"
+            newChanFileName = newFileName +"_channels_original.pickle"
 
             if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
                 print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-
+            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
+                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
     def get_events(self,fileName,subsample='original'):
         """
-        returns a np.array of event data
-        
+        about:
+            this function handles the fetching of the events associated with a given file.
+            those events may be either all (original) or some specified subset.  To succesfully obtain a 
+            subsample the function model.get_subsample_indices must first be run.
+        input:
+            fileName - string representing the file without the full path and without a file extension
+            subsample - any numeric string, int or float that specifies an already processed subsample 
+        return:
+            a np.array of event data
         """
         
         if subsample != 'original':
@@ -117,16 +157,21 @@ class Model:
         tmp.close()
         return events
         
-    def get_master_channel_list(self,excludedChannels=[]):
+    def get_master_channel_list(self):
         """
-        returns a unique, sorted set of channels for all files in a project
-
+        about:
+            In the case that all files doe not have matching channel lists a 
+            master channel list is used to provide a unique list over all files
+        input:
+            None
+        return:
+            a unique, sorted set of channels for all files in a project
         """
 
         allChannels = []
         fileList = get_fcs_file_names(self.homeDir)
         for fileName in fileList:
-            fileChannels = self.get_file_channel_list(fileName,subsample='original')
+            fileChannels = self.get_file_channel_list(fileName)
 
             allChannels+=fileChannels
         allChannels = np.sort(np.unique(allChannels))
@@ -138,9 +183,12 @@ class Model:
 
     def get_master_channel_indices(self,channels):
         """
-        returns the indices of given channels w.r.t. the master channel list
-        channels is a iteriable
-
+        about:
+            Returns the indices of given channels w.r.t. the master channel list.
+        input:
+            channels - a list (or other iterable) of channel names
+        return:
+            a list of channel indices
         """
 
         masterList = self.get_master_channel_list()
@@ -148,39 +196,41 @@ class Model:
         
         return channelInds
    
-    def get_file_channel_list(self,fileName,subsample='original',excludedChannels=[]):
+    def get_file_channel_list(self,fileName):
         """
-        returns the channels associated with a given file
-        fileName is not the path but the fcs file name without an extension
-        excludedChannels is a list of indices to be excluded
-        
+        about:
+            Fetches the channels associated with a given file from a saved pickle file.
+        input:
+            fileName - string representing the file without the full path and without a file extension
+        return:
+            A np.array of file channels associated with a given file. The function returns None if 
+            no channel list has yet been made.
         """
                 
-        fileName = fileName + "_channels_" + subsample + ".pickle"
+        fileName = fileName + "_channels_" + "original" + ".pickle"
         if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
             print "INPUT ERROR: bad file name specified in model.get_file_channel_list"
+            print "\t" + os.path.join(self.homeDir,'data',fileName)
             return None
         
         tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
         fileChannels = cPickle.load(tmp)
         tmp.close()
         fileChannels = np.array([re.sub("\s","_",c) for c in fileChannels])
-        fileChannelIndices = np.arange(len(fileChannels))
-        print 'filechanindices', fileChannelIndices
-        print 'fileChannels', fileChannels
-
-        fileChannels = fileChannels[np.array(list(set(np.arange(fileChannelIndices.size)).difference(set(excludedChannels))))]
-        print 'returning fileChannels',fileChannels
 
         return fileChannels
 
     def get_subsample_indices(self,subsample,dataType='fcs'):
         """
-        get subsample indices
-        subsample is a number smaller than the number of events in the smallest file
-        method returns false when subsample size is larger than the number of 
-        events in at least one of the project files.
-   
+        about:
+            Creates a subsample of fcs data.  Subsample is a number smaller than the number of events 
+            in the smallest file.  If it is not then subsample is saved as   
+        args:    
+            fileName - string representing the file without the full path and without a file extension
+            dataType - may be any of the following: fcs,txt
+        return:
+            false when subsample size is larger than the number of 
+            events in at least one of the project files.
         """
 
         if subsample == "original":
@@ -197,7 +247,6 @@ class Model:
 
         ## otherwise create the pickle file
         fileList = get_fcs_file_names(self.homeDir)
-        numObs = None
         minNumObs = np.inf
 
         ## get minimum number of observations out of all files considered
@@ -205,19 +254,14 @@ class Model:
             fcsData = self.get_events(fileName,subsample='original')
             n,d = np.shape(fcsData)
 
-            ## curiousity check
-            if numObs == None:
-                numObs = n
-            elif numObs != n:
-                pass
-                    
             if n < minNumObs:
                 minNumObs = n
 
+            ## check to see that the specified subsample is <= the number of events
             if subsample > minNumObs:
-                print "ERROR: subsample greater than minimum num events in file", fileName
-                return False
-
+                print "WARNING: subsample greater than minimum num events in file --- using all events", fileName
+                subsample = minNumObs
+           
         ## get the random ints and save as a pickle
         randEvents = np.random.random_integers(0,minNumObs-1,subsample)
         tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
@@ -225,13 +269,47 @@ class Model:
         tmp.close()
         return randEvents
 
+    def create_imgs_for_thumbnails(self,indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType):
+        """
+        about:
+            handler function for RunMakeFigures.
+        args:
+            indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType
+        return:
+            None
+        """
+
+        script = os.path.join(self.baseDir,"RunMakeFigures.py")
+        
+        ## error checking
+        if os.path.isfile(script) == False:
+            print 'ERROR: cannot find RunMakeFigures'
+        else:
+            pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(self.pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
+                                                                                    imgDir,longModelName,modelType,self.homeDir)
+            proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+
+            while True:
+                try:
+                    next_line = proc.stdout.readline()
+                    proc.wait()
+                    if next_line == '' and proc.poll() != None:
+                        break
+                    else:
+                        print next_line 
+                except:
+                    proc.wait()
+                    break
+
     def load_model_results_pickle(self,modelName,modelType):
         """
-        loads a pickled fcm file into the workspace
-        data is a fcm data object
-        k is the number of components
-        the results are the last 5 samples from the posterior so here we average those samples then 
-        use those data as a summary of the posterior
+        about:
+            loads a pickled fcm file into the workspace
+        args:
+            modelName - 
+            modelType - must be one of the following: components, modes
+        return:
+            model and classify
         """
         
         if modelType not in ['components','modes']:
@@ -243,34 +321,6 @@ class Model:
         model = cPickle.load(tmp1)
         samplesFromPostr = 1.0
         k = int(model.pis().size / samplesFromPostr)
-        #print 'calculated k = ', k
-        #print 'pi', np.shape(model.pis())
-        #print 'mu', np.shape(model.mus()), np.shape(model.mus()[0])
-        #print 'sig',np.shape(model.sigmas()), np.shape(model.sigmas()[0])
-
-        # working on the averaging thing
-        #newPis = np.reshape(model.pis(),(k,samplesFromPostr))
-        #newPis = np.mean(newPis,axis=1)
-        #allsamples, features = np.shape(model.mus())
-        #newMus = None
-        #for d in range(features):
-        #    newMusD = np.reshape(model.mus()[:,d],(k,samplesFromPostr))
-        #    newMusD = np.mean(newMusD,axis=1)
-        #    if newMus == None:
-        #        newMus = newMusD
-        #    else:
-        #        newMus = np.vstack([newMus,newMusD])
-        #newMus = newMus.transpose()
-    
-        # alternative is to just take one of the occurances of each
-        #newPis = model.pis()[:k]
-        #newMus =  model.mus()[:k,:]
-        #newSigmas = model.sigmas()[:k,:,:]
-        #print np.shape(newPis), np.shape(newMus), np.shape(newSigmas)
-        
-        #model.pis = newPis
-        #model.mus = newMus
-        #model.sigmas = newSigmas
         
         classify = cPickle.load(tmp2)
         tmp1.close()
@@ -278,14 +328,26 @@ class Model:
 
         return model,classify
     
-    def get_n_color_colorbar(self,n,cmapName='jet'):# Spectral #gist_rainbow
-        "breaks any matplotlib cmap into n colors" 
+    def get_n_color_colorbar(self,n,cmapName='jet'):
+        """
+        about:
+            breaks any matplotlib cmap into n colors 
+        args:
+            cmapName - may be any mpl cmap i.e. spectral, jet, gist_rainbow
+        return:
+            a matplotlib.cmap
+        """
         cmap = cm.get_cmap(cmapName,n) 
         return cmap(np.arange(n))
 
     def rgb_to_hex(self,rgb):
         """
-        converts a rgb 3-tuple into hex
+        about:
+            converts a rgb 3-tuple into hex
+        args:
+            3-tubple of red, green and blue numeric values
+        return:
+            hex color
         """
 
         return '#%02x%02x%02x' % rgb[:3]
