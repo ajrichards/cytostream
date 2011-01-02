@@ -60,7 +60,6 @@ elif dataType == 'txt':
     
 ## save the np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
-print 'newFileName', newFileName
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
 newDataFileName = newFileName + "_data_original.pickle"
 newChanFileName = newFileName + "_channels_original.pickle" 

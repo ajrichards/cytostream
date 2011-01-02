@@ -16,16 +16,16 @@ import matplotlib.pyplot as plt
 ## parse inputs
 def bad_input():
     print "\nERROR: incorrect args"
-    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subset -t modelType -h homeDir"
-    print "     projectID (-p) project name"
-    print "     channel1 (-i) channel 1 name"
-    print "      channel2 (-j) channel 2 name"
-    print "      homeDir  (-h) home directory of current project"
+    print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subsample -t modelType -h homeDir"
+    print "  projectID    (-p) project name"
+    print "  channel1     (-i) channel 1 name"
+    print "  channel2     (-j) channel 2 name"
+    print "  homeDir      (-h) home directory of current project"
     print "  selectedFile (-f) name of selected file"
-    print "        altDir (-a) alternative directory (optional)"
-    print "        subset (-s) subsampling number (optional)"
-    print "     modelName (-m) model name"
-    print "     modelType (-t) model type"
+    print "  altDir       (-a) alternative directory (optional)"
+    print "  subsample    (-s) subsampling number (optional)"
+    print "  modelName    (-m) model name"
+    print "  modelType    (-t) model type"
     print "\n"
     sys.exit()
 
@@ -43,7 +43,7 @@ altDir = None
 homeDir = None
 modelType = None
 modelName = None
-subset = "all"
+subsample = "original"
 run = True
 for o, a in optlist:
     if o == '-i':
@@ -57,7 +57,7 @@ for o, a in optlist:
     if o == '-p':
         projectID = a
     if o == '-s':
-        subset = a
+        subsample = a
     if o == '-m':
         modelName = a
     if o == '-t':
@@ -65,7 +65,7 @@ for o, a in optlist:
     if o == '-h':
         homeDir = a
 
-def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subset='all',labels=None,buff=0.02,altDir=None):
+def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subsample='original',labels=None,buff=0.02,altDir=None):
     #fig = pyplot.figure(figsize=(7,7))
     markerSize = 5
     alphaVal = 0.5
@@ -85,17 +85,12 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subset='all',la
     
     channel1 = fileChannels[index1]
     channel2 = fileChannels[index2]
-    data = model.pyfcm_load_fcs_file(selectedFile)
-    
-    ## subset give an numpy array of indices
-    if subset != "all":
-        subsampleIndices = model.get_subsample_indices(subset)
-        data = data[subsampleIndices,:]
+    events = model.get_events(selectedFile,subsample=subsample)
 
     ## make plot 
     totalPoints = 0
     if labels == None:
-        ax.scatter([data[:,index1]],[data[:,index2]],color='blue',s=markerSize)
+        ax.scatter([events[:,index1]],[events[:,index2]],color='blue',s=markerSize)
     else:
         if type(np.array([])) != type(labels):
             labels = np.array(labels)
@@ -108,21 +103,20 @@ def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subset='all',la
             rgbVal = tuple([val * 256 for val in cmp[l,:3]])
             hexColor = model.rgb_to_hex(rgbVal)[:7]
 
-            x = data[:,index1][np.where(labels==l)[0]]
-            y = data[:,index2][np.where(labels==l)[0]]
+            x = events[:,index1][np.where(labels==l)[0]]
+            y = events[:,index2][np.where(labels==l)[0]]
             
             totalPoints+=x.size
 
             if x.size == 0:
                 continue
             ax.scatter(x,y,color=hexColor,s=markerSize)
-            #ax.scatter(x,y,color=hexColor,s=markerSize)
 
     ## handle data edge buffers                                                                                                                                              
-    bufferX = buff * (data[:,index1].max() - data[:,index1].min())
-    bufferY = buff * (data[:,index2].max() - data[:,index2].min())
-    ax.set_xlim([data[:,index1].min()-bufferX,data[:,index1].max()+bufferX])
-    ax.set_ylim([data[:,index2].min()-bufferY,data[:,index2].max()+bufferY])
+    bufferX = buff * (events[:,index1].max() - events[:,index1].min())
+    bufferY = buff * (events[:,index2].max() - events[:,index2].min())
+    ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
+    ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
 
     ## save file
     fileName = selectedFile
@@ -170,7 +164,7 @@ if run == True:
     model.initialize(projectID,homeDir)
 
     if modelName == None:
-        make_scatter_plot(model,selectedFile,channel1,channel2,subset=subset,altDir=altDir)
+        make_scatter_plot(model,selectedFile,channel1,channel2,subsample=subsample,altDir=altDir)
     else:
         statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType) 
-        make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,subset=subset,altDir=altDir)
+        make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,subsample=subsample,altDir=altDir)
