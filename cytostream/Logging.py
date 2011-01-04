@@ -50,6 +50,7 @@ class Logger():
         log['excluded_files_analysis'] = []
         log['excluded_channels_qa'] = []
         log['excluded_channels_analysis'] = []
+        log['setting_results_thumbview_imgs'] = 'pairwise'
 
         return log
 
