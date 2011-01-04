@@ -1,17 +1,52 @@
+#!/usr/bin/env python                                                                                                                                                                                                                       
+import sys,os,unittest,time,re
+from cytostream import Controller, NoGuiAnalysis
+
+## test class for the main window function                                                                                                                                                                                                   
+class TestCase1(unittest.TestCase):
+    def setUp(self):
+        cwd = os.getcwd()
+        if os.path.split(cwd)[1] == 'unittests':
+            BASEDIR = os.path.split(cwd)[0]
+        elif os.path.split(cwd)[1] == 'cytostream':
+            BASEDIR = cwd
+        else:
+            print "ERROR: Model test cannot find home dir -- cwd", cwd
+
+        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        projectID = 'utest'
+        self.nga = NoGuiAnalysis(projectID,filePathList)
+
+    def testLog(self):
+        self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
+        
+
+    #def testFiles(self):
+    #    self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) != 2)
+
+    #def testCreateNewProject(self):
+    #    ## test creation of a project                                                                                                                                                                                                        
+    #     self.controller.create_new_project(view=None,projectID='utest')
+    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
+    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
+    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))
+
+
+### Run the tests 
+if __name__ == '__main__':
+    unittest.main()
+
+
+'''
 #!/usr/bin/env python
 
-import sys,os,unittest,time,re
-from PyQt4 import QtGui, QtCore
-import subprocess
+import sys,os,unittest,re
 
-import sys
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg')
+#if sys.platform == 'darwin':
+#    import matplotlib
+#    matplotlib.use('Agg')
 
 from cytostream import Controller
-import numpy as np
-BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class TestCase1(unittest.TestCase):
@@ -79,14 +114,13 @@ class TestCase1(unittest.TestCase):
         ### create figures 
         #print 'creating results images'
         #self.controller.process_images('results')
- 
-    '''
+
     def verifyModelRun(self,modelName,modelType):
        statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName,modelType)    
        return statModelClasses
-    '''
 
-    '''
+
+
     def runSelectedModel(self):
         # numcomponents
         self.controller.log.log['numComponents'] = 16
@@ -101,8 +135,5 @@ class TestCase1(unittest.TestCase):
 
         # check image creation
         self.controller.process_images('results')
-    '''
-
-### Run the tests 
-if __name__ == '__main__':
-    unittest.main()
+   
+'''

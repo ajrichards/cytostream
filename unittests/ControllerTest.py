@@ -1,7 +1,7 @@
+#!/usr/bin/env python
+
 import sys,os,unittest,time,re
 from cytostream import Controller
-
-import numpy as np
 
 ## test class for the main window function
 class ControllerTest(unittest.TestCase):

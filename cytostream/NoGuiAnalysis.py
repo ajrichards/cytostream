@@ -15,30 +15,35 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,allFiles,subsample='1e4',makeQaFigs=True,makeResultsFigs=True, numComponents=16):
+    def __init__(self,projectID,filePathList,makeQaFigs=False,makeResultsFigs=False,configDict=None):
+
         ## error checking
-        if type(allFiles) != type([]):
-            print "ERROR:allFiles input must be of type list"
+        if type(filePathList) != type([]):
+            print "INPUT ERROR: filePathList in NoGuiAnalysis input must be of type list"
+            return None
+        if type(projectID) != type('abc'):
+            print "INPUT ERROR: projectID in NoGuiAnalysis input must be of type str"
             return None
 
+        ## declare variables
         self.projectID = projectID
-        self.allFiles = allFiles
-        self.subsample = subsample
+        self.filePathList = filePathList
         self.makeQaFigs = makeQaFigs
         self.makeResultsFigs = makeResultsFigs
-        self.numComponents = numComponents
+        self.configDict = configDict
         self.initialize()
+        self.load_files()
 
-        for fileName in self.allFiles:
-            self.controller.log.log['selectedFile'] = os.path.split(fileName)[-1]
-            print 'running model on', self.controller.log.log['selectedFile']
-            self.run_selected_model()
+    def initialize(self):
+        self.controller = Controller(configDict=self.configDict) 
+        self.controller.initialize_project(self.projectID)
+        self.controller.create_new_project(view=None,projectID=self.projectID)
+        
+    def load_files(self):
+        self.controller.load_files_handler(self.filePathList)
 
-        ## create figures
-        if self.makeResultsFigs == True:
-            print 'creating results figures'
-            self.controller.process_images('results')
 
+    '''
     def initialize(self):
         self.controller = Controller()
         self.controller.initialize_project(self.projectID)
@@ -83,7 +88,9 @@ class NoGuiAnalysis():
         selectedFile = self.controller.log.log['selectedFile']
         modelName = "%s_sub%s_dpmm"%(re.sub("\.fcs|\.pickle","",selectedFile),int(float(self.subsample)))
         statModelModes, statModelClasses = self.controller.model.load_model_results_pickle(modelName,'modes')
-        
+       
+    '''
+ 
 ### Run the tests 
 if __name__ == '__main__':
     projectID = 'noguitest'

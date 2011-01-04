@@ -18,8 +18,6 @@ for o, a in optlist:
     if o == '-v':
         VERBOSE = True
 
-
-
 #if o == '-a':
 #    RUNALL = True
 
@@ -41,8 +39,6 @@ for o, a in optlist:
 #    ThumbnailViewerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ThumbnailViewerTest)
 #   thumbnailViewerdataSuite = unittest.TestSuite([ThumbnailViewerTestSuite])
 
-
-
 ### non GUI Tests
 from ControllerTest import *
 ControllerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ControllerTest)
@@ -52,17 +48,17 @@ from ModelTest import *
 ModelTestSuite = unittest.TestLoader().loadTestsFromTestCase(ModelTest)
 modelSuite = unittest.TestSuite([ModelTestSuite])
 
-from TestCase1 import *
-TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
-runSuite = unittest.TestSuite([TestCase1Suite])
+#from TestCase1 import *
+#TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
+#runSuite = unittest.TestSuite([TestCase1Suite])
 
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
 caculatorSuite = unittest.TestSuite([DistanceCalculatorSuite])
 
-from FileAlignerTest1 import FileAlignerTest1
-FileAlignerTestSuite1 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest1)
-from FileAlignerTest2 import FileAlignerTest2
-FileAlignerTestSuite2 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest2)
+#from FileAlignerTest1 import FileAlignerTest1
+#FileAlignerTestSuite1 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest1)
+#from FileAlignerTest2 import FileAlignerTest2
+#FileAlignerTestSuite2 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest2)
 
-fileAlignerSuite = unittest.TestSuite([FileAlignerTestSuite1,FileAlignerTestSuite2])
+#fileAlignerSuite = unittest.TestSuite([FileAlignerTestSuite1,FileAlignerTestSuite2])
