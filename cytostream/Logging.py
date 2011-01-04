@@ -1,5 +1,6 @@
 import os,csv,re
 import numpy as np
+from cytostream import configDictDefault
 
 '''
 Logger class to handle the logging tasks of the pipline software
@@ -16,15 +17,25 @@ class Logger():
     
     ## consttructor
     def __init__(self):
-        self.log = {'currentState':'initial'}
+        self.log = {'current_state':'initial'}
 
-    def initialize(self,projectID,homeDir,load=False):
+    def initialize(self,projectID,homeDir,load=False,configDict=None):
         self.projectID = projectID
         self.homeDir = homeDir
         self.modelDir = os.path.join(self.homeDir,'models')
         self.figDir  = os.path.join(self.homeDir, 'figs')
         self.dataDir = os.path.join(self.homeDir, 'data')
 
+        if configDict == None:
+            self.configDict = configDictDefault
+        else:
+            self.configDict = configDict
+
+        ## error checking
+        if type(self.configDict) != type({}):
+            print "INPUT ERROR: in Logging.py configDict must be of type dict"
+
+        ## setup the logger from existing or from new
         if load == False:
             self.log = self.set_var_defaults()
         elif load == True:
@@ -32,25 +43,10 @@ class Logger():
 
     def set_var_defaults(self):
         log = {}
-        log['current_state'] = 'Data Processing'
-        log['highest_State'] = 0
-        log['input_data_type'] = 'fcs'
-        log['subsample_qa'] = '1e3'
-        log['subsample_analysis'] = '1e3'
-        log['setting_max_scatter_display'] = '2e4'
-        log['selected_file'] = None
-        log['selected_model'] = None
-        log['selected_transform'] = 'log'
-        log['selected_k'] = 16
-        log['model_to_run'] = None
-        log['results_mode'] = 'modes'
-        log['data_processing_mode'] = 'channel select'
-        log['component_states'] = None
-        log['excluded_files_qa'] = []
-        log['excluded_files_analysis'] = []
-        log['excluded_channels_qa'] = []
-        log['excluded_channels_analysis'] = []
-        log['setting_results_thumbview_imgs'] = 'pairwise'
+
+        ## load default variables
+        for key,item in self.configDict.iteritems():
+            log[key] = item
 
         return log
 
@@ -78,7 +74,7 @@ class Logger():
 
                 logFileDict[linja[0]] = linja[1]
             
-                if linja[0] == 'excludedFilesQA' or linja[0] == 'excludedChannels' or linja[0] == 'excludedFilesAnalysis':
+                if re.search('excluded_files',linja[0]) or re.search('excluded_channels',linja[0]):
                     linja[1] = re.sub("\s+|\[|\]|'","",linja[1]).split(",")
 
             return logFileDict
@@ -124,4 +120,3 @@ class Logger():
             newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
 
         return newList
-

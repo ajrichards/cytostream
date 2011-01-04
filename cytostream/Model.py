@@ -62,6 +62,7 @@ class Model:
         return:
             None
         """
+
         ## initialize project
         self.projectID = projectID
         self.homeDir = homeDir
@@ -102,6 +103,7 @@ class Model:
 
         ## get python path
         script = os.path.join(self.homeDir,"..","..","LoadFile.py")
+
         for filePath in fileList:
             proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,transform),
                                     shell=True,
@@ -269,7 +271,7 @@ class Model:
         tmp.close()
         return randEvents
 
-    def create_imgs_for_thumbnails(self,indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType):
+    def create_thumbnail(self,indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType):
         """
         about:
             handler function for RunMakeFigures.

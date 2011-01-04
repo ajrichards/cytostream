@@ -31,7 +31,7 @@ from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,ge
 from Logging import Logger
 
 class Controller:
-    def __init__(self,viewType=None):
+    def __init__(self,viewType=None,configDict=None):
         '''
         construct an instance of the controller class
         to use invoke the method initialize
@@ -47,6 +47,7 @@ class Controller:
         self.appName = "cytostream"
         self.fontName = 'Arial' #'Helvetica'
         self.verbose = False
+        self.configDict = configDict
         self.reset_workspace()
 
     def reset_workspace(self):
@@ -62,7 +63,7 @@ class Controller:
     def initialize_project(self,projectID,loadExisting=False):
         self.projectID = projectID
         self.homeDir = os.path.join(self.baseDir,"projects",self.projectID)
-        self.log.initialize(self.projectID,self.homeDir,load=loadExisting) 
+        self.log.initialize(self.projectID,self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.projectID,self.homeDir)
 
     def process_images(self,mode,progressBar=None,modelName=None,view=None):
@@ -139,29 +140,8 @@ class Controller:
                     if channelI in excludedChannels or channelJ in excludedChannels:
                         continue
                                         
-                    ###################################
-                    self.model.create_imgs_for_thumbnails(indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType)
-                    #script = os.path.join(self.baseDir,"RunMakeFigures.py")
-                    #if os.path.isfile(script) == False:
-                    #    print 'ERROR: cannot find RunMakeFigures'
-                    # 
-                    #pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
-                    #                                                                        imgDir,longModelName,modelType,self.homeDir)
-                    #proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-                    #
-                    #while True:
-                    #    try:
-                    #        next_line = proc.stdout.readline()
-                    #        proc.wait()
-                    #        if next_line == '' and proc.poll() != None:
-                    #            break
-                    #        else:
-                    #            print next_line
-                    #    except:
-                    #        proc.wait()
-                    #        break
-                    
-                    ####################################
+                    ## create original for thumbnails
+                    self.model.create_thumbnail(indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType)
 
                     imageCount += 1
                     progress = 1.0 / float(len(imageProgress)) *100.0
@@ -294,9 +274,9 @@ class Controller:
             print "WARNING: did not initialize project"
             return False
 
-        # remove previous 
+        ## remove previous 
         if self.homeDir != None and os.path.exists(self.homeDir) == True and createNew == True:
-            print 'overwriting...', self.homeDir
+            print 'INFO: overwriting old project of same name...', self.homeDir
             self.remove_project(self.homeDir)
 
         if createNew == True and self.homeDir != None:
@@ -306,9 +286,8 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"models"))
             os.mkdir(os.path.join(self.homeDir,"results"))
 
-        #    if fcsFileName != None:
-        #        self.load_fcs_file(fcsFileName)
-        #        self.log.log['selectedFile'] = fcsFileName.split(os.path.sep)[-1]
+        ## save progress
+        self.save()
 
         return True
 
