@@ -346,8 +346,12 @@ class Controller:
         if dataType not in ['fcs','txt']:
             print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' or 'txt'"
 
+        ## used the selected transform
         transform = self.log.log['selected_transform']
         self.model.load_files(fileList)
+
+        ## set the selected file
+        self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",os.path.split(fileList[0])[-1])
 
     def get_component_states(self):
         try:

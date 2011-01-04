@@ -18,8 +18,7 @@ class ControllerTest(unittest.TestCase):
         self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
         self.controller = Controller()
         self.controller.initialize_project("utest") 
-        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs") 
-        self.controller.log.log['selected_file'] = os.path.split(self.fcsFileName)[-1]
+        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")
 
     def testLog(self):
         self.controller.save()

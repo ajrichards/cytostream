@@ -16,56 +16,77 @@ BASEDIR = os.path.dirname(__file__)
 ## test class for the main window function
 class TestCase1(unittest.TestCase):
     
-    def testTestCase1(self):
-        self.projectID = 'utest'
-        self.allFiles = [os.path.join(BASEDIR,"..","cytostream","example_data", "3FITC_4PE_004.fcs")]
-        self.subsample = '1e3'
-        self.controller = Controller()
-        self.controller.initialize_project(self.projectID)
-
-        firstFile = True
-        goFlag = True
-        for fileName in self.allFiles:
-            if os.path.isfile(fileName) == False:
-                print 'ERROR: Bad file name skipping', fileName
-                continue
-
-            fileName = str(fileName)
-            if firstFile == True:
-                self.controller.create_new_project(fileName)
-                firstFile = False
-            else:
-                goFlag = self.controller.load_additional_fcs_files(fileName)
-
-        if self.controller.homeDir == None:
-            print "ERROR: project failed to initialize"
-            return
+    def setUp(self):
+        cwd = os.getcwd()
+        if os.path.split(cwd)[1] == 'unittests':
+            BASEDIR = os.path.split(cwd)[0]
+        elif os.path.split(cwd)[1] == 'cytostream':
+            BASEDIR = cwd
         else:
-            print "project created."
+            print "ERROR: Model test cannot find home dir -- cwd", cwd
 
-        # handle subsampling 
-        self.controller.log.log['subsample'] = self.subsample
-        self.controller.handle_subsampling()
-        self.controller.save()
+        self.projectID = 'utest'
+        self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
+        self.controller = Controller()
+        self.controller.initialize_project("utest")
+        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")
 
-        # create quality assurance images
-        self.controller.process_images('qa')
+    def testTestCase1(self):
+        self.controller.load_files_handler([self.fcsFileName])
+        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,"data"))) != 2)
+       
+        #self.projectID = 'utest'
+        #self.allFiles = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        #self.subsample = '1e3'
+        #self.controller = Controller()
+        #self.controller.initialize_project(self.projectID)
 
-        ## run models
-        for fileName in self.allFiles:
-            self.failIf(os.path.isfile(fileName) == False)
-            self.controller.log.log['selectedFile'] = os.path.split(fileName)[-1]
-            print 'running model on', self.controller.log.log['selectedFile']
-            self.runSelectedModel()
-
-        ## create figures 
-        print 'creating results images'
-        self.controller.process_images('results')
-
+        #firstFile = True
+        #goFlag = True
+        #for fileName in self.allFiles:
+        #    if os.path.isfile(fileName) == False:
+        #        print 'ERROR: Bad file name skipping', fileName
+        #        continue
+        #
+        #    fileName = str(fileName)
+        #    if firstFile == True:
+        #        self.controller.create_new_project(fileName)
+        #        firstFile = False
+        #    else:
+        #        goFlag = self.controller.load_additional_fcs_files(fileName)
+        #
+        #if self.controller.homeDir == None:
+        #    print "ERROR: project failed to initialize"
+        #    return
+        #else:
+        #    print "project created."
+        #
+        ## handle subsampling 
+        #self.controller.log.log['subsample'] = self.subsample
+        #self.controller.handle_subsampling()
+        #self.controller.save()
+        #
+        ## create quality assurance images
+        #self.controller.process_images('qa')
+        # 
+        ### run models
+        #for fileName in self.allFiles:
+        #    self.failIf(os.path.isfile(fileName) == False)
+        #    self.controller.log.log['selectedFile'] = os.path.split(fileName)[-1]
+        #    print 'running model on', self.controller.log.log['selectedFile']
+        #    self.runSelectedModel()
+        #
+        ### create figures 
+        #print 'creating results images'
+        #self.controller.process_images('results')
+ 
+    '''
     def verifyModelRun(self,modelName,modelType):
        statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName,modelType)    
        return statModelClasses
+    '''
 
+    '''
     def runSelectedModel(self):
         # numcomponents
         self.controller.log.log['numComponents'] = 16
@@ -80,6 +101,7 @@ class TestCase1(unittest.TestCase):
 
         # check image creation
         self.controller.process_images('results')
+    '''
 
 ### Run the tests 
 if __name__ == '__main__':
