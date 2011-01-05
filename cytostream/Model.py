@@ -251,6 +251,11 @@ class Model:
         fileList = get_fcs_file_names(self.homeDir)
         minNumObs = np.inf
 
+        ## error checking
+        if len(fileList) == 0:
+            print "ERROR: cannot carry out subsampling -- no files in file list"
+            return None
+
         ## get minimum number of observations out of all files considered
         for fileName in fileList:
             fcsData = self.get_events(fileName,subsample='original')

@@ -1,8 +1,15 @@
 #!/usr/bin/env python                                                                                                                                                                                                                       
 import sys,os,unittest,time,re
-from cytostream import Controller, NoGuiAnalysis
+from cytostream import NoGuiAnalysis, configDictDefault
 
-## test class for the main window function                                                                                                                                                                                                   
+'''
+configDict - arg is not required although custom analyses are carried out using a custom dict as shown
+
+notes:
+    to retrieve file names and events from a given file see the method 'testFiles'
+
+A. Richards
+'''                                                                                                                                                                                      
 class TestCase1(unittest.TestCase):
     def setUp(self):
         cwd = os.getcwd()
@@ -13,24 +20,24 @@ class TestCase1(unittest.TestCase):
         else:
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
+        ## run the no gui analysis
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
+        
         self.nga = NoGuiAnalysis(projectID,filePathList)
 
     def testLog(self):
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
         
-
-    #def testFiles(self):
-    #    self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) != 2)
-
-    #def testCreateNewProject(self):
-    #    ## test creation of a project                                                                                                                                                                                                        
-    #     self.controller.create_new_project(view=None,projectID='utest')
-    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
-    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
-    #    self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))
-
+    def testFiles(self):
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
+        
+        ## get file names 
+        fileNameList = self.nga.get_file_names()
+        self.assertEqual(len(fileNameList),1)
+        
+        events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
+        self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
 
 ### Run the tests 
 if __name__ == '__main__':

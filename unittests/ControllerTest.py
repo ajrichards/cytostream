@@ -62,6 +62,16 @@ class ControllerTest(unittest.TestCase):
         self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs'))) != 7)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','3FITC_4PE_004_thumbs')))
 
+    def testRunModel(self):
+        self.controller.log.log['num_iters_mcmc'] = 1100
+        self.controller.log.log['selected_k'] = 16
+        self.controller.log.log['model_to_run'] = 'dpmm'
+        subsample = self.controller.log.log['subsample_analysis']
+        self.controller.run_selected_model(subsample=True)
+        #selectedFile = self.controller.log.log['selectedFile']
+        #modelName = "%s_sub%s_dpmm"%(re.sub("\.fcs|\.pickle","","3FITC_4PE_004"),int(float(subsample)))
+        #statModelModes, statModelClasses = self.controller.model.load_model_results_pickle(modelName,'modes')
+
 ### Run the tests 
 if __name__ == '__main__':
     unittest.main()

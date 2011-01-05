@@ -6,11 +6,11 @@ import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir"
+    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:n:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:n:s:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
     print "Note: fileName (-f) must be the full" 
@@ -18,6 +18,7 @@ except getopt.GetoptError:
     print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
     print "          name (-n) user given name for model run"
+    print " subsample     (-s) subsample is t or f"
     sys.exit()
 
 k = 16
@@ -31,6 +32,8 @@ for o, a in optlist:
         k = a
     if o == '-n':
         name = a
+    if o == '-s':
+        subsample = a
 
 print 'running dpmm with %s'%k
 
@@ -41,13 +44,7 @@ if os.path.isdir(homeDir) == False:
 
 longModelName = "Dirichlet Process Mixture Model"
 projName = os.path.split(homeDir)[-1]
-longFileName = os.path.join(homeDir,"data",fileName)
 projectID = os.path.split(homeDir)[-1]
-
-## more error checking
-if os.path.isfile(longFileName) == False:
-    print "INPUT ERROR: not a valid file name", longFileName
-    sys.exit()
 
 if re.search('\D',str(k)):
     print "INPUT ERROR: k must be numeric"
@@ -61,43 +58,29 @@ log.initialize(projectID,homeDir,load=True)
 
 model = Model()
 model.initialize(projectID,homeDir)
-
-## load the data into py-fcm
-if re.search("\.fcs",longFileName):
-    data = fcm.loadFCS(longFileName)
-elif re.search("\.pickle",longFileName):
-    data= cPickle.load(open(longFileName,'r'))
+events = model.get_events(fileName,subsample=subsample)
 
 ## account for excluded channels
-#excludedChannels = log.log['excludedChannels']
-#
-#if type(log.log['excludedChannels']) != type([]):
-#    excludedChannels = []
-#
-#fileChannels = model.get_file_channel_list(fileName)
-#allChannels = range(len(fileChannels))
-#excludedIndices = []
+excludedChannels = log.log['excluded_channels_analysis']
 
-#if len(excludedChannles) > 0:
-#    for chan in excludedChannels:
-#        excludedIndices.append(fileChannels.index(chan))
+if type(excludedChannels) != type([]):
+    excludedChannels = []
 
-#includedIndices = list(set(allChannels).difference(set(excludedIndices)))
+fileChannels = model.get_file_channel_list(fileName)
+allChannels = range(len(fileChannels))
+includedIndices = list(set(allChannels).difference(set(excludedChannels)))
 
-#print 'excludedIndices', excludedIndices
-#print 'includedIndices', includedIndices
+################ ici ##################
 
-mod = fcm.statistics.DPMixtureModel(data,k,last=1)
+
+mod = fcm.statistics.DPMixtureModel(events,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)
 modelRunStop = time.time()
 full = mod.get_results()
 
-#print dir(modes)
-#print modes.modes()
-
 ## classify the components
-classifyComponents = full.classify(data)
+classifyComponents = full.classify(events)
 print 'dumping components fit'
 if name == None:
     tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_components.pickle"),'w')
@@ -113,7 +96,7 @@ tmp2.close()
 
 ## classify the modes
 modes = full.make_modal()
-classifyModes = modes.classify(data)
+classifyModes = modes.classify(events)
 print 'dumping modes fit'
 if name == None:
     tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_modes.pickle"),'w')
