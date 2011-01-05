@@ -344,27 +344,26 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None,view=None):
-        numItersMCMC = 1100
-        selectedModel = self.log.log['modelToRun']
-        numComponents = self.log.log['numComponents']
-        
+    def run_selected_model(self,progressBar=None,view=None,subsample=True):
+        numItersMCMC =  self.log.log['num_iters_mcmc']
+        selectedModel = self.log.log['model_to_run']
+        numComponents = self.log.log['selected_k']
+        subsample = self.log.log['subsample_analysis']
 
-        if self.subsampleIndices == None:
-            fileList = get_fcs_file_names(self.homeDir)
-        elif self.subsampleIndices != None:
-            fileList = get_fcs_file_names(self.homeDir,getPickles=True)
+        #if self.subsampleIndices == None:
+        fileList = get_fcs_file_names(self.homeDir)
+        #elif self.subsampleIndices != None:
+        #    fileList = get_fcs_file_names(self.homeDir,getPickles=True)
 
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
         percentagesReported = []
         for fileName in fileList:
-
             if selectedModel == 'dpmm':
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s"%(pythonPath,script,self.homeDir,fileName,numComponents), 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(pythonPath,script,self.homeDir,fileName,numComponents,subsample), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)

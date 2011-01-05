@@ -21,7 +21,8 @@ configDictDefault = {
     'input_data_type'                       : 'fcs',                # fcs, txt
     'setting_max_scatter_display'           : '2e4',                # any float, int or string
     'selected_transform'                    : 'log',                # log, logicle
-    'number_filter_steps'                   : 0,                    # not yet implemented
+    'num_filter_steps'                      : 0,                    # not yet implemented
+    'num_iters_mcmc'                        : 1100,                 # an int
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e3',                # any float, int or string

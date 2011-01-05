@@ -31,6 +31,8 @@ class NoGuiAnalysis():
         self.makeQaFigs = makeQaFigs
         self.makeResultsFigs = makeResultsFigs
         self.configDict = configDict
+
+        ## initialize and load files
         self.initialize()
         self.load_files()
 
@@ -41,6 +43,20 @@ class NoGuiAnalysis():
         
     def load_files(self):
         self.controller.load_files_handler(self.filePathList)
+        self.controller.handle_subsampling(self.controller.log.log['subsample_qa'])
+        self.controller.handle_subsampling(self.controller.log.log['subsample_analysis'])
+
+    def get_file_names(self):
+        fileList = get_fcs_file_names(self.controller.homeDir)
+        
+        return fileList
+
+    def get_events(self,fileName,subsample='original'):
+        events = self.controller.model.get_events(fileName,subsample=subsample)
+
+        return events
+    
+
 
 
     '''
@@ -96,4 +112,4 @@ if __name__ == '__main__':
     projectID = 'noguitest'
     allFiles = [os.path.join(BASEDIR,"example_data", "3FITC_4PE_004.fcs")]
     subsample = '1e4'
-    nga = NoGuiAnalysis(projectID,allFiles,subsample)
+    nga = NoGuiAnalysis(projectID,allFiles)
