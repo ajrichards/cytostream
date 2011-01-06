@@ -26,10 +26,8 @@ class TestCase1(unittest.TestCase):
         
         self.nga = NoGuiAnalysis(projectID,filePathList)
 
-    def testLog(self):
+    def tests(self):
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
-        
-    def testFiles(self):
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
         
         ## get file names 
@@ -125,8 +123,6 @@ class TestCase1(unittest.TestCase):
     def verifyModelRun(self,modelName,modelType):
        statModel,statModelClasses = self.controller.model.load_model_results_pickle(modelName,modelType)    
        return statModelClasses
-
-
 
     def runSelectedModel(self):
         # numcomponents
