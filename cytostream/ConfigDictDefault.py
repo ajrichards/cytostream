@@ -13,17 +13,21 @@ configDictDefault = {
     ########### state variables ##############################################################
     'current_state'                         : 'Data Processing',    # do not change
     'highest_State'                         : '0',                  # do not change
-    'selected_file'                         : None,                 # do not change
-    'selected_model'                        : None,                 # do not change
+    'selected_file'                         : 'None',                 # do not change
+    'selected_model'                        : 'None',                 # do not change
     'data_processing_mode'                  : 'channel select',     # do not change   
-    'models_run_count'                      : '0',                    # do not change
+    'models_run_count'                      : '0',                  # do not change
 
     ########### immutable variables ##########################################################
     'input_data_type'                       : 'fcs',                # fcs, txt
     'setting_max_scatter_display'           : '2e4',                # any float, int or string
     'selected_transform'                    : 'log',                # log, logicle
     'num_filter_steps'                      : '0',                  # not yet implemented
-    'num_iters_mcmc'                        : '1100',                 # an int
+    'num_iters_mcmc'                        : '1100',               # an int
+    'thumbnail_results_default'             : 'modes',              # modes, components
+    'scatter_marker_size'                   : '1',                  # mpl scatter marker size
+    'font_size'                             : '12',                 # int
+    'font_name'                             : 'arial',              # font name
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e3',                # any float, int or string
@@ -31,9 +35,9 @@ configDictDefault = {
     'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
     'selected_k'                            : '16',                 # an int divisible by 8
     'results_mode'                          : 'modes',              # modes, components
-    'thumbnail_view'                        : 'pairwise',           # pairwise, custom
-    'excluded_files_qa'                     : '[]',                   # a list of ints (indices)
-    'excluded_files_analysis'               : '[]',                   # a list of ints (indices)
-    'excluded_channels_qa'                  : '[]',                   # a list of ints (indices)  
-    'excluded_channels_analysis'            : '[]',                   # a list of ints (indices)
+    'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
+    'excluded_files_qa'                     : '[]',                 # a list of ints (indices)
+    'excluded_files_analysis'               : '[]',                 # a list of ints (indices)
+    'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
+    'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
 }

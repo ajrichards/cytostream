@@ -66,27 +66,48 @@ class Controller:
         self.log.initialize(self.projectID,self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.projectID,self.homeDir)
 
-    def process_images(self,mode,progressBar=None,modelName=None,view=None):
+    def process_images(self,mode,modelRunID=None,progressBar=None,view=None):
 
         ## error check
         if mode not in ['qa','analysis']:
             print "ERROR: invalid mode specified"
+            return None
 
-        subsample = self.log.log['setting_max_scatter_display']
-        self.handle_subsampling(subsample)
-        
+        if mode == 'analysis' and modelRunID == None:
+            print "ERROR: controller.process_images - modelRun must be specified"
+            return None
+
         ## determine mode specific variables
         if mode == 'qa':
+            subsample = self.log.log['subsample_qa']
             excludedChannels = self.log.log['excluded_channels_qa']
             excludedFiles = self.log.log['excluded_files_qa']
         elif mode == 'analysis':
+            subsample = self.log.log['subsample_analysis']
             excludedChannels = self.log.log['excluded_channels_analysis']
             excludedFiles = self.log.log['excluded_files_analysis']
 
-        modelName = self.log.log['model_to_run']
-        fileList = get_fcs_file_names(self.homeDir,excludedFiles)
+        if subsample == 'original':
+            maxViewSubsample = self.log.log['setting_max_scatter_display']
+            self.handle_subsampling(maxViewSubsample)
+        
+        fileList = get_fcs_file_names(self.homeDir)
         numImagesToCreate = 0
         
+        ## specify which images to create NOTE: assumption that all channel indices are always the same 
+        comparisons = self.log.log['thumbnails_to_view']
+        
+        if comparisons == None:
+            fileChannels = self.model.get_file_channel_list(fileList[0])
+            channelIndices = range(len(fileChannels))
+            comparisons = []
+            for i in channelIndices:
+                for j in channelIndices:
+                    if j >= i or i in excludedChannels or j in excludedChannels:
+                        continue
+                    comparisons.append((i,j))
+            self.log.log['thumbnails_to_view'] = comparisons
+
         ## get num images to create
         for fileName in fileList:
             fileChannels = self.model.get_file_channel_list(fileName)
@@ -101,65 +122,37 @@ class Controller:
             if fileName in excludedFiles:
                 continue
 
-            ## get model name
+            ## get img dir
             if mode == 'analysis':
-                if subsample == None or subsample == 'original':
-                    longModelName = re.sub('\.fcs|\.pickle','',fileName)+"_"+modelName
-                    imgDir = os.path.join(self.homeDir,'figs',modelName)
-                else:
-                    longModelName = re.sub('\.fcs|\.pickle','',fileName)+"_sub%s_"%int(float(self.log.log['subsample']))+modelName
-                    imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)            
+                imgDir = os.path.join(self.homeDir,'figs',modelRunID)
+            elif mode == 'qa':
+                imgDir = os.path.join(self.homeDir,"figs",'qa')
 
-                if os.path.isdir(imgDir) == False:
-                    if self.verbose == True:
-                        print 'making img dir', imgDir
-                    os.mkdir(imgDir)
-            else:
-                imgDir = 'None'
-                longModelName = 'None'
+            if os.path.isdir(imgDir) == False:
+                if self.verbose == True:
+                    print 'making img dir', imgDir
+                os.mkdir(imgDir)
         
             ## progress point information 
             imageProgress = range(int(numImagesToCreate))
-            fileSpecificIndices = range(len(fileChannels))
         
             ## specify model type to show as thumbnails
-            modelType = 'modes'
+            modelType = self.log.log['thumbnail_results_default']
 
-            ## make all pairwise comparisons
-            for i in fileSpecificIndices:
-                indexI = fileSpecificIndices[i]
-                channelI = fileChannels[indexI]
-                for j in fileSpecificIndices:
-                    if j >= i:
-                        continue
-
-                    indexJ = fileSpecificIndices[j]
-                    channelJ = fileChannels[indexJ]
-
-                    ## check to see that channels are not in excluded channels
-                    if channelI in excludedChannels or channelJ in excludedChannels:
-                        continue
+            ## make the specifed figures
+            for indexI,indexJ in comparisons:
                                         
-                    ## create original for thumbnails
-                    self.model.create_thumbnail(indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType)
+                ## create original for thumbnails
+                self.model.create_thumbnail(indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType)
 
-                    imageCount += 1
-                    progress = 1.0 / float(len(imageProgress)) *100.0
-                    percentDone+=progress
+                imageCount += 1
+                progress = 1.0 / float(len(imageProgress)) *100.0
+                percentDone+=progress
 
-                    if progressBar != None:
-                        progressBar.move_bar(int(round(percentDone)))
-                        #print 'moving', percentDone
-
-            ## create the thumbnails
-            if mode == 'qa':
-                imgDir = os.path.join(self.homeDir,"figs")
-            elif mode == 'analysis':
-                if self.log.log['subsample'] == "original":
-                    imgDir = os.path.join(self.homeDir,'figs',"%s"%(modelName))
-                else:
-                    imgDir = os.path.join(self.homeDir,'figs',"sub%s_"%int(float(self.log.log['subsample']))+modelName)
-
+                if progressBar != None:
+                    progressBar.move_bar(int(round(percentDone)))
+                    #print 'moving', percentDone
+                    
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
             
@@ -344,7 +337,7 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None,view=None,subsample=True):
+    def run_selected_model(self,progressBar=None,view=None,useSubsample=False,cleanBorderEvents=True):
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
         numComponents = int(self.log.log['selected_k'])
@@ -356,12 +349,20 @@ class Controller:
         self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
         self.save()
 
+        if useSubsample == False:
+            subsample = 'original'
+
+        if cleanBorderEvents == True:
+            cbe = 't'
+        else:
+            cbe = 'f'
+
         for fileName in fileList:
             if selectedModel == 'dpmm':
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(pythonPath,script,self.homeDir,fileName,numComponents,subsample), 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s -c %s"%(pythonPath,script,self.homeDir,fileName,numComponents,subsample,cbe), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)

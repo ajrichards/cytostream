@@ -10,7 +10,7 @@ import numpy as np
 ## important line to fix popup error in mac osx
 import matplotlib
 matplotlib.use('Agg')
-from cytostream import Model
+from cytostream import Model, Logger
 import matplotlib.pyplot as plt
 
 ## parse inputs
@@ -18,8 +18,8 @@ def bad_input():
     print "\nERROR: incorrect args"
     print sys.argv[0] + "-p projectID -i channel1 -j channel2 -f selectedFile -a alternateDirectory -s subsample -t modelType -h homeDir"
     print "  projectID    (-p) project name"
-    print "  channel1     (-i) channel 1 name"
-    print "  channel2     (-j) channel 2 name"
+    print "  channel1     (-i) channel 1 index"
+    print "  channel2     (-j) channel 2 index"
     print "  homeDir      (-h) home directory of current project"
     print "  selectedFile (-f) name of selected file"
     print "  altDir       (-a) alternative directory (optional)"
@@ -42,14 +42,14 @@ selectedFile = None
 altDir = None
 homeDir = None
 modelType = None
-modelName = None
+modelRunID = None
 subsample = "original"
 run = True
 for o, a in optlist:
     if o == '-i':
-        channel1 = a
+        channel1 = int(a)
     if o == '-j':
-        channel2 = a
+        channel2 = int(a)
     if o == '-f':
         selectedFile = a
     if o == '-a':
@@ -59,33 +59,47 @@ for o, a in optlist:
     if o == '-s':
         subsample = a
     if o == '-m':
-        modelName = a
+        modelRunID = a
     if o == '-t':
         modelType = a
     if o == '-h':
         homeDir = a
 
-def make_scatter_plot(model,selectedFile,channel1Ind,channel2Ind,subsample='original',labels=None,buff=0.02,altDir=None):
-    #fig = pyplot.figure(figsize=(7,7))
-    markerSize = 5
-    alphaVal = 0.5
+def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='original',labels=None,buff=0.02,altDir=None,modelLog=None):
 
-    fontName = 'arial'
-    fontSize = 12
+    ## declare variables
+    markerSize = int(log.log['scatter_marker_size'])
+    fontName = log.log['font_name']
+    fontSize = log.log['font_size']
+    alphaVal = 0.5
     plotType = 'png'
+
+    ## make sure subsampling is that of model run
+    if modelLog != None:
+        subsample = modelLog['subsample']
 
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
     ax = fig.add_subplot(111)
 
+    if subsample == 'original':
+        subsample = self.log.log['setting_max_scatter_display']
+        subsampleIndices = model.get_subsample_indices(subsample)
+        if labels != None:
+            labels = labels[subsampleIndices]
+
     ## specify channels
     fileChannels = model.get_file_channel_list(selectedFile)
     index1 = int(channel1Ind)
-    index2 = int(channel2Ind)
-    
+    index2 = int(channel2Ind) 
     channel1 = fileChannels[index1]
     channel2 = fileChannels[index2]
     events = model.get_events(selectedFile,subsample=subsample)
+
+    if labels != None:
+        n,d = events.shape
+        if n != labels.size:
+            print "RunMakeScatterPlot.py - ERROR: labels and events don't match",n,labels.size
 
     ## make plot 
     totalPoints = 0
@@ -137,8 +151,8 @@ if altDir == 'None':
     altDir = None
 if homeDir == 'None':
     homeDir = None
-if modelName == 'None':
-    modelName = None
+if modelRunID == 'None':
+    modelRunID = None
     statModel,statModelClasses = None,None
 
 if altDir == None and homeDir == None:
@@ -160,11 +174,15 @@ if altDir != None and os.path.isdir(altDir) == False:
     run = False
 
 if run == True:
+    ## initialize a logger and a model to get specified files and channels     
+    log = Logger()
+    log.initialize(projectID,homeDir,load=True)
     model = Model()
     model.initialize(projectID,homeDir)
 
-    if modelName == None:
-        make_scatter_plot(model,selectedFile,channel1,channel2,subsample=subsample,altDir=altDir)
+    if modelRunID == None:
+        make_scatter_plot(model,log,selectedFile,channel1,channel2,subsample=subsample,altDir=altDir)
     else:
-        statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType) 
-        make_scatter_plot(model,selectedFile,channel1,channel2,labels=statModelClasses,subsample=subsample,altDir=altDir)
+        statModel, statModelClasses = model.load_model_results_pickle(selectedFile,modelRunID,modelType=modelType)
+        modelLog = model.load_model_results_log(selectedFile,modelRunID)
+        make_scatter_plot(model,log,selectedFile,channel1,channel2,labels=statModelClasses,modelLog=modelLog,subsample=subsample,altDir=altDir)

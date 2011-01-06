@@ -48,6 +48,11 @@ class Logger():
         for key,item in self.configDict.iteritems():
             if item == '[]':
                 item = []
+            elif re.search("\[",item):
+                item = [int(i) for i in item.split(";")]
+            if item == 'None':
+                item = None
+                
             log[key] = item
 
         return log
@@ -81,18 +86,4 @@ class Logger():
                
                 logFileDict[linja[0]] = linja[1]
 
-            return logFileDict
-
-    ## given a model name read in a model log file and return a dictionary
-    def read_model_log(self,modelName):
-        longName = os.path.join(self.modelDir,modelName+".log")
-        if os.path.isfile(longName) == False:
-            print "ERROR: invalid model logfile specified",longName
-            return None
-        else:
-            logFileDict = {}
-            reader = csv.reader(open(longName,'r'))
-            for linja in reader:
-                logFileDict[linja[0]] = linja[1]
-                  
             return logFileDict

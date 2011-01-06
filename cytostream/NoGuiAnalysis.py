@@ -15,7 +15,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,filePathList,makeQaFigs=False,makeResultsFigs=False,configDict=None):
+    def __init__(self,projectID,filePathList,useSubsample=False,makeQaFigs=True,makeResultsFigs=True,configDict=None):
 
         ## error checking
         if type(filePathList) != type([]):
@@ -31,81 +31,114 @@ class NoGuiAnalysis():
         self.makeQaFigs = makeQaFigs
         self.makeResultsFigs = makeResultsFigs
         self.configDict = configDict
+        self.useSubsample = useSubsample
 
         ## initialize and load files
         self.initialize()
         self.load_files()
 
+        ## quality assurance figures
+        if self.makeQaFigs == True:
+            self.make_qa_figures()
+
+        ## run model
+        self.run_model()
+
+        ## make results figures
+        fileNameList = self.get_file_names()
+        for fileName in fileNameList:
+            if self.makeResultsFigs == True:
+                self.make_results_figures(fileName,'run1')
+
     def initialize(self):
+        """
+        initializes a project
+        """
+
         self.controller = Controller(configDict=self.configDict) 
         self.controller.initialize_project(self.projectID)
         self.controller.create_new_project(view=None,projectID=self.projectID)
         
     def load_files(self):
+        """
+        loads the list of files supplied as input into the project
+
+        """
+
         self.controller.load_files_handler(self.filePathList)
         self.controller.handle_subsampling(self.controller.log.log['subsample_qa'])
         self.controller.handle_subsampling(self.controller.log.log['subsample_analysis'])
 
     def get_file_names(self):
+        """
+        returns all file names associated with a project
+
+        """
+
+
         fileList = get_fcs_file_names(self.controller.homeDir)
         
         return fileList
 
     def get_events(self,fileName,subsample='original'):
+        """
+        returns the events from a given file name
+
+        """
+
         events = self.controller.model.get_events(fileName,subsample=subsample)
 
         return events
     
+    def make_qa_figures(self):
+        """
+        makes the figures for quality assurance
+
+        """
+
+        subsample = self.controller.log.log['subsample_qa']
+        self.controller.handle_subsampling(subsample)
+        self.controller.process_images('qa')
+    
+    def run_model(self):
+        """
+        runs model for all input files
+
+        """
 
 
+        self.controller.run_selected_model(useSubsample=self.useSubsample)
+    
+    def get_model_results(self,fileName,modelRunID,modelType):
+        """
+        returns model results
 
-    '''
-    def initialize(self):
-        self.controller = Controller()
-        self.controller.initialize_project(self.projectID)
+        """
+
+
+        statModel, statModelClasses = self.controller.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
         
-        firstFile = True
-        goFlag = True
-        for fileName in self.allFiles:
+        return statModel, statModelClasses
 
-            if os.path.isfile(fileName) == False:
-                print 'ERROR: Bad file name skipping', fileName
-                continue
+    def get_model_log(self,fileName,modelRunID):
+        """
+        returns model run dictionary
 
-            print 'adding...', fileName
-            fileName = str(fileName)
-            if firstFile == True:
-                self.controller.create_new_project(fileName)
-                firstFile = False
-            else:
-                goFlag = self.controller.load_additional_fcs_files(fileName)
+        """
 
-        if self.controller.homeDir == None:
-            print "ERROR: project failed to initialize"
-            return
-        else:
-            print "project created."
-        
-        # subsampling
-        print "handling subsampling"
-        self.controller.log.log['subsample'] = self.subsample
-        self.controller.handle_subsampling()
-        self.controller.save()
-        
-        # qa image creation
-        if self.makeQaFigs == True:
-            print 'making qa images'
-            self.controller.process_images('qa')
+        modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
+        return modelLog
 
-    def run_selected_model(self):
-        self.controller.log.log['numComponents'] = self.numComponents
-        self.controller.log.log['modelToRun'] = 'dpmm'
-        self.controller.run_selected_model()
-        selectedFile = self.controller.log.log['selectedFile']
-        modelName = "%s_sub%s_dpmm"%(re.sub("\.fcs|\.pickle","",selectedFile),int(float(self.subsample)))
-        statModelModes, statModelClasses = self.controller.model.load_model_results_pickle(modelName,'modes')
-       
-    '''
+    def make_results_figures(self,fileName,modelRunID):
+        """
+        make the results figures for a given file and a given model run
+
+        """
+  
+        subsample = self.controller.log.log['subsample_analysis']
+        self.controller.handle_subsampling(subsample)
+        self.controller.process_images('analysis',modelRunID=modelRunID)
+
  
 ### Run the tests 
 if __name__ == '__main__':

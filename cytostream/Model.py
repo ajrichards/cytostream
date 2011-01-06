@@ -276,24 +276,24 @@ class Model:
         tmp.close()
         return randEvents
 
-    def create_thumbnail(self,indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType):
+    def create_thumbnail(self,indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType):
         """
         about:
             handler function for RunMakeFigures.
         args:
-            indexI,indexJ,fileName,subsample,imgDir,longModelName,modelName,modelType
+            indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType
         return:
             None
         """
 
-        script = os.path.join(self.baseDir,"RunMakeFigures.py")
+        script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
         
         ## error checking
         if os.path.isfile(script) == False:
             print 'ERROR: cannot find RunMakeFigures'
         else:
             pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(self.pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
-                                                                                    imgDir,longModelName,modelType,self.homeDir)
+                                                                                    imgDir,modelRunID,modelType,self.homeDir)
             proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
 
             while True:
@@ -313,8 +313,9 @@ class Model:
         about:
             loads a pickled fcm file into the workspace
         args:
-            modelName - 
-            modelType - must be one of the following: components, modes
+            fileName - string representing the file without the full path and without a file extension
+            modelNum - each model run is given a unique run id: run1, run2, etc.
+            modelType - either components or modes
         return:
             model and classify
         """
@@ -341,6 +342,30 @@ class Model:
 
         return model,classify
     
+    def load_model_results_log(self,fileName,modelNum):
+        """
+        about:
+            loads a pickled fcm file into the workspace
+        args:
+            fileName - string representing the file without the full path and without a file extension
+            modelNum - each model run is given a unique run id: run1, run2, etc.
+            modelType - either components or modes
+        return:
+            model and classify
+        """
+        
+        tmpFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+".log")
+        if os.path.isfile(tmpFile) == False:
+            print "ERROR: model.load_model_results_log - bad log file path specified"
+            return None
+
+        logFileDict = {}
+        reader = csv.reader(open(tmpFile,'r'))
+        for linja in reader:
+            logFileDict[linja[0]] = linja[1]
+
+        return logFileDict
+
     def get_n_color_colorbar(self,n,cmapName='jet'):
         """
         about:
