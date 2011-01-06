@@ -14,16 +14,17 @@ A. Richards
 '''
 
 import sys,getopt,os,re,cPickle,time,csv
+import numpy as np
 import fcm
 import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -v"
+    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -c cleanBorderEvents -v"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:s:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:s:c:v')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
     print "Note: fileName (-f) must be the full" 
@@ -31,12 +32,14 @@ except getopt.GetoptError:
     print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
     print " subsample     (-s) subsample is t or f"
+    print " clean         (-c) clean border events"
     print " verbose       (-v) verbose flag"
     sys.exit()
 
 k = 16
 name = None
 verbose = False
+cleanBorderEvents = True
 for o, a in optlist:
     if o == '-f':
         fileName = a
@@ -48,6 +51,12 @@ for o, a in optlist:
         subsample = a
     if o == '-v':
         verbose = True
+    if o == '-c':
+        a = a.lower()
+        if re.search('t|true',a):
+            cleanBorderEvents = True
+        else:
+            cleanBorderEvents = False
 
 ## initial error checking
 print 'running dpmm with %s'%k
@@ -72,11 +81,20 @@ model = Model()
 model.initialize(projectID,homeDir)
 events = model.get_events(fileName,subsample=subsample)
 modelNum = "run%s"%int(log.log['models_run_count'])
+numItersMCMC =  int(log.log['num_iters_mcmc'])
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
 excludedChannels = log.log['excluded_channels_analysis']
-includedChannels = list(set(range(len(fileChannels))).difference(set(excludedChannels)))
+
+if len(excludedChannels) != 0:
+    includedChannels = list(set(range(len(fileChannels))).difference(set(excludedChannels)))
+    includedChannelLabels = np.array(fileChannels)[includedChannels].tolist()
+    excludedChannelLabels = np.array(fileChannels)[excludedChannels].tolist()
+else:
+    includedChannels = range(len(fileChannels))
+    includedChannelLabels = fileChannels
+    excludedChannelLabels = []
 
 if len(includedChannels) + len(excludedChannels) != len(fileChannels):
     print "ERROR: Failed error sum check for excluding channels - RunDPMM.py", len(includedChannels) + len(excludedChannels), len(fileChannels)
@@ -85,8 +103,29 @@ elif type(includedChannels) != type([]) or type(excludedChannels) != type([]):
 
 events = events[:,includedChannels]
 
+## remove the border data points for the model fitting                                                                                                                       
+n,d = np.shape(events)
+
+allZeroInds = []
+for ind in range(d):
+    zeroInds = np.where(events[:,ind] == 0)
+    zeroInds = zeroInds[0].tolist()
+    if len(zeroInds) > 0:
+        allZeroInds += zeroInds
+
+allZeroInds = list(set(allZeroInds))
+nonZeroInds = list(set(np.arange(n)).difference(set(allZeroInds)))
+
+if len(allZeroInds) + len(nonZeroInds) != n:
+    print "ERROR: RunDPMM.py Failed clean borders integrity check"
+
+if cleanBorderEvents == True:
+    nonZeroEvents = events[nonZeroInds,:]
+else:
+    nonZeroEvents = events
+
 ## run the model 
-mod = fcm.statistics.DPMixtureModel(events,k,last=1)
+mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)
 modelRunStop = time.time()
@@ -127,10 +166,25 @@ if verbose == True:
 
 writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+".log"),'w'))
 runTime = modelRunStop - modelRunStart
+
+def list2Str(lst):
+    strList =  "".join([str(i)+";" for i in lst])[:-1]
+    if strList == '':
+        return '[]'
+    else:
+        return strList
+
 writer.writerow(["timestamp", time.asctime()])
+writer.writerow(["subsample", str(subsample)])
 writer.writerow(["project id", projName])
 writer.writerow(["file name", fileName])
 writer.writerow(["full model name", longModelName])
 writer.writerow(["model runtime",str(round(runTime,4))])
 writer.writerow(["number components",str(k)])
+writer.writerow(["used channels",list2Str(includedChannelLabels)])
+writer.writerow(["unused channels",list2Str(excludedChannelLabels)])
+writer.writerow(["number mcmc iters",str(numItersMCMC)])
+writer.writerow(["number events",str(n)])
+writer.writerow(["number zero events",str(len(allZeroInds))])
+writer.writerow(["zeros events removed", str(cleanBorderEvents)])
 writer.writerow(["number modes",str(len(list(set(classifyModes))))])
