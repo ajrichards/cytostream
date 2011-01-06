@@ -308,7 +308,7 @@ class Model:
                     proc.wait()
                     break
 
-    def load_model_results_pickle(self,modelName,modelType):
+    def load_model_results_pickle(self,fileName,modelNum,modelType='modes'):
         """
         about:
             loads a pickled fcm file into the workspace
@@ -323,8 +323,14 @@ class Model:
             print "ERROR: invalide model type specified in load_model_results"
             return False
 
-        tmp1 = open(os.path.join(self.homeDir,'models',modelName+"_%s.pickle"%modelType),'r')
-        tmp2 = open(os.path.join(self.homeDir,'models',modelName+"_classify_%s.pickle"%modelType),'r')
+        tmp1File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.pickle"%modelType)
+        tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.pickle"%modelType)
+        tmp1 = open(tmp1File,'rb')
+        tmp2 = open(tmp2File,'rb')
+
+        if os.path.isfile(tmp1File) == False or os.path.isfile(tmp2File) == False:
+            print "ERROR: bad model file specified -- path does not exist"
+
         model = cPickle.load(tmp1)
         samplesFromPostr = 1.0
         k = int(model.pis().size / samplesFromPostr)

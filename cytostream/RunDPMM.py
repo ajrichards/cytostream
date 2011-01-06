@@ -1,4 +1,17 @@
 #!/usr/bin/python
+'''
+
+output:
+    a fcm.statistics.dp_cluster.ModalDPMixture object for modes
+    a np.array object of the cluster assignments for modes
+
+    a fcm.statistics.dp_cluster.DPMixture object for components
+    a np.array object of the cluster assignments for components
+
+    a run specific logfile
+
+A. Richards
+'''
 
 import sys,getopt,os,re,cPickle,time,csv
 import fcm
@@ -6,23 +19,24 @@ import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample"
+    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -v"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:n:s:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:s:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
     print "Note: fileName (-f) must be the full" 
     print "      homeDir  (-h) home directory for current project"
     print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
-    print "          name (-n) user given name for model run"
     print " subsample     (-s) subsample is t or f"
+    print " verbose       (-v) verbose flag"
     sys.exit()
 
 k = 16
 name = None
+verbose = False
 for o, a in optlist:
     if o == '-f':
         fileName = a
@@ -30,14 +44,13 @@ for o, a in optlist:
         homeDir = a
     if o == '-k':
         k = a
-    if o == '-n':
-        name = a
     if o == '-s':
         subsample = a
-
-print 'running dpmm with %s'%k
+    if o == '-v':
+        verbose = True
 
 ## initial error checking
+print 'running dpmm with %s'%k
 if os.path.isdir(homeDir) == False:
     print "INPUT ERROR: not a valid project", homeDir
     sys.exit()
@@ -52,42 +65,42 @@ else:
     k = int(k)
 
 ## initialize a logger and a model to get specified files and channels
-print 'initializing logger'
 log = Logger()
 log.initialize(projectID,homeDir,load=True)
 
 model = Model()
 model.initialize(projectID,homeDir)
 events = model.get_events(fileName,subsample=subsample)
+modelNum = "run%s"%int(log.log['models_run_count'])
 
 ## account for excluded channels
-excludedChannels = log.log['excluded_channels_analysis']
-
-if type(excludedChannels) != type([]):
-    excludedChannels = []
-
 fileChannels = model.get_file_channel_list(fileName)
-allChannels = range(len(fileChannels))
-includedIndices = list(set(allChannels).difference(set(excludedChannels)))
+excludedChannels = log.log['excluded_channels_analysis']
+includedChannels = list(set(range(len(fileChannels))).difference(set(excludedChannels)))
 
-################ ici ##################
+if len(includedChannels) + len(excludedChannels) != len(fileChannels):
+    print "ERROR: Failed error sum check for excluding channels - RunDPMM.py", len(includedChannels) + len(excludedChannels), len(fileChannels)
+elif type(includedChannels) != type([]) or type(excludedChannels) != type([]):
+    print "ERROR: Failed error type check for excluding channels - RunDPMM.py", type(includedChannels),type(excludedChannels)
 
+events = events[:,includedChannels]
 
+## run the model 
 mod = fcm.statistics.DPMixtureModel(events,k,last=1)
 modelRunStart = time.time()
 mod.fit(verbose=True)
 modelRunStop = time.time()
 full = mod.get_results()
+if subsample != 'original':
+    subsample = int(float(subsample))
 
-## classify the components
+## classify the components and dump
 classifyComponents = full.classify(events)
-print 'dumping components fit'
-if name == None:
-    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_components.pickle"),'w')
-    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_classify_components.pickle"),'w')
-else:
-    tmp1 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_components.pickle"),'w')
-    tmp2 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_components.pickle"),'w')
+if verbose == True:
+    print 'RunDPMM.py - dumping components fit'
+
+tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.pickle"),'w')
+tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.pickle"),'w')
 
 cPickle.dump(full,tmp1)
 cPickle.dump(classifyComponents,tmp2)
@@ -97,13 +110,11 @@ tmp2.close()
 ## classify the modes
 modes = full.make_modal()
 classifyModes = modes.classify(events)
-print 'dumping modes fit'
-if name == None:
-    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_modes.pickle"),'w')
-    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm_classify_modes.pickle"),'w')
-else:
-    tmp3 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_modes.pickle"),'w')
-    tmp4 = open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+"_classify_modes.pickle"),'w')
+if verbose == True:
+    print 'RunDPMM.py - dumping modes fit'
+
+tmp3 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.pickle"),'w')
+tmp4 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.pickle"),'w')
 
 cPickle.dump(modes,tmp3)
 cPickle.dump(classifyModes,tmp4)
@@ -111,11 +122,10 @@ tmp3.close()
 tmp4.close()
 
 ## write a log file
-if name == None:
-    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+"_dpmm.log"),'w'))
-else:
-    writer = csv.writer(open(os.path.join(homeDir,'models',re.sub("\.fcs|\.pickle","",fileName)+name+".log"),'w'))
+if verbose == True:
+    print 'RunDPMM.py - writing log file'
 
+writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+".log"),'w'))
 runTime = modelRunStop - modelRunStart
 writer.writerow(["timestamp", time.asctime()])
 writer.writerow(["project id", projName])

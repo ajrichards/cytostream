@@ -84,7 +84,7 @@ class Controller:
             excludedFiles = self.log.log['excluded_files_analysis']
 
         modelName = self.log.log['model_to_run']
-        fileList = get_fcs_file_names(self.homeDir,excludedFiles=excludedFiles)
+        fileList = get_fcs_file_names(self.homeDir,excludedFiles)
         numImagesToCreate = 0
         
         ## get num images to create
@@ -340,24 +340,22 @@ class Controller:
 
     ##################################################################################################
     #
-    # log files
+    # model related
     #
     ##################################################################################################
 
     def run_selected_model(self,progressBar=None,view=None,subsample=True):
-        numItersMCMC =  self.log.log['num_iters_mcmc']
+        numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
-        numComponents = self.log.log['selected_k']
+        numComponents = int(self.log.log['selected_k'])
         subsample = self.log.log['subsample_analysis']
-
-        #if self.subsampleIndices == None:
         fileList = get_fcs_file_names(self.homeDir)
-        #elif self.subsampleIndices != None:
-        #    fileList = get_fcs_file_names(self.homeDir,getPickles=True)
-
         percentDone = 0
         totalIters = float(len(fileList)) * numItersMCMC
         percentagesReported = []
+        self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
+        self.save()
+
         for fileName in fileList:
             if selectedModel == 'dpmm':
                 script = os.path.join(self.baseDir,"RunDPMM.py")

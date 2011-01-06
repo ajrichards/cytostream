@@ -46,6 +46,8 @@ class Logger():
 
         ## load default variables
         for key,item in self.configDict.iteritems():
+            if item == '[]':
+                item = []
             log[key] = item
 
         return log
@@ -53,14 +55,18 @@ class Logger():
     ## effectivly the only action necessary to save a project in its current state
     def write(self):
         writer = csv.writer(open(os.path.join(self.homeDir,self.projectID+'.log'),'w'))
-        
+
         for key,item in self.log.iteritems():
+            if type(item) == type([]):
+                item = "".join([str(i)+";" for i in item])[:-1]
+                if item == '':
+                    item = '[]'
+
             writer.writerow([key,item])
             
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
         projLog = os.path.join(self.homeDir,self.projectID+".log")
-
         if os.path.isfile(projLog) == False:
             print "ERROR: invalid model logfile specified",projLog
             return None
@@ -68,14 +74,12 @@ class Logger():
             logFileDict = {}
             reader = csv.reader(open(projLog,'r'))
             for linja in reader:
-
-                if linja[0] == 'checksArray':
-                    linja[1] = self.str2array(linja[1])
-
+                if linja[1] == '[]':
+                    linja[1] = []
+                elif re.search("excluded",linja[0]):
+                    linja[1] = [int(i) for i in linja[1].split(";")]
+               
                 logFileDict[linja[0]] = linja[1]
-            
-                if re.search('excluded_files',linja[0]) or re.search('excluded_channels',linja[0]):
-                    linja[1] = re.sub("\s+|\[|\]|'","",linja[1]).split(",")
 
             return logFileDict
 
@@ -92,31 +96,3 @@ class Logger():
                 logFileDict[linja[0]] = linja[1]
                   
             return logFileDict
-
-    def str2array(self,myStr):
-        if not re.search("^\[\[",myStr):
-            return None
-
-        myStr = myStr[1:-1]
-        myStr = re.sub("\n", ",", myStr)
-        myList = myStr.split(",")
-        newList = []
-
-        for l in myList:
-            newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
-
-        return np.array(newList)
-
-    def str2list(self,myStr):
-        if not re.search("^\[\[",myStr):
-            return None
-
-        myStr = myStr[1:-1]
-        myStr = re.sub("\n", ",", myStr)
-        myList = myStr.split(",")
-        newList = []
-
-        for l in myList:
-            newList.append([int(float(i)) for i in re.sub("\[|\]","",l).split()])
-
-        return newList
