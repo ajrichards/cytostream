@@ -9,7 +9,9 @@ notes:
     to retrieve file names and events from a given file see the method 'testFiles'
 
 A. Richards
-'''                                                                                                                                                                                      
+'''
+
+
 class TestCase1(unittest.TestCase):
     def setUp(self):
         cwd = os.getcwd()
@@ -24,10 +26,29 @@ class TestCase1(unittest.TestCase):
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
         
-        self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDictDefault,useSubsample=True,makeQaFigs=True)
+        ## run the initial model for all files
+        configDict1 = configDictDefault.copy()
+        configDict1['excluded_channels_analysis'] = [1]
+        configDict1['thumbnails_to_view'] = [(0,2),(0,3)]
+        self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict1,useSubsample=True,makeQaFigs=True)
+        fileNameList = self.nga.get_file_names()
+    
+        for fileName in fileNameList:
+            self.nga.make_results_figures(fileName,'run1')
+
+        ## run the model again this time for only one file
+        configDict2 = configDict1.copy()
+        configDict2['data_in_focus'] = "3FITC_4PE_004"
+        self.nga.run_model()
+        self.nga.make_results_figures(fileName,'run2')
+
+        ## create filtering dict - key = (chan1Ind,chan2Ind) item = (chan1min,chan1max,chan2min,chan2max)
+        filteringDict = {(0,3):(400,800,150,300)}
+        self.nga.handle_filtering("3FITC_4PE_004",filteringDict)
+        events = self.nga.get_events("3FITC_4PE_004")
+        print events.shape
 
     def tests(self):
-
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
@@ -41,7 +62,7 @@ class TestCase1(unittest.TestCase):
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
 
         ## check that qa figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 7)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 3)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
         
         ## check that model results can be retrieved
@@ -56,9 +77,14 @@ class TestCase1(unittest.TestCase):
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 7)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 3)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
+        ## make sure there are less filtered events than unfiltered
+        filteredEvents = self.nga.get_events("3FITC_4PE_004",filterID='filter1')
+        allEvents = self.nga.get_events("3FITC_4PE_004")
+        print filteredEvents.shape, allEvents.shape
+        self.failIf(filteredEvents.shape[0] > allEvents.shape[0])
 
 ### Run the tests 
 if __name__ == '__main__':

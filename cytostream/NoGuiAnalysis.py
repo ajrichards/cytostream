@@ -15,7 +15,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,filePathList,useSubsample=False,makeQaFigs=True,makeResultsFigs=True,configDict=None):
+    def __init__(self,projectID,filePathList,useSubsample=False,makeQaFigs=True,configDict=None):
 
         ## error checking
         if type(filePathList) != type([]):
@@ -29,7 +29,6 @@ class NoGuiAnalysis():
         self.projectID = projectID
         self.filePathList = filePathList
         self.makeQaFigs = makeQaFigs
-        self.makeResultsFigs = makeResultsFigs
         self.configDict = configDict
         self.useSubsample = useSubsample
 
@@ -43,12 +42,6 @@ class NoGuiAnalysis():
 
         ## run model
         self.run_model()
-
-        ## make results figures
-        fileNameList = self.get_file_names()
-        for fileName in fileNameList:
-            if self.makeResultsFigs == True:
-                self.make_results_figures(fileName,'run1')
 
     def initialize(self):
         """
@@ -80,13 +73,18 @@ class NoGuiAnalysis():
         
         return fileList
 
-    def get_events(self,fileName,subsample='original'):
+    def get_events(self,fileName,subsample='original',filterID=None):
         """
         returns the events from a given file name
 
         """
 
-        events = self.controller.model.get_events(fileName,subsample=subsample)
+        fileList = self.get_file_names()
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
+            return None
+
+        events = self.controller.model.get_events(fileName,subsample=subsample,filterID=filterID)
 
         return events
     
@@ -114,7 +112,11 @@ class NoGuiAnalysis():
         returns model results
 
         """
-
+        
+        fileList = self.get_file_names()
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model results"
+            return None
 
         statModel, statModelClasses = self.controller.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
         
@@ -125,6 +127,10 @@ class NoGuiAnalysis():
         returns model run dictionary
 
         """
+        fileList = self.get_file_names()
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model log"
+            return None
 
         modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
         return modelLog
@@ -134,12 +140,28 @@ class NoGuiAnalysis():
         make the results figures for a given file and a given model run
 
         """
-  
+
+        fileList = self.get_file_names()
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping make results figures"
+            return None
+
         subsample = self.controller.log.log['subsample_analysis']
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
 
- 
+    def handle_filtering(self,fileName,filteringDict):
+        fileList = self.get_file_names()
+
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
+            return None
+
+        if type(filteringDict) != type({}):
+            print "ERROR: NoGuiAnalysis.handle_filtering -- filteringDict must be of type dict"
+    
+        self.controller.handle_filtering(fileName,filteringDict)
+
 ### Run the tests 
 if __name__ == '__main__':
     projectID = 'noguitest'
