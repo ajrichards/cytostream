@@ -5,7 +5,6 @@ state variables     - deal with stage transitions and stages or specifics of the
 immutable variables - may be set here but they do not change after a project has been created
 analysis variables  - these variables although set here may be changed while cytostream is running
 
-
 A. Richards
 '''
 
@@ -13,16 +12,16 @@ configDictDefault = {
     ########### state variables ##############################################################
     'current_state'                         : 'Data Processing',    # do not change
     'highest_State'                         : '0',                  # do not change
-    'selected_file'                         : 'None',                 # do not change
-    'selected_model'                        : 'None',                 # do not change
+    'selected_file'                         : 'None',               # do not change
+    'selected_model'                        : 'None',               # do not change
     'data_processing_mode'                  : 'channel select',     # do not change   
     'models_run_count'                      : '0',                  # do not change
+    'filters_run_count'                     : '{}',                 # do not change
 
     ########### immutable variables ##########################################################
     'input_data_type'                       : 'fcs',                # fcs, txt
     'setting_max_scatter_display'           : '2e4',                # any float, int or string
     'selected_transform'                    : 'log',                # log, logicle
-    'num_filter_steps'                      : '0',                  # not yet implemented
     'num_iters_mcmc'                        : '1100',               # an int
     'thumbnail_results_default'             : 'modes',              # modes, components
     'scatter_marker_size'                   : '1',                  # mpl scatter marker size
@@ -40,4 +39,5 @@ configDictDefault = {
     'excluded_files_analysis'               : '[]',                 # a list of ints (indices)
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
     'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
+    'data_in_focus'                         : 'all',                # all or file name
 }

@@ -46,13 +46,25 @@ class Logger():
 
         ## load default variables
         for key,item in self.configDict.iteritems():
-            if item == '[]':
+            if type(item) == type([]):
+                pass
+            elif item == '[]':
                 item = []
-            elif re.search("\[",item):
+            elif re.search("\[",str(item)):
                 item = [int(i) for i in item.split(";")]
             if item == 'None':
                 item = None
-                
+            
+            if re.search("filters_run_count",key):
+                if item == '{}':
+                    item = {}
+                else:
+                    parser = [re.sub("\{|\}|'","",p) for p in item.split(",")]
+                    item = {}
+                    for p in parser:
+                        k,v = p.split(":")
+                        item[k] = int(v)
+
             log[key] = item
 
         return log
@@ -66,7 +78,7 @@ class Logger():
                 item = "".join([str(i)+";" for i in item])[:-1]
                 if item == '':
                     item = '[]'
-
+            
             writer.writerow([key,item])
             
     ## reads the log file assciated with the current project and returns a dict

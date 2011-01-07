@@ -206,7 +206,7 @@ class Controller:
         '''
 
         if subsample != 'original':
-            subsample = int(float(subsample))           
+            subsample = int(float(subsample))
             self.subsampleIndices = self.model.get_subsample_indices(subsample)
 
             if type(self.subsampleIndices) == type(np.array([])):
@@ -239,7 +239,6 @@ class Controller:
     ##################################################################################################
            
     def create_new_project(self,view=None,projectID=None):
-        #fcsFileName = str(fcsFileName)
         createNew = True
     
         ## create projects dir if necssary
@@ -331,6 +330,46 @@ class Controller:
         except:
             return None
 
+    def handle_filtering(self,fileName,filteringDict):
+        
+        ## get the filter number id
+        if self.log.log['filters_run_count'].has_key(fileName) == False:
+            self.log.log['filters_run_count'][fileName] = 1
+        else:
+            self.log.log['filters_run_count'][fileName]+=1
+
+        self.save()
+       
+        filterNumber = int(self.log.log['filters_run_count'][fileName])
+        if filterNumber > 1:
+            print "WARNING: multi statge filtering is not yet finished"
+
+        channels = filteringDict.keys()[0]
+        boundries = filteringDict.values()[0]
+        subsample = self.log.log['subsample_analysis']
+        events = self.model.get_events(fileName,subsample='original')
+        xIndices = np.where(events[:,channels[0]] > boundries[0]) and np.where(events[:,channels[1]] < boundries[1])
+        xIndices = xIndices[0]
+        yIndices = np.where(events[:,channels[0]] > boundries[2]) and np.where(events[:,channels[1]] < boundries[3])
+        yIndices = yIndices[0]        
+        filteredIndices = np.array(list(set(yIndices.tolist()).intersection(set(xIndices.tolist()))))
+        data = events[filteredIndices,:]
+        
+        newDataFileName = fileName + "_data_%s.pickle"%("filter"+str(filterNumber))
+        logFileName = fileName + "_data_%s.log"%("filter"+str(filterNumber))
+        tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
+        cPickle.dump(data,tmp)
+        tmp.close()
+        logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
+        logFile.writerow(str(filteringDict))
+
+        if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+            print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+
+            return True
+        else:
+            return True
+
     ##################################################################################################
     #
     # model related
@@ -338,6 +377,7 @@ class Controller:
     ##################################################################################################
 
     def run_selected_model(self,progressBar=None,view=None,useSubsample=False,cleanBorderEvents=True):
+        dataInFocus = self.log.log['data_in_focus']
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
         numComponents = int(self.log.log['selected_k'])
@@ -357,6 +397,12 @@ class Controller:
         else:
             cbe = 'f'
 
+        ## set the data in focus
+        if dataInFocus != 'all' and dataInFocus not in fileList:
+            print "ERROR: Controller.run_selected_model -- dataInFocus cannot be found"
+        elif dataInFocus != 'all' and dataInFocus in fileList:
+            fileList = dataInFocus
+            
         for fileName in fileList:
             if selectedModel == 'dpmm':
                 script = os.path.join(self.baseDir,"RunDPMM.py")
