@@ -73,6 +73,15 @@ class NoGuiAnalysis():
         
         return fileList
 
+    def update(self):
+        """
+        update log file status
+
+        """
+
+        self.controller.save()
+
+
     def get_events(self,fileName,subsample='original',filterID=None):
         """
         returns the events from a given file name

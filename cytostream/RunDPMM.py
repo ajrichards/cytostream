@@ -77,11 +77,18 @@ else:
 log = Logger()
 log.initialize(projectID,homeDir,load=True)
 
+## check to see if this is a filtering step
+filterID = log.log['filter_in_focus']
+
+print filterID,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+print log.log
+
+## prepare model
 model = Model()
 model.initialize(projectID,homeDir)
-events = model.get_events(fileName,subsample=subsample)
 modelNum = "run%s"%int(log.log['models_run_count'])
 numItersMCMC =  int(log.log['num_iters_mcmc'])
+events = model.get_events(fileName,subsample=subsample,filterID=filterID)
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
