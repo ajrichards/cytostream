@@ -37,17 +37,25 @@ class TestCase1(unittest.TestCase):
             self.nga.make_results_figures(fileName,'run1')
 
         ## run the model again this time for only one file
+        fileName = "3FITC_4PE_004"
         configDict2 = configDict1.copy()
-        configDict2['data_in_focus'] = "3FITC_4PE_004"
+        configDict2['data_in_focus'] = fileName
+        self.nga.update()
         self.nga.run_model()
         self.nga.make_results_figures(fileName,'run2')
 
-        ## create filtering dict - key = (chan1Ind,chan2Ind) item = (chan1min,chan1max,chan2min,chan2max)
+        ## run the model again this time for some filtered data
+        ## filtering dict - key = (chan1Ind,chan2Ind) item = (chan1min,chan1max,chan2min,chan2max)
         filteringDict = {(0,3):(400,800,150,300)}
-        self.nga.handle_filtering("3FITC_4PE_004",filteringDict)
-        events = self.nga.get_events("3FITC_4PE_004")
-        print events.shape
-
+        subsample = int(float(self.nga.controller.log.log['subsample_analysis']))
+        filterID = "%s_%s"%(subsample,'filter1')
+        self.nga.handle_filtering(fileName,filteringDict)
+        configDict2['data_in_focus'] = fileName
+        configDict2['filter_in_focus'] = filterID
+        self.nga.update()
+        self.nga.run_model()
+        self.nga.make_results_figures(fileName,'run3')
+        
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
@@ -80,10 +88,10 @@ class TestCase1(unittest.TestCase):
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 3)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
-        ## make sure there are less filtered events than unfiltered
-        filteredEvents = self.nga.get_events("3FITC_4PE_004",filterID='filter1')
-        allEvents = self.nga.get_events("3FITC_4PE_004")
-        print filteredEvents.shape, allEvents.shape
+        ## make sure there are less filtered events than unfiltered filteredEvents = self.nga.get_even
+        subsample = int(float(self.nga.controller.log.log['subsample_analysis']))
+        filteredEvents = self.nga.get_events("3FITC_4PE_004",filterID='%s_filter1'%(subsample))
+        allEvents = self.nga.get_events("3FITC_4PE_004",subsample=self.nga.controller.log.log['subsample_analysis'])
         self.failIf(filteredEvents.shape[0] > allEvents.shape[0])
 
 ### Run the tests 

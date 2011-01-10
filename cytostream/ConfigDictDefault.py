@@ -39,5 +39,6 @@ configDictDefault = {
     'excluded_files_analysis'               : '[]',                 # a list of ints (indices)
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
     'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
-    'data_in_focus'                         : 'all',                # all or file name
+    'file_in_focus'                         : 'all',                # all or file name
+    'filter_in_focus'                       : 'None',               # all or file name
 }

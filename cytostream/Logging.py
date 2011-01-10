@@ -52,6 +52,7 @@ class Logger():
                 item = []
             elif re.search("\[",str(item)):
                 item = [int(i) for i in item.split(";")]
+            
             if item == 'None':
                 item = None
             
@@ -83,19 +84,38 @@ class Logger():
             
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
+        print 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAADDDDDDDDDDDDIIIIIIIIINNNGG'
         projLog = os.path.join(self.homeDir,self.projectID+".log")
         if os.path.isfile(projLog) == False:
             print "ERROR: invalid model logfile specified",projLog
             return None
         else:
+            print "...............good"
             logFileDict = {}
             reader = csv.reader(open(projLog,'r'))
             for linja in reader:
+                print '\t',linja
                 if linja[1] == '[]':
                     linja[1] = []
                 elif re.search("excluded",linja[0]):
                     linja[1] = [int(i) for i in linja[1].split(";")]
-               
+                elif linja[1] == 'None':
+                    linja[1] = None
+
+                if linja[1] == 'None':
+                    print ".........................", linja
+
+
+                if re.search("filters_run_count",linja[0]):
+                    if linja[1] == '{}':
+                        linja[1] = {}
+                    else:
+                        parser = [re.sub("\{|\}|'","",p) for p in linja[1].split(",")]
+                        linja[1] = {}
+                        for p in parser:
+                            k,v = p.split(":")
+                            linja[1][k] = int(v)
+
                 logFileDict[linja[0]] = linja[1]
 
             return logFileDict
