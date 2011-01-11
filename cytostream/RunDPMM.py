@@ -78,17 +78,28 @@ log = Logger()
 log.initialize(projectID,homeDir,load=True)
 
 ## check to see if this is a filtering step
-filterID = log.log['filter_in_focus']
-
-print filterID,"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-print log.log
-
+filterInFocus = log.log['filter_in_focus']
+if filterInFocus == None:
+    pass
+elif filterInFocus == 'None':
+    pass
+else:
+    subsample = filterInFocus
+    
 ## prepare model
 model = Model()
 model.initialize(projectID,homeDir)
 modelNum = "run%s"%int(log.log['models_run_count'])
 numItersMCMC =  int(log.log['num_iters_mcmc'])
-events = model.get_events(fileName,subsample=subsample,filterID=filterID)
+
+## get events
+if re.search('filter',str(subsample)):
+    pass
+elif subsample != 'original':
+    print 'subsample in rundp', subsample
+    subsample = str(int(float(subsample)))
+
+events = model.get_events(fileName,subsample=subsample)
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
@@ -137,8 +148,12 @@ modelRunStart = time.time()
 mod.fit(verbose=True)
 modelRunStop = time.time()
 full = mod.get_results()
-if subsample != 'original':
-    subsample = int(float(subsample))
+
+#if subsample 
+##
+#
+#if subsample != 'original':
+#    subsample = int(float(subsample))
 
 ## classify the components and dump
 classifyComponents = full.classify(events)
@@ -195,3 +210,4 @@ writer.writerow(["number events",str(n)])
 writer.writerow(["number zero events",str(len(allZeroInds))])
 writer.writerow(["zeros events removed", str(cleanBorderEvents)])
 writer.writerow(["number modes",str(len(list(set(classifyModes))))])
+writer.writerow(["filter used", filterInFocus])

@@ -68,10 +68,35 @@ class NoGuiAnalysis():
 
         """
 
-
         fileList = get_fcs_file_names(self.controller.homeDir)
         
         return fileList
+
+    def get(self,key):
+        """
+        get a value in the log file
+        
+        """
+    
+        if self.controller.log.log.has_key(key) == False:
+            print "ERROR: in NoGuiAnalysis.set -- invalid key entry",key
+            return None
+    
+        return self.controller.log.log[key]
+
+    def set(self,key,value):
+        """
+        set a value in the log file
+        
+        """
+        
+        if self.controller.log.log.has_key(key) == False:
+            print "ERROR: in NoGuiAnalysis.set -- invalid key entry",key
+            return None
+    
+        self.controller.log.log[key] = value
+        self.update()
+        
 
     def update(self):
         """
@@ -82,7 +107,7 @@ class NoGuiAnalysis():
         self.controller.save()
 
 
-    def get_events(self,fileName,subsample='original',filterID=None):
+    def get_events(self,fileName,subsample='original'):
         """
         returns the events from a given file name
 
@@ -93,7 +118,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
             return None
 
-        events = self.controller.model.get_events(fileName,subsample=subsample,filterID=filterID)
+        events = self.controller.model.get_events(fileName,subsample=subsample)
 
         return events
     

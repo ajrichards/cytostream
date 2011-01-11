@@ -132,7 +132,7 @@ class Model:
             if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
                 print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
-    def get_events(self,fileName,subsample='original',filterID=None):
+    def get_events(self,fileName,subsample='original'):
         """
         about:
             this function handles the fetching of the events associated with a given file.
@@ -145,14 +145,9 @@ class Model:
             a np.array of event data
         """
         
-        if filterID != None:
-            fileName = fileName + "_data_" + filterID + ".pickle"
-            tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
-            events = cPickle.load(tmp)
-            tmp.close()
-            return events
-
-        if subsample != 'original':
+        if re.search('filter',str(subsample)):
+            pass
+        elif subsample != 'original':
             subsample = str(int(float(subsample)))
 
         fileName = fileName + "_data_" + subsample + ".pickle"
