@@ -4,7 +4,7 @@
 # python RunMakeFigures.py -p Demo -i 0 -j 1 -f 3FITC_4PE_004.fcs -h ./projects/Demo
 #
 
-import getopt,sys,os
+import getopt,sys,os,re
 import numpy as np
 
 ## important line to fix popup error in mac osx
@@ -71,6 +71,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     markerSize = int(log.log['scatter_marker_size'])
     fontName = log.log['font_name']
     fontSize = log.log['font_size']
+    filterInFocus = log.log['filter_in_focus']
     alphaVal = 0.5
     plotType = 'png'
 
@@ -82,24 +83,41 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     fig = plt.figure(figsize=(7,7))
     ax = fig.add_subplot(111)
 
-    if subsample == 'original':
-        subsample = self.log.log['setting_max_scatter_display']
-        subsampleIndices = model.get_subsample_indices(subsample)
-        if labels != None:
-            labels = labels[subsampleIndices]
-
     ## specify channels
     fileChannels = model.get_file_channel_list(selectedFile)
     index1 = int(channel1Ind)
     index2 = int(channel2Ind) 
     channel1 = fileChannels[index1]
     channel2 = fileChannels[index2]
-    events = model.get_events(selectedFile,subsample=subsample)
+
+    ## get events
+    if re.search('filter',str(subsample)):
+        pass
+    elif subsample != 'original':
+        subsample = str(int(float(subsample)))
+
+    if re.search('original',str(subsample)) and re.search('filter',str(subsample)):
+        events = model.get_events(selectedFile,subsample=subsample)
+        subsample = self.log.log['setting_max_scatter_display']
+        subsampleIndices = model.get_subsample_indices(subsample)
+        events = events[subsampleIndices,:]
+
+    elif re.search('original',str(subsample)):
+        subsample = self.log.log['setting_max_scatter_display']
+        subsampleIndices = model.get_subsample_indices(subsample)
+        if labels != None:
+            labels = labels[subsampleIndices]
+
+        events = model.get_events(selectedFile,subsample=subsample)
+
+    else:
+        events = model.get_events(selectedFile,subsample=subsample)
 
     if labels != None:
         n,d = events.shape
         if n != labels.size:
-            print "RunMakeScatterPlot.py - ERROR: labels and events don't match",n,labels.size
+            print "ERROR: RunMakeScatterPlot.py -- labels and events do not match",n,labels.size
+            return None
 
     ## make plot 
     totalPoints = 0

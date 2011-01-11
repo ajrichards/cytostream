@@ -79,22 +79,21 @@ class Logger():
                 item = "".join([str(i)+";" for i in item])[:-1]
                 if item == '':
                     item = '[]'
-            
+            if item == None:
+                item = 'None'
+
             writer.writerow([key,item])
             
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
-        print 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAADDDDDDDDDDDDIIIIIIIIINNNGG'
         projLog = os.path.join(self.homeDir,self.projectID+".log")
         if os.path.isfile(projLog) == False:
             print "ERROR: invalid model logfile specified",projLog
             return None
         else:
-            print "...............good"
             logFileDict = {}
             reader = csv.reader(open(projLog,'r'))
             for linja in reader:
-                print '\t',linja
                 if linja[1] == '[]':
                     linja[1] = []
                 elif re.search("excluded",linja[0]):

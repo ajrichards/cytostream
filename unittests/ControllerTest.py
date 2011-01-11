@@ -80,6 +80,7 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(statModelComponentClasses.size,1000)
         self.assertEqual(statModelModeClasses.size,1000)
 
+        
         ## check IR from log file
         modelRunID = 'run1'
         modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
@@ -93,8 +94,6 @@ class ControllerTest(unittest.TestCase):
 
         self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs', modelRunID))) != 4)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
-        #print self.controller.log.log
 
 ### Run the tests
 if __name__ == '__main__':
