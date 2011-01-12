@@ -331,25 +331,40 @@ class Controller:
             return None
 
     def handle_filtering(self,fileName,filteringDict):
-        
+
+        subsample = self.log.log['subsample_analysis']
+
+        ## declare variables
+        if not re.search('filter', str(subsample)):
+            subsample = int(float(subsample))
+            
         ## get the filter number id
+        subsampleStr = re.sub('_filter\d+','',str(subsample))
         if self.log.log['filters_run_count'].has_key(fileName) == False:
-            self.log.log['filters_run_count'][fileName] = 1
+            self.log.log['filters_run_count'][fileName] = {subsampleStr:1}
         else:
-            self.log.log['filters_run_count'][fileName]+=1
+            if self.log.log['filters_run_count'][fileName].has_key(subsampleStr):
+                self.log.log['filters_run_count'][fileName][subsampleStr]+=1
+            else:
+                self.log.log['filters_run_count'][fileName] = {subsampleStr:1}
 
         self.save()
        
-        filterNumber = int(self.log.log['filters_run_count'][fileName])
+        filterNumber = int(self.log.log['filters_run_count'][fileName][subsampleStr])
         channels = filteringDict.keys()[0]
         boundries = filteringDict.values()[0]
-        subsample = int(float(self.log.log['subsample_analysis']))
+
+
+        print "..............................................................."
+        print 'handeling filtering'
+        print 'filter number', filterNumber
+        print 'filter dict', filteringDict
+        print 'filter run count', self.log.log['filters_run_count']
+        print "..............................................................."
+
 
         ## get events
-        if filterNumber > 1:
-            events = self.model.get_events(fileName,filterID='%s_filter%s'%(subsample,filterNumber-1) )
-        else:
-            events = self.model.get_events(fileName,subsample=subsample)
+        events = self.model.get_events(fileName,subsample=subsample)
         
         ## get indices
         xIndices = np.where(events[:,channels[0]] > boundries[0]) and np.where(events[:,channels[1]] < boundries[1])

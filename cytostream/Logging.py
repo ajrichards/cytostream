@@ -1,4 +1,4 @@
-import os,csv,re
+import os,csv,re,ast
 import numpy as np
 from cytostream import configDictDefault
 
@@ -46,25 +46,31 @@ class Logger():
 
         ## load default variables
         for key,item in self.configDict.iteritems():
-            if type(item) == type([]):
-                pass
-            elif item == '[]':
-                item = []
-            elif re.search("\[",str(item)):
-                item = [int(i) for i in item.split(";")]
-            
-            if item == 'None':
-                item = None
-            
-            if re.search("filters_run_count",key):
-                if item == '{}':
-                    item = {}
-                else:
-                    parser = [re.sub("\{|\}|'","",p) for p in item.split(",")]
-                    item = {}
-                    for p in parser:
-                        k,v = p.split(":")
-                        item[k] = int(v)
+            #if type(item) == type([]):
+            #    pass
+            #elif item == '[]':
+            #    item = []
+            #elif re.search("\[",str(item)):
+            #    item = [int(i) for i in item.split(";")]
+            #  
+            #if item == 'None':
+            #    item = None
+            # 
+            #if re.search("filters_run_count",key):
+            #    if item == '{}':
+            #        item = {}
+            #    else:
+            #        parser = [re.sub("\{|\}|'","",p) for p in item.split(",")]
+            #        item = {}
+            #        for p in parser:
+            #            k,v = p.split(":")
+            #            item[k] = int(v)
+
+            if re.search("\[|\{|None",str(item)):
+                #try:
+                item = ast.literal_eval(str(item))
+                #except:
+                #    print '..............weird string I am', item
 
             log[key] = item
 
@@ -75,12 +81,15 @@ class Logger():
         writer = csv.writer(open(os.path.join(self.homeDir,self.projectID+'.log'),'w'))
 
         for key,item in self.log.iteritems():
-            if type(item) == type([]):
-                item = "".join([str(i)+";" for i in item])[:-1]
-                if item == '':
-                    item = '[]'
+            #if type(item) == type([]):
+            #    item = "".join([str(i)+";" for i in item])[:-1]
+            #    if item == '':
+            #        item = '[]'
+
             if item == None:
                 item = 'None'
+            elif type(item) != type('i am a string'):
+                item = str(item)
 
             writer.writerow([key,item])
             
@@ -94,26 +103,29 @@ class Logger():
             logFileDict = {}
             reader = csv.reader(open(projLog,'r'))
             for linja in reader:
-                if linja[1] == '[]':
-                    linja[1] = []
-                elif re.search("excluded",linja[0]):
-                    linja[1] = [int(i) for i in linja[1].split(";")]
-                elif linja[1] == 'None':
-                    linja[1] = None
+                #if linja[1] == '[]':
+                #    linja[1] = []
+                #elif re.search("excluded",linja[0]):
+                #    linja[1] = [int(i) for i in linja[1].split(";")]
+                #elif linja[1] == 'None':
+                #    linja[1] = None
+                #
 
-                if linja[1] == 'None':
-                    print ".........................", linja
+                #if re.search("filters_run_count",linja[0]):
+                #    if linja[1] == '{}':
+                #        linja[1] = {}
+                #     else:
+                #        parser = [re.sub("\{|\}|'","",p) for p in linja[1].split(",")]
+                #        linja[1] = {}
+                #        for p in parser:
+                #            k,v = p.split(":")
+                #            linja[1][k] = int(v)
 
-
-                if re.search("filters_run_count",linja[0]):
-                    if linja[1] == '{}':
-                        linja[1] = {}
-                    else:
-                        parser = [re.sub("\{|\}|'","",p) for p in linja[1].split(",")]
-                        linja[1] = {}
-                        for p in parser:
-                            k,v = p.split(":")
-                            linja[1][k] = int(v)
+                if re.search("\[|\{|None",str(linja[1])):
+                    try:
+                        linja[1] = ast.literal_eval(str(linja[1]))
+                    except:
+                        print '....................this is a weird string', linja[1]
 
                 logFileDict[linja[0]] = linja[1]
 
