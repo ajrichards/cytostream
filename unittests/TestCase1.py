@@ -4,8 +4,8 @@ from cytostream import NoGuiAnalysis, configDictDefault
 
 '''
 description - Shows the user how to run an original set of files using one set of parameters.  Then 
-    a new set of parameters are given in the form of a configDict and the model is run again -- this
-    time only on a single file.
+              a new set of parameters are given in the form of a configDict and the model is run again -- this
+              time only on a single file.
 
 
 A. Richards
