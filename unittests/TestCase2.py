@@ -14,7 +14,7 @@ A. Richards
  
 '''
 
-class TestCase1(unittest.TestCase):
+class TestCase2(unittest.TestCase):
     def setUp(self):
         cwd = os.getcwd()
         if os.path.split(cwd)[1] == 'unittests':
@@ -52,25 +52,25 @@ class TestCase1(unittest.TestCase):
 
         ## create a gate to filter the filtered data
         self.nga.set('subsample_analysis',filterID1)
-        filteringDict2 = {(0,3):(500,800,250,300)}
-        filterID2 = "%s_%s"%(subset,'filter2')
+        filteringDict2 = {(0,3):(700,750,250,300)}
         self.nga.handle_filtering(fileName,filteringDict2)
+        filterID2 = "%s_%s"%(subset,'filter2')
         self.nga.set('filter_in_focus',filterID2)
-        #self.nga.run_model()
-        #self.nga.make_results_figures(fileName,'run2')
+        self.nga.run_model()
+        self.nga.make_results_figures(fileName,'run3')
 
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
         
-        ## get file names 
+        ## get file names
         fileNameList = self.nga.get_file_names()
         self.assertEqual(len(fileNameList),1)
 
         ## get events
         events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
-        self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
+        self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa'])))
 
         ## check that qa figs were made
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 3)

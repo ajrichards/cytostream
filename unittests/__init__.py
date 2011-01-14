@@ -48,9 +48,13 @@ from ModelTest import *
 ModelTestSuite = unittest.TestLoader().loadTestsFromTestCase(ModelTest)
 modelSuite = unittest.TestSuite([ModelTestSuite])
 
-#from TestCase1 import *
-#TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
-#runSuite = unittest.TestSuite([TestCase1Suite])
+from TestCase1 import *
+TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
+runSuite = unittest.TestSuite([TestCase1Suite])
+
+from TestCase2 import *
+TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
+runSuite = unittest.TestSuite([TestCase2Suite])
 
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
