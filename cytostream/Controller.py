@@ -205,7 +205,10 @@ class Controller:
 
         '''
 
-        if subsample != 'original':
+        ## if subsample is set to some filter
+        if re.search('filter', str(subsample)):
+            pass
+        elif subsample != 'original':
             subsample = int(float(subsample))
             self.subsampleIndices = self.model.get_subsample_indices(subsample)
 
@@ -333,13 +336,14 @@ class Controller:
     def handle_filtering(self,fileName,filteringDict):
 
         subsample = self.log.log['subsample_analysis']
+        print 'handling filtering...', subsample
 
         ## declare variables
         if not re.search('filter', str(subsample)):
             subsample = int(float(subsample))
             
         ## get the filter number id
-        subsampleStr = re.sub('_filter\d+','',str(subsample))
+        subsampleStr = re.sub('filter\d+|\_','',str(subsample))
         if self.log.log['filters_run_count'].has_key(fileName) == False:
             self.log.log['filters_run_count'][fileName] = {subsampleStr:1}
         else:
@@ -352,29 +356,43 @@ class Controller:
        
         filterNumber = int(self.log.log['filters_run_count'][fileName][subsampleStr])
         channels = filteringDict.keys()[0]
-        boundries = filteringDict.values()[0]
-
+        boundries = [int(val) for val in filteringDict.values()[0]]
 
         print "..............................................................."
-        print 'handeling filtering'
+        print 'handling filtering...', subsample
         print 'filter number', filterNumber
         print 'filter dict', filteringDict
         print 'filter run count', self.log.log['filters_run_count']
         print "..............................................................."
 
+        filterID = "%s_filter%s"%(subsampleStr,filterNumber)
+
+        ## check to see if a log file has been created for this project
+        filterLogFile = os.path.join(self.homeDir,'filterLog.log')
+        if os.path.isfile(filterLogFile) == True:
+            filterLog = csv.writer(open(filterLogFile,'a'))
+        else:
+            filterLog = csv.writer(open(filterLogFile,'w'))
+
+        filterLog.writerow([fileName,subsample,filterID,filteringDict]) 
 
         ## get events
         events = self.model.get_events(fileName,subsample=subsample)
-        
-        ## get indices
-        xIndices = np.where(events[:,channels[0]] > boundries[0]) and np.where(events[:,channels[1]] < boundries[1])
-        xIndices = xIndices[0]
-        yIndices = np.where(events[:,channels[0]] > boundries[2]) and np.where(events[:,channels[1]] < boundries[3])
-        yIndices = yIndices[0]        
-        filteredIndices = np.array(list(set(yIndices.tolist()).intersection(set(xIndices.tolist()))))
-        data = events[filteredIndices,:]
 
-        filterID = "%s_filter%s"%(subsample,filterNumber)
+        ## get indices
+        xData = events[:,channels[0]]
+        yData = events[:,channels[1]]
+
+        xIndices1 = np.where(xData > float(boundries[0]))[0]
+        xIndices2 = np.where(xData < float(boundries[1]))[0]
+        xIndices = list(set(xIndices1).intersection(set(xIndices2)))
+
+        yIndices1 = np.where(yData > float(boundries[2]))[0]
+        yIndices2 = np.where(yData < float(boundries[3]))[0]
+        yIndices = list(set(yIndices1).intersection(set(yIndices2)))
+        filteredIndices = np.array(list(set(yIndices).intersection(set(xIndices))))
+        data = events[filteredIndices,:]
+        
         newDataFileName = fileName + "_data_%s.pickle"%filterID
         logFileName = fileName + "_data_%s.log"%filterID
         tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')

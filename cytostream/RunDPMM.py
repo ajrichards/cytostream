@@ -79,12 +79,12 @@ log.initialize(projectID,homeDir,load=True)
 
 ## check to see if this is a filtering step
 filterInFocus = log.log['filter_in_focus']
-if filterInFocus == None:
-    pass
-elif filterInFocus == 'None':
-    pass
-else:
-    subsample = filterInFocus
+#if filterInFocus == None:
+#    pass
+#elif filterInFocus == 'None':
+#    pass
+#else:
+#    subsample = filterInFocus
     
 ## prepare model
 model = Model()
@@ -99,7 +99,18 @@ elif subsample != 'original':
     print 'subsample in rundp', subsample
     subsample = str(int(float(subsample)))
 
-events = model.get_events(fileName,subsample=subsample)
+print "......................................................."
+print "debug rundpmm...........", subsample, fileName
+print "subsample",subsample
+print "file name", fileName
+print "......................................................."
+
+if filterInFocus == None:
+    events = model.get_events(fileName,subsample=subsample)
+elif filterInFocus == 'None':
+    events = model.get_events(fileName,subsample=subsample)
+else:
+    events = model.get_events(fileName,subsample=filterInFocus)
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
@@ -121,7 +132,7 @@ elif type(includedChannels) != type([]) or type(excludedChannels) != type([]):
 
 events = events[:,includedChannels]
 
-## remove the border data points for the model fitting                                                                                                                       
+## remove the border data points for the model fitting                                                                                                              
 n,d = np.shape(events)
 
 allZeroInds = []

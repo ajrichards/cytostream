@@ -96,12 +96,14 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     elif subsample != 'original':
         subsample = str(int(float(subsample)))
 
+    ## ensure the proper events are being loaded
     if re.search('original',str(subsample)) and re.search('filter',str(subsample)):
         events = model.get_events(selectedFile,subsample=subsample)
         subsample = self.log.log['setting_max_scatter_display']
         subsampleIndices = model.get_subsample_indices(subsample)
         events = events[subsampleIndices,:]
-
+    elif filterInFocus != None and filterInFocus != 'None' and re.search('filter',filterInFocus):
+        events = model.get_events(selectedFile,subsample=filterInFocus)
     elif re.search('original',str(subsample)):
         subsample = self.log.log['setting_max_scatter_display']
         subsampleIndices = model.get_subsample_indices(subsample)
@@ -109,7 +111,6 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
             labels = labels[subsampleIndices]
 
         events = model.get_events(selectedFile,subsample=subsample)
-
     else:
         events = model.get_events(selectedFile,subsample=subsample)
 
