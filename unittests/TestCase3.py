@@ -4,15 +4,15 @@ from cytostream import NoGuiAnalysis, configDictDefault
 
 '''
 description - Shows the user how to run an original set of files using one set of parameters.  Then 
-              a new set of parameters are given in the form of a configDict and the model is run again -- this
-              time only on a single file.
-
+              the model is run again this time using a reference file---referred to in the software 
+              as 'onefit'.  This means that the model is run on a single reference file then all other 
+              files in the project are fit using the results from that model run.
 
 A. Richards
 '''
 
 
-class TestCase1(unittest.TestCase):
+class TestCase3(unittest.TestCase):
     def setUp(self):
         cwd = os.getcwd()
         if os.path.split(cwd)[1] == 'unittests':
@@ -23,14 +23,18 @@ class TestCase1(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         ## run the no gui analysis
-        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs"),
+                        os.path.join(BASEDIR,"cytostream","example_data", "duplicate.fcs")]
+
         projectID = 'utest'
         
         ## run the initial model for all files
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1200
-        configDict['subsample_qa'] = 500
-        configDict['subsample_analysis'] = 500
+        configDict['thumbnails_to_view'] = [(0,2),(0,3)]
+        configDict['model_mode'] = 'onefit'
+        configDict['model_reference'] = "3FITC_4PE_004"
+        configDict['model_reference_run_id'] = 'run1'
 
         self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True)
         fileNameList = self.nga.get_file_names()
@@ -40,12 +44,12 @@ class TestCase1(unittest.TestCase):
             self.nga.make_results_figures(fileName,'run1')
         
         ## run the model again this time for only one file while using more of the config file functionality
-        fileName = "3FITC_4PE_004"
-        self.nga.set('excluded_channels_analysis',[1])
-        self.nga.set('thumbnails_to_view', [(0,2),(0,3)])
-        self.nga.set('file_in_focus',fileName)
-        self.nga.run_model()
-        self.nga.make_results_figures(fileName,'run2')
+        #fileName = "3FITC_4PE_004"
+        #self.nga.set('model_mode','onefit')
+        #self.nga.set('thumbnails_to_view', [(0,2),(0,3)])
+        #self.nga.set('file_in_focus',fileName)
+        #self.nga.run_model()
+        #self.nga.make_results_figures(fileName,'run2')
                 
     def tests(self):
         ## ensure project was created
@@ -54,14 +58,14 @@ class TestCase1(unittest.TestCase):
         
         ## get file names 
         fileNameList = self.nga.get_file_names()
-        self.assertEqual(len(fileNameList),1)
+        self.assertEqual(len(fileNameList),2)
 
         ## get events
         events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
 
         ## check that qa figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 7)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 6)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
         
         ## check that model results can be retrieved
@@ -76,15 +80,10 @@ class TestCase1(unittest.TestCase):
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 7)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 6)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
-        ## check that the correct number of figures were made in the second model run
-        ## check that analysis figs were made
-        modelRunID = 'run2'
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 3)
-        self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
+        ## check that model file used 'onefit' and that the reference is nonzero
 
 
 ### Run the tests 
