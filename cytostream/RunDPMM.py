@@ -67,6 +67,7 @@ if os.path.isdir(homeDir) == False:
 longModelName = "Dirichlet Process Mixture Model"
 projName = os.path.split(homeDir)[-1]
 projectID = os.path.split(homeDir)[-1]
+loadFile = None
 
 if re.search('\D',str(k)):
     print "INPUT ERROR: k must be numeric"
@@ -79,13 +80,14 @@ log.initialize(projectID,homeDir,load=True)
 
 ## check to see if this is a filtering step
 filterInFocus = log.log['filter_in_focus']
-#if filterInFocus == None:
-#    pass
-#elif filterInFocus == 'None':
-#    pass
-#else:
-#    subsample = filterInFocus
-    
+if filterInFocus == 'None':
+    filterInFocus = None
+
+## determine the model mode
+modelMode = log.log['model_mode']
+modelReference = log.log['model_reference']
+modelReferenceRunID =  log.log['model_reference_run_id']
+
 ## prepare model
 model = Model()
 model.initialize(projectID,homeDir)
@@ -96,7 +98,6 @@ numItersMCMC =  int(log.log['num_iters_mcmc'])
 if re.search('filter',str(subsample)):
     pass
 elif subsample != 'original':
-    print 'subsample in rundp', subsample
     subsample = str(int(float(subsample)))
 
 print "......................................................."
@@ -106,8 +107,6 @@ print "file name", fileName
 print "......................................................."
 
 if filterInFocus == None:
-    events = model.get_events(fileName,subsample=subsample)
-elif filterInFocus == 'None':
     events = model.get_events(fileName,subsample=subsample)
 else:
     events = model.get_events(fileName,subsample=filterInFocus)
@@ -153,18 +152,28 @@ if cleanBorderEvents == True:
 else:
     nonZeroEvents = events
 
-## run the model 
-mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,last=1)
-modelRunStart = time.time()
-mod.fit(verbose=True)
-modelRunStop = time.time()
-full = mod.get_results()
+######################
+# handle model running
+######################
 
-#if subsample 
-##
-#
-#if subsample != 'original':
-#    subsample = int(float(subsample))
+loadModel = False
+if modelMode == 'onefit' and modelReference == fileName:
+    loadModel = False
+elif modelMode == 'onefit':
+    loadModel = True
+
+modelRunStart = time.time()
+## run the model 
+if loadModel == False:
+    mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,last=1)
+    mod.fit(verbose=True)
+    full = mod.get_results()
+
+## use a saved model
+else:
+    full, uselessClasses = model.load_model_results_pickle(modelReference,modelReferenceRunID,modelType='components')
+
+modelRunStop = time.time()
 
 ## classify the components and dump
 classifyComponents = full.classify(events)
@@ -179,11 +188,13 @@ cPickle.dump(classifyComponents,tmp2)
 tmp1.close()
 tmp2.close()
 
+print 'classsssssssssssssssssssssssssssssiiiiiiiiiiiiiiifffffffffffffyyyyyyyyyyiiiiiiiiinnnnnnnnn'
 ## classify the modes
 modes = full.make_modal()
 classifyModes = modes.classify(events)
 if verbose == True:
     print 'RunDPMM.py - dumping modes fit'
+print '...........................................................................................'
 
 tmp3 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.pickle"),'w')
 tmp4 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.pickle"),'w')
@@ -192,6 +203,8 @@ cPickle.dump(modes,tmp3)
 cPickle.dump(classifyModes,tmp4)
 tmp3.close()
 tmp4.close()
+
+
 
 ## write a log file
 if verbose == True:
@@ -222,3 +235,8 @@ writer.writerow(["number zero events",str(len(allZeroInds))])
 writer.writerow(["zeros events removed", str(cleanBorderEvents)])
 writer.writerow(["number modes",str(len(list(set(classifyModes))))])
 writer.writerow(["filter used", filterInFocus])
+writer.writerow(["model mode", modelMode])
+if modelReference == None:
+    writer.writerow(["model reference", 'None'])
+else:
+    writer.writerow(["model reference", modelReference])

@@ -444,7 +444,7 @@ class Controller:
         if fileInFocus != 'all' and fileInFocus not in fileList:
             print "ERROR: Controller.run_selected_model -- fileInFocus cannot be found"
         elif fileInFocus != 'all' and fileInFocus in fileList:
-            fileList = fileInFocus
+            fileList = [fileInFocus]
             
         for fileName in fileList:
             if selectedModel == 'dpmm':

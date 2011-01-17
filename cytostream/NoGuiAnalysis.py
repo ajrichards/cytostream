@@ -16,6 +16,11 @@ BASEDIR = os.path.dirname(__file__)
 ## test class for the main window function
 class NoGuiAnalysis():
     def __init__(self,projectID,filePathList,useSubsample=False,makeQaFigs=True,configDict=None):
+        """
+          class constructor 
+
+        """
+
 
         ## error checking
         if type(filePathList) != type([]):
@@ -32,8 +37,10 @@ class NoGuiAnalysis():
         self.configDict = configDict
         self.useSubsample = useSubsample
 
-        ## initialize and load files
+        ## initialize
         self.initialize()
+
+        ## load files
         self.load_files()
 
         ## quality assurance figures
