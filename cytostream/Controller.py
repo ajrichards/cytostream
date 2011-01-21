@@ -10,7 +10,8 @@ A.Richards
 
 import csv,sys,time,re,shutil
 import numpy as np
-from PIL import Image
+#from PIL import Image
+import Image
 
 try:
     from PyQt4 import QtGui, QtCore
