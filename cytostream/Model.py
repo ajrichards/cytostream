@@ -75,8 +75,10 @@ class Model:
             self.baseDir = os.path.dirname(__file__)
 
         ## set python path
-        self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
-
+        if sys.platform == 'win32':
+            self.pythonPath = os.path.join("C:\Python27\python")
+        else:
+            self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
     def load_files(self,fileList,dataType='fcs',transform='log'):
         """
         about: 
@@ -101,7 +103,7 @@ class Model:
             os.mkdir(os.path.join(self.homeDir,"data"))
             print "INFO: making home dir from Model"
 
-        ## get python path
+        ## create script
         script = os.path.join(self.homeDir,"..","..","LoadFile.py")
 
         for filePath in fileList:
@@ -156,7 +158,7 @@ class Model:
             print "\t", os.path.join(self.homeDir,'data',fileName)
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
+        tmp = open(os.path.join(self.homeDir,'data',fileName),'r')
         events = cPickle.load(tmp)
         tmp.close()
         return events
@@ -217,7 +219,7 @@ class Model:
             print "\t" + os.path.join(self.homeDir,'data',fileName)
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',fileName),'rb')
+        tmp = open(os.path.join(self.homeDir,'data',fileName),'r')
         fileChannels = cPickle.load(tmp)
         tmp.close()
         fileChannels = np.array([re.sub("\s","_",c) for c in fileChannels])
@@ -244,7 +246,7 @@ class Model:
 
         ## use pickle file if already created
         if os.path.isfile(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample)) == True:
-            tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'rb')
+            tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'r')
             subsampleIndices = cPickle.load(tmp)
             tmp.close()
             return subsampleIndices
@@ -328,8 +330,8 @@ class Model:
 
         tmp1File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.pickle"%modelType)
         tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.pickle"%modelType)
-        tmp1 = open(tmp1File,'rb')
-        tmp2 = open(tmp2File,'rb')
+        tmp1 = open(tmp1File,'r')
+        tmp2 = open(tmp2File,'r')
 
         if os.path.isfile(tmp1File) == False or os.path.isfile(tmp2File) == False:
             print "ERROR: bad model file specified -- path does not exist"
