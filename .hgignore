@@ -1,0 +1,10 @@
+./*/projects/*
+.*\.pyc
+.*~
+config_cs.py
+./.hg/hgrc
+dist/*
+build/*
+fcm.log
+unittests/alignfigs/*
+unittests/results/*

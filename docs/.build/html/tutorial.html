@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; cytostream v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="cytostream v0.1 documentation" href="index.html" />
+    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+  </head>
+  <body>
+
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+<a href="index.html"><img src="_static/logo.png" border="0" alt="py4sci"/></a>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+       <li><a href="contents.html">documentation </a> &raquo;</li>
+ 
+      </ul>
+    </div>
+
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Tutorial</a><ul>
+<li><a class="reference external" href="#running-cytostream">Running cytostream</a></li>
+<li><a class="reference external" href="#loading-the-data">Loading the data</a></li>
+<li><a class="reference external" href="#data-processing">Data Processing</a></li>
+<li><a class="reference external" href="#quality-assurance">Quality Assurance</a></li>
+<li><a class="reference external" href="#model">Model</a></li>
+<li><a class="reference external" href="#results-navigation">Results Navigation</a></li>
+<li><a class="reference external" href="#more">More</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="getting_started.html" title="previous chapter">Getting started</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/tutorial.txt">Show Source</a></li>
+            </ul>
+          <h3>Quick search</h3>
+            <form class="search" action="search.html" method="get">
+              <input type="text" name="q" size="18" /> <input type="submit" value="Go" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+        </div>
+      </div>
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  
+  <div class="section" id="id1">
+<span id="tutorial"></span><h1>Tutorial<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p id="installing-docdir">For help with installation see &#8220;getting_started&#8221;</p>
+<div class="section" id="running-cytostream">
+<h2>Running cytostream<a class="headerlink" href="#running-cytostream" title="Permalink to this headline">¶</a></h2>
+<p>To start cytostream:</p>
+<div class="highlight-python"><pre>&gt; cd ~/.../cytostream/cytostream
+&gt; python cytostream</pre>
+</div>
+</div>
+<div class="section" id="loading-the-data">
+<h2>Loading the data<a class="headerlink" href="#loading-the-data" title="Permalink to this headline">¶</a></h2>
+<p>In the opening screen <cite>File -&gt; New</cite> or <cite>File -&gt; Open</cite> are used to open projects.</p>
+<blockquote>
+<img alt="_images/screenshot_initial.png" src="_images/screenshot_initial.png" />
+</blockquote>
+<p>To begin a project cytostream takes as input *.fcs files.  They may be loaded as single files or in bulk using the commands <cite>cntl</cite> and <cite>shift</cite> to select more than one file.</p>
+</div>
+<div class="section" id="data-processing">
+<h2>Data Processing<a class="headerlink" href="#data-processing" title="Permalink to this headline">¶</a></h2>
+<p>Once the file(s) are loaded then a grid of check boxes will appear, where the rows are the files and the columns are the channels.</p>
+<blockquote>
+<img alt="_images/screenshot_data-processing.png" src="_images/screenshot_data-processing.png" />
+</blockquote>
+<p>The check boxes will be used in future releases to carry out compensation and transformations.  The <cite>Subset Selector</cite> is where the user specifies how much of the data will be used throughout the subsequent steps.  Given that flow cytometry data often consists of a large number of observations, it can be helpful to carry out analyses on subsets of the data first before using  all of the observations.  Once the user continues from this stage cytostream will wait for user input to make the figures necessary for quality assurance purposes.</p>
+</div>
+<div class="section" id="quality-assurance">
+<h2>Quality Assurance<a class="headerlink" href="#quality-assurance" title="Permalink to this headline">¶</a></h2>
+<p>Currently, this stage allows for the browsing of data to enable the user to get a feel for the results before any models are run.  More quality assurance options will be included in a later release.</p>
+<blockquote>
+<img alt="_images/screenshot_quality-assurance.png" src="_images/screenshot_quality-assurance.png" />
+</blockquote>
+<p>Clicking on an image will bring up an interactive plot of the individual scatter plot.  Using the <cite>File Selector</cite> allows the user browse the different plots associated with the the files in the project.  The <cite>View All</cite> button brings the user back to a thumbnail view of the data plots&#8212;effectivly allowing the user to toggle the view.</p>
+</div>
+<div class="section" id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline">¶</a></h2>
+<p>The model stage is the point where a model may be selected and associated parameters may be changed.</p>
+<blockquote>
+<img alt="_images/screenshot_model.png" src="_images/screenshot_model.png" />
+</blockquote>
+<p>After selecting a model and choosing the appropriate parameters, cytostream will then ask the user to run the model and create the figures.</p>
+</div>
+<div class="section" id="results-navigation">
+<h2>Results Navigation<a class="headerlink" href="#results-navigation" title="Permalink to this headline">¶</a></h2>
+<p>With the model run the option to navigate results becomes available.  As seen in the <cite>Quality Assurance</cite> stage users may toggle between thumbnail and individual view modes.</p>
+<blockquote>
+<img alt="_images/screenshot_results-nav.png" src="_images/screenshot_results-nav.png" />
+</blockquote>
+</div>
+<div class="section" id="more">
+<h2>More<a class="headerlink" href="#more" title="Permalink to this headline">¶</a></h2>
+<p>A given project is automatically saved after the completion of each stage.  After completion of the pipeline, users may return to the <cite>Data Processing</cite> stage to increase the number of observations used as part of the analysis.  Similarly, upon return to the <cite>Model</cite> stage users may change settings and rerun the data as they see fit.  The <cite>Results Navigation</cite> allows the additional option of scrolling through the run models with the <cite>Model Selector</cite>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">home</a>|&nbsp;</li>
+        <li><a href="search.html">search</a>|&nbsp;</li>
+       <li><a href="contents.html">documentation </a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2010, Adam Richards Jacob Frelinger Cliburn Chan.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.5.2.
+    </div>
+  </body>
+</html>
