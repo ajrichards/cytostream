@@ -100,12 +100,6 @@ if re.search('filter',str(subsample)):
 elif subsample != 'original':
     subsample = str(int(float(subsample)))
 
-print "......................................................."
-print "debug rundpmm...........", subsample, fileName
-print "subsample",subsample
-print "file name", fileName
-print "......................................................."
-
 if filterInFocus == None:
     events = model.get_events(fileName,subsample=subsample)
 else:
@@ -131,7 +125,7 @@ elif type(includedChannels) != type([]) or type(excludedChannels) != type([]):
 
 events = events[:,includedChannels]
 
-## remove the border data points for the model fitting                                                                                                              
+## remove the border data points for the model fitting                                               
 n,d = np.shape(events)
 
 allZeroInds = []
@@ -188,7 +182,6 @@ cPickle.dump(classifyComponents,tmp2)
 tmp1.close()
 tmp2.close()
 
-print 'classsssssssssssssssssssssssssssssiiiiiiiiiiiiiiifffffffffffffyyyyyyyyyyiiiiiiiiinnnnnnnnn'
 ## classify the modes
 modes = full.make_modal()
 classifyModes = modes.classify(events)

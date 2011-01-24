@@ -24,7 +24,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
 
-    def testCreateNewProject(self):       
+    def testCreateNewProject(self):
         ## test creation of a project
         self.controller.create_new_project(view=None,projectID='utest')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))

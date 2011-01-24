@@ -27,6 +27,7 @@ configDictDefault = {
     'scatter_marker_size'                   : '1',                  # mpl scatter marker size
     'font_size'                             : '12',                 # int
     'font_name'                             : 'arial',              # font name
+    'plot_type'                             : 'png',                # png, pdf, jpg
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e3',                # any float, int or string

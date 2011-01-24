@@ -59,6 +59,9 @@ class TestCase2(unittest.TestCase):
         self.nga.run_model()
         self.nga.make_results_figures(fileName,'run3')
 
+        ## return filter in focus to default
+        self.nga.set('filter_in_focus','None')
+
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
