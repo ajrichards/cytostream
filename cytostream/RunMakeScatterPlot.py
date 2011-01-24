@@ -72,8 +72,8 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     fontName = log.log['font_name']
     fontSize = log.log['font_size']
     filterInFocus = log.log['filter_in_focus']
+    plotType = log.log['plot_type']
     alphaVal = 0.5
-    plotType = 'png'
 
     ## make sure subsampling is that of model run
     if modelLog != None:
@@ -145,7 +145,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
                 continue
             ax.scatter(x,y,color=hexColor,s=markerSize)
 
-    ## handle data edge buffers                                                                                                                                              
+    ## handle data edge buffers                                                    
     bufferX = buff * (events[:,index1].max() - events[:,index1].min())
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
     ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
