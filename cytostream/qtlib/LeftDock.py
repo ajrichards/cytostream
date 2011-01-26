@@ -35,7 +35,7 @@ def add_left_dock(mainWindow):
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
-    if mainWindow.fileSelector != None and mainWindow.log.log['selectedFile'] == None:
+    if mainWindow.fileSelector != None and mainWindow.log.log['selected_file'] == None:
         mainWindow.set_selected_file()
 
     masterChannelList = mainWindow.model.get_master_channel_list()
@@ -88,72 +88,72 @@ def add_left_dock(mainWindow):
         showModelSelector = False
         modelsRun = None
 
+    if mainWindow.log.log['current_state'] == 'qa':
+        excludedFiles = mainWindow.log.log['excluded_files_qa']
+        subsampleDefault = mainWindow.log.log['subsample_qa']
+    else:
+        excludedFiles = mainWindow.log.log['excluded_files_analysis']
+        subsampleDefault = mainWindow.log.log['subsample_analysis']
+
     ## check to see if fileList needs adjusting
-    if type(mainWindow.log.log['excludedFiles']) == type([]) and len(mainWindow.log.log['excludedFiles']) > 0:
-        for f in mainWindow.log.log['excludedFiles']:
+    if type(excludedFiles) == type([]) and len(excludedFiles) > 0:
+        for f in excludedFiles:
             fileList.remove(f)
 
-        mainWindow.log.log['selectedFile'] = fileList[0]
+        mainWindow.log.log['selected_file'] = fileList[0]
 
     ## file selector
-    if mainWindow.log.log['currentState'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.set_selected_file,
-                                               fileDefault=mainWindow.log.log['selectedFile'],
+                                               fileDefault=mainWindow.log.log['selected_file'],
                                                showModelSelector=showModelSelector,modelsRun=modelsRun)
         mainWindow.fileSelector.setAutoFillBackground(True)
-        subsamplingDefault = mainWindow.log.log['subsample']
         vbl1.addWidget(mainWindow.fileSelector)
         
     ## data processing
-    if mainWindow.log.log['currentState'] == "Data Processing":
+    if mainWindow.log.log['current_state'] == "Data Processing":
         mainWindow.dock1 = DataProcessingDock1(masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                              contBtnFn=None,subsetDefault=subsamplingDefault)
+                                              contBtnFn=None,subsetDefault=subsampleDefault)
         callBackfn = mainWindow.handle_data_processing_mode_callback
-        mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['dataProcessingAction'])
+        mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['data_processing_mode'])
         mainWindow.dock1.setAutoFillBackground(True)
         mainWindow.dock2.setAutoFillBackground(True)
         hbl2.addWidget(mainWindow.dock2)
         hbl3.addWidget(mainWindow.dock1)
 
     ## quality assurance
-    elif mainWindow.log.log['currentState'] == "Quality Assurance":
+    elif mainWindow.log.log['current_state'] == "Quality Assurance":
         
-        ### check to see if fileList needs adjusting
-        #if type(mainWindow.log.log['excludedFiles']) == type([]) and len(mainWindow.log.log['excludedFiles']) > 0:
-        #    for f in mainWindow.log.log['excludedFiles']:
-        #        fileList.remove(f)
-        #        print 'removeing file %s in leftdock'%f
-
         mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                               contBtnFn=None,subsetDefault=subsamplingDefault,viewAllFn=mainWindow.display_thumbnails)
+                                               contBtnFn=None,subsetDefault=subsampleDefault,viewAllFn=mainWindow.display_thumbnails)
         vbl3.addWidget(mainWindow.dock)
         mainWindow.dock.setAutoFillBackground(True)
    
     ## model
-    elif mainWindow.log.log['currentState'] == "Model":
+    elif mainWindow.log.log['current_state'] == "Model":
         modelList = ['DPMM','K-means']
         mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,componentsFn=mainWindow.set_num_components)
         mainWindow.dock.setAutoFillBackground(True)
         vbl3.addWidget(mainWindow.dock)
 
     ## results navigation
-    elif mainWindow.log.log['currentState'] == "Results Navigation":
+    elif mainWindow.log.log['current_state'] == "Results Navigation":
         mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
                                                 resultsModeFn=mainWindow.set_selected_results_mode,
-                                                resultsModeDefault=mainWindow.log.log['resultsMode'],viewAllFn=mainWindow.display_thumbnails,
+                                                resultsModeDefault=mainWindow.log.log['results_mode'],viewAllFn=mainWindow.display_thumbnails,
                                                 infoBtnFn=mainWindow.show_model_log_info)
         mainWindow.dock.setAutoFillBackground(True)
         vbl3.addWidget(mainWindow.dock)
 
     ## one dimensional viewer
-    if mainWindow.log.log['currentState'] == 'OneDimViewer':
+    if mainWindow.log.log['current_state'] == 'OneDimViewer':
         mainWindow.dock = OneDimViewerDock(fileList,masterChannelList,callBack=mainWindow.odv.paint)
         mainWindow.dock.setAutoFillBackground(True)
         vbl1.addWidget(mainWindow.dock)
         
     ## stages with thumbnails
-    if mainWindow.log.log['currentState'] in ['Quality Assurance', 'Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance', 'Results Navigation']:
         mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)
 
     ## finalize alignments

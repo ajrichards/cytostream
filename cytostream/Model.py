@@ -323,7 +323,7 @@ class Model:
         return:
             model and classify
         """
-        
+
         if modelType not in ['components','modes']:
             print "ERROR: invalide model type specified in load_model_results"
             return False

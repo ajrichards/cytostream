@@ -45,4 +45,5 @@ configDictDefault = {
     'model_mode'                            : 'normal',             # normal, onefit, pooled
     'model_reference'                       : 'None',               # fileName, pooled
     'model_reference_run_id'                : 'None',               # a run id i.e. run1
+    'channel_view'                          : 'normal',             # normal, custom
 }

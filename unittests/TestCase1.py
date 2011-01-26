@@ -46,7 +46,8 @@ class TestCase1(unittest.TestCase):
         self.nga.set('file_in_focus',fileName)
         self.nga.run_model()
         self.nga.make_results_figures(fileName,'run2')
-                
+        self.nga.set('file_in_focus','all')                
+
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
