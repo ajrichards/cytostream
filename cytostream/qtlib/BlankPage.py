@@ -21,7 +21,7 @@ class BlankPage(QtGui.QWidget):
 ### Run the tests 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    bp = BlankPage()
+    bp = BlankPage(None)
     bp.show()
     sys.exit(app.exec_())
     

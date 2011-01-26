@@ -6,7 +6,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from scipy.stats import gaussian_kde
-from cytostream import Model,get_fcs_file_names
+from cytostream import Model,get_fcs_file_names, Logger
+from cytostream.tools import fetch_plotting_events
 from matplotlib.widgets import CheckButtons
 
 
@@ -37,7 +38,6 @@ class OneDimViewer(FigureCanvas):
             return False
 
         ## prepare plot environment
-        #self.fig = Figure()
         self.fig = Figure()
         self.ax = self.fig.add_subplot(111)
         self.fig.set_frameon(background)
@@ -48,6 +48,8 @@ class OneDimViewer(FigureCanvas):
 
         ## initialize model
         projectID = os.path.split(homeDir)[-1]
+        log = Logger()
+        log.initialize(projectID,homeDir,load=True)
         model = Model()
         model.initialize(projectID,homeDir)
 
@@ -57,7 +59,7 @@ class OneDimViewer(FigureCanvas):
         self.masterChannelList = model.get_master_channel_list() 
 
         ## create the plot
-        self.make_plot(model,subset)
+        self.make_plot(model,log,subset)
 
         ## initialization of the canvas 
         FigureCanvas.__init__(self, self.fig)
@@ -73,20 +75,8 @@ class OneDimViewer(FigureCanvas):
 
         return self.colors[color],self.lines[line]
 
-    def make_plot(self,model,subset,buff=0.02):
+    def make_plot(self,model,log,subset,buff=0.02):
         
-        ## specify variables 
-        if subset == 'All Data':
-            markerSize = 4
-        elif float(subset) < 1e4:
-            markerSize = 5
-        else:
-            markerSize = 4
-
-        fontName = 'arial'
-        fontSize = 12
-        plotType = 'png'
-
         ## make all the line plots (dict key order : [fileInd][channelInd]
         self.plotDict = {}
         self.tagDict = {}
@@ -98,22 +88,16 @@ class OneDimViewer(FigureCanvas):
                 else:
                     visible = False
 
-                self.make_line_plot(subset,model,fcsFileInd,channelInd,visible=visible)
+                self.make_line_plot(subset,model,log,fcsFileInd,channelInd,visible=visible)
 
-    def make_line_plot(self,subset,model,fcsFileInd,channelInd,visible=False):
+    def make_line_plot(self,subset,model,log,fcsFileInd,channelInd,visible=False):
 
-        fcsFileName = self.fcsFileList[fcsFileInd]
+        fcsFileName = re.sub("\.fcs|\.pickle|\.csv","",self.fcsFileList[fcsFileInd])
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
         ## determine subset of events
-        data = model.pyfcm_load_fcs_file(fcsFileName)
-
-        if subset != 'All Data':
-            indices = model.get_subsample_indices(subset)
-            events = [float(d) for d in data[indices,channelInd]]
-        else:             
-            events = [float(d) for d in data[:, channelInd]]
-
+        data = fetch_plotting_events(fcsFileName,model,log,subsample)
+        events = [float(d) for d in data[:, channelInd]]
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
         ## the histogram of the data
@@ -164,7 +148,7 @@ if __name__ == '__main__':
     baseDir = os.path.dirname(__file__)
     mode = 'results'
     homeDir = os.path.join(baseDir,'..','projects','utest')
-    subsample = 'All Data' #'1e3'
+    subsample = '1e3'
 
     ## use qt to display widget
     app = QtGui.QApplication(sys.argv)

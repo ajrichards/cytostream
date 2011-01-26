@@ -80,7 +80,6 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(statModelComponentClasses.size,1000)
         self.assertEqual(statModelModeClasses.size,1000)
 
-        
         ## check IR from log file
         modelRunID = 'run1'
         modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)

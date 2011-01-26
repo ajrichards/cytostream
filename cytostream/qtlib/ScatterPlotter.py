@@ -5,7 +5,8 @@ import numpy as np
 from matplotlib.figure import Figure  
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from cytostream import Model, Logger
+from cytostream import Model, Logger 
+from cytostream.tools import fetch_plotting_events, get_all_colors, get_file_sample_stats
 
 class ScatterPlotter(FigureCanvas):
     '''
@@ -16,7 +17,6 @@ class ScatterPlotter(FigureCanvas):
     homeDir - home directory of the project i.e. '/.../cytostream/projects/foo'
     parent (optional) - A QtGui.QWidget() instance
     subset (optional) - Specifies the number of samples in a subset
-    altDir (optional) - Used when data should be saved in a non-default directory
     modelName (optional) - The currently selected model -- see FileSelector class
     modelType (optional) - The mode or type associated with a model (i.e. components, modes)
     background (optional) - for saving the figure a backgound should be rendered during plot generation
@@ -27,7 +27,7 @@ class ScatterPlotter(FigureCanvas):
     '''
 
     def __init__(self,homeDir,selectedFile,channel1,channel2,subset,modelName=None,parent=None,
-                 altDir=None,background=False,modelType=None):
+                 background=False,modelType=None):
 
         ## error checking
         if os.path.isdir(homeDir) == False:
@@ -36,6 +36,7 @@ class ScatterPlotter(FigureCanvas):
 
         if modelName != None and modelType == None:
             print "ERROR: if model name specified must specify model type as well"
+            print 'modelName', modelName, 'modelType', modelType
             return False
 
         if modelType != None and modelName == None:
@@ -44,31 +45,23 @@ class ScatterPlotter(FigureCanvas):
 
         ## prepare plot environment
         self.fig = Figure()
-        ax = self.fig.add_subplot(111)
+        self.ax = self.fig.add_subplot(111)
         self.fig.set_frameon(background)
-        
+        self.plotDict = {}
+        self.modelType = modelType
+        self.colors = get_all_colors()
+
         ## prepare model
         projectID = os.path.split(homeDir)[-1]        
-        log = Logger()
-        log.initialize(projectID,homeDir,load=True)
-        model = Model()
-        model.initialize(projectID,homeDir)
+        self.log = Logger()
+        self.log.initialize(projectID,homeDir,load=True)
+        self.model = Model()
+        self.model.initialize(projectID,homeDir)
 
-        if modelName != None:
-            statModel,statModelClasses = model.load_model_results_pickle(modelName,modelType)
+        ## create initial scatter plot
+        self.make_scatter_plot(selectedFile,channel1,channel2,subset,modelName=modelName)
         
-            if modelType == 'components':
-                centroids = statModel.mus()
-            elif modelType == 'modes':
-                centroids = statModel.modes()
-        else:
-            statModel,statModelClasses = None, None
-            centroids = None
-
-        self.make_scatter_plot(ax,log,model,selectedFile,channel1,channel2,subset,labels=statModelClasses,
-                               centroids=centroids,statModel=statModel,modelType=modelType)
-        
-        # initialization of the canvas 
+        ## initialization of the canvas 
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
@@ -76,101 +69,143 @@ class ScatterPlotter(FigureCanvas):
         # notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
-    def make_scatter_plot(self,ax,log,model,selectedFile,channel1Ind,channel2Ind,subsample,labels=None,buff=0.02,
-                          altDir=None,centroids=None,statModel=None,modelType=None):
+    def make_scatter_plot(self,selectedFile,channel1Ind,channel2Ind,subsample,buff=0.02,modelName=None):
+
+        ## clear axis
+        self.ax.clear()
 
         ## declare variables
-        fontName = log.log['font_name']
-        markerSize = int(log.log['scatter_marker_size'])
-        fontSize = log.log['font_size']
-        plotType = log.log['plot_type']
-        filterInFocus = log.log['filter_in_focus']
+        fontName = self.log.log['font_name']
+        markerSize = int(self.log.log['scatter_marker_size'])
+        fontSize = self.log.log['font_size']
+        plotType = self.log.log['plot_type']
+        filterInFocus = self.log.log['filter_in_focus']
 
         ## specify channels
-        fileChannels = model.get_file_channel_list(selectedFile)
+        fileChannels = self.model.get_file_channel_list(selectedFile)
         index1 = int(channel1Ind)
         index2 = int(channel2Ind)
         channel1 = fileChannels[index1]
         channel2 = fileChannels[index2]
 
-        ## get events          
-        if re.search('filter',str(subsample)):
-            pass
-        elif subsample != 'original':
-            subsample = str(int(float(subsample)))
-
-        ## ensure the proper events are being loaded
-        if re.search('original',str(subsample)) and re.search('filter',str(subsample)):
-            events = model.get_events(selectedFile,subsample=subsample)
-            subsample = self.log.log['setting_max_scatter_display']
-            subsampleIndices = model.get_subsample_indices(subsample)
-            events = events[subsampleIndices,:]
-        elif filterInFocus != None and filterInFocus != 'None' and re.search('filter',filterInFocus):
-            events = model.get_events(selectedFile,subsample=filterInFocus)
-        elif re.search('original',str(subsample)):
-            subsample = self.log.log['setting_max_scatter_display']
-            subsampleIndices = model.get_subsample_indices(subsample)
-            if labels != None:
-                labels = labels[subsampleIndices]
-
-            events = model.get_events(selectedFile,subsample=subsample)
+        ## handle analysis mode variables
+        plotID, channelsID = self.get_plot_channel_id(selectedFile,subsample,modelName,index1,index2)
+        if modelName != None:
+            statModel,statModelClasses = self.model.load_model_results_pickle(selectedFile,modelName,modelType=self.modelType)
+            labels = statModelClasses            
         else:
-            events = model.get_events(selectedFile,subsample=subsample)
+            statModel,statModelClasses = None, None
+            centroids,labels = None,None
+
+        ## get events
+        events,labels = fetch_plotting_events(selectedFile,self.model,self.log,subsample,labels=labels)
+
+        ## handle sample stats
+        if labels != None and self.plotDict[plotID][channelsID].has_key('centroids') == False:
+            centroids,variances,sizes = get_file_sample_stats(events,labels)    
+            self.plotDict[plotID][channelsID]['centroids'] = centroids
+            self.plotDict[plotID][channelsID]['variances'] = variances
+            self.plotDict[plotID][channelsID]['sizes'] = sizes
+        elif labels != None and self.plotDict[plotID][channelsID].has_key('centroids') == True:
+            centroids = self.plotDict[plotID][channelsID]['centroids']
 
         if labels != None:
             n,d = events.shape
             if n != labels.size:
                 print "ERROR: ScatterPlotter.py -- labels and events do not match",n,labels.size
                 return None
-        ###############################
-        print "........................."
-        print "debuggin."
-        print events.shape
-        print "........................."
-        ###############################
 
         ## make plot
         totalPoints = 0
         if labels == None:
-            ax.scatter([events[:,index1]],[events[:,index2]],color='blue',s=markerSize)
+
+            ## check to see if data are already available
+            if self.plotDict[plotID][channelsID].has_key('qa') == False:
+                self.plotDict[plotID][channelsID]['qa'] = (events[:,index1],events[:,index2])
+            
+            ## make the plot
+            dataX,dataY = self.plotDict[plotID][channelsID]['qa']
+            self.ax.scatter([dataX],[dataY],color='blue',s=markerSize)
         else:
             if type(np.array([])) != type(labels):
                 labels = np.array(labels)
 
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
-            cmp = model.get_n_color_colorbar(maxLabel+1)
+            cmp = self.model.get_n_color_colorbar(maxLabel+1)
 
             for l in np.sort(np.unique(labels)):
-                rgbVal = tuple([val * 256 for val in cmp[l,:3]])
-                hexColor = model.rgb_to_hex(rgbVal)[:7]
+                clusterColor = self.colors[l]
 
-                x = events[:,index1][np.where(labels==l)[0]]
-                y = events[:,index2][np.where(labels==l)[0]]
+                ## check to see if centorids are already available
+                dataX = events[:,index1][np.where(labels==l)[0]]
+                dataY = events[:,index2][np.where(labels==l)[0]]
+            
+                totalPoints+=dataX.size
 
-                totalPoints+=x.size
-
-                if x.size == 0:
+                if dataX.size == 0:
                     continue
-                ax.scatter(x,y,color=hexColor,s=markerSize)
+                self.ax.scatter(dataX,dataY,color=clusterColor,s=markerSize)
+
+                ## handle centroids if present     
+                prefix = ''
+                alphaVal = 0.8
+
+                if centroids != None:
+                    if centroids[str(int(l))].size != events.shape[1]:
+                        print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
+                    
+                    xPos = centroids[str(int(l))][index1]
+                    yPos = centroids[str(int(l))][index2]
+
+                    if xPos < 0 or yPos <0:
+                        continue
+
+                    if clusterColor in ['#FFFFAA','y','#33FF77']:
+                        self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize,
+                                ha="center", va="center",
+                                bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
+                                )
+                    else:
+                        self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize,
+                                ha="center", va="center",
+                                bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
+                                )
 
         ## handle data edge buffers
         bufferX = buff * (events[:,index1].max() - events[:,index1].min())
         bufferY = buff * (events[:,index2].max() - events[:,index2].min())
-        ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
-        ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
+        self.ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
+        self.ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
 
         ## save file
         fileName = selectedFile
-        ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
-        ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-        ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+        self.ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
+        self.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+        self.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+
+
+    def get_plot_channel_id(self,selectedFile,subsample,modelName,index1,index2):
+        if modelName == None:
+            plotID = "%s_%s"%(selectedFile,subsample)
+        else:
+            plotID = "%s_%s_%s"%(selectedFile,subsample,modelName)
+
+        channelsID = "%s-%s"%(index1,index2)
+
+        if self.plotDict.has_key(plotID) == False:
+            self.plotDict[plotID] = {}
+        if self.plotDict[plotID].has_key(channelsID) == False:
+            self.plotDict[plotID][channelsID] = {}
+
+        return plotID, channelsID
+
 
 if __name__ == '__main__':
 
     ## check that unittests were run and necessary data is present
     baseDir = os.path.dirname(__file__)
-    mode = 'qa'
+    mode = 'results'
     projectID = 'utest'
     selectedFile = "3FITC_4PE_004"
     selectedModel = 'run1'

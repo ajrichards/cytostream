@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from cytostream import Model, Logger
+from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats
 import matplotlib.pyplot as plt
 
 ## parse inputs
@@ -65,7 +66,7 @@ for o, a in optlist:
     if o == '-h':
         homeDir = a
 
-def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='original',labels=None,buff=0.02,altDir=None,modelLog=None):
+def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='original',labels=None,buff=0.02,altDir=None,modelLog=None,centroids=None):
 
     ## declare variables
     markerSize = int(log.log['scatter_marker_size'])
@@ -82,6 +83,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     ## prepare figure
     fig = plt.figure(figsize=(7,7))
     ax = fig.add_subplot(111)
+    colors = get_all_colors()
 
     ## specify channels
     fileChannels = model.get_file_channel_list(selectedFile)
@@ -91,34 +93,17 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     channel2 = fileChannels[index2]
 
     ## get events
-    if re.search('filter',str(subsample)):
-        pass
-    elif subsample != 'original':
-        subsample = str(int(float(subsample)))
-
-    ## ensure the proper events are being loaded
-    if re.search('original',str(subsample)) and re.search('filter',str(subsample)):
-        events = model.get_events(selectedFile,subsample=subsample)
-        subsample = self.log.log['setting_max_scatter_display']
-        subsampleIndices = model.get_subsample_indices(subsample)
-        events = events[subsampleIndices,:]
-    elif filterInFocus != None and filterInFocus != 'None' and re.search('filter',filterInFocus):
-        events = model.get_events(selectedFile,subsample=filterInFocus)
-    elif re.search('original',str(subsample)):
-        subsample = self.log.log['setting_max_scatter_display']
-        subsampleIndices = model.get_subsample_indices(subsample)
-        if labels != None:
-            labels = labels[subsampleIndices]
-
-        events = model.get_events(selectedFile,subsample=subsample)
-    else:
-        events = model.get_events(selectedFile,subsample=subsample)
+    events,labels = fetch_plotting_events(selectedFile,model,log,subsample,labels=labels)
 
     if labels != None:
         n,d = events.shape
         if n != labels.size:
             print "ERROR: RunMakeScatterPlot.py -- labels and events do not match",n,labels.size
             return None
+
+    ## handle centroids
+    if labels != None:
+        centroids,variances,sizes = get_file_sample_stats(events,labels)
 
     ## make plot 
     totalPoints = 0
@@ -133,8 +118,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
         cmp = model.get_n_color_colorbar(maxLabel+1)
 
         for l in np.sort(np.unique(labels)):
-            rgbVal = tuple([val * 256 for val in cmp[l,:3]])
-            hexColor = model.rgb_to_hex(rgbVal)[:7]
+            clusterColor = colors[l]
 
             x = events[:,index1][np.where(labels==l)[0]]
             y = events[:,index2][np.where(labels==l)[0]]
@@ -143,7 +127,32 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
 
             if x.size == 0:
                 continue
-            ax.scatter(x,y,color=hexColor,s=markerSize)
+            ax.scatter(x,y,color=clusterColor,s=markerSize)
+
+            ## handle centroids if present                                                                                                                                   
+            prefix = ''
+            alphaVal = 0.8
+
+            if centroids != None:
+                if centroids[str(int(l))].size != events.shape[1]:
+                    print "ERROR: ScatterPlotter.py -- centroids not same shape as events"
+
+                xPos = centroids[str(int(l))][index1]
+                yPos = centroids[str(int(l))][index2]
+
+                if xPos < 0 or yPos <0:
+                    continue
+
+                if clusterColor in ['#FFFFAA','y','#33FF77']:
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize,
+                                 ha="center", va="center",
+                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
+                                 )
+                else:
+                    ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize,
+                                 ha="center", va="center",
+                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
+                                 )
 
     ## handle data edge buffers                                                    
     bufferX = buff * (events[:,index1].max() - events[:,index1].min())
@@ -204,4 +213,10 @@ if run == True:
     else:
         statModel, statModelClasses = model.load_model_results_pickle(selectedFile,modelRunID,modelType=modelType)
         modelLog = model.load_model_results_log(selectedFile,modelRunID)
+        if modelType in ['components','modes']:
+            pass
+        else:
+            statModel,statModelClasses = None, None
+            labels = None
+
         make_scatter_plot(model,log,selectedFile,channel1,channel2,labels=statModelClasses,modelLog=modelLog,subsample=subsample,altDir=altDir)
