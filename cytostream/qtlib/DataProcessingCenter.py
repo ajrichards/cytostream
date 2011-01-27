@@ -3,7 +3,7 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 
 class DataProcessingCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, transformList, compensationList, currentAction, alternateChannelList = None, parent=None, checksArray=None,fontSize=11):
+    def __init__(self, fileList, masterChannelList, transformList, compensationList, currentAction, alternateChannelList=None, parent=None, checksArray=None,fontSize=11):
         QtGui.QWidget.__init__(self,parent)
 
         self.setWindowTitle('Data Processing')

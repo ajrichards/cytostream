@@ -9,7 +9,7 @@ from cytostream.qtlib import ScatterPlotter
 from cytostream import Model, Logger, get_fcs_file_names
 
 class MultiplePlotter(QtGui.QWidget):
-    def __init__(self,homeDir,selectedFile,channel1,channel2,subset,modelName=None,parent=None,
+    def __init__(self,homeDir,selectedFile,channel1,channel2,subsample,modelName=None,parent=None,
                  background=False,modelType=None,mode='qa'):
 
         #super(MultiplePlotter, self).__init__()
@@ -18,10 +18,7 @@ class MultiplePlotter(QtGui.QWidget):
         ## input variables
         self.setWindowTitle('Multiple Plotter')
         self.homeDir = homeDir
-        #self.channel1 = channel1
-        #self.channel2 = channel2
         self.subsample = subsample
-        self.modelName = modelName
         self.parent = parent
         self.background = background
         self.modelType = modelType
@@ -32,8 +29,9 @@ class MultiplePlotter(QtGui.QWidget):
         self.selectedChannel2 = int(channel2)
         self.selectedFile = selectedFile
         self.selectedModelName = modelName
+        self.selectedHighlight = "None"
         self.fileList = get_fcs_file_names(self.homeDir)
-
+        
         ## layout variables
         self.vbl = QtGui.QVBoxLayout()                       # overall layout
         self.vbl.setAlignment(QtCore.Qt.AlignCenter)
@@ -45,11 +43,11 @@ class MultiplePlotter(QtGui.QWidget):
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter) 
 
         ## get file channels
-        projectID = os.path.split(homeDir)[-1]
+        projectID = os.path.split(self.homeDir)[-1]
         log = Logger()
-        log.initialize(projectID,homeDir,load=True)
+        log.initialize(projectID,self.homeDir,load=True)
         model = Model()
-        model.initialize(projectID,homeDir)
+        model.initialize(projectID,self.homeDir)
         channelView = log.log['channel_view']
         self.channelList = model.get_file_channel_list(selectedFile)
         
@@ -60,6 +58,12 @@ class MultiplePlotter(QtGui.QWidget):
         self.hbl1.addLayout(self.chan2Layout)
         self.initFileSelector()
         self.hbl1.addLayout(self.filesLayout)
+
+        if self.selectedModelName != None:
+            statModel,statModelClasses = model.load_model_results_pickle(self.selectedFile,self.selectedModelName,modelType=self.modelType)
+            uniqueLabels = np.sort(np.unique(statModelClasses)).tolist()
+            self.initHighlight(uniqueLabels)
+            self.hbl1.addLayout(self.highlightLayout)
 
         ## create the first plot
         self.create_plot()
@@ -156,29 +160,63 @@ class MultiplePlotter(QtGui.QWidget):
         self.filesLayout.addLayout(self.filesLayoutA)
         self.filesLayout.addLayout(self.filesLayoutB)
     
+    def initHighlight(self,uniqueLabels):
+        ## setup layouts
+        self.highlightLayoutA = QtGui.QHBoxLayout()
+        self.highlightLayoutA.setAlignment(QtCore.Qt.AlignCenter)
+        self.highlightLayoutB = QtGui.QHBoxLayout()
+        self.highlightLayoutB.setAlignment(QtCore.Qt.AlignCenter)
+        self.highlightLayout = QtGui.QVBoxLayout()
+        self.highlightLayout.setAlignment(QtCore.Qt.AlignCenter)
+        
+        ## create label
+        self.labelHighlight = QtGui.QLabel("highlight", self)
+        self.highlightLayoutA.addWidget(self.labelHighlight)
+
+        ## create combobox
+        self.highlightSelector = QtGui.QComboBox(self)
+        for hl in ["None"] + uniqueLabels:
+            self.highlightSelector.addItem(str(hl))
+
+        ## set default
+        self.highlightSelector.setCurrentIndex(0)
+        self.connect(self.highlightSelector, QtCore.SIGNAL('activated(int)'),self.highlight_selector_callback)
+        self.highlightLayoutB.addWidget(self.highlightSelector)
+
+        ## finalize layout
+        self.highlightLayout.addLayout(self.highlightLayoutA)
+        self.highlightLayout.addLayout(self.highlightLayoutB)
+
     def create_plot(self):
-        self.plot = ScatterPlotter(homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
-                                   modelName=self.modelName,modelType=self.modelType,parent=self.parent)
+        self.plot = ScatterPlotter(self.homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
+                                   modelName=self.selectedModelName,modelType=self.modelType,parent=self.parent)
         
     def channel1_selector_callback(self,selectedInd):
         selectedTxt = str(self.channel1Selector.currentText())
         self.selectedChannel1 = selectedInd
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
-                                    modelName=self.selectedModelName)
+                                    modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
 
     def channel2_selector_callback(self,selectedInd):
         selectedTxt = str(self.channel2Selector.currentText())
         self.selectedChannel2 = selectedInd
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
-                                    modelName=self.selectedModelName)
+                                    modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
 
     def file_selector_callback(self,selectedInd):
         selectedTxt = str(self.fileSelector.currentText())
         self.selectedFile = selectedTxt
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
-                                    modelName=self.selectedModelName)
+                                    modelName=self.selectedModelName,highlight=self.selectedHighlight)
+        self.plot.draw()
+        
+    def highlight_selector_callback(self,selectedInd):
+        selectedTxt = str(self.highlightSelector.currentText())
+        self.selectedHighlight = selectedTxt
+        self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
+                                    modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
 
     def get_selected(self,selectorID):

@@ -69,7 +69,14 @@ class ScatterPlotter(FigureCanvas):
         # notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
-    def make_scatter_plot(self,selectedFile,channel1Ind,channel2Ind,subsample,buff=0.02,modelName=None):
+    def make_scatter_plot(self,selectedFile,channel1Ind,channel2Ind,subsample,buff=0.02,modelName=None,highlight=None):
+
+        if highlight == "None":
+            highlight = None
+
+        if highlight != None and modelName==None:
+            print "ERROR: ScatterPlotter.py -- if highlight is specified then modelName must also be true"
+            highlight = None
 
         ## clear axis
         self.ax.clear()
@@ -92,7 +99,7 @@ class ScatterPlotter(FigureCanvas):
         plotID, channelsID = self.get_plot_channel_id(selectedFile,subsample,modelName,index1,index2)
         if modelName != None:
             statModel,statModelClasses = self.model.load_model_results_pickle(selectedFile,modelName,modelType=self.modelType)
-            labels = statModelClasses            
+            labels = statModelClasses
         else:
             statModel,statModelClasses = None, None
             centroids,labels = None,None
@@ -136,6 +143,17 @@ class ScatterPlotter(FigureCanvas):
 
             for l in np.sort(np.unique(labels)):
                 clusterColor = self.colors[l]
+                markerSize = int(self.log.log['scatter_marker_size'])
+
+                ## handle highlighted clusters      
+                if highlight != None and str(int(highlight)) == str(int(l)):
+                    alphaVal = 0.8
+                    markerSize =  int(self.log.log['scatter_marker_size']) + 4
+                elif highlight !=None and str(int(highlight)) != str(int(l)):
+                    alphaVal = 0.5
+                    clusterColor = "#CCCCCC"
+                else:
+                    alphaVal=0.8
 
                 ## check to see if centorids are already available
                 dataX = events[:,index1][np.where(labels==l)[0]]
@@ -149,7 +167,6 @@ class ScatterPlotter(FigureCanvas):
 
                 ## handle centroids if present     
                 prefix = ''
-                alphaVal = 0.8
 
                 if centroids != None:
                     if centroids[str(int(l))].size != events.shape[1]:
@@ -170,7 +187,7 @@ class ScatterPlotter(FigureCanvas):
                         self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
-                                )
+                                     )
 
         ## handle data edge buffers
         bufferX = buff * (events[:,index1].max() - events[:,index1].min())
