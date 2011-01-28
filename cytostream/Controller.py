@@ -14,12 +14,6 @@ import numpy as np
 import Image
 
 try:
-    from PyQt4 import QtGui, QtCore
-except:
-    print "IMPORT WARNING: Module PyQt4 is not available"
-    sys.exit()
-
-try:
     from config_cs import configCS
     pythonPath = configCS['pythonPath']
 except:
@@ -242,40 +236,23 @@ class Controller:
     #
     ##################################################################################################
            
-    def create_new_project(self,view=None,projectID=None):
-        createNew = True
-    
+    def create_new_project(self,projectID):
+
         ## create projects dir if necssary
         if os.path.isdir(os.path.join(self.baseDir,'projects')) == False:
             print "INFO: projects dir did not exist. creating..."
             os.mkdir(os.path.join(self.baseDir,'projects'))
-
-        ## get project id
-        if projectID != None:
-            pass
-        elif createNew == True and projectID == None:
-            projectID, ok = QtGui.QInputDialog.getText(view, self.appName, 'Enter the name of your new project:')
-            projectID = str(projectID)
-            
-            if ok == False:
-                createNew = False
-        else:
-            createNew = False
-            print "ERROR: creating a new project"
-
-        if createNew == True:
-            print 'initializing project...'
-            self.initialize_project(projectID)
-        else:
-            print "WARNING: did not initialize project"
-            return False
+        
+        ## initialize project
+        self.initialize_project(projectID)
 
         ## remove previous 
-        if self.homeDir != None and os.path.exists(self.homeDir) == True and createNew == True:
-            print 'INFO: overwriting old project of same name...', self.homeDir
+        if self.homeDir != None and os.path.exists(self.homeDir) == True:
+            if self.verbose == True:
+                print 'INFO: overwriting old project of same name...', self.homeDir
             self.remove_project(self.homeDir)
 
-        if createNew == True and self.homeDir != None:
+        if self.homeDir != None:
             os.mkdir(self.homeDir)
             os.mkdir(os.path.join(self.homeDir,"data"))
             os.mkdir(os.path.join(self.homeDir,"figs"))

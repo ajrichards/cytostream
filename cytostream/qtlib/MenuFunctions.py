@@ -4,15 +4,11 @@ import sys,re,os
 from PyQt4 import QtGui,QtCore
 from StateTransitions import *
 
-if hasattr(sys,'frozen'):
-    baseDir = os.path.dirname(sys.executable)
-    baseDir = re.sub("MacOS","Resources",baseDir)
-else:
-    baseDir = os.path.dirname(__file__)
-
-sys.path.append(os.path.join(baseDir,'..'))
-
 def add_actions(mainWindow, target, actions):
+    '''
+    add menu actions
+    
+    '''
     for action in actions:
         if action is None:
             target.addSeparator()
@@ -21,18 +17,19 @@ def add_actions(mainWindow, target, actions):
 
 def create_action(mainWindow, text, slot=None, shortcut=None, icon=None,
                   tip=None, checkable=False, signal="triggered()"):
+    
+    '''
+    create menu actions
+
+    '''
+
     action = QtGui.QAction(text, mainWindow)
 
     if icon is not None:
-        pathPass = False
-        if os.path.isfile(os.path.join(baseDir,"images",icon+".png")) == True:
-            action.setIcon(QtGui.QIcon(os.path.join(baseDir,"images",icon+".png")))
-            pathPass = True
-        elif os.path.isfile(os.path.join(mainWindow.controller.baseDir,"lib","python2.6","images",icon+".png")) == True:
-            action.setIcon(QtGui.QIcon(os.path.join(mainWindow.controller.baseDir,"lib", "python2.6","images","%s.png"%icon)))
-            pathPass = True
-
-        if pathPass == False:
+        iconPath = os.path.join(mainWindow.controller.baseDir,"qtlib","images",icon+".png") 
+        if os.path.isfile(iconPath) == True:
+            action.setIcon(QtGui.QIcon(iconPath))
+        else:
             print "WARNING: bad icon specified", icon + ".png"
 
     if shortcut is not None:
@@ -46,24 +43,24 @@ def create_action(mainWindow, text, slot=None, shortcut=None, icon=None,
         action.setCheckable(True)
     return action
 
-
 def create_menubar_toolbar(mainWindow):
 
-    #################################
-    # Menu actions
-    #################################
+    '''
+    create menubar where each toolbar contains the actions
+    
+    '''
 
     ## file menu actions
-    fileNewBulkAction = create_action(mainWindow,"New...", slot=mainWindow.create_new_project_bulk,
-                                      shortcut=QtGui.QKeySequence.New,icon="filenew", tip="Create a new project with mulitple files")
+    fileNewAction = create_action(mainWindow,"New...", slot=mainWindow.create_new_project,
+                                  shortcut=QtGui.QKeySequence.New,icon="filenew", tip="Create a new project")
     fileOpenAction = create_action(mainWindow,"&Open...", mainWindow.open_existing_project,
-                                              QtGui.QKeySequence.Open, "fileopen",
-                                              "Open an existing project")
+                                   QtGui.QKeySequence.Open, "fileopen",
+                                   "Open an existing project")
     fileSaveAction = create_action(mainWindow,"&Save", mainWindow.fileSave,
-                                              QtGui.QKeySequence.Save, "filesave", "Save the image")
+                                   QtGui.QKeySequence.Save, "filesave", "Save the image")
     fileSaveAsAction = create_action(mainWindow,"Save &As...",
-                                                mainWindow.fileSaveAs, icon="filesaveas",
-                                                tip="Save the project using a new name")
+                                     mainWindow.fileSaveAs, icon="filesaveas",
+                                     tip="Save the project using a new name")
     filePrintAction = create_action(mainWindow,"&Print", mainWindow.filePrint,
                                     QtGui.QKeySequence.Print, "fileprint", "Print the current image")
     fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
@@ -93,7 +90,7 @@ def create_menubar_toolbar(mainWindow):
 
     ## define file menu
     mainWindow.fileMenu = mainWindow.menuBar().addMenu("&File")
-    mainWindow.fileMenuActions = (fileNewBulkAction,fileOpenAction,
+    mainWindow.fileMenuActions = (fileNewAction,fileOpenAction,
                                   fileSaveAction, fileSaveAsAction, None,
                                   filePrintAction, fileQuitAction)
     add_actions(mainWindow,mainWindow.fileMenu,mainWindow.fileMenuActions)

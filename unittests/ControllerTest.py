@@ -26,7 +26,7 @@ class ControllerTest(unittest.TestCase):
 
     def testCreateNewProject(self):
         ## test creation of a project
-        self.controller.create_new_project(view=None,projectID='utest')
+        self.controller.create_new_project(self.projectID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))

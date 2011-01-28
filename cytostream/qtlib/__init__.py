@@ -19,6 +19,6 @@ from ResultsNavigationDock import ResultsNavigationDock
 from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock
-from StateTransitions import *
+from StateTransitions import move_to_initial, move_to_data_processing
 from MainWindow import MainWindow
 #from Main import Main

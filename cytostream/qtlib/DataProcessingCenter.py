@@ -3,58 +3,105 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 
 class DataProcessingCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, transformList, compensationList, currentAction, alternateChannelList=None, parent=None, checksArray=None,fontSize=11):
+    def __init__(self, fileList, masterChannelList, alternateChannelList=None, loadFileFn=None, editBtnFn=None, parent=None,fontSize=11):
         QtGui.QWidget.__init__(self,parent)
 
+        ## arg variables
         self.setWindowTitle('Data Processing')
+        self.fileList = fileList
         self.masterChannelList = masterChannelList
         self.alternateChannelList = alternateChannelList
-        self.fileList = fileList
-        self.transformList = transformList
-        self.compensationList = compensationList
-        self.currentAction = currentAction
-        self.checksArray = checksArray
+        self.loadFileFn = loadFileFn
+        self.editBtnFn = editBtnFn
         self.fontSize = fontSize
-        grid = QtGui.QGridLayout()
 
-        ## verify or create alternate channel list
-        if self.alternateChannelList == None:
-            self.alternateChannelList = ['chan-%s'%(num) for num in range(len(self.masterChannelList))]
-        
+        ## declared variables
+        self.transformList = ['log','logicle']
+        self.compensationList = []
+        self.allFilePaths = []
+
         ## prepare layout
+        self.grid = QtGui.QGridLayout()
         vbox = QtGui.QVBoxLayout()
         vbox.setAlignment(QtCore.Qt.AlignTop)
         self.hbox = QtGui.QHBoxLayout()
         self.hbox.setAlignment(QtCore.Qt.AlignTop)
 
-        ## error checking
-        if self.currentAction not in ['editor','channel select', 'transformation', 'compensation','add remove']:
-            print "ERROR: invalid action specified in data processing center", self.currentAction
-        
-        if self.checksArray != None and type(self.checksArray) != type(np.array([])):
-            print "ERROR: checksArray must be np.array not", type(self.checksArray)
-            return None
-    
-        if self.checksArray != None and type(self.checksArray) == type(np.array([])):
-            rows, cols = np.shape(self.checksArray)
-            if rows != len(self.fileList) or cols != len(self.masterChannelList):
-                print "ERROR: dimension mismatch", (len(self.fileList), len(self.masterChannelList)), (rows,cols)
-                return None
-
+        ## verify or create alternate channel list
+        if self.alternateChannelList == None:
+            self.alternateChannelList = ['chan-%s'%(num) for num in range(len(self.masterChannelList))]
+         
         ## checkbuttons
-        self.make_check_buttons(grid,self.hbox)
-        self.make_chan_files_sheet(self.hbox)
-        vbox.addLayout(self.hbox)
+        if len(self.fileList) > 0:
+            self.make_check_buttons()
+            self.make_summary_sheet()
+            vbox.addLayout(self.hbox)
+        else:
+            self.init_no_file_view()
+            vbox.addLayout(self.hbox)
+
         self.setLayout(vbox)
 
-    def make_chan_files_sheet(self,box):
+    def init_no_file_view(self):
+        nfLayout1 = QtGui.QVBoxLayout()
+        nfLayout1.setAlignment(QtCore.Qt.AlignTop)
+        nfLayout2 = QtGui.QVBoxLayout()
+        nfLayout2.setAlignment(QtCore.Qt.AlignCenter)
+        nfLayout2a = QtGui.QHBoxLayout()
+        nfLayout2a.setAlignment(QtCore.Qt.AlignCenter)        
+        nfLayout2b = QtGui.QHBoxLayout()
+        nfLayout2b.setAlignment(QtCore.Qt.AlignCenter)        
+        nfLayout3 = QtGui.QHBoxLayout()
+        nfLayout3.setAlignment(QtCore.Qt.AlignCenter)
+        
+        ## label widget 
+        nfLayout2a.addWidget(QtGui.QLabel('Welcome to cytostream'))
+        nfLayout2b.addWidget(QtGui.QLabel('To begin a project load your file(s)'))
+
+        ## button widgets
+        self.nfLoadBtn = QtGui.QPushButton("Load Files")
+        self.nfLoadBtn.setMaximumWidth(100)
+        nfLayout3.addWidget(self.nfLoadBtn)
+        if self.loadFileFn == None:
+            self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
+        else:
+            self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.get_file_names)
+
+        self.nfEditBtn = QtGui.QPushButton("Edit Settings")
+        self.nfEditBtn.setMaximumWidth(100)
+        nfLayout3.addWidget(self.nfEditBtn)
+
+        if self.editBtnFn == None:
+            self.editBtnFn = self.generic_callback
+
+        self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
+
+        ## finalize layout
+        nfLayout2.addLayout(nfLayout2a)
+        nfLayout2.addLayout(nfLayout2b)
+        nfLayout1.addLayout(nfLayout2)
+        nfLayout1.addLayout(nfLayout3)
+        self.hbox.addLayout(nfLayout1)
+    
+    def get_file_names(self):
+        self.allFilePaths = self.loadFileFn()
+
+
+    def generic_callback():
+        print "generic callback"
+
+    def make_summary_sheet(self):
+
+        ## setup layouts
+        ssLayout1 = QtGui.QHBoxLayout()
+        ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
 
         ## create a data dict
         dataDict = {}
         self.colNames = ["Name", "Events", "Channels"]
         
         for fileName in self.fileList:
-            if dataDict.has_key('File name') == False:
+            if dataDict.has_key('Name') == False:
                 dataDict['Name'] = [fileName]
             else:
                 dataDict['Name'].append(fileName)
@@ -69,7 +116,8 @@ class DataProcessingCenter(QtGui.QWidget):
             else:
                 dataDict['Channels'].append('y')
 
-        hbox = QtGui.QHBoxLayout()
+        print 'datadict', dataDict
+
         ## get row with maximum number of elements 
         mostVals = 0
         for valList in dataDict.itervalues():
@@ -95,24 +143,24 @@ class DataProcessingCenter(QtGui.QWidget):
                 #font.setBold(True)
                 model.setData(model.index(row,col), QtCore.QVariant(font), QtCore.Qt.FontRole)
 
-        #tree = QtGui.QTreeView()
-        #tree.setModel(model)
-        table = QtGui.QTableView()
-        table.setModel(model)
+        tree = QtGui.QTreeView()
+        tree.setModel(model)
+        #table = QtGui.QTableView()
+        #table.setModel(model)
 
         ## finalize layout                                                                               
-        hbox.addWidget(table)
-        hbox.setAlignment(QtCore.Qt.AlignCenter)
-        box.addLayout(hbox)
+        ssLayout1.addWidget(tree)
+        self.hbox.addLayout(ssLayout1)
 
-    def make_check_buttons(self,grid,box):
-        vbox = QtGui.QVBoxLayout()
-        vbox.setAlignment(QtCore.Qt.AlignTop)
+    
+    def make_check_buttons(self):
+        cbLayout1 = QtGui.QVBoxLayout()
+        cbLayout1.setAlignment(QtCore.Qt.AlignTop)
 
-        hboxLabel = QtGui.QHBoxLayout()
-        hboxLabel.setAlignment(QtCore.Qt.AlignCenter)
-        hboxLabel.addWidget(QtGui.QLabel('Rename and excluded channels'))
-        vbox.addLayout(hboxLabel)
+        cbLabelLayout = QtGui.QHBoxLayout()
+        cbLabelLayout.setAlignment(QtCore.Qt.AlignCenter)
+        cbLabelLayout.addWidget(QtGui.QLabel('Rename and excluded channels'))
+        cbLayout1.addLayout(cbLabelLayout)
         
         self.gWidgets = {}
         for row in range(len(self.masterChannelList)):
@@ -121,31 +169,30 @@ class DataProcessingCenter(QtGui.QWidget):
             if row == 0:
                 self.gWidgets[0] = {}
                 self.gWidgets[0][0] = QtGui.QLabel(' ')
-                grid.addWidget(self.gWidgets[0][0],0,0)
+                self.grid.addWidget(self.gWidgets[0][0],0,0)
 
                 self.gWidgets[row+1] = {}
                 self.gWidgets[row+1][0] = QtGui.QLabel("Original ID")
-                grid.addWidget(self.gWidgets[row+1][0],row+1,0)
+                self.grid.addWidget(self.gWidgets[row+1][0],row+1,0)
 
                 self.gWidgets[row+1][1] = QtGui.QLabel("Alternate ID")
-                grid.addWidget(self.gWidgets[row+1][1],row+1,1)
+                self.grid.addWidget(self.gWidgets[row+1][1],row+1,1)
 
                 self.gWidgets[row+1][1] = QtGui.QLabel("Exclude")
-                grid.addWidget(self.gWidgets[row+1][1],row+1,2)
-                grid.setAlignment(self.gWidgets[row+1][1],QtCore.Qt.AlignCenter)
+                self.grid.addWidget(self.gWidgets[row+1][1],row+1,2)
+                self.grid.setAlignment(self.gWidgets[row+1][1],QtCore.Qt.AlignCenter)
 
             self.gWidgets[row+2] = {}
             self.gWidgets[row+2][0] = QtGui.QLabel(channel)
-            grid.addWidget(self.gWidgets[row+2][0],row+2,0)
+            self.grid.addWidget(self.gWidgets[row+2][0],row+2,0)
 
             self.gWidgets[row+2][1] = QtGui.QLabel(self.alternateChannelList[row])
-            grid.addWidget(self.gWidgets[row+2][1],row+2,1)
+            self.grid.addWidget(self.gWidgets[row+2][1],row+2,1)
 
             cBox = QtGui.QCheckBox(self)
             self.gWidgets[row+2][2] = cBox
-            grid.addWidget(self.gWidgets[row+2][2],row+2,2)
-            grid.setAlignment(self.gWidgets[row+2][2],QtCore.Qt.AlignCenter)
-
+            self.grid.addWidget(self.gWidgets[row+2][2],row+2,2)
+            self.grid.setAlignment(self.gWidgets[row+2][2],QtCore.Qt.AlignCenter)
 
             #self.gWidgets[0] = {}
             #self.gWidgets[0][col+1] = QtGui.QLabel(channel+"  ")
@@ -177,11 +224,9 @@ class DataProcessingCenter(QtGui.QWidget):
         self.renameBtn.setMaximumWidth(100)
         hbox.addWidget(self.renameBtn)
 
-        vbox.addLayout(hbox)
-
-        vbox.addLayout(grid)
-        box.addLayout(vbox)
-        
+        cbLayout1.addLayout(hbox)
+        cbLayout1.addLayout(self.grid)
+        self.hbox.addLayout(cbLayout1)    
 
     def generic_callback(self):
         print "generic callback"
@@ -247,13 +292,8 @@ class DataProcessingCenter(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
-    fileList = ['file1', 'file2']
-    transformList = ['transform1', 'transform2', 'transform3']
-    compensationList = ['compensation1', 'compensation2']
-    checksArray = np.array([[1,1,1,1],[0,0,0,0]])
-    #['editor','channel select', 'transformation', 'compensation','add remove']:
-    currentAction = 'channel select'
-    dpc = DataProcessingCenter(fileList, masterChannelList, transformList, compensationList, currentAction,checksArray=checksArray)
+    fileList = [] #['file1', 'file2']
+    dpc = DataProcessingCenter(fileList, masterChannelList)
     dpc.show()
     sys.exit(app.exec_())
     

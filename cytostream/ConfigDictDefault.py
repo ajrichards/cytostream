@@ -11,7 +11,7 @@ A. Richards
 configDictDefault = {
     ########### state variables ##############################################################
     'current_state'                         : 'Data Processing',    # do not change
-    'highest_State'                         : '0',                  # do not change
+    'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
     'selected_model'                        : 'None',               # do not change
     'data_processing_mode'                  : 'channel select',     # do not change   

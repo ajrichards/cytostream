@@ -10,6 +10,11 @@ import sys, getopt, os
 from PyQt4 import QtGui
 from cytostream.qtlib import MainWindow
 
+import sys
+if sys.platform == 'darwin':
+    import matplotlib
+    matplotlib.use('Agg')
+
 class Main():
     def __init__(self):
         app = QtGui.QApplication(sys.argv)
