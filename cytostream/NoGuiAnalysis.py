@@ -57,7 +57,7 @@ class NoGuiAnalysis():
 
         self.controller = Controller(configDict=self.configDict) 
         self.controller.initialize_project(self.projectID)
-        self.controller.create_new_project(view=None,projectID=self.projectID)
+        self.controller.create_new_project(self.projectID)
         
     def load_files(self):
         """

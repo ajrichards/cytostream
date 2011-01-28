@@ -30,17 +30,21 @@ else:
     baseDir = os.path.dirname(__file__)
 sys.path.append(os.path.join(baseDir,'qtlib'))
 
-from OpenExistingProject import OpenExistingProject
-from BlankPage import BlankPage
-from PipelineDock import PipelineDock
-from Controller import Controller
-from MenuFunctions import *
-from LeftDock import *
-from FileControls import *
-from StateTransitions import *
-from ThumbnailViewer import ThumbnailViewer
-from ScatterPlotter import ScatterPlotter
-#from ReadFileThreader import ReadFileThreader
+from cytostream import Controller
+from cytostream import get_project_names
+from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
+
+#from OpenExistingProject import OpenExistingProject
+#from BlankPage import BlankPage
+#from PipelineDock import PipelineDock
+#from Controller import Controller
+#from MenuFunctions import *
+#from LeftDock import *
+#from FileControls import *
+#from StateTransitions import *
+#from ThumbnailViewer import ThumbnailViewer
+#from ScatterPlotter import ScatterPlotter
+##from ReadFileThreader import ReadFileThreader
 
 __version__ = "0.2"
 
@@ -149,44 +153,72 @@ class MainWindow(QtGui.QMainWindow):
         else:
             pass
 
-
     def create_new_project(self):
-        self.controller.create_new_project(self)
-       
+        ## ask for project name
+        projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter the name of your new project:')
+        projectID = re.sub("\s+","_",str(projectID))
+        idValid = True
 
-    def create_new_project_bulk(self):
-        #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
-        allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open file(s)')
+        ## ensure project name is valid and not already used
+        existingProjects = get_project_names(self.controller.baseDir)
+        if projectID in existingProjects:
+            idValid = False
         
-        firstFile = True
-        goFlag = True
-        for fileName in allFiles:
-            fileName = str(fileName)
-            if firstFile == True:
-                
-                firstFile = False
+        while idValid == False: 
+            reply = QtGui.QMessageBox.question(self, 'Message', "A project named '%s' already exists. \nDo you want to overwrite it?"%projectID, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+            if reply == QtGui.QMessageBox.Yes:
+                idValid = True
+                print 'overwriting anyway'
             else:
-                goFlag = self.controller.load_additional_fcs_files(fileName,self)
+                projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter another project name:')
+                projectID = re.sub("\s+","_",str(projectID))
+                if projectID not in existingProjects:
+                    idValid = True
 
-        if self.controller.homeDir == None:
-            return
-   
-        if goFlag == True:
-            if self.model.homeDir == None:
-                self.model.initialize(self.controller.projectID,self.controller.homeDir) 
-                fileList = get_fcs_file_names(self.controller.homeDir)
-                if len(fileList) > 0:
-                    self.controller.log.log['selectedFile'] = fileList[0]
-                self.controller.log.initialize(self.controller.projectID,self.controller.homeDir)
-                self.log = self.controller.log
+        ## check to see if project creation was canceled
+        if projectID == '':
+            return None
 
-            if self.controller.homeDir != None:
-                self.add_pipeline_dock()
-                self.pDock.set_btn_highlight('data processing')
-                move_to_data_processing(self)
-   
-        else:
-            print "ERROR: not moving to data processing bad goflag"
+        if self.controller.verbose == True:
+            print 'INFO: creating new project', projectID
+        
+        ## initialize and load project
+        self.controller.initialize_project(projectID)
+        self.controller.create_new_project(projectID='utest')
+        move_to_data_processing(self)
+
+        #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
+        #allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open file(s)')
+        #
+        #firstFile = True
+        #goFlag = True
+        #for fileName in allFiles:
+        #    fileName = str(fileName)
+        #    if firstFile == True:
+        #        
+        #        firstFile = False
+        #    else:
+        #        goFlag = self.controller.load_additional_fcs_files(fileName,self)
+        #
+        #if self.controller.homeDir == None:
+        #    return
+        #
+        #if goFlag == True:
+        #    if self.model.homeDir == None:
+        #        self.model.initialize(self.controller.projectID,self.controller.homeDir) 
+        #        fileList = get_fcs_file_names(self.controller.homeDir)
+        #        if len(fileList) > 0:
+        #            self.controller.log.log['selected_file'] = fileList[0]
+        #        self.controller.log.initialize(self.controller.projectID,self.controller.homeDir)
+        #        self.log = self.controller.log
+        #
+        #    if self.controller.homeDir != None:
+        #        self.add_pipeline_dock()
+        #        self.pDock.set_btn_highlight('data processing')
+        #        move_to_data_processing(self)
+        #
+        #else:
+        #    print "ERROR: not moving to data processing bad goflag"
 
     def open_existing_project(self):        
         if self.controller.projectID != None:
@@ -265,22 +297,21 @@ class MainWindow(QtGui.QMainWindow):
         self.set_selected_model()
 
         selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
-        fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']) + "_" + selectedModel
+        fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selected_file']) + "_" + selectedModel
 
-        modelLogFile = self.log.read_model_log('%s_sub%s_%s'%(re.sub("\.fcs|\.pickle","",self.log.log['selectedFile']),
-                                                              int(float(self.log.log['subsample'])),self.log.log['selectedModel'])) 
-        QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
-                          """<br><b>Project ID</b> - %s
-                             <br><b>Model name</b> - %s
-                             <br><b>Date time</b>  - %s
-                             <br><b>Full  name</b> - %s
-                             <br><b>File name</b>  - %s 
-                             <br><b>Components</b> - %s
-                             <br><b>Modes</b>      - %s
-                             <br><b>Run time</b>   - %s"""%(modelLogFile['project id'],selectedModel,modelLogFile['timestamp'],
-                                                     modelLogFile['full model name'],modelLogFile['file name'],
-                                                     modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
-                          )
+        print "suppose to show model log file.................."
+        #QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
+        #                  """<br><b>Project ID</b> - %s
+        #                     <br><b>Model name</b> - %s
+        #                     <br><b>Date time</b>  - %s
+        #                     <br><b>Full  name</b> - %s
+        #                     <br><b>File name</b>  - %s 
+        #                     <br><b>Components</b> - %s
+        #                     <br><b>Modes</b>      - %s
+        #                     <br><b>Run time</b>   - %s"""%(modelLogFile['project id'],selectedModel,modelLogFile['timestamp'],
+        #                                             modelLogFile['full model name'],modelLogFile['file name'],
+        #                                             modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
+        #                  )
     def helpHelp(self):
         self.display_info("The help is not yet implimented")
         #form = helpform.HelpForm("index.html", self)
@@ -311,11 +342,11 @@ class MainWindow(QtGui.QMainWindow):
     #################################################
 
     def set_subsample(self):
-        if self.log.log['currentState'] == "Data Processing":
+        if self.log.log['current_state'] == "Data Processing":
             ss, ssInd = self.dock1.get_subsample()
 
             # if changed remove old thumbs
-            if ss != self.log.log['subsample']:
+            if ss != self.log.log['subsample_qa']:
                 imgDir = os.path.join(self.controller.homeDir,"figs")
                 for img in os.listdir(imgDir):
                     if re.search("\.png",img):
@@ -326,7 +357,7 @@ class MainWindow(QtGui.QMainWindow):
                                 os.remove(os.path.join(imgDir,img,thumb))
                         os.rmdir(os.path.join(imgDir,img))
 
-            self.log.log['subsample'] = ss
+            self.log.log['subsample_qa'] = ss
             goFlag = self.controller.handle_subsampling()
             
             if goFlag == True:
@@ -335,51 +366,52 @@ class MainWindow(QtGui.QMainWindow):
                 return False
     
     def set_checks_array(self):
-        if self.log.log['currentState'] == "Data Processing":
-            checksArray = self.dpc.get_selected_channels()
-            if type(checksArray) != type(np.array([])):
-                print "ERROR in set_checks_array"
-                return False
-                                         
-            self.log.log['checksArray'] = checksArray
-
-            if self.log.log['checksArray'].sum() == 0:
-                return True
-
-            self.set_excluded_files_channels()
-
-        return True  
+        print "debug setting checks array"
+        #if self.log.log['current_state'] == "Data Processing":
+        #    checksArray = self.dpc.get_selected_channels()
+        #    if type(checksArray) != type(np.array([])):
+        #        print "ERROR in set_checks_array"
+        #        return False
+        #                                 
+        #    self.log.log['checksArray'] = checksArray
+        #
+        #    if self.log.log['checksArray'].sum() == 0:
+        #        return True
+        # 
+        #    self.set_excluded_files_channels()
+        #
+        #return True  
 
     def set_excluded_files_channels(self):
-        if type(self.log.log['checksArray']) != type(np.array([])):
-            print "ERROR cannot set excluded files or channels bad checksArray"
-
-        excludedFiles = []
-        excludedChannels = []
-        masterChannelList = self.model.get_master_channel_list()
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        sumCols = self.log.log['checksArray'].sum(axis=0)
-        sumRows = self.log.log['checksArray'].sum(axis=1)
-        excludedChannels =  np.array(masterChannelList)[[int(i) for i in np.where(sumCols == 0)[0]]]
-        excludedFiles =  np.array(fileList)[[int(i) for i in np.where(sumRows == 0)[0]]]
-
-        self.log.log['excludedChannels'] = excludedChannels.tolist()
-        self.log.log['excludedFiles'] = excludedFiles.tolist()
-        
-        if self.controller.verbose == True:
-            print 'setting excluding channels', excludedChannels
-            print 'setting excluding files', excludedFiles
+        print "debug setting excluded file channels"
+        #if type(self.log.log['checksArray']) != type(np.array([])):
+        #    print "ERROR cannot set excluded files or channels bad checksArray"
+        #
+        #excludedFiles = []
+        #excludedChannels = []
+        #masterChannelList = self.model.get_master_channel_list()
+        #fileList = get_fcs_file_names(self.controller.homeDir)
+        #sumCols = self.log.log['checksArray'].sum(axis=0)
+        #sumRows = self.log.log['checksArray'].sum(axis=1)
+        #excludedChannels =  np.array(masterChannelList)[[int(i) for i in np.where(sumCols == 0)[0]]]
+        #excludedFiles =  np.array(fileList)[[int(i) for i in np.where(sumRows == 0)[0]]]
+        #
+        #self.log.log['excludedChannels'] = excludedChannels.tolist()
+        #self.log.log['excludedFiles'] = excludedFiles.tolist()
+        #
+        #if self.controller.verbose == True:
+        #    print 'setting excluding channels', excludedChannels
+        #    print 'setting excluding files', excludedFiles
 
         ## adjust the selected file
-        fileList = get_fcs_file_names(self.controller.homeDir)
-        if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
-            for f in self.log.log['excludedFiles']:
-                fileList.remove(f)
-            self.log.log['selectedFile'] == fileList[0]
+        #fileList = get_fcs_file_names(self.controller.homeDir)
+        #if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
+        #    for f in self.log.log['excludedFiles']:
+        #        fileList.remove(f)
+        #    self.log.log['selectedFile'] == fileList[0]
 
     def set_num_components(self,value):
         diff = value % 8
-        #print value, diff
         if diff == 0:
             newValue = value
         elif (value - diff) % 8 == 0:
@@ -387,25 +419,25 @@ class MainWindow(QtGui.QMainWindow):
         elif (value + diff) % 8 == 0:
             newValue = value + diff
 
-        self.log.log['numComponents'] = newValue
+        self.log.log['selected_k'] = newValue
 
     def set_model_to_run(self):
         sm, smInd = self.dock.get_model_to_run()
         if sm == 'DPMM':
-            self.log.log['modelToRun'] = 'dpmm'
+            self.log.log['model_to_run'] = 'dpmm'
         elif sm == 'K-means':
-            self.log.log['modelToRun'] = 'kmeans'
+            self.log.log['model_to_run'] = 'kmeans'
         else:
             print "ERROR: invalid selection for modelToRun"
 
     def track_highest_state(self):
         ## keep track of the highest state
-        if self.stateList.__contains__(self.log.log['currentState']):
-            if self.stateList.index(self.log.log['currentState']) > self.log.log['highestState']:
-                self.log.log['highestState'] = self.stateList.index(self.log.log['currentState'])
+        if self.stateList.__contains__(self.log.log['current_state']):
+            if self.stateList.index(self.log.log['current_state']) > self.log.log['highest_state']:
+                self.log.log['highest_state'] = self.stateList.index(self.log.log['current_state'])
 
     def run_progress_bar(self):
-        mode = self.log.log['currentState']
+        mode = self.log.log['current_state']
 
         self.set_widgets_enabled(False)
 
@@ -436,7 +468,7 @@ class MainWindow(QtGui.QMainWindow):
         move_to_results_navigation(self,runNew=True)
  
     def display_thumbnails(self,runNew=False):
-        mode = self.log.log['currentState']
+        mode = self.log.log['current_state']
         hbl = QtGui.QHBoxLayout()
         vbl = QtGui.QVBoxLayout()
         vbl.setAlignment(QtCore.Qt.AlignCenter)
@@ -444,17 +476,17 @@ class MainWindow(QtGui.QMainWindow):
         
         ## adjust the selected file
         fileList = get_fcs_file_names(self.controller.homeDir)
-        if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
-            for f in self.log.log['excludedFiles']:
+        if type(self.log.log['excluded_files']) == type([]) and len(self.log.log['excluded_files']) > 0:
+            for f in self.log.log['excluded_files']:
                 fileList.remove(f)
                 
-            self.log.log['selectedFile'] == fileList[0]
+            self.log.log['selected_file'] == fileList[0]
 
         if mode == 'Quality Assurance':
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
-            fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
-            thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
+            fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
+            thumbDir = os.path.join(imgDir,self.log.log['selected_file'][:-4]+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
             
         elif mode == 'Results Navigation':
@@ -464,25 +496,25 @@ class MainWindow(QtGui.QMainWindow):
                 self.display_info("No models have been run yet -- so results cannot be viewed")
                 return False
 
-            self.log.log['selectedModel'] = modelsRun[0] 
+            self.log.log['selected_model'] = modelsRun[0] 
 
-            if self.log.log['selectedModel'] not in modelsRun:
+            if self.log.log['selected_model'] not in modelsRun:
                 print "ERROR selected model not in models run"
 
             ## thumbs viewer
             self.mainWidget = QtGui.QWidget(self)
-            fileChannels = self.model.get_file_channel_list(self.log.log['selectedFile']) 
+            fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
 
-            if self.log.log['subsample'] == 'original':
-                imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selectedModel'])
+            if self.log.log['subsample_analysis'] == 'original':
+                imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
             else:
-                subset = str(int(float(self.log.log['subsample'])))
-                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subset,self.log.log['selectedModel']))
+                subset = str(int(float(self.log.log['subsample_analysis'])))
+                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subset,self.log.log['selected_model']))
             
             if os.path.isdir(imgDir) == False:
                 print "ERROR: a bad imgDir has been specified", imgDir
 
-            thumbDir = os.path.join(imgDir,self.log.log['selectedFile'][:-4]+"_thumbs")
+            thumbDir = os.path.join(imgDir,self.log.log['selected_file'][:-4]+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
         
         else:
@@ -502,42 +534,43 @@ class MainWindow(QtGui.QMainWindow):
         return True
 
     def handle_data_processing_mode_callback(self,item=None):
-        if item != None:
-            self.log.log['dataProcessingAction'] = item
-            if item not in ['channel select']: 
-                self.display_info("This stage is in beta testing and is not yet suggested for general use")
-            move_to_data_processing(self)
+        print "handeling data processing mode callback"
+        #if item != None:
+        #    self.log.log['dataProcessingAction'] = item
+        #    if item not in ['channel select']: 
+        #        self.display_info("This stage is in beta testing and is not yet suggested for general use")
+        #    move_to_data_processing(self)
 
     def set_selected_results_mode(self):
-        #selectedMode, selectedModeInd = self.dock.get_selected_results_mode() 
-        selectedMode = self.dock.get_results_mode()
-        self.log.log['resultsMode'] = selectedMode
-        self.handle_show_scatter(img=None)
+        print "setting selected results mode"
+        #selectedMode = self.dock.get_results_mode()
+        #self.log.log['results_mode'] = selectedMode
+        #self.handle_show_scatter(img=None)
 
     def set_selected_file(self):
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
-        self.log.log['selectedFile'] = selectedFile
+        self.log.log['selected_file'] = selectedFile
         
     def set_selected_model(self):
         selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-        self.log.log['selectedModel'] = selectedModel
+        self.log.log['selected_model'] = selectedModel
 
     def refresh_state(self):
-        if self.log.log['currentState'] == "Data Processing":
+        if self.log.log['current_state'] == "Data Processing":
             move_to_data_processing(self)
-        elif self.log.log['currentState'] == "Quality Assurance":
+        elif self.log.log['current_state'] == "Quality Assurance":
             move_to_quality_assurance(self)
-        elif self.log.log['currentState'] == "Model":
+        elif self.log.log['current_state'] == "Model":
             move_to_model(self)
-        elif self.log.log['currentState'] == "Results Navigation":
+        elif self.log.log['current_state'] == "Results Navigation":
             move_to_results_navigation(self)
-        elif self.log.log['currentState'] == "Results Summary":
+        elif self.log.log['current_state'] == "Results Summary":
             move_to_results_summary(self)
 
         QtCore.QCoreApplication.processEvents()
 
     def handle_show_scatter(self,img=None):
-        mode = self.log.log['currentState']
+        mode = self.log.log['current_state']
         self.set_selected_file()
         
         ## layout and widget setup
@@ -554,7 +587,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
 
         if img != None:
-            channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs","",self.log.log['selectedFile']),"",img)
+            channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs","",self.log.log['selected_file']),"",img)
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
@@ -568,8 +601,8 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,
-                                parent=self.mainWidget,subset=self.log.log['subsample'])
+            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,
+                                parent=self.mainWidget,subset=self.log.log['subsample_qa'])
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
@@ -578,14 +611,14 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
 
-            if self.log.log['subsample'] == 'original':
-                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + self.log.log['selectedModel']
+            if self.log.log['subsample_analysis'] == 'original':
+                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + self.log.log['selected_model']
             else:
                 subset = str(int(float(self.log.log['subsample'])))
-                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selectedFile']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
+                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
 
-            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selectedFile'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
-                                modelName=modelName,modelType=self.log.log['resultsMode'],parent=self.mainWidget)
+            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
+                                modelName=modelName,modelType=self.log.log['results_mode'],parent=self.mainWidget)
             ntb = NavigationToolbar(sp, self.mainWidget)
             vbl.addWidget(sp)
             vbl.addWidget(ntb)
@@ -623,15 +656,12 @@ class MainWindow(QtGui.QMainWindow):
             print "ERROR: invalid flag sent to widgets_enable_all"
             return None
 
-        
-
-        if self.log.log['currentState'] == 'Data Processing':
+        if self.log.log['current_state'] == 'Data Processing':
             self.dock1.setEnabled(flag)
             self.dock2.setEnabled(flag)
             self.fileSelector.setEnabled(flag)
             self.pDock.setEnabled(flag)
-        elif self.log.log['currentState'] == 'Quality Assurance':
+        elif self.log.log['current_state'] == 'Quality Assurance':
             self.dock.setEnabled(flag)
             self.fileSelector.setEnabled(flag)
             self.pDock.setEnabled(flag)
-       

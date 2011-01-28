@@ -1,21 +1,29 @@
-#!/usr/bin/python  
+#!/usr/bin/python
 
-''' 
-call to initialize cytostream  
-A. Richards    
-adam.richards@stat.duke.edu  
 '''
+this script activates the GUI
+
+A. Ricahrds
+'''
+
+import sys, getopt, os
+from PyQt4 import QtGui
+from cytostream.qtlib import MainWindow
 
 import sys
 if sys.platform == 'darwin':
     import matplotlib
     matplotlib.use('Agg') 
 
-#import matplotlib
-#matplotlib.use("Qt4Agg")
+class Main():
+    def __init__(self):
+        app = QtGui.QApplication(sys.argv)
+        app.setOrganizationName("Duke University")
+        app.setOrganizationDomain("duke.edu")
+        app.setApplicationName("cytostream")
+        mw = MainWindow()
+        mw.show()
+        app.exec_()
 
-
-
-from cytostream.qtlib import Main
-
-Main()
+if __name__ == '__main__':
+    main = Main()
