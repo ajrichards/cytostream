@@ -1,9 +1,14 @@
-import sys
+import sys,time
 from PyQt4 import QtGui, QtCore
 import numpy as np
+from cytostream.qtlib import ProgressBar
+from cytostream.qtlib.BlankPage import BlankPage
+
 
 class DataProcessingCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, alternateChannelList=None, loadFileFn=None, editBtnFn=None, parent=None,fontSize=11):
+    def __init__(self, fileList, masterChannelList, alternateChannelList=None, loadFileFn=None, editBtnFn=None, parent=None,
+                 fontSize=11,mainWindow=None,showProgressBar=False):
+
         QtGui.QWidget.__init__(self,parent)
 
         ## arg variables
@@ -14,11 +19,14 @@ class DataProcessingCenter(QtGui.QWidget):
         self.loadFileFn = loadFileFn
         self.editBtnFn = editBtnFn
         self.fontSize = fontSize
+        self.mainWindow = mainWindow
+        self.showProgressBar = showProgressBar
 
         ## declared variables
         self.transformList = ['log','logicle']
         self.compensationList = []
         self.allFilePaths = []
+        self.progressBar = None
 
         ## prepare layout
         self.grid = QtGui.QGridLayout()
@@ -65,7 +73,7 @@ class DataProcessingCenter(QtGui.QWidget):
         if self.loadFileFn == None:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
         else:
-            self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.get_file_names)
+            self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.load_data_files)
 
         self.nfEditBtn = QtGui.QPushButton("Edit Settings")
         self.nfEditBtn.setMaximumWidth(100)
@@ -75,17 +83,68 @@ class DataProcessingCenter(QtGui.QWidget):
             self.editBtnFn = self.generic_callback
 
         self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
+        
+        if self.showProgressBar == True:
+            self.init_progressbar()
 
         ## finalize layout
         nfLayout2.addLayout(nfLayout2a)
         nfLayout2.addLayout(nfLayout2b)
         nfLayout1.addLayout(nfLayout2)
         nfLayout1.addLayout(nfLayout3)
+        if self.progressBar != None:
+            nfLayout1.addLayout(self.pbarLayout1)
         self.hbox.addLayout(nfLayout1)
     
-    def get_file_names(self):
-        self.allFilePaths = self.loadFileFn()
+    def init_progressbar(self):
+        ## add progress bar if loading
+        self.progressLabel = QtGui.QLabel('Carry out transformation and compensation')
+        self.progressBar = ProgressBar(parent=self,buttonLabel="proceed")
+        if self.mainWindow != None:
+            self.progressBar.set_callback(lambda x=self.progressBar: self.mainWindow.load_files_with_progressbar(x))
 
+        buffer1 = QtGui.QLabel('\t\t\t')
+        buffer2 = QtGui.QLabel('\t\t\t')
+        buffer3 = QtGui.QLabel('\t\t\t')
+        buffer4 = QtGui.QLabel('\t\t\t')
+        buffer5 = QtGui.QLabel('\t\t\t')
+        buffer6 = QtGui.QLabel('\t\t\t')
+        pbarLayout1a = QtGui.QHBoxLayout()
+        pbarLayout1a.setAlignment(QtCore.Qt.AlignCenter)
+        pbarLayout1b = QtGui.QHBoxLayout()
+        pbarLayout1b.setAlignment(QtCore.Qt.AlignCenter)
+        self.pbarLayout1 = QtGui.QVBoxLayout()
+        self.pbarLayout1.setAlignment(QtCore.Qt.AlignCenter)
+
+        pbarLayout1a.addWidget(buffer6)
+        pbarLayout1a.addWidget(self.progressLabel)
+        pbarLayout1a.addWidget(buffer6)
+        pbarLayout1b.addWidget(buffer3)
+        pbarLayout1b.addWidget(self.progressBar)
+        pbarLayout1b.addWidget(buffer4)
+        self.pbarLayout1.addWidget(buffer1)
+        self.pbarLayout1.addWidget(buffer2)
+        self.pbarLayout1.addLayout(pbarLayout1a)
+        self.pbarLayout1.addLayout(pbarLayout1b)
+        
+        ## load the files
+        #self.mainWindow.load_files_with_progressbar(self.mainWindow.allFilePaths, self.progressBar)
+        #self.mainWindow.allFilePaths = []
+        #self.mainWindow.refresh_state()
+       
+    def load_data_files(self):
+        self.mainWindow.allFilePaths = [str(pathName) for pathName in self.loadFileFn()]
+        self.mainWindow.mainWidget = QtGui.QWidget(self)
+        bp = BlankPage(parent=self.mainWindow.mainWidget)
+        vbl = QtGui.QVBoxLayout()
+        vbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        hbl.addWidget(bp)
+        vbl.addLayout(hbl)
+        self.mainWindow.mainWidget.setLayout(vbl)
+        self.mainWindow.refresh_main_widget()
+        self.mainWindow.refresh_state()
 
     def generic_callback():
         print "generic callback"

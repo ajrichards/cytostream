@@ -21,12 +21,13 @@ Adam Richards
 adam.richards@stat.duke.edu
 """
 
-import sys,csv,os,re,cPickle,subprocess
+import sys,csv,os,re,cPickle,subprocess,time
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
 from matplotlib import rc
 import matplotlib.cm as cm
+from PyQt4 import QtCore, QtGui
 rc('font',family = 'sans-serif')
 
 class Model:
@@ -79,7 +80,7 @@ class Model:
             self.pythonPath = os.path.join("C:\Python27\python")
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
-    def load_files(self,fileList,dataType='fcs',transform='log'):
+    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None):
         """
         about: 
             This is a handler function for the script LoadFile.py which loads an fcs
@@ -106,7 +107,10 @@ class Model:
         ## create script
         script = os.path.join(self.homeDir,"..","..","LoadFile.py")
 
+        fileCount = 0
         for filePath in fileList:
+            print 'loading %s...'%filePath
+
             proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,transform),
                                     shell=True,
                                     stdout=subprocess.PIPE,
@@ -123,6 +127,15 @@ class Model:
                 except:
                     break
             
+            fileCount+=1
+            percentDone = float(fileCount) / float(len(fileList)) * 100.0
+             
+            if progressBar != None:
+                progressBar.move_bar(int(round(percentDone)))
+                progressBar.show()
+                QtCore.QCoreApplication.processEvents()
+                time.sleep(2)
+
             ## check to see that files were made             
             newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
             newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)

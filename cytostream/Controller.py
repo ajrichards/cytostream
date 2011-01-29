@@ -291,19 +291,21 @@ class Controller:
             os.remove(fcsFileName)
             self.view.status.set("file removed")
 
-    def load_files_handler(self,fileList,dataType='fcs'):
+    def load_files_handler(self,fileList,progressBar=None):
         if type(fileList) != type([]):
             print "INPUT ERROR: load_files_handler: takes as input a list of file paths"
   
+        dataType = self.log.log['input_data_type']
+
         if dataType not in ['fcs','txt']:
             print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' or 'txt'"
 
         ## used the selected transform
         transform = self.log.log['selected_transform']
-        self.model.load_files(fileList)
+        self.model.load_files(fileList,progressBar=progressBar)
 
         ## set the selected file
-        self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",os.path.split(fileList[0])[-1])
+        #self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",os.path.split(fileList[0])[-1])
 
     def get_component_states(self):
         try:
