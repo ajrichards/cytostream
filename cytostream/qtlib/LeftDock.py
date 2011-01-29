@@ -81,7 +81,7 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
     ## check to see if fileList needs adjusting
-    if mainWindow.log.log['currentState'] in ['Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Results Navigation']:
         showModelSelector = True
         modelsRun = get_models_run(mainWindow.controller.homeDir,mainWindow.possibleModels)
     else:

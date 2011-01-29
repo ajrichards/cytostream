@@ -79,30 +79,34 @@ class ProgressBar(QtGui.QWidget):
         hbl1.setAlignment(QtCore.Qt.AlignCenter)
         hbl2 = QtGui.QHBoxLayout()
         hbl2.setAlignment(QtCore.Qt.AlignCenter)
-        
+
         self.pbar = QtGui.QProgressBar(self)
         hbl1.addWidget(self.pbar)
         vbl.addLayout(hbl1)
 
-        self.button = QtGui.QPushButton(buttonLabel, self)
-        self.button.setMaximumWidth(150)
-        self.button.setMinimumWidth(150)
-        self.button.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.button.move(40, 80)
-        hbl2.addWidget(self.button)
-        vbl.addLayout(hbl2)
-        self.setLayout(vbl)
+        if buttonLabel != None:
+            self.button = QtGui.QPushButton(buttonLabel, self)
+            self.button.setMaximumWidth(150)
+            self.button.setMinimumWidth(150)
+            self.button.setFocusPolicy(QtCore.Qt.NoFocus)
+            hbl2.addWidget(self.button)
+            vbl.addLayout(hbl2)
+            self.connect(self.button,QtCore.SIGNAL('clicked()'), self.onStart)
+        else:
+            self.button = None
 
-        self.connect(self.button,QtCore.SIGNAL('clicked()'), self.onStart)
+        self.setLayout(vbl)        
         self.timer = QtCore.QBasicTimer()
         self.step = 0;
 
     def onStart(self):
         if self.running == False:
-            self.button.setText('Please wait...')
+            if self.button != None:
+                self.button.setText('Please wait...')
+                self.button.setEnabled(False)
+                
             self.running = True
-            self.button.setEnabled(False)
-    
+            
     def move_bar(self,step):
         self.step = step
         self.pbar.setValue(self.step)

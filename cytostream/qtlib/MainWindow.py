@@ -33,7 +33,7 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller
 from cytostream import get_project_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
-
+from cytostream.qtlib import ProgressBar
 #from OpenExistingProject import OpenExistingProject
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
@@ -92,6 +92,7 @@ class MainWindow(QtGui.QMainWindow):
         self.tv = None
         self.lastChanI = None
         self.lastChanJ = None
+        self.allFilePaths = []
 
     #################################################
     #
@@ -165,7 +166,8 @@ class MainWindow(QtGui.QMainWindow):
             idValid = False
         
         while idValid == False: 
-            reply = QtGui.QMessageBox.question(self, 'Message', "A project named '%s' already exists. \nDo you want to overwrite it?"%projectID, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+            reply = QtGui.QMessageBox.question(self, 'Message', "A project named '%s' already exists. \nDo you want to overwrite it?"%projectID, 
+                                               QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
                 idValid = True
                 print 'overwriting anyway'
@@ -184,42 +186,11 @@ class MainWindow(QtGui.QMainWindow):
         
         ## initialize and load project
         self.controller.initialize_project(projectID)
-        self.controller.create_new_project(projectID='utest')
+        self.controller.create_new_project(projectID)
         move_to_data_processing(self)
 
         #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
-        #allFiles = QtGui.QFileDialog.getOpenFileNames(self, 'Open file(s)')
-        #
-        #firstFile = True
-        #goFlag = True
-        #for fileName in allFiles:
-        #    fileName = str(fileName)
-        #    if firstFile == True:
-        #        
-        #        firstFile = False
-        #    else:
-        #        goFlag = self.controller.load_additional_fcs_files(fileName,self)
-        #
-        #if self.controller.homeDir == None:
-        #    return
-        #
-        #if goFlag == True:
-        #    if self.model.homeDir == None:
-        #        self.model.initialize(self.controller.projectID,self.controller.homeDir) 
-        #        fileList = get_fcs_file_names(self.controller.homeDir)
-        #        if len(fileList) > 0:
-        #            self.controller.log.log['selected_file'] = fileList[0]
-        #        self.controller.log.initialize(self.controller.projectID,self.controller.homeDir)
-        #        self.log = self.controller.log
-        #
-        #    if self.controller.homeDir != None:
-        #        self.add_pipeline_dock()
-        #        self.pDock.set_btn_highlight('data processing')
-        #        move_to_data_processing(self)
-        #
-        #else:
-        #    print "ERROR: not moving to data processing bad goflag"
-
+        
     def open_existing_project(self):        
         if self.controller.projectID != None:
             reply = QtGui.QMessageBox.question(self, self.controller.appName,
@@ -250,6 +221,17 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_state()
         self.refresh_state()  # done twice to force correct visualation in pipeline
         
+    def load_files_with_progressbar(self,progressBar):
+        ## error check
+        if type(self.allFilePaths) != type([]):
+            print "ERROR: MainWindow -- load_files_with_progressbar -- bad input type"
+        if len(self.allFilePaths) < 1:
+            print "WARNING: MainWindow -- load_files_with_progressbar -- allFilePaths is empty"
+
+        self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar)
+        self.allFilePaths = []
+        self.refresh_state()
+
     def fileSave(self):
         if self.controller.homeDir != None:
             self.controller.save()
@@ -365,22 +347,6 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 return False
     
-    def set_checks_array(self):
-        print "debug setting checks array"
-        #if self.log.log['current_state'] == "Data Processing":
-        #    checksArray = self.dpc.get_selected_channels()
-        #    if type(checksArray) != type(np.array([])):
-        #        print "ERROR in set_checks_array"
-        #        return False
-        #                                 
-        #    self.log.log['checksArray'] = checksArray
-        #
-        #    if self.log.log['checksArray'].sum() == 0:
-        #        return True
-        # 
-        #    self.set_excluded_files_channels()
-        #
-        #return True  
 
     def set_excluded_files_channels(self):
         print "debug setting excluded file channels"
@@ -533,7 +499,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
-    def handle_data_processing_mode_callback(self,item=None):
+    def handle_file_loading(self,item=None):
         print "handeling data processing mode callback"
         #if item != None:
         #    self.log.log['dataProcessingAction'] = item

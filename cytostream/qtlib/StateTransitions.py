@@ -12,18 +12,14 @@ adam.richards@stat.duke.edu
 import os,sys,re
 import numpy as np
 from PyQt4 import QtGui,QtCore
-#from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
-from cytostream import get_fcs_file_names
-from cytostream.qtlib.DataProcessingCenter import DataProcessingCenter
-
-#from LeftDock import *
-#from FileControls import *
-#from BasicWidgets import ProgressBar
-#from DataProcessingCenter import DataProcessingCenter
-#from ModelCenter import ModelCenter
-#from OneDimViewer import OneDimViewer
-#from BlankPage import BlankPage
+from LeftDock import *
+from FileControls import *
+from BasicWidgets import ProgressBar
+from DataProcessingCenter import DataProcessingCenter
+from ModelCenter import ModelCenter
+from OneDimViewer import OneDimViewer
+from BlankPage import BlankPage
 
 def move_to_initial(mainWindow):
     if mainWindow.pDock != None:
@@ -52,7 +48,7 @@ def move_to_results_navigation(mainWindow,runNew=False):
 
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
-    mainWindow.log.log['currentState'] = "Results Navigation"
+    mainWindow.log.log['current_state'] = "Results Navigation"
     goFlag = mainWindow.display_thumbnails(runNew)                 
                                                                                                                                                              
     if goFlag == False:                                                                                                                                  
@@ -81,7 +77,7 @@ def move_to_model(mainWindow):
     if mainWindow.dockWidget != None:                                                                                                                          
         remove_left_dock(mainWindow)                                                                                                                           
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)                                                                                                                
-    mainWindow.log.log['currentState'] = "Model"                                                                                                               
+    mainWindow.log.log['current_state'] = "Model"                                                                                                               
     mainWindow.mc = ModelCenter(parent=mainWindow.mainWidget,runModelFn=mainWindow.run_progress_bar)                                                                      
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)                                                                                                             
     hbl.setAlignment(QtCore.Qt.AlignCenter)                                                                                                              
@@ -181,18 +177,28 @@ def move_to_data_processing(mainWindow):
             if not re.search("\.fcs|\.csv",os.path.split(str(fileName))[-1]):
                 print "WARNING: loaded file is not of type fcs or csv", fileName
 
-        print 'change view here'
-
         return allFiles
 
-    mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files)
+    showProgressBar = False
+
+    if len(mainWindow.allFilePaths) > 0:
+        showProgressBar = True
+    else:
+        showProgressBar = False
+
+    print 'moving to data processing', showProgressBar
+
+
+    mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,mainWindow=mainWindow,showProgressBar=showProgressBar)
     
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
     hbl.setAlignment(QtCore.Qt.AlignTop)
     hbl.addWidget(mainWindow.dpc)
     mainWindow.refresh_main_widget()
-    add_left_dock(mainWindow)
-    mainWindow.dock1.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+    if len(mainWindow.dpc.allFilePaths) > 0:
+        add_left_dock(mainWindow)
+        mainWindow.dock1.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+    
     mainWindow.track_highest_state()
     mainWindow.controller.save()
     if mainWindow.pDock != None:
@@ -234,7 +240,7 @@ def move_to_one_dim_viewer(mainWindow):
     vbl.addWidget(ntb)
     mainWindow.mainWidget.setLayout(vbl)
     QtCore.QCoreApplication.processEvents()
-    mainWindow.log.log['currentState'] = "OneDimViewer"
+    mainWindow.log.log['current_state'] = "OneDimViewer"
     mainWindow.refresh_main_widget()
     add_left_dock(mainWindow)
 
