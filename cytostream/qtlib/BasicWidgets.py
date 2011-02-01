@@ -69,7 +69,7 @@ class Slider(QtGui.QWidget):
 
 
 class ProgressBar(QtGui.QWidget):
-    def __init__(self, parent=None,buttonLabel='Run'):
+    def __init__(self, parent=None,buttonLabel='Run',withLabel=False):
         QtGui.QWidget.__init__(self, parent)
 
         self.running = False
@@ -79,10 +79,16 @@ class ProgressBar(QtGui.QWidget):
         hbl1.setAlignment(QtCore.Qt.AlignCenter)
         hbl2 = QtGui.QHBoxLayout()
         hbl2.setAlignment(QtCore.Qt.AlignCenter)
+        hbl3 = QtGui.QHBoxLayout()
+        hbl3.setAlignment(QtCore.Qt.AlignCenter)
+        
+        if withLabel != False:
+            self.progressLabel = QtGui.QLabel(withLabel)
+            hbl3.addWidget(self.progressLabel)
 
         self.pbar = QtGui.QProgressBar(self)
         hbl1.addWidget(self.pbar)
-        vbl.addLayout(hbl1)
+
 
         if buttonLabel != None:
             self.button = QtGui.QPushButton(buttonLabel, self)
@@ -90,7 +96,6 @@ class ProgressBar(QtGui.QWidget):
             self.button.setMinimumWidth(150)
             self.button.setFocusPolicy(QtCore.Qt.NoFocus)
             hbl2.addWidget(self.button)
-            vbl.addLayout(hbl2)
             self.connect(self.button,QtCore.SIGNAL('clicked()'), self.onStart)
         else:
             self.button = None
@@ -98,6 +103,13 @@ class ProgressBar(QtGui.QWidget):
         self.setLayout(vbl)        
         self.timer = QtCore.QBasicTimer()
         self.step = 0;
+
+
+        ## finalize layout
+        vbl.addLayout(hbl1)
+        vbl.addLayout(hbl2)
+        vbl.addLayout(hbl3)
+
 
     def onStart(self):
         if self.running == False:
