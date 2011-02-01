@@ -36,11 +36,11 @@ configDictDefault = {
     'selected_k'                            : '16',                 # an int divisible by 8
     'results_mode'                          : 'modes',              # modes, components
     'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
-    'excluded_files_qa'                     : '[]',                 # a list of ints (indices)
-    'excluded_files_analysis'               : '[]',                 # a list of ints (indices)
+    'excluded_files'                        : '[]',                 # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
     'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
     'alternate_channel_labels'              : '[]',                 # a list of labels
+    'alternate_file_labels'                 : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
     'filter_in_focus'                       : 'None',               # all or e.g. '1000_filter1'
     'model_mode'                            : 'normal',             # normal, onefit, pooled
