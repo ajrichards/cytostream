@@ -33,7 +33,7 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller
 from cytostream import get_project_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
-from cytostream.qtlib import ProgressBar
+from cytostream.qtlib import ProgressBar, PipelineDock
 #from OpenExistingProject import OpenExistingProject
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
@@ -187,6 +187,7 @@ class MainWindow(QtGui.QMainWindow):
         ## initialize and load project
         self.controller.initialize_project(projectID)
         self.controller.create_new_project(projectID)
+        self.add_pipeline_dock()
         move_to_data_processing(self)
 
         #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")

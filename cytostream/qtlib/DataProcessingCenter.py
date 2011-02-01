@@ -1,13 +1,14 @@
-import sys,time
+import sys,time,os
 from PyQt4 import QtGui, QtCore
 import numpy as np
 from cytostream.qtlib import ProgressBar
 from cytostream.qtlib.BlankPage import BlankPage
+from cytostream import Logger, Model
 
 
 class DataProcessingCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, alternateChannelList=None, loadFileFn=None, editBtnFn=None, parent=None,
-                 fontSize=11,mainWindow=None,showProgressBar=False):
+    def __init__(self, fileList, masterChannelList, alternateChannelList=None, mainWindow=None, loadFileFn=None, editBtnFn=None, parent=None,
+                 fontSize=11,showProgressBar=False,excludedChannels=[]):
 
         QtGui.QWidget.__init__(self,parent)
 
@@ -16,17 +17,25 @@ class DataProcessingCenter(QtGui.QWidget):
         self.fileList = fileList
         self.masterChannelList = masterChannelList
         self.alternateChannelList = alternateChannelList
+        self.mainWindow = mainWindow
         self.loadFileFn = loadFileFn
         self.editBtnFn = editBtnFn
         self.fontSize = fontSize
-        self.mainWindow = mainWindow
         self.showProgressBar = showProgressBar
+        self.excludedChannels = [int(chan) for chan in excludedChannels]
 
         ## declared variables
         self.transformList = ['log','logicle']
         self.compensationList = []
         self.allFilePaths = []
         self.progressBar = None
+
+        ## prepare model and log
+        if self.mainWindow != None:
+            self.controller = mainWindow.controller
+            self.log = self.controller.log
+        else:
+            self.log = None
 
         ## prepare layout
         self.grid = QtGui.QGridLayout()
@@ -37,11 +46,12 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## verify or create alternate channel list
         if self.alternateChannelList == None:
-            self.alternateChannelList = ['chan-%s'%(num) for num in range(len(self.masterChannelList))]
+            self.alternateChannelList = [chan for chan in self.masterChannelList]
          
         ## checkbuttons
         if len(self.fileList) > 0:
-            self.make_check_buttons()
+            self.make_data_dict()
+            self.make_channels_sheet()
             self.make_summary_sheet()
             vbox.addLayout(self.hbox)
         else:
@@ -74,6 +84,9 @@ class DataProcessingCenter(QtGui.QWidget):
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
         else:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.load_data_files)
+
+        if self.showProgressBar == True:
+            self.nfLoadBtn.setEnabled(False)
 
         self.nfEditBtn = QtGui.QPushButton("Edit Settings")
         self.nfEditBtn.setMaximumWidth(100)
@@ -126,12 +139,7 @@ class DataProcessingCenter(QtGui.QWidget):
         self.pbarLayout1.addWidget(buffer2)
         self.pbarLayout1.addLayout(pbarLayout1a)
         self.pbarLayout1.addLayout(pbarLayout1b)
-        
-        ## load the files
-        #self.mainWindow.load_files_with_progressbar(self.mainWindow.allFilePaths, self.progressBar)
-        #self.mainWindow.allFilePaths = []
-        #self.mainWindow.refresh_state()
-       
+               
     def load_data_files(self):
         self.mainWindow.allFilePaths = [str(pathName) for pathName in self.loadFileFn()]
         self.mainWindow.mainWidget = QtGui.QWidget(self)
@@ -149,54 +157,121 @@ class DataProcessingCenter(QtGui.QWidget):
     def generic_callback():
         print "generic callback"
 
-    def make_summary_sheet(self):
 
+    def make_channels_sheet(self):
+        ## setup layouts
+        ssLayout = QtGui.QVBoxLayout()
+        ssLayout.setAlignment(QtCore.Qt.AlignCenter)
+        ssLayout1 = QtGui.QHBoxLayout()
+        ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
+        ssLayout2 = QtGui.QHBoxLayout()
+        ssLayout2.setAlignment(QtCore.Qt.AlignCenter)
+        ssLayout3 = QtGui.QHBoxLayout()
+        ssLayout3.setAlignment(QtCore.Qt.AlignCenter)
+
+        ## set up the label
+        self.chksSummaryLabel = QtGui.QLabel('Select included channels and edit labels')
+
+        ## create the excluded channels panel
+        model1 = QtGui.QStandardItemModel()
+
+        for row in range(len(self.masterChannelList)):
+            channel = self.masterChannelList[row]
+            item1 = QtGui.QStandardItem('%s' % channel)
+            altChannel = self.alternateChannelList[row]
+
+            ## set which ones are checked
+            check = QtCore.Qt.Unchecked if row in self.excludedChannels else QtCore.Qt.Checked
+            item1.setCheckState(check)
+            item1.setCheckable(True)
+            item1.setEditable(False)
+            model1.appendRow(item1)
+            
+        self.view1 = QtGui.QListView()
+        self.view1.setModel(model1)
+
+        ## create the alternate channel list panel
+        self.model2 = QtGui.QStandardItemModel()
+
+        for row in range(len(self.masterChannelList)):
+            channel = self.alternateChannelList[row]
+            item2 = QtGui.QStandardItem('%s' % channel)
+            altChannel = self.alternateChannelList[row]
+
+            ## set which ones are checked
+            check = QtCore.Qt.Unchecked
+            item2.setCheckState(check)
+            item2.setCheckable(False)
+            item2.setEditable(True)
+            self.model2.appendRow(item2)
+
+        self.view2 = QtGui.QListView()
+        self.view2.setModel(self.model2)
+
+        ## setup save btn
+        self.saveBtn = QtGui.QPushButton("Save labels")
+        self.saveBtn.setMaximumWidth(100)
+        self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.set_alternate_labels)
+
+        ## finalize layouts
+        ssLayout1.addWidget(self.chksSummaryLabel)
+        ssLayout3.addWidget(self.saveBtn)
+        ssLayout2.addWidget(self.view1)
+        ssLayout2.addWidget(self.view2)
+        ssLayout.addLayout(ssLayout1)
+        ssLayout.addLayout(ssLayout2)
+        ssLayout.addLayout(ssLayout3)
+        self.hbox.addLayout(ssLayout)
+
+    def make_data_dict(self):
+        ## create a data dict
+        self.dataDict = {}
+        self.colNames = ["Name", "Events", "Channels"]
+        
+        for fileName in self.fileList:
+            if self.dataDict.has_key('Name') == False:
+                self.dataDict['Name'] = [fileName]
+            else:
+                self.dataDict['Name'].append(fileName)
+
+            if self.dataDict.has_key('Events') == False:
+                self.dataDict['Events'] = [self.get_num_events(fileName)]
+            else:
+                self.dataDict['Events'].append(self.get_num_events(fileName))
+
+            if self.dataDict.has_key('Channels') == False:
+                self.dataDict['Channels'] = [self.get_num_channels(fileName)]
+            else:
+                self.dataDict['Channels'].append(self.get_num_channels(fileName))
+
+    def make_summary_sheet(self):
         ## setup layouts
         ssLayout1 = QtGui.QHBoxLayout()
         ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
 
-        ## create a data dict
-        dataDict = {}
-        self.colNames = ["Name", "Events", "Channels"]
-        
-        for fileName in self.fileList:
-            if dataDict.has_key('Name') == False:
-                dataDict['Name'] = [fileName]
-            else:
-                dataDict['Name'].append(fileName)
-
-            if dataDict.has_key('Events') == False:
-                dataDict['Events'] = ['x']
-            else:
-                dataDict['Events'].append('y')
-
-            if dataDict.has_key('Channels') == False:
-                dataDict['Channels'] = ['x']
-            else:
-                dataDict['Channels'].append('y')
-
-        print 'datadict', dataDict
-
         ## get row with maximum number of elements 
         mostVals = 0
-        for valList in dataDict.itervalues():
+        for valList in self.dataDict.itervalues():
             if len(valList) > mostVals:
                 mostVals = len(valList)
 
-        model = QtGui.QStandardItemModel(mostVals,len(dataDict.keys()))
+        model = QtGui.QStandardItemModel(mostVals,len(self.dataDict.keys()))
 
         ## populate the model
         for col in range(len(self.colNames)):
             key = self.colNames[col]
-            items = dataDict[key]
+            items = self.dataDict[key]
 
             ## set the header
             model.setHeaderData(col, QtCore.Qt.Horizontal, QtCore.QVariant(key))
 
             ## populate the rows
             for row in range(len(items)):
-                item = items[row]
-                model.setData(model.index(row,col), QtCore.QVariant(item))
+                item = QtCore.QVariant(items[row])
+
+                #item.setCheckable(True)
+                #item.setEditable(False)
+                model.setData(model.index(row,col),item)
                 font = QtGui.QFont()
                 font.setPointSize(self.fontSize)
                 #font.setBold(True)
@@ -211,131 +286,44 @@ class DataProcessingCenter(QtGui.QWidget):
         ssLayout1.addWidget(tree)
         self.hbox.addLayout(ssLayout1)
 
-    
-    def make_check_buttons(self):
-        cbLayout1 = QtGui.QVBoxLayout()
-        cbLayout1.setAlignment(QtCore.Qt.AlignTop)
-
-        cbLabelLayout = QtGui.QHBoxLayout()
-        cbLabelLayout.setAlignment(QtCore.Qt.AlignCenter)
-        cbLabelLayout.addWidget(QtGui.QLabel('Rename and excluded channels'))
-        cbLayout1.addLayout(cbLabelLayout)
-        
-        self.gWidgets = {}
-        for row in range(len(self.masterChannelList)):
-            channel = self.masterChannelList[row]
-
-            if row == 0:
-                self.gWidgets[0] = {}
-                self.gWidgets[0][0] = QtGui.QLabel(' ')
-                self.grid.addWidget(self.gWidgets[0][0],0,0)
-
-                self.gWidgets[row+1] = {}
-                self.gWidgets[row+1][0] = QtGui.QLabel("Original ID")
-                self.grid.addWidget(self.gWidgets[row+1][0],row+1,0)
-
-                self.gWidgets[row+1][1] = QtGui.QLabel("Alternate ID")
-                self.grid.addWidget(self.gWidgets[row+1][1],row+1,1)
-
-                self.gWidgets[row+1][1] = QtGui.QLabel("Exclude")
-                self.grid.addWidget(self.gWidgets[row+1][1],row+1,2)
-                self.grid.setAlignment(self.gWidgets[row+1][1],QtCore.Qt.AlignCenter)
-
-            self.gWidgets[row+2] = {}
-            self.gWidgets[row+2][0] = QtGui.QLabel(channel)
-            self.grid.addWidget(self.gWidgets[row+2][0],row+2,0)
-
-            self.gWidgets[row+2][1] = QtGui.QLabel(self.alternateChannelList[row])
-            self.grid.addWidget(self.gWidgets[row+2][1],row+2,1)
-
-            cBox = QtGui.QCheckBox(self)
-            self.gWidgets[row+2][2] = cBox
-            self.grid.addWidget(self.gWidgets[row+2][2],row+2,2)
-            self.grid.setAlignment(self.gWidgets[row+2][2],QtCore.Qt.AlignCenter)
-
-            #self.gWidgets[0] = {}
-            #self.gWidgets[0][col+1] = QtGui.QLabel(channel+"  ")
-            #self.gWidgets[0][col+1].setAlignment(QtCore.Qt.AlignCenter)
-            #grid.setAlignment(self.gWidgets[0][col+1],QtCore.Qt.AlignCenter)
-            #grid.addWidget(self.gWidgets[0][col+1],0,col+1)
-            #grid.setVerticalSpacing(1)
-            #row = 0
-                    
-            #cBox = QtGui.QCheckBox(self)
-            #self.gWidgets[row+1][col+1] = cBox
-            ##self.gWidgets[row+1][col+1].setFocusPolicy(QtCore.Qt.NoFocus)
-            #grid.addWidget(self.gWidgets[row+1][col+1],row+1,col+1)
-            #grid.setAlignment(self.gWidgets[row+1][col+1],QtCore.Qt.AlignCenter)
-            #self.connect(self.gWidgets[row+1][col+1], QtCore.SIGNAL('clicked()'),
-            #             lambda x=(row+1,col+1): self.callback_channel_select(indices=x))
-
-        ## add refresh and revert buttons
-        hbox = QtGui.QHBoxLayout()
-        self.refreshBtn = QtGui.QPushButton("Refresh")
-        self.refreshBtn.setMaximumWidth(100)
-        hbox.addWidget(self.refreshBtn)
-
-        self.revertBtn = QtGui.QPushButton("Revert")
-        self.revertBtn.setMaximumWidth(100)
-        hbox.addWidget(self.revertBtn)
-
-        self.renameBtn = QtGui.QPushButton("Rename")
-        self.renameBtn.setMaximumWidth(100)
-        hbox.addWidget(self.renameBtn)
-
-        cbLayout1.addLayout(hbox)
-        cbLayout1.addLayout(self.grid)
-        self.hbox.addLayout(cbLayout1)    
-
     def generic_callback(self):
         print "generic callback"
 
-    def callback_channel_select(self,indices=None):
-        print 'callback for channel select'
-
-        if indices != None:
-            print indices
-
     def set_alternate_labels(self):
-        print 'setting alternate labels'
+        n = len(self.masterChannelList)
+        altLabels = [str(self.model2.data(self.model2.index(i,0)).toString()) for i in range(n)]
 
-    def select_all_channels(self,indices):
-        row, col = indices
-        
-        if row != None:
-            for i in range(len(self.masterChannelList)):
-                self.gWidgets[row][i+1].setChecked(True)
-        if col != None:
-            for j in range(len(self.fileList)):
-                self.gWidgets[j+1][col].setChecked(True)
+        if self.log != None:
+            self.log.log['alternate_channel_labels'] = altLabels
+            self.controller.save()
+        else:
+            print altLabels
 
-    def unselect_all_channels(self,indices):
-        row, col = indices
-                            
-        if row != None:
-            for i in range(len(self.masterChannelList)):
-                self.gWidgets[row][i+1].setChecked(False)
-        if col != None:
-            for j in range(len(self.fileList)):
-                self.gWidgets[j+1][col].setChecked(False)
 
-    def select_all_channels_verify(self):
-        ## check the columns
-        for col in range(len(self.masterChannelList)):
-            allChecked = True
-            for i in range(len(self.fileList)):
-                if self.gWidgets[i+1][col+1].checkState() == 0:
-                    allChecked = False
-            self.gWidgets[len(self.fileList)+1][col+1].setChecked(allChecked)
-       
-        ## check the rows 
-        for row in range(len(self.fileList)):
-            allChecked = True
-            for j in range(len(self.masterChannelList)):
-                if self.gWidgets[row+1][j+1].checkState() == 0:
-                    allChecked = False
-            self.gWidgets[row+1][len(self.masterChannelList)+1].setChecked(allChecked)
+    def get_num_events(self,fileName):
+        '''
+        fetch the number of events in a file
 
+        '''
+
+        if self.log != None:
+            events = self.controller.model.get_events(fileName,subsample='original')
+            return len(events)
+        else:
+            return 'na'
+
+    def get_num_channels(self,fileName):
+        '''
+        fetch the numbe of channels in a file
+
+        '''
+
+        if self.log != None:
+            fileChannels = self.controller.model.get_file_channel_list(fileName)
+            return len(fileChannels)
+        else:
+            return 'na'
+                  
     ## getter for external access to channel states
     def get_selected_channels(self):
         checkedBoxes = np.zeros((len(self.fileList),len(self.masterChannelList)))
@@ -349,9 +337,15 @@ class DataProcessingCenter(QtGui.QWidget):
 
 ### Run the tests                                                            
 if __name__ == '__main__':
+    ''' 
+    Note: to show the opening screen set fileList = [] 
+          otherwise use fileList = ['3FITC_4PE_004']
+    
+    '''
+    
     app = QtGui.QApplication(sys.argv)
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
-    fileList = [] #['file1', 'file2']
+    fileList = ['file1','file2','file3']
     dpc = DataProcessingCenter(fileList, masterChannelList)
     dpc.show()
     sys.exit(app.exec_())

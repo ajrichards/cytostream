@@ -40,6 +40,7 @@ configDictDefault = {
     'excluded_files_analysis'               : '[]',                 # a list of ints (indices)
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
     'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
+    'alternate_channel_labels'              : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
     'filter_in_focus'                       : 'None',               # all or e.g. '1000_filter1'
     'model_mode'                            : 'normal',             # normal, onefit, pooled

@@ -186,9 +186,6 @@ def move_to_data_processing(mainWindow):
     else:
         showProgressBar = False
 
-    print 'moving to data processing', showProgressBar
-
-
     mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,mainWindow=mainWindow,showProgressBar=showProgressBar)
     
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
