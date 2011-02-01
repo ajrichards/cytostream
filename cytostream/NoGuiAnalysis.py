@@ -86,7 +86,7 @@ class NoGuiAnalysis():
         """
     
         if self.controller.log.log.has_key(key) == False:
-            print "ERROR: in NoGuiAnalysis.set -- invalid key entry",key
+            print "ERROR: in NoGuiAnalysis.get -- invalid key entry",key
             return None
     
         return self.controller.log.log[key]

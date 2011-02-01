@@ -46,6 +46,8 @@ class TestCase1(unittest.TestCase):
         self.nga.set('file_in_focus',fileName)
         self.nga.run_model()
         self.nga.make_results_figures(fileName,'run2')
+        
+        ## if file_in_focus is changed return it to the original state
         self.nga.set('file_in_focus','all')                
 
     def tests(self):
@@ -85,7 +87,6 @@ class TestCase1(unittest.TestCase):
         modelRunID = 'run2'
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 3)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
 
 
 ### Run the tests 

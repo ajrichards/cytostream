@@ -93,7 +93,7 @@ class ModelDock(QtGui.QWidget):
         pass
 
 
-### Run the tests                                                                           
+### Run the tests
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     modelList = ['model1', 'model2']
