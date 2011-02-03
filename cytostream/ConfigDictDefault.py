@@ -47,4 +47,5 @@ configDictDefault = {
     'model_reference'                       : 'None',               # fileName, pooled
     'model_reference_run_id'                : 'None',               # a run id i.e. run1
     'channel_view'                          : 'normal',             # normal, custom
+    'app_color'                             : '#999999',            # a color
 }

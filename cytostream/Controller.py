@@ -284,12 +284,45 @@ class Controller:
                 os.rmdir(os.path.join(homeDir,fileOrDir))
         os.rmdir(homeDir)
 
-    def rm_fcs_file(self,fcsFileName):
-        if os.path.isfile(fcsFileName) == False:
-            print "ERROR: could not rm file: %s"%fcsFileName
-        else:
-            os.remove(fcsFileName)
-            self.view.status.set("file removed")
+    def rm_fcs_file(self,fcsFile):
+        '''
+        remove a fcs file from a project
+
+        '''
+
+        dataDir = os.path.join(self.homeDir,'data')
+        modelsDir = os.path.join(self.homeDir,'models')
+        figsDir = os.path.join(self.homeDir,'figs')
+        searchKey1 = fcsFile + "\_data"
+        searchKey2 = fcsFile + "\_channels"
+        searchKey3 = fcsFile + "\_run"
+        searchKey4 = fcsFile + "\_"
+
+        ## remove files from data directory
+        for dirFile in os.listdir(dataDir):
+            if re.search(searchKey1 + "|" + searchKey2, dirFile):
+                os.remove(os.path.join(dataDir,dirFile))
+
+        ## remove files from models directory
+        for dirFile in os.listdir(modelsDir):
+            if re.search(searchKey3, dirFile):
+                os.remove(os.path.join(modelsDir,dirFile))
+        
+        ## get a list of figures dirs and remove files from each
+        figsDirList = []
+        for itemName in os.listdir(figsDir):
+            if os.path.isdir(os.path.join(figsDir,itemName)):
+                figsDirList.append(itemName)
+
+        ## remove all figures
+        for dirName in figsDirList:
+            for dirFile in os.listdir(os.path.join(figsDir,dirName,fcsFile+"_thumbs")):
+                os.remove(os.path.join(figsDir,dirName,fcsFile+"_thumbs",dirFile))
+            os.removedirs(os.path.join(figsDir,dirName,fcsFile+"_thumbs"))
+
+            for dirFile in os.listdir(os.path.join(figsDir,dirName)):
+                if re.search(searchKey4,dirFile):
+                    os.remove(os.path.join(figsDir,dirName,dirFile))
 
     def load_files_handler(self,fileList,progressBar=None):
         if type(fileList) != type([]):

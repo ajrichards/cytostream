@@ -187,13 +187,13 @@ def move_to_data_processing(mainWindow):
         showProgressBar = False
 
     mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,mainWindow=mainWindow,showProgressBar=showProgressBar)
-    
+    add_left_dock(mainWindow)
+
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
     hbl.setAlignment(QtCore.Qt.AlignTop)
     hbl.addWidget(mainWindow.dpc)
     mainWindow.refresh_main_widget()
     if len(mainWindow.dpc.allFilePaths) > 0:
-        add_left_dock(mainWindow)
         mainWindow.dock1.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
     
     mainWindow.track_highest_state()

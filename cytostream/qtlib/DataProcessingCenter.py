@@ -63,6 +63,18 @@ class DataProcessingCenter(QtGui.QWidget):
 
         self.setLayout(vbox)
 
+        ## save the initial results for alternate channels and files
+        self.channels_save_callback()
+        self.files_save_callback()
+
+        ## enable/disable buttons
+        if self.showProgressBar == True and self.mainWindow !=None:
+            self.mainWindow.pDock.contBtn.setEnabled(False)
+        elif len(self.fileList) == 0 and self.mainWindow !=None:
+            self.mainWindow.pDock.contBtn.setEnabled(False)
+        else:
+            self.mainWindow.pDock.contBtn.setEnabled(True)
+
     def init_no_file_view(self):
         nfLayout1 = QtGui.QVBoxLayout()
         nfLayout1.setAlignment(QtCore.Qt.AlignTop)
@@ -116,6 +128,7 @@ class DataProcessingCenter(QtGui.QWidget):
             nfLayout1.addLayout(self.pbarLayout1)
         self.hbox.addLayout(nfLayout1)
     
+        
     def init_progressbar(self):
         ## add progress bar if loading
         #self.progressLabel = QtGui.QLabel('Carry out transformation and compensation')
@@ -164,7 +177,6 @@ class DataProcessingCenter(QtGui.QWidget):
     def generic_callback():
         print "generic callback"
 
-
     def make_channels_sheet(self):
         ## setup layouts
         ssLayout = QtGui.QVBoxLayout()
@@ -210,7 +222,7 @@ class DataProcessingCenter(QtGui.QWidget):
         ## setup save btn
         self.saveBtn = QtGui.QPushButton("save changes")
         self.saveBtn.setMaximumWidth(100)
-        self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.channels_callback)
+        self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.channels_save_callback)
 
         ## finalize layouts
         ssLayout1.addWidget(self.chksSummaryLabel)
@@ -221,21 +233,23 @@ class DataProcessingCenter(QtGui.QWidget):
         ssLayout.addLayout(ssLayout3)
         self.hbox.addLayout(ssLayout)
 
-    def make_files_sheet(self):
+    def make_files_sheet(self, firstRun=True):
         ## setup layouts
-        ssLayout = QtGui.QVBoxLayout()
-        ssLayout.setAlignment(QtCore.Qt.AlignCenter)
-        ssLayout1 = QtGui.QHBoxLayout()
-        ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
-        ssLayout2 = QtGui.QHBoxLayout()
-        ssLayout2.setAlignment(QtCore.Qt.AlignCenter)
-        ssLayout3 = QtGui.QHBoxLayout()
-        ssLayout3.setAlignment(QtCore.Qt.AlignCenter)
+        if firstRun == True:
+            ssLayout = QtGui.QVBoxLayout()
+            ssLayout.setAlignment(QtCore.Qt.AlignCenter)
+            ssLayout1 = QtGui.QHBoxLayout()
+            ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
+            ssLayout2 = QtGui.QHBoxLayout()
+            ssLayout2.setAlignment(QtCore.Qt.AlignCenter)
+            ssLayout3 = QtGui.QHBoxLayout()
+            ssLayout3.setAlignment(QtCore.Qt.AlignCenter)
 
         self.fileSummaryLabel = QtGui.QLabel('Select files for removal and edit labels')
 
         ## create the file list panel
-        self.modelFiles = QtGui.QStandardItemModel()
+        if firstRun == True:
+            self.modelFiles = QtGui.QStandardItemModel()
         
         for row in range(len(self.fileList)):
             fileName = self.fileList[row]
@@ -244,6 +258,7 @@ class DataProcessingCenter(QtGui.QWidget):
             item2 = QtGui.QStandardItem('%s'%fileName)
             item3 = QtGui.QStandardItem('%s'%altFileName)
             item4 = QtGui.QStandardItem('%s'%self.get_num_channels(fileName))
+            item5 = QtGui.QStandardItem('%s'%self.get_num_events(fileName))
             
             ## set which ones are checked
             check = QtCore.Qt.Unchecked
@@ -253,7 +268,8 @@ class DataProcessingCenter(QtGui.QWidget):
             item2.setEditable(False)
             item3.setEditable(True)
             item4.setEditable(False)
-            self.modelFiles.appendRow([item1,item2,item3,item4])
+            item4.setEditable(False)
+            self.modelFiles.appendRow([item1,item2,item3,item4,item5])
 
         ## setup the header
         self.modelFiles.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('file'))
@@ -264,33 +280,50 @@ class DataProcessingCenter(QtGui.QWidget):
         self.modelFiles.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
         self.modelFiles.setHeaderData(3, QtCore.Qt.Horizontal, QtCore.QVariant('channels'))
         self.modelFiles.setHeaderData(3, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+        self.modelFiles.setHeaderData(4, QtCore.Qt.Horizontal, QtCore.QVariant('events'))
+        self.modelFiles.setHeaderData(4, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
 
         viewFiles = QtGui.QTreeView()
         viewFiles.setModel(self.modelFiles)
 
         ## setup save btn
-        self.saveFilesBtn = QtGui.QPushButton("save changes")
-        self.saveFilesBtn.setMaximumWidth(100)
-        self.connect(self.saveFilesBtn, QtCore.SIGNAL('clicked()'),self.files_save_callback)
+        if firstRun == True:
+            self.saveFilesBtn = QtGui.QPushButton("save changes")
+            self.saveFilesBtn.setMaximumWidth(100)
+            self.connect(self.saveFilesBtn, QtCore.SIGNAL('clicked()'),self.files_save_callback)
                 
-        self.removeFileBtn = QtGui.QPushButton("remove")
-        self.removeFileBtn.setMaximumWidth(100)
-        self.connect(self.removeFileBtn, QtCore.SIGNAL('clicked()'),self.files_remove_callback)
+            self.addFileBtn = QtGui.QPushButton("add")
+            self.addFileBtn.setMaximumWidth(100)
+            self.connect(self.addFileBtn, QtCore.SIGNAL('clicked()'),self.files_add_callback)
+
+            self.removeFileBtn = QtGui.QPushButton("remove")
+            self.removeFileBtn.setMaximumWidth(100)
+            self.connect(self.removeFileBtn, QtCore.SIGNAL('clicked()'),self.files_remove_callback)
 
         ## finalize layout
-        ssLayout1.addWidget(self.fileSummaryLabel)
-        ssLayout2.addWidget(viewFiles)
-        ssLayout3.addWidget(self.saveFilesBtn)
-        ssLayout3.addWidget(self.removeFileBtn)
-        ssLayout.addLayout(ssLayout1)
-        ssLayout.addLayout(ssLayout2)
-        ssLayout.addLayout(ssLayout3)
-        self.hbox.addLayout(ssLayout)
+        if firstRun == True:
+            ssLayout1.addWidget(self.fileSummaryLabel)
+            ssLayout2.addWidget(viewFiles)
+            ssLayout3.addWidget(self.saveFilesBtn)
+            ssLayout3.addWidget(self.addFileBtn)
+            ssLayout3.addWidget(self.removeFileBtn)
+            ssLayout.addLayout(ssLayout1)
+            ssLayout.addLayout(ssLayout2)
+            ssLayout.addLayout(ssLayout3)
+            self.hbox.addLayout(ssLayout)
 
     def generic_callback(self):
         print "generic callback"
 
-    def channels_callback(self):
+    def channels_save_callback(self):
+        ''' 
+        saves alternate channel names
+        saves excluded channels for quality assurance
+
+        '''
+
+        print 'channels save'
+
         n = len(self.masterChannelList)
         altLabels = [str(self.modelChannels.data(self.modelChannels.index(i,2)).toString()) for i in range(n)]
         checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
@@ -300,11 +333,23 @@ class DataProcessingCenter(QtGui.QWidget):
             self.log.log['alternate_channel_labels'] = altLabels
             self.log.log['excluded_channels_qa'] = excludedChannels
             self.controller.save()
+        
+        #print 'alternate channels', altLabels
+        #print 'excluded channels', excludedChannels
+
+    def files_add_callback(self):
+        print 'should be adding files'
+        if self.mainWindow != None:
+            self.load_data_files()
         else:
-            print 'alternate channels', altLabels
-            print 'excluded channels', excludedChannels
+            print 'load data file btn'
 
     def files_save_callback(self):
+        '''
+        saves alternate file names
+
+        '''
+
         n = len(self.fileList)
         altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
 
@@ -314,17 +359,33 @@ class DataProcessingCenter(QtGui.QWidget):
         else:
             print 'alternate file names', altFiles
 
-
     def files_remove_callback(self):
+        '''
+        remove selected files from list
+        '''
+
         n = len(self.fileList)
         checkStates = [self.modelFiles.itemFromIndex(self.modelFiles.index(i,0)).checkState() for i in range(n)]
         filesToRemove = np.where(np.array([i for i in checkStates]) == 2)[0].tolist()
 
-        if self.log != None:
-            print 'suppose to be removing files here....'
-        else:
-            print 'removing', filesToRemove
+        if len(filesToRemove) > 0:
+            includedIndices = list(set(range(n)).difference(set(filesToRemove)))
+            print '\tincluded files', includedIndices
 
+            ## remove all files associated with each fcs file
+            if self.log != None:
+                for indToRemove in filesToRemove:
+                    fileToRemove = self.fileList[indToRemove]
+                self.controller.rm_fcs_file(fileToRemove)
+            
+            ## reset file list and recreate widget
+            self.fileList = np.array(self.fileList)[includedIndices].tolist()
+            self.modelFiles.clear()
+            self.make_files_sheet(firstRun=False)
+
+        ## refresh log
+        self.files_save_callback()
+            
     def get_num_events(self,fileName):
         '''
         fetch the number of events in a file
@@ -349,17 +410,6 @@ class DataProcessingCenter(QtGui.QWidget):
         else:
             return 'na'
                   
-    ## getter for external access to channel states
-    def get_selected_channels(self):
-        checkedBoxes = np.zeros((len(self.fileList),len(self.masterChannelList)))
-        
-        for row in range(len(self.fileList)):
-            for col in range(len(self.masterChannelList)):
-                if self.gWidgets[row+1][col+1].checkState() == 2:
-                    checkedBoxes[row][col] = 1
-
-        return checkedBoxes
-
 ### Run the tests                                                            
 if __name__ == '__main__':
     ''' 
