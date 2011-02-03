@@ -21,6 +21,7 @@ sys.path.append(os.path.join(baseDir,'..'))
 
 from FileControls import *
 from FileSelector import FileSelector
+from SubsetSelector import SubsetSelector
 from DataProcessingDock1 import DataProcessingDock1
 from DataProcessingDock2 import DataProcessingDock2
 from QualityAssuranceDock import QualityAssuranceDock
@@ -51,32 +52,33 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget = QtGui.QWidget(mainWindow)
     palette = mainWindow.dockWidget.palette()
     role = mainWindow.dockWidget.backgroundRole()
-    palette.setColor(role, QtGui.QColor('black'))
+    appColor = mainWindow.controller.log.log['app_color']
+    palette.setColor(role, QtGui.QColor(appColor))
     mainWindow.dockWidget.setPalette(palette)
     mainWindow.dockWidget.setAutoFillBackground(True)
     
     # setup alignments
     hbl = QtGui.QVBoxLayout(mainWindow.dockWidget)
     
-    hbl1 = QtGui.QHBoxLayout()
-    hbl1.setAlignment(QtCore.Qt.AlignCenter)
-    vbl1 = QtGui.QVBoxLayout()
-    vbl1.addLayout(hbl1)
-    vbl1.setAlignment(QtCore.Qt.AlignTop)
+    hboxTop = QtGui.QHBoxLayout()
+    hboxTop.setAlignment(QtCore.Qt.AlignCenter)
+    vboxTop = QtGui.QVBoxLayout()
+    vboxTop.addLayout(hboxTop)
+    vboxTop.setAlignment(QtCore.Qt.AlignTop)
     
-    hbl2 = QtGui.QHBoxLayout()
-    hbl2.setAlignment(QtCore.Qt.AlignCenter)
-    vbl2 = QtGui.QVBoxLayout()
-    vbl2.addLayout(hbl2)
-    vbl2.setAlignment(QtCore.Qt.AlignCenter)
+    hboxCenter = QtGui.QHBoxLayout()
+    hboxCenter.setAlignment(QtCore.Qt.AlignCenter)
+    vboxCenter = QtGui.QVBoxLayout()
+    vboxCenter.addLayout(hboxCenter)
+    vboxCenter.setAlignment(QtCore.Qt.AlignCenter)
  
-    hbl3 = QtGui.QHBoxLayout()
-    hbl3.setAlignment(QtCore.Qt.AlignCenter)
-    vbl3 = QtGui.QVBoxLayout()
-    vbl3.addLayout(hbl3)
-    vbl3.setAlignment(QtCore.Qt.AlignBottom)
+    hboxBottom = QtGui.QHBoxLayout()
+    hboxBottom.setAlignment(QtCore.Qt.AlignCenter)
+    vboxBottom = QtGui.QVBoxLayout()
+    vboxBottom.addLayout(hboxBottom)
+    vboxBottom.setAlignment(QtCore.Qt.AlignBottom)
 
-    widgetWidth = 0.15 * mainWindow.screenWidth
+    widgetWidth = 0.13 * mainWindow.screenWidth
     mainWindow.dockWidget.setMaximumWidth(widgetWidth)
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
@@ -89,10 +91,10 @@ def add_left_dock(mainWindow):
         modelsRun = None
 
     if mainWindow.log.log['current_state'] == 'qa':
-        excludedFiles = mainWindow.log.log['excluded_files_qa']
+        excludedFiles = mainWindow.log.log['excluded_files']
         subsampleDefault = mainWindow.log.log['subsample_qa']
     else:
-        excludedFiles = mainWindow.log.log['excluded_files_analysis']
+        excludedFiles = mainWindow.log.log['excluded_files']
         subsampleDefault = mainWindow.log.log['subsample_analysis']
 
     ## check to see if fileList needs adjusting
@@ -103,63 +105,86 @@ def add_left_dock(mainWindow):
         mainWindow.log.log['selected_file'] = fileList[0]
 
     ## file selector
-    if mainWindow.log.log['current_state'] in ['Data Processing','Quality Assurance','Model','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model','Results Navigation']:
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.set_selected_file,
                                                fileDefault=mainWindow.log.log['selected_file'],
                                                showModelSelector=showModelSelector,modelsRun=modelsRun)
         mainWindow.fileSelector.setAutoFillBackground(True)
-        vbl1.addWidget(mainWindow.fileSelector)
+        vboxTop.addWidget(mainWindow.fileSelector)
         
+    ## subset selector
+    if mainWindow.log.log['current_state'] in ['Data Processing']:
+
+        if mainWindow.log.log['current_state'] == 'Data Processing':
+            subsetDefault = mainWindow.log.log['subsample_qa']
+        else:
+            subsetDefault = mainWindow.log.log['subsample_analysis']
+
+        mainWindow.subsetSelector = SubsetSelector(subsetList,parent=mainWindow.dockWidget,
+                                               selectionFn=mainWindow.generic_callback,
+                                               subsetDefault=subsetDefault)
+
+        mainWindow.subsetSelector.setAutoFillBackground(True)
+        vboxTop.addWidget(mainWindow.subsetSelector)
+    
+
+    ## continue btn
+    #mainWindow.contBtn = QtGui.QPushButton("Continue")
+    #mainWindow.contBtn.setMaximumWidth(100)
+    #hboxBottom.addWidget(mainWindow.contBtn)
+    #contBtnFn = mainWindow.generic_callback
+    #mainWindow.connect(mainWindow.contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
+
     ## data processing
-    if mainWindow.log.log['current_state'] == "Data Processing":
-        mainWindow.dock1 = DataProcessingDock1(masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                              contBtnFn=None,subsetDefault=subsampleDefault)
-        callBackfn = mainWindow.handle_data_processing_mode_callback
-        mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['data_processing_mode'])
-        mainWindow.dock1.setAutoFillBackground(True)
-        mainWindow.dock2.setAutoFillBackground(True)
-        hbl2.addWidget(mainWindow.dock2)
-        hbl3.addWidget(mainWindow.dock1)
+    #if mainWindow.log.log['current_state'] == "Data Processing":
+    #    mainWindow.dock1 = DataProcessingDock1(masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
+    #                                          contBtnFn=None,subsetDefault=subsampleDefault)
+    #    callBackfn = mainWindow.generic_callback #handle_data_processing_mode_callback
+    #    mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['data_processing_mode'])
+    #    mainWindow.dock1.setAutoFillBackground(True)
+    #    mainWindow.dock2.setAutoFillBackground(True)
+    #    hbl2.addWidget(mainWindow.dock2)
+    #    hbl3.addWidget(mainWindow.dock1)
 
     ## quality assurance
-    elif mainWindow.log.log['current_state'] == "Quality Assurance":
-        
-        mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-                                               contBtnFn=None,subsetDefault=subsampleDefault,viewAllFn=mainWindow.display_thumbnails)
-        vbl3.addWidget(mainWindow.dock)
-        mainWindow.dock.setAutoFillBackground(True)
+    #elif mainWindow.log.log['current_state'] == "Quality Assurance":
+    #    
+    #    mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
+    #                                           contBtnFn=None,subsetDefault=subsampleDefault,viewAllFn=mainWindow.display_thumbnails)
+    #    vbl3.addWidget(mainWindow.dock)
+    #    mainWindow.dock.setAutoFillBackground(True)
    
     ## model
-    elif mainWindow.log.log['current_state'] == "Model":
-        modelList = ['DPMM','K-means']
-        mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,componentsFn=mainWindow.set_num_components)
-        mainWindow.dock.setAutoFillBackground(True)
-        vbl3.addWidget(mainWindow.dock)
+    #elif mainWindow.log.log['current_state'] == "Model":
+    #    modelList = ['DPMM','K-means']
+    #    mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,componentsFn=mainWindow.set_num_components)
+    #    mainWindow.dock.setAutoFillBackground(True)
+    #    vbl3.addWidget(mainWindow.dock)
 
     ## results navigation
-    elif mainWindow.log.log['current_state'] == "Results Navigation":
-        mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
-                                                resultsModeFn=mainWindow.set_selected_results_mode,
-                                                resultsModeDefault=mainWindow.log.log['results_mode'],viewAllFn=mainWindow.display_thumbnails,
-                                                infoBtnFn=mainWindow.show_model_log_info)
-        mainWindow.dock.setAutoFillBackground(True)
-        vbl3.addWidget(mainWindow.dock)
+    #elif mainWindow.log.log['current_state'] == "Results Navigation":
+    #    mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
+    #                                            resultsModeFn=mainWindow.set_selected_results_mode,
+    #                                            resultsModeDefault=mainWindow.log.log['results_mode'],viewAllFn=mainWindow.display_thumbnails,
+    #                                            infoBtnFn=mainWindow.show_model_log_info)
+    #    mainWindow.dock.setAutoFillBackground(True)
+    #    vbl3.addWidget(mainWindow.dock)
 
     ## one dimensional viewer
-    if mainWindow.log.log['current_state'] == 'OneDimViewer':
-        mainWindow.dock = OneDimViewerDock(fileList,masterChannelList,callBack=mainWindow.odv.paint)
-        mainWindow.dock.setAutoFillBackground(True)
-        vbl1.addWidget(mainWindow.dock)
+    #if mainWindow.log.log['current_state'] == 'OneDimViewer':
+    #    mainWindow.dock = OneDimViewerDock(fileList,masterChannelList,callBack=mainWindow.odv.paint)
+    #    mainWindow.dock.setAutoFillBackground(True)
+    #    vbl1.addWidget(mainWindow.dock)
         
     ## stages with thumbnails
-    if mainWindow.log.log['current_state'] in ['Quality Assurance', 'Results Navigation']:
-        mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)
+    #if mainWindow.log.log['current_state'] in ['Quality Assurance', 'Results Navigation']:
+    #    mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)
 
     ## finalize alignments
-    hbl.addLayout(vbl1)
-    hbl.addLayout(vbl2)
-    hbl.addLayout(vbl3)
+    hbl.addLayout(vboxTop)
+    hbl.addLayout(vboxCenter)
+    hbl.addLayout(vboxBottom)
 
     mainWindow.mainDockWidget.setWidget(mainWindow.dockWidget)
     mainWindow.addDockWidget(QtCore.Qt.LeftDockWidgetArea, mainWindow.mainDockWidget)

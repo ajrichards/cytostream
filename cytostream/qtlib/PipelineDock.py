@@ -6,7 +6,7 @@ from BasicWidgets import Tooltip
 
 class PipelineDock(QtGui.QWidget):
 
-    def __init__(self, parent=None, eSize=35, btnCallBacks=None):
+    def __init__(self, parent=None, appColor='black', eSize=35, btnCallBacks=None):
         QtGui.QWidget.__init__(self, parent)
 
         ## set variables
@@ -21,74 +21,98 @@ class PipelineDock(QtGui.QWidget):
         ## color
         palette = self.palette()
         role = self.backgroundRole()
-        palette.setColor(role, QtGui.QColor('black'))
+        palette.setColor(role, QtGui.QColor(appColor))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
 
     def create_buttons(self):
         ## setup layout
-        vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QVBoxLayout()
+        hbl = QtGui.QVBoxLayout()
+        hboxTop = QtGui.QVBoxLayout()
+        hboxTop.setAlignment(QtCore.Qt.AlignCenter)
+        vboxTop = QtGui.QHBoxLayout()
+        vboxTop.addLayout(hboxTop)
+        vboxTop.setAlignment(QtCore.Qt.AlignTop)
 
-        ## create buttons (7 to 1.5)
+        hboxCenter = QtGui.QHBoxLayout()
+        hboxCenter.setAlignment(QtCore.Qt.AlignCenter)
+        vboxCenter = QtGui.QVBoxLayout()
+        vboxCenter.addLayout(hboxCenter)
+        vboxCenter.setAlignment(QtCore.Qt.AlignCenter)
+
+        hboxBottom = QtGui.QHBoxLayout()
+        hboxBottom.setAlignment(QtCore.Qt.AlignCenter)
+        vboxBottom = QtGui.QVBoxLayout()
+        vboxBottom.addLayout(hboxBottom)
+        vboxBottom.setAlignment(QtCore.Qt.AlignBottom)
 
         ## data processing
         self.dataProcessingBtn = QtGui.QPushButton("Data")
-        self.dataProcessingBtn.setMaximumWidth(self.eSize*1.5)
-        self.dataProcessingBtn.setMinimumWidth(self.eSize*1.5)
+        self.dataProcessingBtn.setMaximumWidth(self.eSize)
+        self.dataProcessingBtn.setMinimumWidth(self.eSize)
         self.dataProcessingBtn.setAutoFillBackground(True)
         self.dataProcessingBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.dataProcessingTip = Tooltip(msg="Carry out channel selection, labeling, transformation and more",parent=self.dataProcessingBtn)
-        hbox.addWidget(self.dataProcessingBtn)
-        hbox.setAlignment(QtCore.Qt.AlignCenter)
+        hboxTop.addWidget(self.dataProcessingBtn)
         self.connect(self.dataProcessingBtn, QtCore.SIGNAL('clicked()'),lambda x='data processing': self.btn_callback(x))
 
         ## quality assurance
         self.qualityAssuranceBtn = QtGui.QPushButton("QA")
-        self.qualityAssuranceBtn.setMaximumWidth(self.eSize*1.5)
-        self.qualityAssuranceBtn.setMinimumWidth(self.eSize*1.5)
+        self.qualityAssuranceBtn.setMaximumWidth(self.eSize)
+        self.qualityAssuranceBtn.setMinimumWidth(self.eSize)
         self.qualityAssuranceBtn.setAutoFillBackground(True)
         self.qualityAssuranceBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.qualityAssuranceTip = Tooltip(msg="Assess the quality of each file",parent=self.qualityAssuranceBtn)
-        hbox.addWidget(self.qualityAssuranceBtn)
+        hboxTop.addWidget(self.qualityAssuranceBtn)
         self.connect(self.qualityAssuranceBtn, QtCore.SIGNAL('clicked()'),lambda x='quality assurance': self.btn_callback(x))
 
         ## model
         self.modelBtn = QtGui.QPushButton("Model")
-        self.modelBtn.setMaximumWidth(self.eSize*1.5)
-        self.modelBtn.setMinimumWidth(self.eSize*1.5)
+        self.modelBtn.setMaximumWidth(self.eSize)
+        self.modelBtn.setMinimumWidth(self.eSize)
         self.modelBtn.setAutoFillBackground(True)
         self.modelBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.modelTip = Tooltip(msg="Run a model on the fcs files",parent=self.modelBtn)
-        hbox.addWidget(self.modelBtn)
+        hboxTop.addWidget(self.modelBtn)
         self.connect(self.modelBtn, QtCore.SIGNAL('clicked()'),lambda x='model': self.btn_callback(x))
 
         ## results navigation
         self.resultsNavigationBtn = QtGui.QPushButton("Results")
-        self.resultsNavigationBtn.setMaximumWidth(self.eSize*1.5)
-        self.resultsNavigationBtn.setMinimumWidth(self.eSize*1.5)
+        self.resultsNavigationBtn.setMaximumWidth(self.eSize)
+        self.resultsNavigationBtn.setMinimumWidth(self.eSize)
         self.resultsNavigationBtn.setAutoFillBackground(True)
         self.resultsNavigationTip = Tooltip(msg="Navigate the results of models run",parent=self.resultsNavigationBtn)
         self.resultsNavigationBtn.setFocusPolicy(QtCore.Qt.NoFocus)
-        hbox.addWidget(self.resultsNavigationBtn)
+        hboxTop.addWidget(self.resultsNavigationBtn)
         self.connect(self.resultsNavigationBtn, QtCore.SIGNAL('clicked()'),lambda x='results navigation': self.btn_callback(x))
 
         ## summary and reports
         self.resultsSummaryBtn = QtGui.QPushButton("Summary")
-        self.resultsSummaryBtn.setMaximumWidth(self.eSize*1.5)
-        self.resultsSummaryBtn.setMinimumWidth(self.eSize*1.5)
+        self.resultsSummaryBtn.setMaximumWidth(self.eSize)
+        self.resultsSummaryBtn.setMinimumWidth(self.eSize)
         self.resultsSummaryBtn.setAutoFillBackground(True)
         self.resultsSummaryBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.resultsSummaryTip = Tooltip(msg="View summaries of the models and produce reports",parent=self.resultsSummaryBtn)
-        hbox.addWidget(self.resultsSummaryBtn)
+        hboxTop.addWidget(self.resultsSummaryBtn)
         self.connect(self.resultsSummaryBtn, QtCore.SIGNAL('clicked()'),lambda x='results summary': self.btn_callback(x))
 
+
+         ## continue btn      
+        self.contBtn = QtGui.QPushButton("Continue")
+        self.contBtn.setMaximumWidth(100)
+        hboxBottom.addWidget(self.contBtn)
+        #contBtnFn = mainWindow.generic_callback
+        #mainWindow.connect(mainWindow.contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
+
         ## finalize layout
-        hbox.setAlignment(QtCore.Qt.AlignCenter)
-        vbox.addLayout(hbox)
-        vbox.setAlignment(QtCore.Qt.AlignTop)
-        self.setLayout(vbox)
+        hbl.addLayout(vboxTop)
+        hbl.addLayout(vboxCenter)
+        hbl.addLayout(vboxBottom)
+
+        #vbox.addLayout(hbox)
+        #vbox.setAlignment(QtCore.Qt.AlignTop)
+        self.setLayout(hbl)
 
     #def btn_callback(self,value):
     #    self.set_btn_highlight(value)

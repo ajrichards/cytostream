@@ -19,7 +19,7 @@ import platform
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from PyQt4.QtCore import  PYQT_VERSION_STR, QT_VERSION_STR
+from PyQt4.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
 #import helpform
 #import qrc_resources
 
@@ -33,7 +33,7 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller
 from cytostream import get_project_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
-from cytostream.qtlib import ProgressBar, PipelineDock
+from cytostream.qtlib import add_left_dock, ProgressBar, PipelineDock
 #from OpenExistingProject import OpenExistingProject
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
@@ -123,7 +123,8 @@ class MainWindow(QtGui.QMainWindow):
                         lambda a=self:move_to_model(a), 
                         lambda a=self:move_to_results_navigation(a), 
                         lambda a=self:move_to_results_summary(a)]
-        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=self.eSize,btnCallBacks=btnCallBacks)
+        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
+                                  appColor=self.controller.log.log['app_color'])
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
         palette.setColor(role, QtGui.QColor('black'))
@@ -138,8 +139,8 @@ class MainWindow(QtGui.QMainWindow):
         
         self.pipelineDock.setWidget(self.pDock)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.pipelineDock)
-        self.pipelineDock.setMinimumWidth(0.10 * self.screenWidth)
-        self.pipelineDock.setMaximumWidth(0.10 * self.screenWidth)
+        self.pipelineDock.setMinimumWidth(0.08 * self.screenWidth)
+        self.pipelineDock.setMaximumWidth(0.08 * self.screenWidth)
 
     def remove_project(self):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
@@ -189,6 +190,7 @@ class MainWindow(QtGui.QMainWindow):
         self.controller.create_new_project(projectID)
         self.add_pipeline_dock()
         move_to_data_processing(self)
+        add_left_dock(self)
 
         #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
         

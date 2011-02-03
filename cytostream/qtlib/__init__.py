@@ -1,5 +1,6 @@
 from BasicWidgets import Slider, ProgressBar, DisplayImage
 from FileSelector import FileSelector
+from SubsetSelector import SubsetSelector
 from MenuFunctions import create_menubar_toolbar, create_action, add_actions
 from BulkNewProject import BulkNewProject
 from OpenExistingProject import OpenExistingProject
