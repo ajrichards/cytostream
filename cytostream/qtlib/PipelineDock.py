@@ -6,11 +6,15 @@ from BasicWidgets import Tooltip
 
 class PipelineDock(QtGui.QWidget):
 
-    def __init__(self, parent=None, appColor='black', eSize=35, btnCallBacks=None):
+    def __init__(self, log, allStates, parent=None, appColor='black', eSize=35, btnCallBacks=None):
         QtGui.QWidget.__init__(self, parent)
 
-        ## set variables
+        ## input variables
         self.eSize = eSize
+        self.log = log
+        self.allStates = allStates
+
+        ## declared variables
         self.buff = 2.0
         self.btnColor = QtGui.QColor(255, 204, 153)
         self.btnCallBacks = btnCallBacks
@@ -25,6 +29,29 @@ class PipelineDock(QtGui.QWidget):
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
+    def enable_disable_states(self):
+        highestStateInd = int(self.log.log['highest_state'])
+        currentState = self.log.log['current_state']
+        highestState = self.allStates[highestStateInd]
+        self.inactivate_all()
+
+        if highestStateInd > 0:
+            self.dataProcessingBtn.setEnabled(True)
+        if highestStateInd > 1:
+            self.qualityAssuranceBtn.setEnabled(True)
+        if highestStateInd > 2:
+            self.modelBtn.setEnabled(True)
+        if highestStateInd > 3:
+            self.resultsNavigationBtn.setEnabled(True)
+        if highestStateInd > 4:        
+            self.resultsSummaryBtn.setEnabled(True)
+
+        if highestState == 0:
+            self.inactivate_all()
+
+        ## highlight current state
+        if currentState in self.allStates[1:]:
+            self.set_btn_highlight(currentState)
 
     def create_buttons(self):
         ## setup layout
@@ -99,23 +126,18 @@ class PipelineDock(QtGui.QWidget):
 
 
          ## continue btn      
-        self.contBtn = QtGui.QPushButton("Continue")
+        self.contBtn = QtGui.QPushButton("continue")
         self.contBtn.setMaximumWidth(100)
         hboxBottom.addWidget(self.contBtn)
-        #contBtnFn = mainWindow.generic_callback
-        #mainWindow.connect(mainWindow.contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
 
         ## finalize layout
         hbl.addLayout(vboxTop)
         hbl.addLayout(vboxCenter)
         hbl.addLayout(vboxBottom)
-
-        #vbox.addLayout(hbox)
-        #vbox.setAlignment(QtCore.Qt.AlignTop)
         self.setLayout(hbl)
 
-    #def btn_callback(self,value):
-    #    self.set_btn_highlight(value)
+    def enable_continue_btn(self,fn):
+        self.connect(self.contBtn, QtCore.SIGNAL('clicked()'),fn)
 
     def unset_all_highlights(self):
         self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % None)
@@ -126,6 +148,7 @@ class PipelineDock(QtGui.QWidget):
         QtCore.QCoreApplication.processEvents()
 
     def set_btn_highlight(self,btnName):
+        btnName = btnName.lower()
         if btnName == 'data processing':
             self.unset_all_highlights()
             self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
@@ -148,6 +171,7 @@ class PipelineDock(QtGui.QWidget):
 
     def btn_callback(self,btnName):
         goFlag = False
+        btnName = btnName.lower()
         if btnName == 'data processing':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[0]()

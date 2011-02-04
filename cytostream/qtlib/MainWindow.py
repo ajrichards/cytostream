@@ -33,7 +33,7 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller
 from cytostream import get_project_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
-from cytostream.qtlib import add_left_dock, ProgressBar, PipelineDock
+from cytostream.qtlib import add_left_dock, ProgressBar, PipelineDock, BlankPage
 #from OpenExistingProject import OpenExistingProject
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
@@ -60,7 +60,7 @@ class MainWindow(QtGui.QMainWindow):
         self.controller = Controller()
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Data Processing', 'Quality Assurance', 'Model', 'Results Navigation','Summary and Reports']
+        self.stateList = ['Initial','Data Processing', 'Quality Assurance', 'Model', 'Results Navigation','Summary and Reports']
         self.possibleModels = ['dpmm']
         self.resultsModeList = ['modes','components']
         
@@ -123,7 +123,7 @@ class MainWindow(QtGui.QMainWindow):
                         lambda a=self:move_to_model(a), 
                         lambda a=self:move_to_results_navigation(a), 
                         lambda a=self:move_to_results_summary(a)]
-        self.pDock = PipelineDock(parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
+        self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
                                   appColor=self.controller.log.log['app_color'])
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
@@ -188,9 +188,7 @@ class MainWindow(QtGui.QMainWindow):
         ## initialize and load project
         self.controller.initialize_project(projectID)
         self.controller.create_new_project(projectID)
-        self.add_pipeline_dock()
         move_to_data_processing(self)
-        add_left_dock(self)
 
         #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
         
@@ -220,11 +218,15 @@ class MainWindow(QtGui.QMainWindow):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
-        self.add_pipeline_dock()
-        self.refresh_state()
+        #self.refresh_state()
         self.refresh_state()  # done twice to force correct visualation in pipeline
         
     def load_files_with_progressbar(self,progressBar):
+        '''
+        callback for loading files from data processing
+
+        '''
+
         ## error check
         if type(self.allFilePaths) != type([]):
             print "ERROR: MainWindow -- load_files_with_progressbar -- bad input type"
@@ -233,6 +235,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar)
         self.allFilePaths = []
+        self.move_transition()
         self.refresh_state()
 
     def fileSave(self):
@@ -305,7 +308,9 @@ class MainWindow(QtGui.QMainWindow):
     ################################################################################################3
 
     def move_transition(self):
+        self.mainWidget = QtGui.QWidget(self)
         bp = BlankPage(parent=self.mainWidget)
+        self.bp = BlankPage(parent=self.mainWidget)
         vbl = QtGui.QVBoxLayout()
         vbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl = QtGui.QHBoxLayout()
@@ -313,9 +318,13 @@ class MainWindow(QtGui.QMainWindow):
         hbl.addWidget(bp)
         vbl.addLayout(hbl)
         self.mainWidget.setLayout(vbl)
+        #self.refresh_main_widget()
+        #hbl = QtGui.QHBoxLayout(self.mainWidget)
+        #hbl.setAlignment(QtCore.Qt.AlignTop)
+        #hbl.addWidget(self.bp)
         self.refresh_main_widget()
-        QtCore.QCoreApplication.processEvents()
-        
+        #QtCore.QCoreApplication.processEvents()
+
     def generic_callback(self):
         print "this button/widget does not do anything yet"
 
@@ -399,11 +408,17 @@ class MainWindow(QtGui.QMainWindow):
         else:
             print "ERROR: invalid selection for modelToRun"
 
-    def track_highest_state(self):
+    def update_highest_state(self):
+        '''
+        keep track of the highest state achieved in software
+
+        '''
+
         ## keep track of the highest state
         if self.stateList.__contains__(self.log.log['current_state']):
-            if self.stateList.index(self.log.log['current_state']) > self.log.log['highest_state']:
+            if self.stateList.index(self.log.log['current_state']) > int(self.log.log['highest_state']):
                 self.log.log['highest_state'] = self.stateList.index(self.log.log['current_state'])
+                self.controller.save()
 
     def run_progress_bar(self):
         mode = self.log.log['current_state']
@@ -502,14 +517,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
-    def handle_file_loading(self,item=None):
-        print "handeling data processing mode callback"
-        #if item != None:
-        #    self.log.log['dataProcessingAction'] = item
-        #    if item not in ['channel select']: 
-        #        self.display_info("This stage is in beta testing and is not yet suggested for general use")
-        #    move_to_data_processing(self)
-
     def set_selected_results_mode(self):
         print "setting selected results mode"
         #selectedMode = self.dock.get_results_mode()
@@ -517,12 +524,36 @@ class MainWindow(QtGui.QMainWindow):
         #self.handle_show_scatter(img=None)
 
     def set_selected_file(self):
+        '''
+        set the selecte file
+        '''
+
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selected_file'] = selectedFile
-        
+        self.controller.save()
+
+    def set_selected_subsample(self):
+        '''
+        set the selected subsample
+
+        '''
+
+        selectedSubset, selectedSubsetInd = self.subsetSelector.get_selected_subset() 
+        if selectedSubset == 'All Data':
+            selectedSubset = 'original'
+
+
+        if self.log.log['current_state'] == 'Data Processing':
+            self.log.log['subsample_qa'] = selectedSubset
+        if self.log.log['current_state'] == 'Model':
+            self.log.log['subsample_analysis'] = selectedSubset
+            
+        self.controller.save()
+
     def set_selected_model(self):
-        selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-        self.log.log['selected_model'] = selectedModel
+        print 'setting selected model'
+        #selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
+        #self.log.log['selected_model'] = selectedModel
 
     def refresh_state(self):
         if self.log.log['current_state'] == "Data Processing":

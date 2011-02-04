@@ -14,7 +14,6 @@ configDictDefault = {
     'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
     'selected_model'                        : 'None',               # do not change
-    'data_processing_mode'                  : 'channel select',     # do not change   
     'models_run_count'                      : '0',                  # do not change
     'filters_run_count'                     : '{}',                 # do not change
 

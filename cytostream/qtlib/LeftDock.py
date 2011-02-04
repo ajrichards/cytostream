@@ -41,9 +41,7 @@ def add_left_dock(mainWindow):
 
     masterChannelList = mainWindow.model.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    transformList = ['transform1', 'transform2', 'transform3']
-    compensationList = ['compensation1', 'compensation2']
-    subsetList = ["1e3", "1e4","5e4","All Data"]
+    subsetList = ["1e03", "1e04","5e04","All Data"]
 
     mainWindow.mainDockWidget = QtGui.QDockWidget(mainWindow.controller.projectID, mainWindow)
     mainWindow.mainDockWidget.setObjectName("MainDockWidget")
@@ -111,7 +109,7 @@ def add_left_dock(mainWindow):
                                                fileDefault=mainWindow.log.log['selected_file'],
                                                showModelSelector=showModelSelector,modelsRun=modelsRun)
         mainWindow.fileSelector.setAutoFillBackground(True)
-        vboxTop.addWidget(mainWindow.fileSelector)
+        hboxTop.addWidget(mainWindow.fileSelector)
         
     ## subset selector
     if mainWindow.log.log['current_state'] in ['Data Processing']:
@@ -122,12 +120,17 @@ def add_left_dock(mainWindow):
             subsetDefault = mainWindow.log.log['subsample_analysis']
 
         mainWindow.subsetSelector = SubsetSelector(subsetList,parent=mainWindow.dockWidget,
-                                               selectionFn=mainWindow.generic_callback,
+                                               selectionFn=mainWindow.set_selected_subsample,
                                                subsetDefault=subsetDefault)
 
         mainWindow.subsetSelector.setAutoFillBackground(True)
-        vboxTop.addWidget(mainWindow.subsetSelector)
+        hboxTop.addWidget(mainWindow.subsetSelector)
     
+    ## more info btn
+    if mainWindow.log.log['current_state'] in ['Data Processing']:
+        mainWindow.moreInfoBtn = QtGui.QPushButton("more info")
+        mainWindow.moreInfoBtn.setMaximumWidth(100)
+        hboxBottom.addWidget(mainWindow.moreInfoBtn)
 
     ## continue btn
     #mainWindow.contBtn = QtGui.QPushButton("Continue")

@@ -28,7 +28,6 @@ class DataProcessingCenter(QtGui.QWidget):
         ## declared variables
         self.transformList = ['log','logicle']
         self.compensationList = []
-        self.allFilePaths = []
         self.progressBar = None
 
         ## prepare model and log
@@ -67,13 +66,27 @@ class DataProcessingCenter(QtGui.QWidget):
         self.channels_save_callback()
         self.files_save_callback()
 
+    def set_enable_disable(self):
         ## enable/disable buttons
         if self.showProgressBar == True and self.mainWindow !=None:
+            self.nfLoadBtn.setEnabled(False)
+            self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
+            self.mainWindow.moreInfoBtn.setEnabled(False)
+            self.mainWindow.subsetSelector.setEnabled(False)
+            self.mainWindow.pDock.inactivate_all()
         elif len(self.fileList) == 0 and self.mainWindow !=None:
+            self.nfLoadBtn.setEnabled(True)
+            self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
+            self.mainWindow.moreInfoBtn.setEnabled(False)
+            self.mainWindow.subsetSelector.setEnabled(False)
+            self.mainWindow.pDock.inactivate_all()
         else:
             self.mainWindow.pDock.contBtn.setEnabled(True)
+            self.mainWindow.moreInfoBtn.setEnabled(True)
+            self.mainWindow.subsetSelector.setEnabled(True)
+            self.mainWindow.pDock.enable_disable_states()
 
     def init_no_file_view(self):
         nfLayout1 = QtGui.QVBoxLayout()
@@ -85,7 +98,9 @@ class DataProcessingCenter(QtGui.QWidget):
         nfLayout2b = QtGui.QHBoxLayout()
         nfLayout2b.setAlignment(QtCore.Qt.AlignCenter)        
         nfLayout3 = QtGui.QHBoxLayout()
-        nfLayout3.setAlignment(QtCore.Qt.AlignCenter)
+        nfLayout3.setAlignment(QtCore.Qt.AlignCenter) 
+        nfLayout4 = QtGui.QHBoxLayout()
+        nfLayout4.setAlignment(QtCore.Qt.AlignCenter)
         
         ## label widget 
         nfLayout2a.addWidget(QtGui.QLabel('Welcome to cytostream'))
@@ -104,9 +119,6 @@ class DataProcessingCenter(QtGui.QWidget):
         else:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.load_data_files)
 
-        if self.showProgressBar == True:
-            self.nfLoadBtn.setEnabled(False)
-
         self.nfEditBtn = QtGui.QPushButton("Edit Settings")
         self.nfEditBtn.setMaximumWidth(100)
         nfLayout3.addWidget(self.nfEditBtn)
@@ -116,7 +128,33 @@ class DataProcessingCenter(QtGui.QWidget):
 
         self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
         
-        if self.showProgressBar == True:
+        ## show files to be loaded ici
+        if self.showProgressBar == True and self.mainWindow!=None:
+            nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
+            self.modelLoad = QtGui.QStandardItemModel()
+
+            for p in range(len(self.mainWindow.allFilePaths)):
+                fullPath = self.mainWindow.allFilePaths[p]
+                fileName = os.path.split(fullPath)[-1]
+                item0 = QtGui.QStandardItem(str(p+1))
+                item1 = QtGui.QStandardItem('%s'%fileName)
+
+                ## populate model
+                item0.setEditable(False)
+                item1.setEditable(False)
+                self.modelLoad.appendRow([item0,item1])
+            
+            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('#'))
+            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('files to load'))
+            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+
+            viewLoad = QtGui.QTreeView()
+            viewLoad.setModel(self.modelLoad)
+            nfLayout4.addWidget(viewLoad)
+            nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
+
+            ## show the progress bar
             self.init_progressbar()
 
         ## finalize layout
@@ -124,15 +162,16 @@ class DataProcessingCenter(QtGui.QWidget):
         nfLayout2.addLayout(nfLayout2b)
         nfLayout1.addLayout(nfLayout2)
         nfLayout1.addLayout(nfLayout3)
+        nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
+        nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
+        nfLayout1.addLayout(nfLayout4)
         if self.progressBar != None:
             nfLayout1.addLayout(self.pbarLayout1)
         self.hbox.addLayout(nfLayout1)
-    
         
     def init_progressbar(self):
         ## add progress bar if loading
-        #self.progressLabel = QtGui.QLabel('Carry out transformation and compensation')
-        self.progressBar = ProgressBar(parent=self,buttonLabel="proceed")
+        self.progressBar = ProgressBar(parent=self,buttonLabel="proceed",withLabel='load files into project')
         if self.mainWindow != None:
             self.progressBar.set_callback(lambda x=self.progressBar: self.mainWindow.load_files_with_progressbar(x))
 
@@ -150,7 +189,6 @@ class DataProcessingCenter(QtGui.QWidget):
         self.pbarLayout1.setAlignment(QtCore.Qt.AlignCenter)
 
         pbarLayout1a.addWidget(buffer6)
-        #pbarLayout1a.addWidget(self.progressLabel)
         pbarLayout1a.addWidget(buffer6)
         pbarLayout1b.addWidget(buffer3)
         pbarLayout1b.addWidget(self.progressBar)
