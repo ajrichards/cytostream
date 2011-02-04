@@ -20,12 +20,13 @@ class SubsetSelector(QtGui.QWidget):
         hbox1 = QtGui.QHBoxLayout()
         hbox2 = QtGui.QHBoxLayout()
         
+        subsetList = [str(int(float(ss))) for ss in subsetList[:-1]] + [subsetList[-1]]
+
         ## subset selector
         hbox1.addWidget(QtGui.QLabel('subsample selector'))
         hbox1.setAlignment(QtCore.Qt.AlignCenter)
         self.subsetSelector = QtGui.QComboBox(self)
         
-        subsetList = [re.sub("\.fcs","",f) for f in subsetList]
         for subsetName in subsetList:
             self.subsetSelector.addItem(subsetName)
 
@@ -33,7 +34,7 @@ class SubsetSelector(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
 
         if subsetDefault != None:
-            subsetDefault = re.sub("\.fcs","",subsetDefault)
+            subsetDefault = str(int(float(subsetDefault)))
             if subsetList.__contains__(subsetDefault):
                 self.subsetSelector.setCurrentIndex(subsetList.index(subsetDefault))
             else:
@@ -62,7 +63,7 @@ class SubsetSelector(QtGui.QWidget):
         sfInd = self.subsetSelector.currentIndex()
         sf = str(self.subsetSelector.currentText())
 
-        return sf+".fcs", sfInd
+        return sf, sfInd
 
     def generic_callback(self):
         print 'callback does not do anything yet'

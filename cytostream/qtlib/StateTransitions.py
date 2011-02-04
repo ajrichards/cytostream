@@ -90,9 +90,9 @@ def move_to_model(mainWindow):
         mainWindow.pDock.set_btn_highlight('model')                                                                                                            
     return True  
 
-def move_to_quality_assurance(mainWindow,runNew=False):
-    if mainWindow.controller.verbose == True:
-        print "moving to quality assurance"
+def move_to_quality_assurance(mainWindow):
+    #if mainWindow.controller.verbose == True:
+    print "moving to quality assurance"
 
     #fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     #if len(fileList) == 0:
@@ -168,7 +168,6 @@ def move_to_data_processing(mainWindow):
     masterChannelList = mainWindow.model.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    currentAction = mainWindow.log.log['data_processing_mode']
 
     ## ready a DataProcessingCenter class
     def load_files():
@@ -186,21 +185,25 @@ def move_to_data_processing(mainWindow):
     else:
         showProgressBar = False
 
-    mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,mainWindow=mainWindow,showProgressBar=showProgressBar)
-    add_left_dock(mainWindow)
+    if mainWindow.pDock == None:
+        mainWindow.add_pipeline_dock()
 
+    mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,
+                                          mainWindow=mainWindow,showProgressBar=showProgressBar)
+    add_left_dock(mainWindow)
+    mainWindow.dpc.set_enable_disable()
+
+    ## handle layout
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
     hbl.setAlignment(QtCore.Qt.AlignTop)
     hbl.addWidget(mainWindow.dpc)
     mainWindow.refresh_main_widget()
-    if len(mainWindow.dpc.allFilePaths) > 0:
-        mainWindow.dock1.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
     
-    mainWindow.track_highest_state()
+    ## handle state transfer
+    mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+    mainWindow.controller.log.log['current_state'] = 'Data Processing'
+    mainWindow.update_highest_state()
     mainWindow.controller.save()
-    if mainWindow.pDock != None:
-        mainWindow.pDock.set_btn_highlight('data processing')
-
     return True
 
 def move_to_one_dim_viewer(mainWindow):

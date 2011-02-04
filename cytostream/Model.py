@@ -110,6 +110,8 @@ class Model:
         fileCount = 0
         for filePath in fileList:
             print 'loading %s...'%filePath
+            if progressBar != None:
+                progressBar.progressLabel.setText("loading %s..."%os.path.split(filePath)[-1])
 
             proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,transform),
                                     shell=True,
@@ -189,11 +191,11 @@ class Model:
 
         allChannels = []
         fileList = get_fcs_file_names(self.homeDir)
-        for fileName in fileList:
-            fileChannels = self.get_file_channel_list(fileName)
 
-            allChannels+=fileChannels
-        allChannels = np.sort(np.unique(allChannels))
+        if len(fileList) == 0:
+            return allChannels
+
+        allChannels = self.get_file_channel_list(fileList[0])
 
         ## remove white space
         allChannels = [re.sub("\s+","-",c) for c in allChannels]

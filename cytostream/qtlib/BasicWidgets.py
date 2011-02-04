@@ -106,11 +106,10 @@ class ProgressBar(QtGui.QWidget):
 
 
         ## finalize layout
+        vbl.addLayout(hbl3)
         vbl.addLayout(hbl1)
         vbl.addLayout(hbl2)
-        vbl.addLayout(hbl3)
-
-
+    
     def onStart(self):
         if self.running == False:
             if self.button != None:
