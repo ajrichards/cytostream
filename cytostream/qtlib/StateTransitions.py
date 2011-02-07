@@ -20,6 +20,7 @@ from DataProcessingCenter import DataProcessingCenter
 from ModelCenter import ModelCenter
 from OneDimViewer import OneDimViewer
 from BlankPage import BlankPage
+from OpenExistingProject import OpenExistingProject
 
 def move_to_initial(mainWindow):
     if mainWindow.pDock != None:
@@ -65,6 +66,28 @@ def move_to_results_navigation(mainWindow,runNew=False):
         mainWindow.pDock.set_btn_highlight('results navigation')
     return True
 
+def move_to_open(mainWindow):
+    if mainWindow.controller.projectID != None:
+        reply = QtGui.QMessageBox.question(mainWindow, mainWindow.controller.appName,
+                                           "Are you sure you want to close the current project - '%s'?"%mainWindow.controller.projectID,
+                                           QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.No:
+            return
+
+    mainWindow.controller.reset_workspace()
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+
+    closeBtnFn = lambda a=mainWindow: move_to_initial(a)
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    projectList = get_project_names(mainWindow.controller.baseDir)
+    mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
+                                                         closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
+    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl.addWidget(mainWindow.existingProjectOpener)
+    mainWindow.refresh_main_widget()
+
 def move_to_model(mainWindow):                                                                                                                                 
     if mainWindow.controller.verbose == True:
         print "moving to model"
@@ -94,57 +117,43 @@ def move_to_quality_assurance(mainWindow):
     #if mainWindow.controller.verbose == True:
     print "moving to quality assurance"
 
-    #fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    #if len(fileList) == 0:
-    #    mainWindow.display_info("No files have been loaded -- so quality assurance cannot be carried out")
-    #    return False
-
-    ## set the subsample                                                                                                                
-    #goFlag = mainWindow.set_subsample()
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    if len(fileList) == 0:
+        mainWindow.display_info("No files have been loaded -- so quality assurance cannot be carried out")
+        return False
 
     #if goFlag == False:
     #    mainWindow.display_info("The num. of samples that you have selected is > than all events in at least one file -- to continue select another value")
     #    return False
+       
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
     
-    ### set the files and channels
-    #goFlag = mainWindow.set_checks_array()
-    # 
-    #if goFlag == False:
-    #    print "ERROR: there was an error trying to set checks array from StateTransitions"
-    #    return False
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    mainWindow.log.log['current_state'] = "Quality Assurance"
+    if mainWindow.log.log['selectedFile'] == None:
+        mainWindow.log.log['selectedFile'] = fileList[0]
     
-    ### check that at least one file and one channel have been selected
-    #if mainWindow.log.log['checksArray'].sum() == 0:
-    #    mainWindow.display_info("There are no selected files or channels -- to continue make selections first")
-    #    return False
+    thumbDir = os.path.join(mainWindow.controller.homeDir,"figs",mainWindow.log.log['selectedFile'][:-4]+"_thumbs")
     
-    #if mainWindow.dockWidget != None:
-    #    remove_left_dock(mainWindow)
-    #mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    #mainWindow.log.log['current_state'] = "Quality Assurance"
-    #if mainWindow.log.log['selectedFile'] == None:
-    #    mainWindow.log.log['selectedFile'] = fileList[0]
-    #
-    #thumbDir = os.path.join(mainWindow.controller.homeDir,"figs",mainWindow.log.log['selectedFile'][:-4]+"_thumbs")
-    #
-    #if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
-    #    goFlag = mainWindow.display_thumbnails()
-    #
-    #    if goFlag == False:
-    #        print "WARNING: failed to display thumbnails not moving to results navigation"
-    #        return False
-    #
-    #    add_left_dock(mainWindow)
-    #else:
-    #    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    #    mainWindow.progressBar = ProgressBar(parent=mainWindow.mainWidget,buttonLabel="Create the figures")
-    #    mainWindow.progressBar.set_callback(mainWindow.run_progress_bar)
-    #    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    #    hbl.addWidget(mainWindow.progressBar)
-    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    #    mainWindow.refresh_main_widget()
-    #    add_left_dock(mainWindow)
-    #
+    if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
+        goFlag = mainWindow.display_thumbnails()
+    
+        if goFlag == False:
+            print "WARNING: failed to display thumbnails not moving to results navigation"
+            return False
+    
+        add_left_dock(mainWindow)
+    else:
+        mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+        mainWindow.progressBar = ProgressBar(parent=mainWindow.mainWidget,buttonLabel="Create the figures")
+        mainWindow.progressBar.set_callback(mainWindow.run_progress_bar)
+        hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+        hbl.addWidget(mainWindow.progressBar)
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        mainWindow.refresh_main_widget()
+        add_left_dock(mainWindow)
+    
     #mainWindow.dock.enable_continue_btn(lambda a=mainWindow: move_to_model(a))
     #mainWindow.track_highest_state()
     #mainWindow.controller.save()
@@ -246,7 +255,3 @@ def move_to_one_dim_viewer(mainWindow):
 
 def move_to_results_summary(mainWindow,runNew=False):
     mainWindow.display_info("This stage is not available yet")
-
-
-
-

@@ -360,8 +360,6 @@ class DataProcessingCenter(QtGui.QWidget):
 
         '''
 
-        print 'channels save'
-
         n = len(self.masterChannelList)
         altLabels = [str(self.modelChannels.data(self.modelChannels.index(i,2)).toString()) for i in range(n)]
         checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
