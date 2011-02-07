@@ -7,6 +7,7 @@ class OpenExistingProject(QtGui.QWidget):
 
         ## variables
         dirModel  = QtGui.QDirModel()
+        self.projectList = projectList
 
         ## setup layouts
         self.vbl = QtGui.QVBoxLayout()
@@ -21,17 +22,44 @@ class OpenExistingProject(QtGui.QWidget):
         self.hbl4.setAlignment(QtCore.Qt.AlignCenter)
         self.hbl5 = QtGui.QHBoxLayout()
         self.hbl5.setAlignment(QtCore.Qt.AlignCenter)
+        self.hbl6 = QtGui.QHBoxLayout()
+        self.hbl6.setAlignment(QtCore.Qt.AlignCenter)
 
+        ## set up main widget label
         self.hbl1.addWidget(QtGui.QLabel('Choose an existing project'))
 
-        self.projectSelector = QtGui.QComboBox(self)
-        self.projectSelector.setMaximumWidth(200)
-        self.projectSelector.setMinimumWidth(200)
-        for project in projectList:
-            self.projectSelector.addItem(project)
-        self.hbl2.addWidget(self.projectSelector)
+        ## show files to be loaded
+        self.hbl2.addWidget(QtGui.QLabel('\t\t\t'))
+        self.modelLoad = QtGui.QStandardItemModel()
 
+        for p in range(len(projectList)):
+            project = projectList[p]
+            item0 = QtGui.QStandardItem(str(p+1))
+            item1 = QtGui.QStandardItem('%s'%project)
+
+            ## populate model
+            item0.setEditable(False)
+            item1.setEditable(False)
+            self.modelLoad.appendRow([item0,item1])
+            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('#'))
+            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('saved projects'))
+            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+
+        self.viewLoad = QtGui.QTreeView()
+        self.viewLoad.setModel(self.modelLoad)
+        self.connect(self.viewLoad,QtCore.SIGNAL('currentChanged()'),self.generic_callback)
+        self.hbl2.addWidget(self.viewLoad)
         
+        self.hbl2.addWidget(QtGui.QLabel('\t\t\t'))
+
+        #self.projectSelector = QtGui.QComboBox(self)
+        #self.projectSelector.setMaximumWidth(200)
+        #self.projectSelector.setMinimumWidth(200)
+        #for project in projectList:
+        #    self.projectSelector.addItem(project)
+        #self.hbl2.addWidget(self.projectSelector)
+
         self.openBtn = QtGui.QPushButton("Open project", self)
         self.openBtn.setMaximumWidth(200)
         self.openBtn.setMinimumWidth(200)
@@ -39,7 +67,7 @@ class OpenExistingProject(QtGui.QWidget):
         if openBtnFn == None:
             openBtnFn = self.generic_callback
 
-        self.connect(self.openBtn,QtCore.SIGNAL('clicked()'), openBtnFn)
+        self.connect(self.openBtn,QtCore.SIGNAL('clicked()'), self.open_project_callback)
 
         self.closeBtn = QtGui.QPushButton("Close screen", self)
         self.closeBtn.setMaximumWidth(200)
@@ -79,9 +107,32 @@ class OpenExistingProject(QtGui.QWidget):
 
         return sp, spInd
     
+    def open_project_callback(self):
+        '''
+        saves alternate file names 
+        
+        '''
+
+        n = len(self.projectList)
+        #altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
+        projects = [str(self.modelLoad.data(self.modelLoad.index(i,1)).toString()) for i in range(n)]
+        selectedRow = self.viewLoad.selectionModel().selectedRows()
+        if len(selectedRow) > 0: 
+            selectedRowInd = int(str(selectedRow[0].row()))
+            print 'selectedRow', selectedRowInd
+        else:
+            reply = QtGui.QMessageBox.warning(self, "Warning", "A project must first be selected in order to load it")
 
 
-### Run the tests                                                                                                                                                                
+
+        #if self.log != None:
+        #    self.log.log['alternate_file_labels'] = altFiles
+        #    self.controller.save()
+        #else:
+        #    print 'alternate file names', altFiles
+
+
+### Run the tests
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     projectList = ['project1','project2','project3']

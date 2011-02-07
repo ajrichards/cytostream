@@ -32,8 +32,8 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 
 from cytostream import Controller
 from cytostream import get_project_names
-from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing 
-from cytostream.qtlib import add_left_dock, ProgressBar, PipelineDock, BlankPage
+from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
+from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, BlankPage
 #from OpenExistingProject import OpenExistingProject
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
@@ -189,30 +189,10 @@ class MainWindow(QtGui.QMainWindow):
         self.controller.initialize_project(projectID)
         self.controller.create_new_project(projectID)
         move_to_data_processing(self)
-
-        #QtGui.QMessageBox.information(self,self.controller.appName,"Use shift and cntl to select multiple FCS files")
         
-    def open_existing_project(self):        
-        if self.controller.projectID != None:
-            reply = QtGui.QMessageBox.question(self, self.controller.appName,
-                                               "Are you sure you want to close the current project - '%s'?"%self.controller.projectID, 
-                                               QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-            if reply == QtGui.QMessageBox.No:
-                return
-            
-        self.controller.reset_workspace()
-        if self.dockWidget != None:
-            remove_left_dock(self)
+    def open_existing_project(self):
+        move_to_open(self)
 
-        closeBtnFn = lambda a=self: move_to_initial(a)
-        self.mainWidget = QtGui.QWidget(self)
-        projectList = get_project_names(self.controller.baseDir)
-        self.existingProjectOpener = OpenExistingProject(projectList,parent=self.mainWidget,openBtnFn=self.open_existing_project_handler,
-                                                         closeBtnFn=closeBtnFn,rmBtnFn=self.remove_project)
-        hbl = QtGui.QHBoxLayout(self.mainWidget)
-        hbl.setAlignment(QtCore.Qt.AlignTop)
-        hbl.addWidget(self.existingProjectOpener)
-        self.refresh_main_widget()
 
     def open_existing_project_handler(self):
         projectID,projectInd = self.existingProjectOpener.get_selected_project()
