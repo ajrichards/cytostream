@@ -35,7 +35,7 @@ from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, BlankPage
-from cytostream.qtlib import ThumbnailViewer
+from cytostream.qtlib import ThumbnailViewer, MultiplePlotter
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
 #from Controller import Controller
@@ -460,7 +460,7 @@ class MainWindow(QtGui.QMainWindow):
             for f in self.log.log['excluded_files']:
                 fileList.remove(f)
                 
-            self.log.log['selected_file'] == fileList[0]
+        self.log.log['selected_file'] == re.sub("\.txt|\.fcs","",fileList[0])
 
         if mode == 'Quality Assurance':
             self.mainWidget = QtGui.QWidget(self)
@@ -525,7 +525,7 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
-        self.log.log['selected_file'] = selectedFile
+        self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
         self.controller.save()
 
     def set_selected_subsample(self):
@@ -597,11 +597,15 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
-            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,
-                                parent=self.mainWidget,subset=self.log.log['subsample_qa'])
-            ntb = NavigationToolbar(sp, self.mainWidget)
-            vbl.addWidget(sp)
-            vbl.addWidget(ntb)
+            subsample=self.log.log['subsample_qa']
+            modelType=None
+            masterChannelList = self.model.get_master_channel_list()
+            channelI = masterChannelList.index(self.lastChanI)
+            channelJ = masterChannelList.index(self.lastChanJ)
+            mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
+                                 modelType=modelType,mode='qa')
+            vbl.addWidget(mp)
+
         elif mode == "Results Navigation":
             self.set_selected_model()
             self.mainWidget = QtGui.QWidget(self)

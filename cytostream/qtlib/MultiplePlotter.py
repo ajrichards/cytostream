@@ -188,8 +188,15 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayout.addLayout(self.highlightLayoutB)
 
     def create_plot(self):
+        print 'modelName', self.selectedModelName
+        print 'modelType', self.modelType
+        print 'selectedFile', self.selectedFile
+        print 'chan1', self.selectedChannel1
+        print 'chan2', self.selectedChannel2
+        print 'background', self.background
+
         self.plot = ScatterPlotter(self.homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
-                                   modelName=self.selectedModelName,modelType=self.modelType,parent=self.parent)
+                                   modelName=self.selectedModelName,modelType=self.modelType, parent=self.parent)
         
     def channel1_selector_callback(self,selectedInd):
         selectedTxt = str(self.channel1Selector.currentText())
@@ -232,10 +239,10 @@ if __name__ == '__main__':
     
     ## check that unittests were run and necessary data is present
     baseDir = os.path.dirname(__file__)
-    mode = 'results'
+    mode = 'qa'#'results'
     projectID = 'utest'
     selectedFile = "3FITC_4PE_004"
-    modelName = 'run1'
+    modelName = None #'run1'
     channel1 = 0
     channel2 = 3
     modelType = 'modes'
@@ -244,7 +251,7 @@ if __name__ == '__main__':
 
     ## check that model is present
     modelChk = os.path.join(baseDir,'..','projects','utest','models','%s_%s.log'%(selectedFile,modelName))
-    if os.path.isfile(modelChk) == False:
+    if mode == 'results' and os.path.isfile(modelChk) == False:
         print "ERROR: Model not present - (Re)run unit tests"
         print modelChk
         sys.exit()
