@@ -9,6 +9,9 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
     
     '''
 
+    if homeDir == None:
+        return []
+
     if type(excludedFiles) != type([]):
         print "INPUT ERROR: bad type for excluded files in get_fcs_file_names"
         return None

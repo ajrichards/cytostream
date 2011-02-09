@@ -167,10 +167,10 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
     
     if altDir == None:
-        fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
+        fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile,channel1,channel2,plotType))
         fig.savefig(fileName,transparent=False,dpi=50)
     else:
-        fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile[:-4],channel1,channel2,plotType))
+        fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile,channel1,channel2,plotType))
         fig.savefig(fileName,transparent=False,dpi=50)
 
 

@@ -6,7 +6,7 @@ from BasicWidgets import Tooltip
 
 class PipelineDock(QtGui.QWidget):
 
-    def __init__(self, log, allStates, parent=None, appColor='black', eSize=35, btnCallBacks=None):
+    def __init__(self, log, allStates, parent=None, appColor='black', eSize=35, btnCallBacks=None,noBtns=False):
         QtGui.QWidget.__init__(self, parent)
 
         ## input variables
@@ -20,7 +20,8 @@ class PipelineDock(QtGui.QWidget):
         self.btnCallBacks = btnCallBacks
 
         ## actions
-        self.create_buttons()
+        if noBtns == False:
+            self.create_buttons()
 
         ## color
         palette = self.palette()

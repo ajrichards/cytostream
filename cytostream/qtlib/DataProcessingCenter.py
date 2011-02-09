@@ -66,8 +66,8 @@ class DataProcessingCenter(QtGui.QWidget):
         self.channels_save_callback()
         self.files_save_callback()
 
+    ## enable/disable buttons
     def set_enable_disable(self):
-        ## enable/disable buttons
         if self.showProgressBar == True and self.mainWindow !=None:
             self.nfLoadBtn.setEnabled(False)
             self.nfEditBtn.setEnabled(True)
@@ -88,6 +88,7 @@ class DataProcessingCenter(QtGui.QWidget):
             self.mainWindow.subsetSelector.setEnabled(True)
             self.mainWindow.pDock.enable_disable_states()
 
+    ## initialize the view without loaded files
     def init_no_file_view(self):
         nfLayout1 = QtGui.QVBoxLayout()
         nfLayout1.setAlignment(QtCore.Qt.AlignTop)
@@ -271,7 +272,7 @@ class DataProcessingCenter(QtGui.QWidget):
         ssLayout.addLayout(ssLayout3)
         self.hbox.addLayout(ssLayout)
 
-    def make_files_sheet(self, firstRun=True):
+    def make_files_sheet(self,firstRun=True):
         ## setup layouts
         if firstRun == True:
             ssLayout = QtGui.QVBoxLayout()
