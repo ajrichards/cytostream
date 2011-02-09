@@ -11,6 +11,7 @@ from DataProcessingCenter import DataProcessingCenter
 from DataProcessingDock1 import DataProcessingDock1
 from DataProcessingDock2 import DataProcessingDock2
 from QualityAssuranceDock import QualityAssuranceDock
+from QualityAssuranceCenter import QualityAssuranceCenter
 from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter
 from ModelDock import ModelDock
@@ -20,6 +21,7 @@ from ResultsNavigationDock import ResultsNavigationDock
 from OneDimViewer import OneDimViewer
 from OneDimViewerDock import OneDimViewerDock
 from LeftDock import add_left_dock, remove_left_dock
-from StateTransitions import move_to_initial, move_to_data_processing,move_to_open
+from StateTransitions import move_to_initial, move_to_data_processing,move_to_open, move_to_quality_assurance
+from StateTransitions import move_to_model, move_transition
 from MainWindow import MainWindow
 #from Main import Main

@@ -8,6 +8,9 @@ class OpenExistingProject(QtGui.QWidget):
         ## variables
         dirModel  = QtGui.QDirModel()
         self.projectList = projectList
+        self.selectedProject = None
+        self.openBtnFn = openBtnFn
+        self.parent = parent
 
         ## setup layouts
         self.vbl = QtGui.QVBoxLayout()
@@ -53,13 +56,7 @@ class OpenExistingProject(QtGui.QWidget):
         
         self.hbl2.addWidget(QtGui.QLabel('\t\t\t'))
 
-        #self.projectSelector = QtGui.QComboBox(self)
-        #self.projectSelector.setMaximumWidth(200)
-        #self.projectSelector.setMinimumWidth(200)
-        #for project in projectList:
-        #    self.projectSelector.addItem(project)
-        #self.hbl2.addWidget(self.projectSelector)
-
+        ## create the buttons
         self.openBtn = QtGui.QPushButton("Open project", self)
         self.openBtn.setMaximumWidth(200)
         self.openBtn.setMinimumWidth(200)
@@ -87,7 +84,6 @@ class OpenExistingProject(QtGui.QWidget):
 
         self.connect(self.rmBtn, QtCore.SIGNAL('clicked()'),rmBtnFn)
         
-
         # finalize layout
         self.vbl.addLayout(self.hbl1)
         self.vbl.addLayout(self.hbl2)
@@ -115,21 +111,24 @@ class OpenExistingProject(QtGui.QWidget):
 
         n = len(self.projectList)
         #altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
+        selectedProject = None
         projects = [str(self.modelLoad.data(self.modelLoad.index(i,1)).toString()) for i in range(n)]
         selectedRow = self.viewLoad.selectionModel().selectedRows()
         if len(selectedRow) > 0: 
             selectedRowInd = int(str(selectedRow[0].row()))
-            print 'selectedRow', selectedRowInd
+            selectedProject = self.projectList[selectedRowInd]
         else:
             reply = QtGui.QMessageBox.warning(self, "Warning", "A project must first be selected in order to load it")
+            return None
 
+        self.selectedProject = selectedProject
 
+        if self.selectedProject != None and self.parent != None:
+            self.openBtnFn()
 
-        #if self.log != None:
-        #    self.log.log['alternate_file_labels'] = altFiles
-        #    self.controller.save()
-        #else:
-        #    print 'alternate file names', altFiles
+        if self.selectedProject != None and self.parent == None:
+            print "this opens project:", self.selectedProject
+
 
 
 ### Run the tests

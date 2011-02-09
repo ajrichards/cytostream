@@ -31,14 +31,15 @@ else:
 sys.path.append(os.path.join(baseDir,'qtlib'))
 
 from cytostream import Controller
-from cytostream import get_project_names
+from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
+from cytostream.qtlib import move_to_quality_assurance, move_transition
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, BlankPage
-#from OpenExistingProject import OpenExistingProject
+from cytostream.qtlib import ThumbnailViewer
 #from BlankPage import BlankPage
 #from PipelineDock import PipelineDock
 #from Controller import Controller
-#from MenuFunctions import *
+#from MenuFunctions import *#
 #from LeftDock import *
 #from FileControls import *
 #from StateTransitions import *
@@ -112,11 +113,16 @@ class MainWindow(QtGui.QMainWindow):
     #
     #################################################
     
-    def add_pipeline_dock(self):
+    def add_pipeline_dock(self,noBtns=False):
         self.pipelineDock = QtGui.QDockWidget(self)
         self.pipelineDock.setObjectName("PipelineDockWidget")
         self.pipelineDock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea|QtCore.Qt.BottomDockWidgetArea)
  
+        try:
+            appColor = self.controller.log.log['app_color']
+        except:
+            appColor = '#999999'
+
         self.pipelineDockWidget = QtGui.QWidget(self)
         btnCallBacks = [lambda a=self:move_to_data_processing(a), 
                         lambda a=self:move_to_quality_assurance(a), 
@@ -124,7 +130,7 @@ class MainWindow(QtGui.QMainWindow):
                         lambda a=self:move_to_results_navigation(a), 
                         lambda a=self:move_to_results_summary(a)]
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
-                                  appColor=self.controller.log.log['app_color'])
+                                  appColor=appColor,noBtns=noBtns)
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
         palette.setColor(role, QtGui.QColor('black'))
@@ -151,7 +157,7 @@ class MainWindow(QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
             self.controller.remove_project(homeDir)
-            self.open_existing_project()
+            move_to_open(self)
         else:
             pass
 
@@ -191,15 +197,25 @@ class MainWindow(QtGui.QMainWindow):
         move_to_data_processing(self)
         
     def open_existing_project(self):
+        '''
+        a reference function to move to the open screen
+        '''
         move_to_open(self)
 
-
     def open_existing_project_handler(self):
-        projectID,projectInd = self.existingProjectOpener.get_selected_project()
+        '''
+        from the open projects page open a selected project
+        '''
+        selectedProject = self.existingProjectOpener.selectedProject 
+        if selectedProject == None:
+            print "ERROR: mainWindow.open_existing_projects_handler - selected project is none"
+            return
+        else:
+            projectID = selectedProject
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
-        #self.refresh_state()
-        self.refresh_state()  # done twice to force correct visualation in pipeline
+        move_transition(self)
+        self.refresh_state()
         
     def load_files_with_progressbar(self,progressBar):
         '''
@@ -215,7 +231,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar)
         self.allFilePaths = []
-        self.move_transition()
+        move_transition(self)
         self.refresh_state()
 
     def fileSave(self):
@@ -287,23 +303,19 @@ class MainWindow(QtGui.QMainWindow):
 
     ################################################################################################3
 
-    def move_transition(self):
-        self.mainWidget = QtGui.QWidget(self)
-        bp = BlankPage(parent=self.mainWidget)
-        self.bp = BlankPage(parent=self.mainWidget)
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(bp)
-        vbl.addLayout(hbl)
-        self.mainWidget.setLayout(vbl)
-        #self.refresh_main_widget()
-        #hbl = QtGui.QHBoxLayout(self.mainWidget)
-        #hbl.setAlignment(QtCore.Qt.AlignTop)
-        #hbl.addWidget(self.bp)
-        self.refresh_main_widget()
-        #QtCore.QCoreApplication.processEvents()
+    #def move_transition(self):
+    #    self.mainWidget = QtGui.QWidget(self)
+    #    bp = BlankPage(parent=self.mainWidget)
+    #    self.bp = BlankPage(parent=self.mainWidget)
+    #    vbl = QtGui.QVBoxLayout()
+    #    vbl.setAlignment(QtCore.Qt.AlignCenter)
+    #    hbl = QtGui.QHBoxLayout()
+    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    #    hbl.addWidget(bp)
+    #    vbl.addLayout(hbl)
+    #    self.mainWidget.setLayout(vbl)
+    #    self.refresh_main_widget()
+    #    #QtCore.QCoreApplication.processEvents()
 
     def generic_callback(self):
         print "this button/widget does not do anything yet"
@@ -380,13 +392,16 @@ class MainWindow(QtGui.QMainWindow):
         self.log.log['selected_k'] = newValue
 
     def set_model_to_run(self):
-        sm, smInd = self.dock.get_model_to_run()
-        if sm == 'DPMM':
-            self.log.log['model_to_run'] = 'dpmm'
-        elif sm == 'K-means':
-            self.log.log['model_to_run'] = 'kmeans'
-        else:
-            print "ERROR: invalid selection for modelToRun"
+        #sm, smInd = self.dock.get_model_to_run()
+        #if sm == 'DPMM':
+        #    self.log.log['model_to_run'] = 'dpmm'
+        #elif sm == 'K-means':
+        #    self.log.log['model_to_run'] = 'kmeans'
+        #else:
+        #    print "ERROR: invalid selection for modelToRun"
+        print 'INFO: need to setup model to run'
+        self.log.log['model_to_run'] = 'dpmm'
+
 
     def update_highest_state(self):
         '''
@@ -402,15 +417,18 @@ class MainWindow(QtGui.QMainWindow):
 
     def run_progress_bar(self):
         mode = self.log.log['current_state']
+        
+        ## handle subsampling
+        if self.log.log['current_state'] == 'Quality Assurance':
+            subsample = self.log.log['subsample_qa']
+        else:
+            subsample = self.log.log['subsample_analysis']
 
-        self.set_widgets_enabled(False)
-
-        if self.controller.subsampleIndices == None:
-            self.controller.handle_subsampling()
+        self.controller.handle_subsampling(subsample)
 
         fileList = get_fcs_file_names(self.controller.homeDir)
         if mode == 'Quality Assurance':
-            self.controller.process_images('qa',progressBar=self.progressBar,view=self)
+            self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
         if mode == 'Model':
             self.set_model_to_run()
@@ -424,8 +442,6 @@ class MainWindow(QtGui.QMainWindow):
             hbl.setAlignment(QtCore.Qt.AlignCenter)
             self.refresh_main_widget()
             add_left_dock(self)
-
-        self.set_widgets_enabled(True)
 
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
@@ -450,7 +466,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
             fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
-            thumbDir = os.path.join(imgDir,self.log.log['selected_file'][:-4]+"_thumbs")
+            thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
             
         elif mode == 'Results Navigation':
@@ -478,7 +494,7 @@ class MainWindow(QtGui.QMainWindow):
             if os.path.isdir(imgDir) == False:
                 print "ERROR: a bad imgDir has been specified", imgDir
 
-            thumbDir = os.path.join(imgDir,self.log.log['selected_file'][:-4]+"_thumbs")
+            thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
         
         else:
@@ -623,25 +639,9 @@ class MainWindow(QtGui.QMainWindow):
         '''
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
-
     def refresh_main_widget(self):
         self.setCentralWidget(self.mainWidget)
         self.mainWidget.activateWindow()
         self.mainWidget.update()
         self.show()
         #QtCore.QCoreApplication.processEvents()
-
-    def set_widgets_enabled(self,flag):
-        if flag not in [True, False]:
-            print "ERROR: invalid flag sent to widgets_enable_all"
-            return None
-
-        if self.log.log['current_state'] == 'Data Processing':
-            self.dock1.setEnabled(flag)
-            self.dock2.setEnabled(flag)
-            self.fileSelector.setEnabled(flag)
-            self.pDock.setEnabled(flag)
-        elif self.log.log['current_state'] == 'Quality Assurance':
-            self.dock.setEnabled(flag)
-            self.fileSelector.setEnabled(flag)
-            self.pDock.setEnabled(flag)

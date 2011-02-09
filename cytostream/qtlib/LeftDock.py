@@ -39,18 +39,33 @@ def add_left_dock(mainWindow):
     if mainWindow.fileSelector != None and mainWindow.log.log['selected_file'] == None:
         mainWindow.set_selected_file()
 
-    masterChannelList = mainWindow.model.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    subsetList = ["1e03", "1e04","5e04","All Data"]
+    if len(fileList) > 0:
+        masterChannelList = mainWindow.model.get_master_channel_list()
 
-    mainWindow.mainDockWidget = QtGui.QDockWidget(mainWindow.controller.projectID, mainWindow)
+    ## declare variables
+    subsetList = ["1e03", "1e04","5e04","All Data"]
+    if mainWindow.controller.projectID == None:
+        projectID = "no project loaded"
+    else:
+        projectID = mainWindow.controller.projectID
+    
+    excludedFiles = None
+
+    ## prepare dock widget
+    mainWindow.mainDockWidget = QtGui.QDockWidget(projectID, mainWindow)
     mainWindow.mainDockWidget.setObjectName("MainDockWidget")
     mainWindow.mainDockWidget.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea|QtCore.Qt.RightDockWidgetArea)
-    
     mainWindow.dockWidget = QtGui.QWidget(mainWindow)
     palette = mainWindow.dockWidget.palette()
     role = mainWindow.dockWidget.backgroundRole()
-    appColor = mainWindow.controller.log.log['app_color']
+
+    ## set colors
+    try:
+        appColor = self.controller.log.log['app_color']
+    except:
+        appColor = '#999999'
+            
     palette.setColor(role, QtGui.QColor(appColor))
     mainWindow.dockWidget.setPalette(palette)
     mainWindow.dockWidget.setAutoFillBackground(True)
@@ -88,19 +103,19 @@ def add_left_dock(mainWindow):
         showModelSelector = False
         modelsRun = None
 
-    if mainWindow.log.log['current_state'] == 'qa':
-        excludedFiles = mainWindow.log.log['excluded_files']
+    if mainWindow.log.log['current_state'] == 'Initial':
+        pass
+    elif mainWindow.log.log['current_state'] == 'Quality Assurance':
+        excludedFiles = mainWindow.log.log['excluded_files_qa']
         subsampleDefault = mainWindow.log.log['subsample_qa']
     else:
-        excludedFiles = mainWindow.log.log['excluded_files']
+        excludedFiles = mainWindow.log.log['excluded_files_analysis']
         subsampleDefault = mainWindow.log.log['subsample_analysis']
 
     ## check to see if fileList needs adjusting
     if type(excludedFiles) == type([]) and len(excludedFiles) > 0:
         for f in excludedFiles:
             fileList.remove(f)
-
-        mainWindow.log.log['selected_file'] = fileList[0]
 
     ## file selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model','Results Navigation']:
@@ -125,9 +140,9 @@ def add_left_dock(mainWindow):
 
         mainWindow.subsetSelector.setAutoFillBackground(True)
         hboxTop.addWidget(mainWindow.subsetSelector)
-    
+
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Data Processing']:
+    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("more info")
         mainWindow.moreInfoBtn.setMaximumWidth(100)
         hboxBottom.addWidget(mainWindow.moreInfoBtn)

@@ -10,7 +10,7 @@ A. Richards
 
 configDictDefault = {
     ########### state variables ##############################################################
-    'current_state'                         : 'Data Processing',    # do not change
+    'current_state'                         : 'Initial',    # do not change
     'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
     'selected_model'                        : 'None',               # do not change
@@ -38,6 +38,8 @@ configDictDefault = {
     'excluded_files'                        : '[]',                 # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
     'excluded_channels_analysis'            : '[]',                 # a list of ints (indices)
+    'excluded_files_qa'                     : '[]',                 # a list of ints
+    'excluded_files_analysis'               : '[]',                 # a list of ints
     'alternate_channel_labels'              : '[]',                 # a list of labels
     'alternate_file_labels'                 : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
