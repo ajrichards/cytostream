@@ -337,9 +337,6 @@ class Controller:
         transform = self.log.log['selected_transform']
         self.model.load_files(fileList,progressBar=progressBar)
 
-        ## set the selected file
-        #self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",os.path.split(fileList[0])[-1])
-
     def get_component_states(self):
         try:
             return self.view.resultsNavigationLeft.get_component_states()
