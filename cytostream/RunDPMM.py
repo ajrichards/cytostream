@@ -77,9 +77,11 @@ else:
 ## initialize a logger and a model to get specified files and channels
 log = Logger()
 log.initialize(projectID,homeDir,load=True)
+selectedTransform = log.log['selected_transform']
 
 ## check to see if this is a filtering step
 filterInFocus = log.log['filter_in_focus']
+
 if filterInFocus == 'None':
     filterInFocus = None
 
@@ -159,7 +161,7 @@ elif modelMode == 'onefit':
 modelRunStart = time.time()
 ## run the model 
 if loadModel == False:
-    mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,last=1)
+    mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,numItersMCMC,last=1,burnin=0)
     mod.fit(verbose=True)
     full = mod.get_results()
 
@@ -197,8 +199,6 @@ cPickle.dump(classifyModes,tmp4)
 tmp3.close()
 tmp4.close()
 
-
-
 ## write a log file
 if verbose == True:
     print 'RunDPMM.py - writing log file'
@@ -229,6 +229,8 @@ writer.writerow(["zeros events removed", str(cleanBorderEvents)])
 writer.writerow(["number modes",str(len(list(set(classifyModes))))])
 writer.writerow(["filter used", filterInFocus])
 writer.writerow(["model mode", modelMode])
+writer.writerow(["transform", selectedTransform])
+
 if modelReference == None:
     writer.writerow(["model reference", 'None'])
 else:

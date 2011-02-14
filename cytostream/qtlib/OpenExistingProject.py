@@ -6,7 +6,6 @@ class OpenExistingProject(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## variables
-        dirModel  = QtGui.QDirModel()
         self.projectList = projectList
         self.selectedProject = None
         self.openBtnFn = openBtnFn
@@ -96,13 +95,6 @@ class OpenExistingProject(QtGui.QWidget):
     def generic_callback(self):
         print 'This button does nothing'
 
-    def get_selected_project(self):
-        spInd = self.projectSelector.currentIndex()
-        sp = str(self.projectSelector.currentText())
-        #sm = sm + ".pickle"
-
-        return sp, spInd
-    
     def open_project_callback(self):
         '''
         saves alternate file names 
