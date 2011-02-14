@@ -1,4 +1,5 @@
 from BasicWidgets import Slider, ProgressBar, DisplayImage
+from EditMenu import EditMenu
 from FileSelector import FileSelector
 from SubsetSelector import SubsetSelector
 from MenuFunctions import create_menubar_toolbar, create_action, add_actions
@@ -8,9 +9,6 @@ from ScatterPlotter import ScatterPlotter
 from MultiplePlotter import MultiplePlotter
 from TwoWayViewer import TwoWayViewer
 from DataProcessingCenter import DataProcessingCenter
-from DataProcessingDock1 import DataProcessingDock1
-from DataProcessingDock2 import DataProcessingDock2
-from QualityAssuranceDock import QualityAssuranceDock
 from QualityAssuranceCenter import QualityAssuranceCenter
 from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter

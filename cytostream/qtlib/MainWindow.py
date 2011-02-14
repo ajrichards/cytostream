@@ -212,8 +212,14 @@ class MainWindow(QtGui.QMainWindow):
             return
         else:
             projectID = selectedProject
+
+        ## remove old docks
+        remove_left_dock(self)
+        self.removeDockWidget(self.pDock)
+
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
+        
         move_transition(self)
         self.refresh_state()
         
@@ -552,6 +558,7 @@ class MainWindow(QtGui.QMainWindow):
         #self.log.log['selected_model'] = selectedModel
 
     def refresh_state(self):
+        print 'refreshing state', self.log.log['current_state']
         if self.log.log['current_state'] == "Data Processing":
             move_to_data_processing(self)
         elif self.log.log['current_state'] == "Quality Assurance":

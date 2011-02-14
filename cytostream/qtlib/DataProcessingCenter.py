@@ -29,6 +29,7 @@ class DataProcessingCenter(QtGui.QWidget):
         self.transformList = ['log','logicle']
         self.compensationList = []
         self.progressBar = None
+        self.nfEditBtn = None
 
         ## prepare model and log
         if self.mainWindow != None:
@@ -70,14 +71,16 @@ class DataProcessingCenter(QtGui.QWidget):
     def set_enable_disable(self):
         if self.showProgressBar == True and self.mainWindow !=None:
             self.nfLoadBtn.setEnabled(False)
-            self.nfEditBtn.setEnabled(True)
+            if self.nfEditBtn != None:
+                self.nfEditBtn.setEnabled(False)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
             self.mainWindow.subsetSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         elif len(self.fileList) == 0 and self.mainWindow !=None:
             self.nfLoadBtn.setEnabled(True)
-            self.nfEditBtn.setEnabled(True)
+            if self.nfEditBtn != None:
+                self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
             self.mainWindow.subsetSelector.setEnabled(False)
@@ -120,16 +123,17 @@ class DataProcessingCenter(QtGui.QWidget):
         else:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.load_data_files)
 
-        self.nfEditBtn = QtGui.QPushButton("Edit Settings")
-        self.nfEditBtn.setMaximumWidth(100)
-        nfLayout3.addWidget(self.nfEditBtn)
+        if self.mainWindow != None and int(self.mainWindow.log.log['highest_state']) == 1:
+            self.nfEditBtn = QtGui.QPushButton("Edit Settings")
+            self.nfEditBtn.setMaximumWidth(100)
+            nfLayout3.addWidget(self.nfEditBtn)
 
-        if self.editBtnFn == None:
-            self.editBtnFn = self.generic_callback
+            if self.editBtnFn == None:
+                self.editBtnFn = self.generic_callback
 
-        self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
+            self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
         
-        ## show files to be loaded ici
+        ## show files to be loaded 
         if self.showProgressBar == True and self.mainWindow!=None:
             nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
             self.modelLoad = QtGui.QStandardItemModel()

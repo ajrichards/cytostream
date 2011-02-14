@@ -22,7 +22,7 @@ from OneDimViewer import OneDimViewer
 from BlankPage import BlankPage
 from OpenExistingProject import OpenExistingProject
 from QualityAssuranceCenter import QualityAssuranceCenter
-
+from EditMenu import EditMenu
 
 def move_transition(mainWindow):
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
@@ -44,6 +44,13 @@ def move_to_initial(mainWindow):
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
+    ## set the state
+    mainWindow.controller.log.log['current_state'] = 'Initial'
+
+    ## adds if not initial initial
+    if mainWindow.controller.homeDir != None:
+        add_left_dock(mainWindow)
+        
     mainWindow.pngViewer = QtGui.QLabel(mainWindow.mainWidget)
     mainWindow.pngViewer.setAlignment(QtCore.Qt.AlignCenter)
     mainWindow.pngViewer.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
@@ -52,8 +59,33 @@ def move_to_initial(mainWindow):
     mainWindow.setCentralWidget(mainWindow.mainWidget)
     mainWindow.image = QtGui.QImage(os.path.join(mainWindow.controller.baseDir,"applications-science.png"))
     mainWindow.show_image()
-    mainWindow.controller.log.log['current_state'] = 'Initial'
 
+#def move_to_edit_menu(mainWindow):
+#    if mainWindow.pDock != None:
+#        mainWindow.pDock.unset_all_highlights()
+#    if mainWindow.dockWidget != None:
+#        remove_left_dock(mainWindow)
+#
+#    closeBtnFn = lambda a=mainWindow: move_to_initial(a)#mainWindow.refresh_state() #
+#    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+#    defaultTransform = mainWindow.log.log['selected_transform']
+#    mainWindow.editMenu = EditMenu(parent=mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
+#                                   mainWindow=mainWindow)
+
+#    ## add right dock
+#    if mainWindow.pDock == None:
+#        mainWindow.add_pipeline_dock()
+#
+#    ## add left dock
+#    add_left_dock(mainWindow)
+#    mainWindow.editMenu.set_enable_disable()
+#
+#    ## layout
+#    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+#    hbl.setAlignment(QtCore.Qt.AlignTop)
+#    hbl.addWidget(mainWindow.editMenu)
+#    mainWindow.refresh_main_widget()
+    
 def move_to_results_navigation(mainWindow,runNew=False):
     if mainWindow.controller.verbose == True:
         print "moving to results navigation"
@@ -236,6 +268,33 @@ def move_to_data_processing(mainWindow):
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
+    ## create a edit menu function
+    def move_to_edit_menu(mainWindow):
+        if mainWindow.pDock != None:
+            mainWindow.pDock.unset_all_highlights()
+        if mainWindow.dockWidget != None:
+            remove_left_dock(mainWindow)
+
+        closeBtnFn = lambda a=mainWindow: move_to_data_processing(a) #lambda a=mainWindow: move_to_initial(a)
+        mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+        defaultTransform = mainWindow.log.log['selected_transform']
+        mainWindow.editMenu = EditMenu(parent=mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
+                                       mainWindow=mainWindow)
+
+        ## add right dock
+        if mainWindow.pDock == None:
+            mainWindow.add_pipeline_dock()
+
+        ## add left dock
+        add_left_dock(mainWindow)
+        mainWindow.editMenu.set_enable_disable()
+
+        ## layout
+        hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+        hbl.setAlignment(QtCore.Qt.AlignTop)
+        hbl.addWidget(mainWindow.editMenu)
+        mainWindow.refresh_main_widget()
+
     ## ready a DataProcessingCenter class
     def load_files():
         allFiles = QtGui.QFileDialog.getOpenFileNames(mainWindow, 'Open file(s)')
@@ -256,7 +315,7 @@ def move_to_data_processing(mainWindow):
         mainWindow.add_pipeline_dock()
 
     mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,
-                                          mainWindow=mainWindow,showProgressBar=showProgressBar)
+                                          mainWindow=mainWindow,showProgressBar=showProgressBar,editBtnFn=lambda a=mainWindow: move_to_edit_menu(a))
 
     mainWindow.controller.log.log['current_state'] = 'Data Processing'
     add_left_dock(mainWindow)

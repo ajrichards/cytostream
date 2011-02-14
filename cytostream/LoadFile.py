@@ -44,7 +44,7 @@ if dataType not in ['fcs','txt']:
     print "INPUT ERROR: bad data type specified", dataType
     sys.exit()
 
-if transform not in ['logicle','hyperlog','log']:
+if transform not in ['logicle','log']:
     print "INPUT ERROR: bas data transform specified ", dataType
     sys.exit()
     
