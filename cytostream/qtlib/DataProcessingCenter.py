@@ -1,9 +1,21 @@
-import sys,time,os
+#!/usr/bin/python
+
+'''
+Cytostream                                                             
+DataProcessingCenter
+
+The main widget for the data processing state
+
+'''
+
+__author__ = "A Richards"
+
+import sys,time,os,re
 from PyQt4 import QtGui, QtCore
 import numpy as np
+from cytostream import Logger, Model, get_fcs_file_names
 from cytostream.qtlib import ProgressBar
-from cytostream.qtlib.BlankPage import BlankPage
-from cytostream import Logger, Model
+from cytostream.qtlib import move_transition
 
 
 class DataProcessingCenter(QtGui.QWidget):
@@ -26,10 +38,10 @@ class DataProcessingCenter(QtGui.QWidget):
         self.excludedChannels = [int(chan) for chan in excludedChannels]
 
         ## declared variables
-        self.transformList = ['log','logicle']
         self.compensationList = []
         self.progressBar = None
         self.nfEditBtn = None
+        self.nfLoadBtn = None
 
         ## prepare model and log
         if self.mainWindow != None:
@@ -39,7 +51,6 @@ class DataProcessingCenter(QtGui.QWidget):
             self.log = None
 
         ## prepare layout
-        self.grid = QtGui.QGridLayout()
         vbox = QtGui.QVBoxLayout()
         vbox.setAlignment(QtCore.Qt.AlignTop)
         self.hbox = QtGui.QHBoxLayout()
@@ -53,7 +64,7 @@ class DataProcessingCenter(QtGui.QWidget):
             self.alternateFileList = [fileName for fileName in self.fileList]
 
         ## checkbuttons
-        if len(self.fileList) > 0:
+        if len(self.fileList) > 0 and self.showProgressBar == False:
             self.make_channels_sheet()
             self.make_files_sheet()
             vbox.addLayout(self.hbox)
@@ -64,18 +75,19 @@ class DataProcessingCenter(QtGui.QWidget):
         self.setLayout(vbox)
 
         ## save the initial results for alternate channels and files
-        self.channels_save_callback()
-        self.files_save_callback()
+        if self.showProgressBar == False:
+            self.channels_save_callback()
+            self.files_save_callback()
 
     ## enable/disable buttons
     def set_enable_disable(self):
         if self.showProgressBar == True and self.mainWindow !=None:
-            self.nfLoadBtn.setEnabled(False)
+            if self.nfLoadBtn != None:
+                self.nfLoadBtn.setEnabled(False)
             if self.nfEditBtn != None:
                 self.nfEditBtn.setEnabled(False)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
-            self.mainWindow.subsetSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         elif len(self.fileList) == 0 and self.mainWindow !=None:
             self.nfLoadBtn.setEnabled(True)
@@ -83,12 +95,10 @@ class DataProcessingCenter(QtGui.QWidget):
                 self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
-            self.mainWindow.subsetSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         else:
             self.mainWindow.pDock.contBtn.setEnabled(True)
             self.mainWindow.moreInfoBtn.setEnabled(True)
-            self.mainWindow.subsetSelector.setEnabled(True)
             self.mainWindow.pDock.enable_disable_states()
 
     ## initialize the view without loaded files
@@ -205,17 +215,20 @@ class DataProcessingCenter(QtGui.QWidget):
                
     def load_data_files(self):
         self.mainWindow.allFilePaths = [str(pathName) for pathName in self.loadFileFn()]
-        self.mainWindow.mainWidget = QtGui.QWidget(self)
-        bp = BlankPage(parent=self.mainWindow.mainWidget)
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(bp)
-        vbl.addLayout(hbl)
-        self.mainWindow.mainWidget.setLayout(vbl)
-        self.mainWindow.refresh_main_widget()
-        self.mainWindow.refresh_state()
+
+        ## check to make sure that file do not contain a file that has already been loaded
+        fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
+        for filePath in self.mainWindow.allFilePaths:
+            fileName = os.path.split(filePath)[-1]
+            fileName = re.sub("\.fcs|\.txt","",fileName)
+        
+            if fileList.__contains__(fileName):
+                msg = "The following file name has already been used\n%s\n\nfile(s) not loaded"%fileName
+                reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+                return None
+
+        move_transition(self.mainWindow) 
+        self.mainWindow.refresh_state(withProgressBar=True)
 
     def generic_callback():
         print "generic callback"
@@ -375,11 +388,7 @@ class DataProcessingCenter(QtGui.QWidget):
             self.log.log['excluded_channels_qa'] = excludedChannels
             self.controller.save()
         
-        #print 'alternate channels', altLabels
-        #print 'excluded channels', excludedChannels
-
     def files_add_callback(self):
-        print 'should be adding files'
         if self.mainWindow != None:
             self.load_data_files()
         else:
@@ -411,22 +420,34 @@ class DataProcessingCenter(QtGui.QWidget):
 
         if len(filesToRemove) > 0:
             includedIndices = list(set(range(n)).difference(set(filesToRemove)))
-            print '\tincluded files', includedIndices
 
-            ## remove all files associated with each fcs file
-            if self.log != None:
-                for indToRemove in filesToRemove:
-                    fileToRemove = self.fileList[indToRemove]
-                self.controller.rm_fcs_file(fileToRemove)
+            if len(filesToRemove) > 1:
+                reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
+                                                   "Are you sure you want to completely remove %s files?"%(len(filesToRemove)),
+                                                   QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
+            else:
+                reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
+                                                   "Are you sure you want to completely remove this file?",QtGui.QMessageBox.Yes, 
+                                                   QtGui.QMessageBox.No)
+        
+            if reply == QtGui.QMessageBox.Yes:
+                ## remove all files associated with each fcs file
+                if self.log != None:
+                    for indToRemove in filesToRemove:
+                        fileToRemove = self.fileList[indToRemove]
+                        self.controller.rm_fcs_file(fileToRemove)
             
-            ## reset file list and recreate widget
-            self.fileList = np.array(self.fileList)[includedIndices].tolist()
-            self.modelFiles.clear()
-            self.make_files_sheet(firstRun=False)
+                ## reset file list and recreate widget
+                self.fileList = np.array(self.fileList)[includedIndices].tolist()
+                self.modelFiles.clear()
+                self.make_files_sheet(firstRun=False)
 
-        ## refresh log
-        self.files_save_callback()
-            
+            ## refresh log
+            self.files_save_callback()
+        else:
+            msg = "Select one or more files in order to carry out file removal"
+            reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+
     def get_num_events(self,fileName):
         '''
         fetch the number of events in a file

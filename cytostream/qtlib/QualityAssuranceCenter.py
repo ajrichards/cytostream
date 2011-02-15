@@ -1,14 +1,23 @@
+#!/usr/bin/python
+'''
+Cytostream
+QualityAssuranceCenter
+The main widget for the quality assurance state
+
+'''
+
+__author__ = "A Richards"
+
 import sys,time,os
 from PyQt4 import QtGui, QtCore
 import numpy as np
 from cytostream.qtlib import ProgressBar
-from cytostream.qtlib.BlankPage import BlankPage
 from cytostream import Logger, Model
 
 
 class QualityAssuranceCenter(QtGui.QWidget):
     def __init__(self, fileList, masterChannelList, alternateChannelList=None, alternateFileList=None,mainWindow=None, 
-                 editBtnFn=None, parent=None,fontSize=11,showProgressBar=True,excludedChannels=[]):
+                 parent=None,fontSize=11,showProgressBar=True,excludedChannels=[]):
 
         QtGui.QWidget.__init__(self,parent)
 
@@ -19,7 +28,6 @@ class QualityAssuranceCenter(QtGui.QWidget):
         self.alternateChannelList = alternateChannelList
         self.alternateFileList = alternateFileList
         self.mainWindow = mainWindow
-        self.editBtnFn = editBtnFn
         self.fontSize = fontSize
         self.showProgressBar = showProgressBar
         self.excludedChannels = [int(chan) for chan in excludedChannels]
@@ -62,7 +70,6 @@ class QualityAssuranceCenter(QtGui.QWidget):
     def set_enable_disable(self):
         ## enable/disable buttons
         if self.showProgressBar == True and self.mainWindow !=None:
-            self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
             self.mainWindow.fileSelector.setEnabled(False)
@@ -90,17 +97,7 @@ class QualityAssuranceCenter(QtGui.QWidget):
         ## label widget 
         nfLayout2a.addWidget(QtGui.QLabel('Quality Assurance'))
         nfLayout2b.addWidget(QtGui.QLabel('To browse the data images must be first created'))
-        
-        ## edit button
-        self.nfEditBtn = QtGui.QPushButton("Edit Settings")
-        self.nfEditBtn.setMaximumWidth(100)
-        nfLayout3.addWidget(self.nfEditBtn)
-
-        if self.editBtnFn == None:
-            self.editBtnFn = self.generic_callback
-
-        self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
-        
+                
         ## show the progress bar
         self.init_progressbar()
 

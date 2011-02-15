@@ -40,7 +40,7 @@ class Model:
         model.initialize(projectID, homeDir)
     """
 
-    def __init__(self):
+    def __init__(self,verbose=False):
         """
         about:
             Basic constructor method.  Class must be initialized before use. 
@@ -51,6 +51,7 @@ class Model:
         """
         self.projectID = None
         self.homeDir = None
+        self.verbose = verbose
 
     def initialize(self,projectID,homeDir):
         """
@@ -109,7 +110,8 @@ class Model:
 
         fileCount = 0
         for filePath in fileList:
-            print 'loading %s...'%filePath
+            if self.verbose == True:
+                print 'loading %s...'%filePath
             if progressBar != None:
                 progressBar.progressLabel.setText("loading %s..."%os.path.split(filePath)[-1])
 

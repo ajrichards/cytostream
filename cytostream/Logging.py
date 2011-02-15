@@ -18,7 +18,7 @@ class Logger():
     
     ## consttructor
     def __init__(self):
-        self.log = {'current_state':'initial'}
+        self.log = {'current_state':'Initial'}
 
     def initialize(self,projectID,homeDir,load=False,configDict=None):
         self.projectID = projectID

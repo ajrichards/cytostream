@@ -67,6 +67,26 @@ class Slider(QtGui.QWidget):
         else:
             self.label.setPixmap(QtGui.QPixmap('max.png'))
 
+class Imager(QtGui.QWidget):
+    def __init__(self, imgPath, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.setAlignment(QtCore.Qt.AlignCenter)
+        vbox = QtGui.QVBoxLayout()
+        vbox.setAlignment(QtCore.Qt.AlignCenter)
+
+        if os.path.exists(imgPath) == False:
+            print "WARNING: Imager -- image path specified does not exist"
+
+        pixmap = QtGui.QPixmap(imgPath)
+
+        label = QtGui.QLabel(self)
+        label.setPixmap(pixmap)
+
+        hbox.addWidget(label)
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
 
 class ProgressBar(QtGui.QWidget):
     def __init__(self, parent=None,buttonLabel='Run',withLabel=False):
@@ -104,7 +124,6 @@ class ProgressBar(QtGui.QWidget):
         self.timer = QtCore.QBasicTimer()
         self.step = 0;
 
-
         ## finalize layout
         vbl.addLayout(hbl3)
         vbl.addLayout(hbl1)
@@ -126,35 +145,6 @@ class ProgressBar(QtGui.QWidget):
 
     def set_callback(self,callback):
         self.connect(self.button, QtCore.SIGNAL('clicked()'),callback)
-
-class DisplayImage(QtGui.QWidget):
-    def __init__(self, imgPath, parent=None, imgTitle=None,width=None,height=None):
-        QtGui.QWidget.__init__(self, parent)
-
-        self.imgPath = imgPath
-        self.imgTitle = imgTitle
-        self.width = width
-        self.height = height
-
-        if os.path.isfile(imgPath) == False:
-            print "WARNING: bad image path specified \n", imgPath
-        else:
-            self.initUI()
-
-    def initUI(self):
-
-        hbox = QtGui.QHBoxLayout(self)
-        pixmap = QtGui.QPixmap(self.imgPath)
-
-        label = QtGui.QLabel(self)
-        label.setPixmap(pixmap)
-
-        hbox.addWidget(label)
-        
-        self.setLayout(hbox)
-
-        if self.imgTitle != None:
-            self.setWindowTitle(self.imgTitle)
 
 class Tooltip(QtGui.QWidget):
     def __init__(self, msg='This is a tooltip', parent=None):

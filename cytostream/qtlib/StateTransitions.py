@@ -2,41 +2,20 @@
 
 '''
 Cytostream
-StageTransitions
-                                                                                                                                                
-Adam Richards
-adam.richards@stat.duke.edu
-                                                                                                                                     
+StateTransitions                                                                                                                                     
 '''
+
+__author__ = "A Richards"
 
 import os,sys,re
 import numpy as np
 from PyQt4 import QtGui,QtCore
 
-from LeftDock import *
-from FileControls import *
-from BasicWidgets import ProgressBar
-from DataProcessingCenter import DataProcessingCenter
-from ModelCenter import ModelCenter
-from OneDimViewer import OneDimViewer
-from BlankPage import BlankPage
-from OpenExistingProject import OpenExistingProject
-from QualityAssuranceCenter import QualityAssuranceCenter
-from EditMenu import EditMenu
-
-def move_transition(mainWindow):
-    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    bp = BlankPage(parent=mainWindow.mainWidget)
-    mainWindow.bp = BlankPage(parent=mainWindow.mainWidget)
-    vbl = QtGui.QVBoxLayout()
-    vbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl = QtGui.QHBoxLayout()
-    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl.addWidget(bp)
-    vbl.addLayout(hbl)
-    mainWindow.mainWidget.setLayout(vbl)
-    mainWindow.refresh_main_widget()
-    #QtCore.QCoreApplication.processEvents()  
+from cytostream import get_fcs_file_names
+from cytostream.qtlib import remove_left_dock, add_left_dock
+from cytostream.qtlib import ProgressBar, Imager
+from cytostream.qtlib import DataProcessingCenter, QualityAssuranceCenter, ModelCenter
+from cytostream.qtlib import ResultsNavigationCenter, EditMenu
 
 def move_to_initial(mainWindow):
     if mainWindow.pDock != None:
@@ -51,41 +30,31 @@ def move_to_initial(mainWindow):
     if mainWindow.controller.homeDir != None:
         add_left_dock(mainWindow)
         
-    mainWindow.pngViewer = QtGui.QLabel(mainWindow.mainWidget)
-    mainWindow.pngViewer.setAlignment(QtCore.Qt.AlignCenter)
-    mainWindow.pngViewer.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-    mainWindow.mainWidget = mainWindow.pngViewer
+    ## declare layouts
+    vbl = QtGui.QVBoxLayout()
+    vbl.setAlignment(QtCore.Qt.AlignCenter)
+    hbl1 = QtGui.QHBoxLayout()
+    hbl1.setAlignment(QtCore.Qt.AlignCenter)
+    hbl2 = QtGui.QHBoxLayout()
+    hbl2.setAlignment(QtCore.Qt.AlignCenter)
+
+    ## add main label
+    mainWindow.titleLabel = QtGui.QLabel('Cytostream')
+    hbl1.addWidget(mainWindow.titleLabel)
+
+    ## add image widget(s)
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    scienceImg =  os.path.join(mainWindow.controller.baseDir,"applications-science.png")
+    si = Imager(scienceImg,mainWindow.mainWidget)
+    hbl2.addWidget(si)
+
+    ## finalize layout                                                                                                                                                          
+    vbl.addLayout(hbl1)
+    vbl.addWidget(QtGui.QLabel(""))
+    vbl.addLayout(hbl2)
+    mainWindow.mainWidget.setLayout(vbl)
     mainWindow.refresh_main_widget()
-    mainWindow.setCentralWidget(mainWindow.mainWidget)
-    mainWindow.image = QtGui.QImage(os.path.join(mainWindow.controller.baseDir,"applications-science.png"))
-    mainWindow.show_image()
 
-#def move_to_edit_menu(mainWindow):
-#    if mainWindow.pDock != None:
-#        mainWindow.pDock.unset_all_highlights()
-#    if mainWindow.dockWidget != None:
-#        remove_left_dock(mainWindow)
-#
-#    closeBtnFn = lambda a=mainWindow: move_to_initial(a)#mainWindow.refresh_state() #
-#    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-#    defaultTransform = mainWindow.log.log['selected_transform']
-#    mainWindow.editMenu = EditMenu(parent=mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
-#                                   mainWindow=mainWindow)
-
-#    ## add right dock
-#    if mainWindow.pDock == None:
-#        mainWindow.add_pipeline_dock()
-#
-#    ## add left dock
-#    add_left_dock(mainWindow)
-#    mainWindow.editMenu.set_enable_disable()
-#
-#    ## layout
-#    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-#    hbl.setAlignment(QtCore.Qt.AlignTop)
-#    hbl.addWidget(mainWindow.editMenu)
-#    mainWindow.refresh_main_widget()
-    
 def move_to_results_navigation(mainWindow,runNew=False):
     if mainWindow.controller.verbose == True:
         print "moving to results navigation"
@@ -252,7 +221,7 @@ def move_to_quality_assurance(mainWindow):
     #    mainWindow.pDock.set_btn_highlight('quality assurance')
     #xsreturn Truexc
 
-def move_to_data_processing(mainWindow):
+def move_to_data_processing(mainWindow,withProgressBar=False):
     if mainWindow.controller.verbose == True:
         print "moving to data processing"
     
@@ -306,7 +275,7 @@ def move_to_data_processing(mainWindow):
 
     showProgressBar = False
 
-    if len(mainWindow.allFilePaths) > 0:
+    if len(mainWindow.allFilePaths) > 0 or withProgressBar == True:
         showProgressBar = True
     else:
         showProgressBar = False
@@ -314,10 +283,15 @@ def move_to_data_processing(mainWindow):
     if mainWindow.pDock == None:
         mainWindow.add_pipeline_dock()
 
+    ## update highest state
+    mainWindow.controller.log.log['current_state'] = 'Data Processing'
+    mainWindow.update_highest_state()
+    mainWindow.controller.save()
+
+    ## create widgets
     mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,
                                           mainWindow=mainWindow,showProgressBar=showProgressBar,editBtnFn=lambda a=mainWindow: move_to_edit_menu(a))
 
-    mainWindow.controller.log.log['current_state'] = 'Data Processing'
     add_left_dock(mainWindow)
     mainWindow.dpc.set_enable_disable()
 
@@ -329,8 +303,6 @@ def move_to_data_processing(mainWindow):
     
     ## handle state transfer
     mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
-    mainWindow.update_highest_state()
-    mainWindow.controller.save()
     return True
 
 def move_to_one_dim_viewer(mainWindow):
@@ -341,17 +313,7 @@ def move_to_one_dim_viewer(mainWindow):
         mainWindow.display_info('To begin either load an existing project or create a new one')
         return False
 
-    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    bp = BlankPage(parent=mainWindow.mainWidget)
-    vbl = QtGui.QVBoxLayout()
-    vbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl = QtGui.QHBoxLayout()
-    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl.addWidget(bp)
-    vbl.addLayout(hbl)
-    mainWindow.mainWidget.setLayout(vbl)
-    mainWindow.refresh_main_widget()
-    QtCore.QCoreApplication.processEvents()
+    move_transition(mainWindow,repaint=True)
 
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
