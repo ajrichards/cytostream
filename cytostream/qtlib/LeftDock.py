@@ -2,32 +2,17 @@
 
 '''
 Cytostream
-LeftDock        
-Adam Richards
-adam.richards@stat.duke.edu
-                   
+LeftDock 
+                  
 '''
+
+__author__ = "A. Richards"
 
 import sys,os
 from PyQt4 import QtGui,QtCore
 
-if hasattr(sys,'frozen'):
-    baseDir = os.path.dirname(sys.executable)
-    baseDir = re.sub("MacOS","Resources",baseDir)
-else:
-    baseDir = os.path.dirname(__file__)
-
-sys.path.append(os.path.join(baseDir,'..'))
-
-from FileControls import *
-from FileSelector import FileSelector
-from SubsetSelector import SubsetSelector
-from DataProcessingDock1 import DataProcessingDock1
-from DataProcessingDock2 import DataProcessingDock2
-from QualityAssuranceDock import QualityAssuranceDock
-from ModelDock import ModelDock
-from ResultsNavigationDock import ResultsNavigationDock
-from OneDimViewerDock import OneDimViewerDock
+from cytostream import get_fcs_file_names
+from cytostream.qtlib import FileSelector,SubsetSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -127,7 +112,7 @@ def add_left_dock(mainWindow):
         hboxTop.addWidget(mainWindow.fileSelector)
         
     ## subset selector
-    if mainWindow.log.log['current_state'] in ['Data Processing']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance']:
 
         if mainWindow.log.log['current_state'] == 'Data Processing':
             subsetDefault = mainWindow.log.log['subsample_qa']
@@ -141,63 +126,17 @@ def add_left_dock(mainWindow):
         mainWindow.subsetSelector.setAutoFillBackground(True)
         hboxTop.addWidget(mainWindow.subsetSelector)
 
+    ## more recreate figures
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+        mainWindow.recreateBtn = QtGui.QPushButton("recreate figures")
+        mainWindow.recreateBtn.setMaximumWidth(100)
+        hboxBottom.addWidget(mainWindow.recreateBtn)
+
     ## more info btn
     if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("more info")
         mainWindow.moreInfoBtn.setMaximumWidth(100)
         hboxBottom.addWidget(mainWindow.moreInfoBtn)
-
-    ## continue btn
-    #mainWindow.contBtn = QtGui.QPushButton("Continue")
-    #mainWindow.contBtn.setMaximumWidth(100)
-    #hboxBottom.addWidget(mainWindow.contBtn)
-    #contBtnFn = mainWindow.generic_callback
-    #mainWindow.connect(mainWindow.contBtn, QtCore.SIGNAL('clicked()'),contBtnFn)
-
-    ## data processing
-    #if mainWindow.log.log['current_state'] == "Data Processing":
-    #    mainWindow.dock1 = DataProcessingDock1(masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-    #                                          contBtnFn=None,subsetDefault=subsampleDefault)
-    #    callBackfn = mainWindow.generic_callback #handle_data_processing_mode_callback
-    #    mainWindow.dock2 = DataProcessingDock2(callBackfn,parent=mainWindow.dockWidget,default=mainWindow.log.log['data_processing_mode'])
-    #    mainWindow.dock1.setAutoFillBackground(True)
-    #    mainWindow.dock2.setAutoFillBackground(True)
-    #    hbl2.addWidget(mainWindow.dock2)
-    #    hbl3.addWidget(mainWindow.dock1)
-
-    ## quality assurance
-    #elif mainWindow.log.log['current_state'] == "Quality Assurance":
-    #    
-    #    mainWindow.dock = QualityAssuranceDock(fileList,masterChannelList,transformList,compensationList,subsetList,parent=mainWindow.dockWidget,
-    #                                           contBtnFn=None,subsetDefault=subsampleDefault,viewAllFn=mainWindow.display_thumbnails)
-    #    vbl3.addWidget(mainWindow.dock)
-    #    mainWindow.dock.setAutoFillBackground(True)
-   
-    ## model
-    #elif mainWindow.log.log['current_state'] == "Model":
-    #    modelList = ['DPMM','K-means']
-    #    mainWindow.dock = ModelDock(modelList,parent=mainWindow.dockWidget,componentsFn=mainWindow.set_num_components)
-    #    mainWindow.dock.setAutoFillBackground(True)
-    #    vbl3.addWidget(mainWindow.dock)
-
-    ## results navigation
-    #elif mainWindow.log.log['current_state'] == "Results Navigation":
-    #    mainWindow.dock = ResultsNavigationDock(mainWindow.resultsModeList,masterChannelList,parent=mainWindow.dockWidget,
-    #                                            resultsModeFn=mainWindow.set_selected_results_mode,
-    #                                            resultsModeDefault=mainWindow.log.log['results_mode'],viewAllFn=mainWindow.display_thumbnails,
-    #                                            infoBtnFn=mainWindow.show_model_log_info)
-    #    mainWindow.dock.setAutoFillBackground(True)
-    #    vbl3.addWidget(mainWindow.dock)
-
-    ## one dimensional viewer
-    #if mainWindow.log.log['current_state'] == 'OneDimViewer':
-    #    mainWindow.dock = OneDimViewerDock(fileList,masterChannelList,callBack=mainWindow.odv.paint)
-    #    mainWindow.dock.setAutoFillBackground(True)
-    #    vbl1.addWidget(mainWindow.dock)
-        
-    ## stages with thumbnails
-    #if mainWindow.log.log['current_state'] in ['Quality Assurance', 'Results Navigation']:
-    #    mainWindow.fileSelector.set_refresh_thumbs_fn(mainWindow.display_thumbnails)
 
     ## finalize alignments
     hbl.addLayout(vboxTop)

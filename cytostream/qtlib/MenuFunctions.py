@@ -2,7 +2,7 @@
 
 import sys,re,os
 from PyQt4 import QtGui,QtCore
-from StateTransitions import *
+from cytostream.qtlib import remove_left_dock, add_left_dock
 
 def add_actions(mainWindow, target, actions):
     '''
@@ -108,6 +108,3 @@ def create_menubar_toolbar(mainWindow):
     ## define help menu
     helpMenu = mainWindow.menuBar().addMenu("&Help")
     add_actions(mainWindow,helpMenu, (helpAboutAction, helpHelpAction))
-    add_actions(mainWindow,mainWindow.mainWidget,(editDataProcessing,
-                                       editQualityAssurance,editModel,
-                                       editResultsNavigation))

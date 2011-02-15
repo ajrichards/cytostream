@@ -1,3 +1,12 @@
+#!/usr/bin/python
+'''
+Cytostream
+EditMenu
+The edit widget for the data processing state
+here global log file definations may be specified
+'''
+__author__ = "A Richards"
+
 import sys
 from PyQt4 import QtGui, QtCore
 
@@ -71,7 +80,6 @@ class EditMenu(QtGui.QWidget):
 
         self.mainWindow.pDock.contBtn.setEnabled(False)
         self.mainWindow.moreInfoBtn.setEnabled(False)
-        self.mainWindow.subsetSelector.setEnabled(False)
         self.mainWindow.pDock.inactivate_all()
     
     def generic_callback(self):

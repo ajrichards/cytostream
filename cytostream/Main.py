@@ -3,7 +3,7 @@
 '''
 this script activates the GUI
 
-A. Ricahrds
+A. Richards
 '''
 
 import sys, getopt, os

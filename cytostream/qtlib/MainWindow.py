@@ -215,7 +215,7 @@ class MainWindow(QtGui.QMainWindow):
 
         ## remove old docks
         remove_left_dock(self)
-        self.removeDockWidget(self.pDock)
+        self.removeDockWidget(self.pipelineDock)
 
         self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
@@ -265,12 +265,12 @@ class MainWindow(QtGui.QMainWindow):
                                 size.height())
             painter.drawImage(0, 0, self.image)
 
-    def show_image(self, percent=None):
-        if self.image.isNull():
-            return
-        
-        image = self.image
-        self.pngViewer.setPixmap(QtGui.QPixmap.fromImage(image))
+    #def show_image(self, percent=None):
+    #    if self.image.isNull():
+    #        return
+    #    
+    #    image = self.image
+    #    self.pngViewer.setPixmap(QtGui.QPixmap.fromImage(image))
 
     def helpAbout(self):
         QtGui.QMessageBox.about(self, "About %s"%self.controller.appName,
@@ -308,21 +308,6 @@ class MainWindow(QtGui.QMainWindow):
         #form.show()
 
     ################################################################################################3
-
-    #def move_transition(self):
-    #    self.mainWidget = QtGui.QWidget(self)
-    #    bp = BlankPage(parent=self.mainWidget)
-    #    self.bp = BlankPage(parent=self.mainWidget)
-    #    vbl = QtGui.QVBoxLayout()
-    #    vbl.setAlignment(QtCore.Qt.AlignCenter)
-    #    hbl = QtGui.QHBoxLayout()
-    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    #    hbl.addWidget(bp)
-    #    vbl.addLayout(hbl)
-    #    self.mainWidget.setLayout(vbl)
-    #    self.refresh_main_widget()
-    #    #QtCore.QCoreApplication.processEvents()
-
     def generic_callback(self):
         print "this button/widget does not do anything yet"
 
@@ -557,10 +542,10 @@ class MainWindow(QtGui.QMainWindow):
         #selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
         #self.log.log['selected_model'] = selectedModel
 
-    def refresh_state(self):
+    def refresh_state(self,withProgressBar=False):
         print 'refreshing state', self.log.log['current_state']
         if self.log.log['current_state'] == "Data Processing":
-            move_to_data_processing(self)
+            move_to_data_processing(self,withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
             move_to_quality_assurance(self)
         elif self.log.log['current_state'] == "Model":

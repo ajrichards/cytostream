@@ -48,7 +48,8 @@ class Controller:
     def reset_workspace(self):
         self.projectID = None
         self.homeDir = None
-        self.model = Model()
+
+        self.model = Model(verbose=self.verbose)
         self.log = Logger()
         self.subsampleIndices = None
                               
