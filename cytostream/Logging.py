@@ -1,23 +1,34 @@
-import os,csv,re,ast
-import numpy as np
-from cytostream import configDictDefault
+#!/usr/bin/python
 
 '''
-Logger class to handle the logging tasks of the pipline software
-project logfile - main log file that holds project specific history and variable information
-model logfiles - each run of a model results in a results pickle as well as a log file
-figure logfiles - figures may be manipulated after the run of a model -- those manipulations are documented here
-
-log entries marked with 'setting' are not meant to be changed by the user
+Cytostream
+Logger
+Logger class used to document the steps involved in the analysis pipeline
 
 '''
 
 __author__ = "A Richards"
 
+import os,csv,re,ast
+import numpy as np
+from cytostream import configDictDefault
+
+
 class Logger():
-    
-    ## consttructor
+    '''
+    Logger class to handle the logging tasks of the pipline software
+    project logfile - main log file that holds project specific history and variable information
+    model logfiles - each run of a model results in a results pickle as well as a log file
+    figure logfiles - figures may be manipulated after the run of a model
+
+    '''
+
     def __init__(self):
+        '''
+        constructor
+
+        '''
+
         self.log = {'current_state':'Initial'}
 
     def initialize(self,projectID,homeDir,load=False,configDict=None):

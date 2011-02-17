@@ -1,17 +1,153 @@
+#!/usr/bin/python
+'''
+Cytostream
+OneDimViewer
+A widget that handles the visualization of single channels as a smoothed
+multiple files may be viewed on the same plot
+
+'''
+
+__author__ = "A Richards"
+
+
 import sys,os,re
-from PyQt4 import QtGui
+from PyQt4 import QtGui,QtCore
 import numpy as np
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from scipy.stats import gaussian_kde
-from cytostream import Model,get_fcs_file_names, Logger
+from cytostream import get_fcs_file_names, Logger, Model
 from cytostream.tools import fetch_plotting_events
 from matplotlib.widgets import CheckButtons
 
+class OneDimViewer(QtGui.QWidget):
+    '''
+    wrapper for the OneDimDrawClass
 
-class OneDimViewer(FigureCanvas):
+    '''
+
+    def __init__(self, homeDir, subset='original', parent=None, channelDefault=None, callBack=None,background=True):
+        QtGui.QWidget.__init__(self,parent)
+
+        ## declare variables
+        self.setWindowTitle('1-D Viewer')
+        self.subset = subset
+        self.background = background
+        self.callBack = callBack
+
+        ## initialize model
+        projectID = os.path.split(homeDir)[-1]
+        log = Logger()
+        log.initialize(projectID,homeDir,load=True)
+        model = Model()
+        model.initialize(projectID,homeDir)
+
+        ## additional class-wide variables
+        self.fcsFileList = get_fcs_file_names(homeDir)
+        #self.fcsFileLabels = [re.sub("\.fcs","",f) for f in self.fcsFileList]
+        self.masterChannelList = model.get_master_channel_list() 
+
+        ## setup layouts
+        hl = QtGui.QHBoxLayout()
+        hl.setAlignment(QtCore.Qt.AlignCenter)
+        vbox1 = QtGui.QVBoxLayout()
+        vbox1.setAlignment(QtCore.Qt.AlignCenter)
+        vbox2 = QtGui.QVBoxLayout()
+        vbox2.setAlignment(QtCore.Qt.AlignCenter)
+        hbox1 = QtGui.QHBoxLayout()
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        hbox2 = QtGui.QHBoxLayout()
+        hbox2.setAlignment(QtCore.Qt.AlignCenter)
+        hbox3 = QtGui.QHBoxLayout()
+        hbox3.setAlignment(QtCore.Qt.AlignCenter)
+
+        ## create checkboxes for each file
+        self.chkBoxes = {}
+        first = True
+        for fcsFileName in self.fcsFileList:
+            fcsFileName = re.sub(".\fcs","",fcsFileName)
+            self.chkBoxes[fcsFileName] = QtGui.QCheckBox(fcsFileName, self)
+            self.chkBoxes[fcsFileName].setFocusPolicy(QtCore.Qt.NoFocus)
+
+            if first == True:
+                self.chkBoxes[fcsFileName].toggle()
+                first = False
+
+            vbox1.addWidget(self.chkBoxes[fcsFileName])
+            self.connect(self.chkBoxes[fcsFileName], QtCore.SIGNAL('clicked()'),lambda x=fcsFileName: self.fcs_file_callback(fcsFileName=x))
+
+        ## channel selector
+        self.channelSelector = QtGui.QComboBox(self)
+        self.channelSelector.setMaximumWidth(180)
+        self.channelSelector.setMinimumWidth(180)
+
+        for channel in self.masterChannelList:
+            self.channelSelector.addItem(channel)
+
+        hbox2.addWidget(self.channelSelector)
+        hbox2.setAlignment(QtCore.Qt.AlignCenter)
+
+        if channelDefault != None:
+            if self.masterChannelL.__contains__(channelDefault):
+                self.channelSelector.setCurrentIndex(self.modelsRun.index(modelDefault))
+            else:
+                print "ERROR: in OneDimViewerDoc - bad specified channelDefault"
+
+        if callBack == None:
+            self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.generic_callback)
+        else:
+            self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_callback)
+
+        ## create the drawer
+        self.odv = OneDimDraw(self.fcsFileList,self.masterChannelList,model,log,subset=subset,background=True,parent=self)
+        hbox3.addWidget(self.odv)
+
+        ## finalize layout
+        vbox1.addLayout(hbox1)
+        vbox2.addLayout(hbox2)
+        vbox2.addLayout(hbox3)
+        hl.addLayout(vbox1)
+        hl.addLayout(vbox2)
+        self.setLayout(hl)
+
+    def generic_callback(self):
+        print 'callback does not do anything'
+
+    def channel_callback(self):
+        cInd = self.channelSelector.currentIndex()
+        c = str(self.channelSelector.currentText())
+        self.callBack(channel=c)
+
+    def fcs_file_callback(self,fcsFileName=None):
+        if fcsFileName != None:
+            print 'fcs callback', fcsFileName,self.fcsFileList.index(fcsFileName)
+
+            fcsIndices = [0 for i in range(len(self.fcsFileList))]
+
+            for fcsFileName in self.fcsFileList:
+                if self.chkBoxes[fcsFileName].isChecked() == True:
+                    fcsIndices[self.fcsFileList.index(fcsFileName)] = 1
+
+            self.callBack(fcsIndices=fcsIndices)
+
+    def get_results_mode(self):
+        return self.resultsMode
+
+    def disable_all(self):
+        self.channelSelector.setEnabled(False)
+
+        for key in self.chkBoxes.keys():
+            self.chkBoxes[key].setEnabled(False)
+
+    def enable_all(self):
+        self.channelSelector.setEnabled(True)
+
+        for key in self.chkBoxes.keys():
+            self.chkBoxes[key].setEnabled(True)
+
+class OneDimDraw(FigureCanvas):
     '''
     class to carry out the creation of a matplotlib figure embedded into the cytostream application.
     The interactive matplotlib figure allowed the user to select channels and toggle samples within
@@ -30,7 +166,7 @@ class OneDimViewer(FigureCanvas):
 
     '''
 
-    def __init__(self, homeDir, parent=None, subset="All Data",altDir=None, modelName=None, background=False, modelType=None):
+    def __init__(self, fcsFileList,masterChannelList,model,log,subset="original",parent=None,altDir=None, modelName=None, background=False, modelType=None):
 
         ## error checking
         if os.path.isdir(homeDir) == False:
@@ -47,16 +183,19 @@ class OneDimViewer(FigureCanvas):
         self.lines = ['-','.','--','-.','o','d','s','^']
 
         ## initialize model
-        projectID = os.path.split(homeDir)[-1]
-        log = Logger()
-        log.initialize(projectID,homeDir,load=True)
-        model = Model()
-        model.initialize(projectID,homeDir)
+        #projectID = os.path.split(homeDir)[-1]
+        #log = Logger()
+        #log.initialize(projectID,homeDir,load=True)
+        #model = Model()
+        #model.initialize(projectID,homeDir)
+
+        self.fcsFileList = fcsFileList
+        self.masterChannelList = masterChannelList
 
         ## additional class-wide variables
-        self.fcsFileList = get_fcs_file_names(homeDir)
-        self.fcsFileLabels = [re.sub("\.fcs","",f) for f in self.fcsFileList]
-        self.masterChannelList = model.get_master_channel_list() 
+        #self.fcsFileList = get_fcs_file_names(homeDir)
+        #self.fcsFileLabels = [re.sub("\.fcs","",f) for f in self.fcsFileList]
+        #self.masterChannelList = model.get_master_channel_list() 
 
         ## create the plot
         self.make_plot(model,log,subset)
@@ -96,7 +235,7 @@ class OneDimViewer(FigureCanvas):
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
         ## determine subset of events
-        data = fetch_plotting_events(fcsFileName,model,log,subsample)
+        data,labels = fetch_plotting_events(fcsFileName,model,log,subsample)
         events = [float(d) for d in data[:, channelInd]]
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
@@ -136,7 +275,7 @@ class OneDimViewer(FigureCanvas):
             color,lineStyle  = self.get_line_attrs(fcsIndex)
             pt = self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
             currentPlts.append(pt)
-            currentLabs.append(self.fcsFileLabels[fcsIndex])
+            currentLabs.append(self.fcsFileList[fcsIndex])
             
         self.fig.legend( currentPlts, currentLabs, 'upper right', shadow=True)
         self.draw()
@@ -152,7 +291,6 @@ if __name__ == '__main__':
 
     ## use qt to display widget
     app = QtGui.QApplication(sys.argv)
-    #parent =  QtGui.QWidget()
     odv = OneDimViewer(homeDir,subset=subsample,background=True)
 
     odv.show()
