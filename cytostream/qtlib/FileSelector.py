@@ -1,47 +1,57 @@
+#!/usr/bin/python                                                                                                                                                               
+'''
+Cytostream 
+SubsetSelector 
+
+A combobox widget to select from different files
+
+'''
+__author__ = "A Richards"
+
+
 import sys,re
 from PyQt4 import QtGui, QtCore
 
 class FileSelector(QtGui.QWidget):
     '''
-    Class that handles the users selection of files and models. Upon selection variables corresponding to the
+    Class that handles the users selection of files.  Upon selection variables corresponding to the
     selected files are changed.  These actions are carried out by functions in the MainWindow widget.
 
     '''
 
-    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None, 
-                 showModelSelector=False, modelDefault=None,possibleModels=None):
+    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
 
         QtGui.QWidget.__init__(self,parent)
-        self.modelSelector = None
-        self.modelsRun = modelsRun
+
+        ## declare variables
         self.color = color
+        self.fileList = fileList
+        self.parent = parent
+
+        ## setup layouts
         vbox = QtGui.QVBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
+        hbox1.setAlignment(QtCore.Qt.AlignLeft)
         hbox2 = QtGui.QHBoxLayout()
-        
-        ## error checking
-        if showModelSelector == True and self.modelsRun == None:
-            print "ERROR: must specify modelsRun if ModelSelector is true"
-
+        hbox2.setAlignment(QtCore.Qt.AlignLeft)     
+   
         ## file selector
-        hbox1.addWidget(QtGui.QLabel('File Selector'))
-        hbox1.setAlignment(QtCore.Qt.AlignCenter)
+        hbox1.addWidget(QtGui.QLabel('file'))
         self.fileSelector = QtGui.QComboBox(self)
         
-        fileList = [re.sub("\.fcs","",f) for f in fileList]
-        for fileName in fileList:
+        self.fileList = [re.sub("\.fcs","",f) for f in self.fileList]
+        for fileName in self.fileList:
             self.fileSelector.addItem(fileName)
 
         hbox2.addWidget(self.fileSelector)
-        hbox2.setAlignment(QtCore.Qt.AlignCenter)
-
+     
         if fileDefault != None:
             fileDefault = re.sub("\.fcs","",fileDefault)
-            if fileList.__contains__(fileDefault):
-                self.fileSelector.setCurrentIndex(fileList.index(fileDefault))
+            if self.fileList.__contains__(fileDefault):
+                self.fileSelector.setCurrentIndex(self.fileList.index(fileDefault))
             else:
                 print "ERROR: in file selector - bad specified fileDefault", fileDefault
 
@@ -49,39 +59,9 @@ class FileSelector(QtGui.QWidget):
             selectionFn = self.generic_callback
         self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
 
-        if showModelSelector != False:
-            hbox3 = QtGui.QHBoxLayout()
-            hbox4 = QtGui.QHBoxLayout()
-            hbox3.addWidget(QtGui.QLabel('Model Selector'))
-            hbox3.setAlignment(QtCore.Qt.AlignCenter)
-
-            ## model selector combobox  
-            self.modelSelector = QtGui.QComboBox(self)
-            self.modelSelector.setMaximumWidth(180)
-            self.modelSelector.setMinimumWidth(180)
-            for model in self.modelsRun:
-                self.modelSelector.addItem(model)
-            hbox4.addWidget(self.modelSelector)
-            hbox4.setAlignment(QtCore.Qt.AlignCenter)
-
-            if modelDefault != None:
-                if self.modelsRun.__contains__(modelDefault):
-                    self.modelSelector.setCurrentIndex(self.modelsRun.index(modelDefault))
-                else:
-                    print "ERROR: in dpd - bad specified modelDefault"
-
-            if selectionFn != None:
-                self.selectionFn = self.generic_callback
-            self.connect(self.modelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)
-
-        ## finalize layout                           
-        vbox.setAlignment(QtCore.Qt.AlignTop)
+        ## finalize layout
         vbox.addLayout(hbox1)
-        vbox.addLayout(hbox2)
-        if showModelSelector == True:
-             vbox.addLayout(hbox3)
-             vbox.addLayout(hbox4)
-    
+        vbox.addLayout(hbox2)    
         self.setLayout(vbox)
 
         ## color the background
@@ -117,6 +97,6 @@ if __name__ == '__main__':
     
     fileList = ['file1', 'file2']
     modelsRun = ['fileName_sampleID_modelID1', 'fileName_sampleID_modelID2']
-    fs = FileSelector(fileList,modelsRun=modelsRun, showModelSelector=True)
+    fs = FileSelector(fileList)
     fs.show()
     sys.exit(app.exec_())

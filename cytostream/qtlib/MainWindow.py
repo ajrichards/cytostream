@@ -88,7 +88,7 @@ class MainWindow(QtGui.QMainWindow):
         self.filename = None
         self.dockWidget = None
         self.fileSelector = None
-        self.pDock = None        
+        self.pDock = None       
         self.dock = None
         self.tv = None
         self.lastChanI = None
@@ -177,7 +177,8 @@ class MainWindow(QtGui.QMainWindow):
                                                QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
                 idValid = True
-                print 'overwriting anyway'
+                if self.controller.verbose == True:
+                    print 'INFO: overwriting old project'
             else:
                 projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter another project name:')
                 projectID = re.sub("\s+","_",str(projectID))
@@ -192,10 +193,14 @@ class MainWindow(QtGui.QMainWindow):
             print 'INFO: creating new project', projectID
         
         ## initialize and load project
+        goFlag = False
         self.controller.initialize_project(projectID)
-        self.controller.create_new_project(projectID)
-        move_to_data_processing(self)
-        
+        goFlag = self.controller.create_new_project(projectID)
+        if goFlag == True:
+            move_to_data_processing(self)
+        else:
+            print "ERROR: create new project did not succeed"
+
     def open_existing_project(self):
         '''
         a reference function to move to the open screen
@@ -318,29 +323,29 @@ class MainWindow(QtGui.QMainWindow):
     #
     #################################################
 
-    def set_subsample(self):
-        if self.log.log['current_state'] == "Data Processing":
-            ss, ssInd = self.dock1.get_subsample()
-
-            # if changed remove old thumbs
-            if ss != self.log.log['subsample_qa']:
-                imgDir = os.path.join(self.controller.homeDir,"figs")
-                for img in os.listdir(imgDir):
-                    if re.search("\.png",img):
-                        os.remove(os.path.join(imgDir,img))
-                    elif re.search("\_thumbs",img) and os.path.isdir(os.path.join(imgDir,img)):
-                        for thumb in os.listdir(os.path.join(imgDir,img)):
-                            if re.search("\.png",thumb):
-                                os.remove(os.path.join(imgDir,img,thumb))
-                        os.rmdir(os.path.join(imgDir,img))
-
-            self.log.log['subsample_qa'] = ss
-            goFlag = self.controller.handle_subsampling()
-            
-            if goFlag == True:
-                return True
-            else:
-                return False
+    #def set_subsample(self):
+    #    if self.log.log['current_state'] == "Data Processing":
+    #        ss, ssInd = self.dock1.get_subsample()
+    #
+    #        # if changed remove old thumbs
+    #        if ss != self.log.log['subsample_qa']:
+    #            imgDir = os.path.join(self.controller.homeDir,"figs")
+    #            for img in os.listdir(imgDir):
+    #                if re.search("\.png",img):
+    #                    os.remove(os.path.join(imgDir,img))
+    #                elif re.search("\_thumbs",img) and os.path.isdir(os.path.join(imgDir,img)):
+    #                    for thumb in os.listdir(os.path.join(imgDir,img)):
+    #                        if re.search("\.png",thumb):
+    #                            os.remove(os.path.join(imgDir,img,thumb))
+    #                    os.rmdir(os.path.join(imgDir,img))
+    #
+    #        self.log.log['subsample_qa'] = ss
+    #        goFlag = self.controller.handle_subsampling()
+    #        
+    #        if goFlag == True:
+    #            return True
+    #        else:
+    #            return False
     
 
     def set_excluded_files_channels(self):
@@ -409,11 +414,17 @@ class MainWindow(QtGui.QMainWindow):
     def run_progress_bar(self):
         mode = self.log.log['current_state']
         
+        ## save selected variables
+        self.set_selected_file()                                                                                                                          
+        self.set_selected_subsample()   
+
         ## handle subsampling
         if self.log.log['current_state'] == 'Quality Assurance':
             subsample = self.log.log['subsample_qa']
         else:
             subsample = self.log.log['subsample_analysis']
+
+        print 'running for subsample', subsample
 
         self.controller.handle_subsampling(subsample)
 
@@ -438,8 +449,38 @@ class MainWindow(QtGui.QMainWindow):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
         move_to_results_navigation(self,runNew=True)
  
+    def recreate_figures(self):
+        '''
+        call back from state transtions to enable thumbnail figure recreation
+
+        '''
+        
+        print 'should be recreating figures'
+
+        if self.log.log['current_state'] == 'Quality Assurance':
+            move_to_quality_assurance(self,mode='progressbar')
+
+
+    def plots_enable_disable(self):
+        '''
+        enables and disables widgets for thumbnail view mode
+
+        '''
+
+        self.subsetSelector.setEnabled(False)
+        self.fileSelector.setEnabled(True)
+        self.recreateBtn.setEnabled(True)
+        self.modeSelector.setEnabled(True)
+        self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
+
+
     def display_thumbnails(self,runNew=False):
+        
+        ## enable/disable
         mode = self.log.log['current_state']
+        self.plots_enable_disable()
+
+        ## setup layout
         hbl = QtGui.QHBoxLayout()
         vbl = QtGui.QVBoxLayout()
         vbl.setAlignment(QtCore.Qt.AlignCenter)
@@ -504,12 +545,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
-    def set_selected_results_mode(self):
-        print "setting selected results mode"
-        #selectedMode = self.dock.get_results_mode()
-        #self.log.log['results_mode'] = selectedMode
-        #self.handle_show_scatter(img=None)
-
     def set_selected_file(self):
         '''
         set the selecte file
@@ -529,8 +564,9 @@ class MainWindow(QtGui.QMainWindow):
         if selectedSubset == 'All Data':
             selectedSubset = 'original'
 
+        print 'setting selected subset...', selectedSubset, self.log.log['current_state']
 
-        if self.log.log['current_state'] == 'Data Processing':
+        if self.log.log['current_state'] == 'Quality Assurance':
             self.log.log['subsample_qa'] = selectedSubset
         if self.log.log['current_state'] == 'Model':
             self.log.log['subsample_analysis'] = selectedSubset
@@ -542,12 +578,12 @@ class MainWindow(QtGui.QMainWindow):
         #selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
         #self.log.log['selected_model'] = selectedModel
 
-    def refresh_state(self,withProgressBar=False):
+    def refresh_state(self,withProgressBar=False,qaMode='thumbs'):
         print 'refreshing state', self.log.log['current_state']
         if self.log.log['current_state'] == "Data Processing":
             move_to_data_processing(self,withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
-            move_to_quality_assurance(self)
+            move_to_quality_assurance(self,mode=qaMode)
         elif self.log.log['current_state'] == "Model":
             move_to_model(self)
         elif self.log.log['current_state'] == "Results Navigation":
@@ -561,18 +597,7 @@ class MainWindow(QtGui.QMainWindow):
         mode = self.log.log['current_state']
         self.set_selected_file()
         
-        ## layout and widget setup
-        self.mainWidget = QtGui.QWidget(self)
-        bp = BlankPage(parent=self.mainWidget)
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(bp)
-        vbl.addLayout(hbl)
-        self.mainWidget.setLayout(vbl)
-        self.refresh_main_widget()
-        QtCore.QCoreApplication.processEvents()
+        move_transition(self,repaint=True)
 
         if img != None:
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs","",self.log.log['selected_file']),"",img)
@@ -586,7 +611,16 @@ class MainWindow(QtGui.QMainWindow):
             print "ERROR: lastChanI or lastChanJ not defined"
             return False
 
+        ## enable/disable
+        try:
+            self.subsetSelector.setEnabled(False)
+            self.fileSelector.setEnabled(True)
+            self.recreateBtn.setEnabled(True)
+        except:
+            pass
+
         if mode == "Quality Assurance":
+
             self.mainWidget = QtGui.QWidget(self)
             vbl = QtGui.QVBoxLayout(self.mainWidget)
             subsample=self.log.log['subsample_qa']

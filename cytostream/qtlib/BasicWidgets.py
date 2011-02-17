@@ -5,7 +5,7 @@ from PyQt4 import QtCore
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callBackFn=None):
+    def __init__(self,btnLabels,parent=None,default=None,callBackFn=None,color='white'):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
@@ -17,6 +17,7 @@ class RadioBtnWidget(QtGui.QWidget):
         self.btnLabels = btnLabels
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
+        self.color = color
 
         for bLabel in self.btnLabels:
             rad = QtGui.QRadioButton(bLabel)

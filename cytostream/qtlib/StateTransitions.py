@@ -2,7 +2,10 @@
 
 '''
 Cytostream
-StateTransitions                                                                                                                                     
+StateTransitions
+
+functions that handle the transitions from one software state to another
+                                                                                                                             
 '''
 
 __author__ = "A Richards"
@@ -11,18 +14,21 @@ import os,sys,re
 import numpy as np
 from PyQt4 import QtGui,QtCore
 
-from cytostream import get_fcs_file_names
+from cytostream import get_fcs_file_names, get_project_names
 from cytostream.qtlib import remove_left_dock, add_left_dock
 from cytostream.qtlib import ProgressBar, Imager
-from cytostream.qtlib import DataProcessingCenter, QualityAssuranceCenter, ModelCenter
+from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
+from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
 
 def move_to_initial(mainWindow):
+
+    ## remove docks
     if mainWindow.pDock != None:
-        mainWindow.pDock.unset_all_highlights()
+        mainWindow.removeDockWidget(mainWindow.pipelineDock)
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
-
+        
     ## set the state
     mainWindow.controller.log.log['current_state'] = 'Initial'
 
@@ -48,11 +54,47 @@ def move_to_initial(mainWindow):
     si = Imager(scienceImg,mainWindow.mainWidget)
     hbl2.addWidget(si)
 
-    ## finalize layout                                                                                                                                                          
+    ## finalize layout
     vbl.addLayout(hbl1)
     vbl.addWidget(QtGui.QLabel(""))
     vbl.addLayout(hbl2)
     mainWindow.mainWidget.setLayout(vbl)
+    mainWindow.refresh_main_widget()
+
+def move_to_open(mainWindow):
+    if mainWindow.controller.projectID != None:
+        reply = QtGui.QMessageBox.question(mainWindow, mainWindow.controller.appName,
+                                           "Are you sure you want to close the current project - '%s'?"%mainWindow.controller.projectID,
+                                           QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+        if reply == QtGui.QMessageBox.No:
+            return None
+        else:
+            mainWindow.controller.save()
+    
+    mainWindow.controller.reset_workspace()
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+
+    closeBtnFn = lambda a=mainWindow: move_to_initial(a)
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    projectList = get_project_names(mainWindow.controller.baseDir)
+    mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
+                                                           closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
+    ## add right dock
+    if mainWindow.pDock == None:
+        mainWindow.add_pipeline_dock()
+
+    ## enable disable other widgets
+    mainWindow.pDock.inactivate_all()
+    mainWindow.pDock.contBtn.setEnabled(False)
+
+    ## add left dock
+    add_left_dock(mainWindow)
+
+    ## layout
+    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
+    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl.addWidget(mainWindow.existingProjectOpener)
     mainWindow.refresh_main_widget()
 
 def move_to_results_navigation(mainWindow,runNew=False):
@@ -84,39 +126,6 @@ def move_to_results_navigation(mainWindow,runNew=False):
         mainWindow.pDock.set_btn_highlight('results navigation')
     return True
 
-def move_to_open(mainWindow):
-    if mainWindow.controller.projectID != None:
-        reply = QtGui.QMessageBox.question(mainWindow, mainWindow.controller.appName,
-                                           "Are you sure you want to close the current project - '%s'?"%mainWindow.controller.projectID,
-                                           QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.No:
-            return
-        else:
-            mainWindow.controller.save()
-    
-    mainWindow.controller.reset_workspace()
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-
-    closeBtnFn = lambda a=mainWindow: move_to_initial(a)
-    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    projectList = get_project_names(mainWindow.controller.baseDir)
-    mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
-                                                           closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
-    ## add right dock
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
-
-    mainWindow.pDock.inactivate_all() 
-
-    ## add left dock
-    add_left_dock(mainWindow)
-
-    ## layout
-    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    hbl.setAlignment(QtCore.Qt.AlignTop)
-    hbl.addWidget(mainWindow.existingProjectOpener)
-    mainWindow.refresh_main_widget()
 
 def move_to_model(mainWindow):                                                                                              
     #if mainWindow.controller.verbose == True:
@@ -143,9 +152,13 @@ def move_to_model(mainWindow):
     #    mainWindow.pDock.set_btn_highlight('model')                                                                     
     return True  
 
-def move_to_quality_assurance(mainWindow):
+def move_to_quality_assurance(mainWindow,mode='thumbs'):
     if mainWindow.controller.verbose == True:
-        print "moving to quality assurance"
+        print "moving to quality assurance", mode
+
+    ## error checking
+    if mode not in ['progressbar', 'thumbs', '1plot']:
+        print "ERROR: move_to_quality_assurance - bad mode", mode
 
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     if len(fileList) == 0:
@@ -159,67 +172,48 @@ def move_to_quality_assurance(mainWindow):
     if mainWindow.log.log['selected_file'] == None:
         mainWindow.log.log['selected_file'] = fileList[0]
 
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
+    ## check that thumbs are made
+    thumbDir = os.path.join(mainWindow.controller.homeDir,"figs","qa",mainWindow.log.log['selected_file']+"_thumbs")
+
+    if os.path.isdir(thumbDir) == False or len(os.listdir(thumbDir)) == 0:
+        mode = 'progressbar'
 
     ## prepare variables
     masterChannelList = mainWindow.model.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
-    showProgressBar = True
-
     if mainWindow.pDock == None:
         mainWindow.add_pipeline_dock()
 
-    mainWindow.qac = QualityAssuranceCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,
-                                            mainWindow=mainWindow,showProgressBar=showProgressBar)
+    mainWindow.controller.log.log['current_state'] = 'Quality Assurance'
 
+    if mode == 'thumbs':
+        mainWindow.display_thumbnails()
+        add_left_dock(mainWindow)
+        return True
+
+    mainWindow.qac = QualityAssuranceCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,
+                                            mainWindow=mainWindow)
+    
     mainWindow.qac.progressBar.set_callback(mainWindow.run_progress_bar)
 
     ## add left dock
-    mainWindow.controller.log.log['current_state'] = 'Quality Assurance'
     add_left_dock(mainWindow)
     mainWindow.qac.set_enable_disable()
+    mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
 
     ## handle layout
     hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
     hbl.setAlignment(QtCore.Qt.AlignTop)
     hbl.addWidget(mainWindow.qac)
     mainWindow.refresh_main_widget()
-    
+
     ## handle state transfer
     mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_model(a))
     mainWindow.update_highest_state()
     mainWindow.controller.save()
     return True
-
-    #thumbDir = os.path.join(mainWindow.controller.homeDir,"figs",mainWindow.log.log['selected_file']+"_thumbs")
-    #
-    #if os.path.isdir(thumbDir) == True and len(os.listdir(thumbDir)) > 1:
-    #    goFlag = mainWindow.display_thumbnails()
-    #
-    #    if goFlag == False:
-    #        print "WARNING: failed to display thumbnails not moving to results navigation"
-    #        return False
-    #
-    #    add_left_dock(mainWindow)
-    #else:
-    #    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    #    mainWindow.progressBar = ProgressBar(parent=mainWindow.mainWidget,buttonLabel="Create the figures")
-    #    mainWindow.progressBar.set_callback(mainWindow.run_progress_bar)
-    #    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    #    hbl.addWidget(mainWindow.progressBar)
-    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    #    mainWindow.refresh_main_widget()
-    #    add_left_dock(mainWindow)
-    
-    #mainWindow.dock.enable_continue_btn(lambda a=mainWindow: move_to_model(a))
-    #mainWindow.track_highest_state()
-    #mainWindow.controller.save()
-    #if mainWindow.pDock != None:
-    #    mainWindow.pDock.set_btn_highlight('quality assurance')
-    #xsreturn Truexc
 
 def move_to_data_processing(mainWindow,withProgressBar=False):
     if mainWindow.controller.verbose == True:
