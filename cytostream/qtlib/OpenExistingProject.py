@@ -1,3 +1,15 @@
+#!/usr/bin/python
+'''
+Cytostream
+OpenExistingProject
+
+A menu to allow the user to select from then open an existing project
+
+ '''
+
+__author__ = "A Richards"
+
+
 import sys
 from PyQt4 import QtGui, QtCore
 
@@ -85,7 +97,9 @@ class OpenExistingProject(QtGui.QWidget):
         
         # finalize layout
         self.vbl.addLayout(self.hbl1)
+        self.vbl.addWidget(QtGui.QLabel('\n'))
         self.vbl.addLayout(self.hbl2)
+        self.vbl.addWidget(QtGui.QLabel('\n'))
         self.vbl.addLayout(self.hbl3)
         self.vbl.addLayout(self.hbl4)
         self.vbl.addLayout(self.hbl5)
