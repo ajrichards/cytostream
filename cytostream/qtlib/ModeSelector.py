@@ -50,43 +50,8 @@ class ModeSelector(QtGui.QWidget):
         hbox1.addWidget(QtGui.QLabel('visualization mode'))
         self.modeSelector = RadioBtnWidget(self.modeList,parent=self)
         hbox2.addWidget(self.modeSelector)
-
-        #self.subsetSelector = QtGui.QComboBox(self)
-        
-        #for subsetName in subsetList:
-        #    self.subsetSelector.addItem(subsetName)
-        #
-        #hbox2.addWidget(self.subsetSelector)
-
-        #if subsetDefault != None:
-        #    subsetDefault = str(int(float(subsetDefault)))
-        #    if subsetList.__contains__(subsetDefault):
-        #        self.subsetSelector.setCurrentIndex(subsetList.index(subsetDefault))
-        #    else:
-        #        print "ERROR: in subset selector - bad specified subsetDefault", subsetDefault
-
-        #if selectionFn == None:
-        #    selectionFn = self.generic_callback
-        #self.connect(self.subsetSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
-
-
-        #def __init__(self,modeList,parent=None,default=None,callBackFn=None,color='white'):
-
-        #self.selectedItem = None
-
-        #for bLabel in self.modeList:
-        #    rad = QtGui.QRadioButton(bLabel)
-        #    self.btns[bLabel] = rad
-        #    self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.set_selected(item))
-        #    vbox.addWidget(self.btns[bLabel])
-        #
-        #    if callBackFn != None:
-        #        self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callBackFn(item=item))
-        #
-        #    if default != None and bLabel == default:
-        #        self.btns[bLabel].setChecked(True)
-        #
-        #hbox2.addWidget(
+        if modeDefault != None:
+            self.set_checked(modeDefault)
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -98,6 +63,14 @@ class ModeSelector(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
+
+    def set_checked(self,modeLabel):
+        if self.modeList.__contains__(modeLabel) == False:
+            print "ERROR: ModeSelector - bad mode label in set_checked"
+            return None
+
+        self.modeSelector.btns[modeLabel].setChecked(True)
+
 
     def set_refresh_thumbs_fn(self,refreshFn):
         self.connect(self.subsetSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn)

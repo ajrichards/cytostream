@@ -36,16 +36,6 @@ from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_da
 from cytostream.qtlib import move_to_quality_assurance, move_transition
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, BlankPage
 from cytostream.qtlib import ThumbnailViewer, MultiplePlotter
-#from BlankPage import BlankPage
-#from PipelineDock import PipelineDock
-#from Controller import Controller
-#from MenuFunctions import *#
-#from LeftDock import *
-#from FileControls import *
-#from StateTransitions import *
-#from ThumbnailViewer import ThumbnailViewer
-#from ScatterPlotter import ScatterPlotter
-##from ReadFileThreader import ReadFileThreader
 
 __version__ = "0.2"
 
@@ -461,24 +451,28 @@ class MainWindow(QtGui.QMainWindow):
             move_to_quality_assurance(self,mode='progressbar')
 
 
-    def plots_enable_disable(self):
+    def plots_enable_disable(self,mode='thumbnails'):
         '''
         enables and disables widgets for thumbnail view mode
 
         '''
 
+        if self.dockWidget == None:
+            add_left_dock(self)
+
         self.subsetSelector.setEnabled(False)
         self.fileSelector.setEnabled(True)
         self.recreateBtn.setEnabled(True)
         self.modeSelector.setEnabled(True)
+        
         self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
-
+        self.modeSelector.set_checked(mode)
 
     def display_thumbnails(self,runNew=False):
         
         ## enable/disable
         mode = self.log.log['current_state']
-        self.plots_enable_disable()
+        self.plots_enable_disable(mode='thumbnails')
 
         ## setup layout
         hbl = QtGui.QHBoxLayout()
@@ -612,12 +606,13 @@ class MainWindow(QtGui.QMainWindow):
             return False
 
         ## enable/disable
-        try:
-            self.subsetSelector.setEnabled(False)
-            self.fileSelector.setEnabled(True)
-            self.recreateBtn.setEnabled(True)
-        except:
-            pass
+        self.plots_enable_disable(mode='plot-1') 
+        #try:
+        #    self.subsetSelector.setEnabled(False)
+        #    self.fileSelector.setEnabled(True)
+        #    self.recreateBtn.setEnabled(True)
+        #except:
+        #    pass
 
         if mode == "Quality Assurance":
 
