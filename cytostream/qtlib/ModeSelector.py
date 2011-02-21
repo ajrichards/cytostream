@@ -20,7 +20,7 @@ class ModeSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, modeList, color='white', parent=None, modeDefault=None, modeFn=None):
+    def __init__(self, modeList, color='white', parent=None, modeDefault=None, modeVizCallback=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -48,7 +48,7 @@ class ModeSelector(QtGui.QWidget):
         
         ## mode selector
         hbox1.addWidget(QtGui.QLabel('visualization mode'))
-        self.modeSelector = RadioBtnWidget(self.modeList,parent=self)
+        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=modeVizCallback)
         hbox2.addWidget(self.modeSelector)
         if modeDefault != None:
             self.set_checked(modeDefault)
@@ -70,16 +70,6 @@ class ModeSelector(QtGui.QWidget):
             return None
 
         self.modeSelector.btns[modeLabel].setChecked(True)
-
-
-    def set_refresh_thumbs_fn(self,refreshFn):
-        self.connect(self.subsetSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn)
-
-    def get_selected_subset(self):
-        sfInd = self.subsetSelector.currentIndex()
-        sf = str(self.subsetSelector.currentText())
-
-        return sf, sfInd
 
     def generic_callback(self):
         print 'callback does not do anything yet'

@@ -28,17 +28,17 @@ class BlankPage(QtGui.QWidget):
         self.label.setText(newLabel)
 
 def move_transition(mainWindow,repaint=False):
+    mainWindow.reset_layout()
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     bp = BlankPage(parent=mainWindow.mainWidget)
     mainWindow.bp = BlankPage(parent=mainWindow.mainWidget)
-    vbl = QtGui.QVBoxLayout()
-    vbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl = QtGui.QHBoxLayout()
     hbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl.addWidget(bp)
-    vbl.addLayout(hbl)
-    mainWindow.mainWidget.setLayout(vbl)
+    hbl.addWidget(mainWindow.bp)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
+
     if repaint == True:
         QtCore.QCoreApplication.processEvents() 
 

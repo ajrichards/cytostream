@@ -32,7 +32,7 @@ class TestCase2(unittest.TestCase):
         configDict = configDictDefault.copy()
         configDict['subsample_qa'] = 1000
         configDict['subsample_analysis'] = 1000
-        configDict['thumbnails_to_view'] = [(0,2),(0,3)]
+        configDict['plots_to_view'] = [(0,2),(0,3)]
 
         self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True)
         fileNameList = self.nga.get_file_names()

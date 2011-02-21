@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 '''
   This program or module is free software: you can redistribute it and/or
   modify it under the terms of the GNU General Public License as published
@@ -14,14 +13,14 @@
   adam.richards@stat.duke.edu
 '''
 
+__author__ = "A Richards"
+
 import os,sys,time,re
 import platform
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
-#import helpform
-#import qrc_resources
 
 if hasattr(sys, 'frozen'):
     baseDir = os.path.dirname(sys.executable)
@@ -33,8 +32,8 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller
 from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
-from cytostream.qtlib import move_to_quality_assurance, move_transition
-from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, BlankPage
+from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
+from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock
 from cytostream.qtlib import ThumbnailViewer, MultiplePlotter
 
 __version__ = "0.2"
@@ -42,6 +41,10 @@ __version__ = "0.2"
 class MainWindow(QtGui.QMainWindow):
 
     def __init__(self):
+        '''
+        constructor
+
+        '''
 
         ## construct and set main variables
         QtGui.QMainWindow.__init__(self)
@@ -84,6 +87,23 @@ class MainWindow(QtGui.QMainWindow):
         self.lastChanI = None
         self.lastChanJ = None
         self.allFilePaths = []
+        self.reset_layout()
+
+    def reset_layout(self):
+        ''' 
+        reset the main widget layouts
+        '''
+        
+        self.vbl = QtGui.QVBoxLayout()
+        self.vboxTop = QtGui.QVBoxLayout()
+        self.vboxTop.setAlignment(QtCore.Qt.AlignTop)
+        self.vboxCenter = QtGui.QVBoxLayout()
+        self.vboxCenter.setAlignment(QtCore.Qt.AlignCenter)
+        self.vboxBottom = QtGui.QVBoxLayout()
+        self.vboxBottom.setAlignment(QtCore.Qt.AlignBottom)        
+        self.vbl.addLayout(self.vboxTop)
+        self.vbl.addLayout(self.vboxBottom)
+        self.vbl.addLayout(self.vboxCenter)
 
     #################################################
     #
@@ -92,10 +112,10 @@ class MainWindow(QtGui.QMainWindow):
     #################################################
     
     def create_statusbar(self):
-        status = self.statusBar()
-        status.setSizeGripEnabled(False)
-        status.addPermanentWidget(self.sizeLabel)
-        status.showMessage("Ready", 5000)
+        self.status = self.statusBar()
+        self.status.setSizeGripEnabled(False)
+        self.status.addPermanentWidget(self.sizeLabel)
+        self.status.showMessage("Ready", 5000)
 
     #################################################
     #
@@ -260,13 +280,6 @@ class MainWindow(QtGui.QMainWindow):
                                 size.height())
             painter.drawImage(0, 0, self.image)
 
-    #def show_image(self, percent=None):
-    #    if self.image.isNull():
-    #        return
-    #    
-    #    image = self.image
-    #    self.pngViewer.setPixmap(QtGui.QPixmap.fromImage(image))
-
     def helpAbout(self):
         QtGui.QMessageBox.about(self, "About %s"%self.controller.appName,
                 """<b>%s</b> v %s
@@ -297,6 +310,7 @@ class MainWindow(QtGui.QMainWindow):
         #                                             modelLogFile['full model name'],modelLogFile['file name'],
         #                                             modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
         #                  )
+
     def helpHelp(self):
         self.display_info("The help is not yet implimented")
         #form = helpform.HelpForm("index.html", self)
@@ -306,65 +320,11 @@ class MainWindow(QtGui.QMainWindow):
     def generic_callback(self):
         print "this button/widget does not do anything yet"
 
-
     #################################################
     #
-    # Setters and handlers
+    # setters and handlers
     #
     #################################################
-
-    #def set_subsample(self):
-    #    if self.log.log['current_state'] == "Data Processing":
-    #        ss, ssInd = self.dock1.get_subsample()
-    #
-    #        # if changed remove old thumbs
-    #        if ss != self.log.log['subsample_qa']:
-    #            imgDir = os.path.join(self.controller.homeDir,"figs")
-    #            for img in os.listdir(imgDir):
-    #                if re.search("\.png",img):
-    #                    os.remove(os.path.join(imgDir,img))
-    #                elif re.search("\_thumbs",img) and os.path.isdir(os.path.join(imgDir,img)):
-    #                    for thumb in os.listdir(os.path.join(imgDir,img)):
-    #                        if re.search("\.png",thumb):
-    #                            os.remove(os.path.join(imgDir,img,thumb))
-    #                    os.rmdir(os.path.join(imgDir,img))
-    #
-    #        self.log.log['subsample_qa'] = ss
-    #        goFlag = self.controller.handle_subsampling()
-    #        
-    #        if goFlag == True:
-    #            return True
-    #        else:
-    #            return False
-    
-
-    def set_excluded_files_channels(self):
-        print "debug setting excluded file channels"
-        #if type(self.log.log['checksArray']) != type(np.array([])):
-        #    print "ERROR cannot set excluded files or channels bad checksArray"
-        #
-        #excludedFiles = []
-        #excludedChannels = []
-        #masterChannelList = self.model.get_master_channel_list()
-        #fileList = get_fcs_file_names(self.controller.homeDir)
-        #sumCols = self.log.log['checksArray'].sum(axis=0)
-        #sumRows = self.log.log['checksArray'].sum(axis=1)
-        #excludedChannels =  np.array(masterChannelList)[[int(i) for i in np.where(sumCols == 0)[0]]]
-        #excludedFiles =  np.array(fileList)[[int(i) for i in np.where(sumRows == 0)[0]]]
-        #
-        #self.log.log['excludedChannels'] = excludedChannels.tolist()
-        #self.log.log['excludedFiles'] = excludedFiles.tolist()
-        #
-        #if self.controller.verbose == True:
-        #    print 'setting excluding channels', excludedChannels
-        #    print 'setting excluding files', excludedFiles
-
-        ## adjust the selected file
-        #fileList = get_fcs_file_names(self.controller.homeDir)
-        #if type(self.log.log['excludedFiles']) == type([]) and len(self.log.log['excludedFiles']) > 0:
-        #    for f in self.log.log['excludedFiles']:
-        #        fileList.remove(f)
-        #    self.log.log['selectedFile'] == fileList[0]
 
     def set_num_components(self,value):
         diff = value % 8
@@ -388,6 +348,24 @@ class MainWindow(QtGui.QMainWindow):
         print 'INFO: need to setup model to run'
         self.log.log['model_to_run'] = 'dpmm'
 
+    def handle_visualization_modes(self,item=None):
+        '''
+        handles the switching between visualization modes for qa and results
+
+        '''
+
+        modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-5','plot-6']
+        
+        if item == 'histogram':
+            move_to_one_dim_viewer(self)
+        elif item == 'thumbnails' and self.log.log['current_state'] == 'Quality Assurance':
+            move_to_quality_assurance(self)
+        elif item == 'thumbnails' and self.log.log['current_state'] == 'Results Navigaiton':
+            print 'should be moving to results navigation thumbs'
+        elif item == 'plot-1':
+            self.handle_show_scatter()
+
+        print 'item', item
 
     def update_highest_state(self):
         '''
@@ -429,11 +407,13 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
             self.progressBar.set_callback(self.create_results_thumbs)
-            hbl = QtGui.QHBoxLayout(self.mainWidget)
-            hbl.addWidget(self.progressBar)
-            hbl.setAlignment(QtCore.Qt.AlignCenter)
-            self.refresh_main_widget()
             add_left_dock(self)
+            hbl = QtGui.QHBoxLayout()
+            hbl.setAlignment(QtCore.Qt.AlignCenter)
+            hbl.addWidget(self.progressBar)
+            self.vboxCenter.addLayout(hbl)
+            self.mainWidget.setLayout(self.vbl)
+            self.refresh_main_widget()
 
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
@@ -449,7 +429,8 @@ class MainWindow(QtGui.QMainWindow):
 
         if self.log.log['current_state'] == 'Quality Assurance':
             move_to_quality_assurance(self,mode='progressbar')
-
+        elif self.log.log['current_state'] == 'Results Navigation':
+            print 'should be moving to results navigation progress bar'
 
     def plots_enable_disable(self,mode='thumbnails'):
         '''
@@ -464,7 +445,6 @@ class MainWindow(QtGui.QMainWindow):
         self.fileSelector.setEnabled(True)
         self.recreateBtn.setEnabled(True)
         self.modeSelector.setEnabled(True)
-        
         self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
         self.modeSelector.set_checked(mode)
 
@@ -475,9 +455,8 @@ class MainWindow(QtGui.QMainWindow):
         self.plots_enable_disable(mode='thumbnails')
 
         ## setup layout
+        self.reset_layout()
         hbl = QtGui.QHBoxLayout()
-        vbl = QtGui.QVBoxLayout()
-        vbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         
         ## adjust the selected file
@@ -528,12 +507,12 @@ class MainWindow(QtGui.QMainWindow):
 
         ## for either mode
         hbl.addWidget(self.tv)
-        vbl.addLayout(hbl)
-        self.mainWidget.setLayout(vbl)
+        self.vboxCenter.addLayout(hbl)
+        self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
         
+        ## disable buttons
         if self.dock != None:
-            ## disable buttons
             self.dock.disable_all()
 
         QtCore.QCoreApplication.processEvents()
@@ -573,6 +552,11 @@ class MainWindow(QtGui.QMainWindow):
         #self.log.log['selected_model'] = selectedModel
 
     def refresh_state(self,withProgressBar=False,qaMode='thumbs'):
+        '''
+        given the current state return to normal widget view
+
+        '''
+
         print 'refreshing state', self.log.log['current_state']
         if self.log.log['current_state'] == "Data Processing":
             move_to_data_processing(self,withProgressBar=withProgressBar)
@@ -591,33 +575,34 @@ class MainWindow(QtGui.QMainWindow):
         mode = self.log.log['current_state']
         self.set_selected_file()
         
+        ## layout
+        self.reset_layout()
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
         move_transition(self,repaint=True)
 
         if img != None:
-            channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs","",self.log.log['selected_file']),"",img)
+            channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
             self.lastChanI = chanI
             self.lastChanJ = chanJ
-            
+        elif self.lastChanI == None or self.lastChanJ == None:
+            masterChannelList = self.model.get_master_channel_list()
+            self.lastChanI = masterChannelList[0]
+            self.lastChanJ = masterChannelList[1]
+
         if self.lastChanI == None or self.lastChanJ == None:
             print "ERROR: lastChanI or lastChanJ not defined"
             return False
 
         ## enable/disable
         self.plots_enable_disable(mode='plot-1') 
-        #try:
-        #    self.subsetSelector.setEnabled(False)
-        #    self.fileSelector.setEnabled(True)
-        #    self.recreateBtn.setEnabled(True)
-        #except:
-        #    pass
 
+        
         if mode == "Quality Assurance":
-
             self.mainWidget = QtGui.QWidget(self)
-            vbl = QtGui.QVBoxLayout(self.mainWidget)
             subsample=self.log.log['subsample_qa']
             modelType=None
             masterChannelList = self.model.get_master_channel_list()
@@ -625,28 +610,31 @@ class MainWindow(QtGui.QMainWindow):
             channelJ = masterChannelList.index(self.lastChanJ)
             mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
                                  modelType=modelType,mode='qa')
-            vbl.addWidget(mp)
+            hbl.addWidget(mp)
 
         elif mode == "Results Navigation":
-            self.set_selected_model()
-            self.mainWidget = QtGui.QWidget(self)
-            vbl = QtGui.QVBoxLayout(self.mainWidget)
-
-            if self.log.log['subsample_analysis'] == 'original':
-                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + self.log.log['selected_model']
-            else:
-                subset = str(int(float(self.log.log['subsample'])))
-                modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
-
-            sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
-                                modelName=modelName,modelType=self.log.log['results_mode'],parent=self.mainWidget)
-            ntb = NavigationToolbar(sp, self.mainWidget)
-            vbl.addWidget(sp)
-            vbl.addWidget(ntb)
+            print 'should be handling results nav scatter'
+            #self.set_selected_model()
+            #self.mainWidget = QtGui.QWidget(self)
+            #
+            #if self.log.log['subsample_analysis'] == 'original':
+            #    modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + self.log.log['selected_model']
+            #else:
+            #    subset = str(int(float(self.log.log['subsample'])))
+            #    modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
+            #
+            #sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
+            #                    modelName=modelName,modelType=self.log.log['results_mode'],parent=self.mainWidget)
+            #ntb = NavigationToolbar(sp, self.mainWidget)
+            #vbl.addWidget(sp)
+            #vbl.addWidget(ntb)
         
             ## enable buttons
-            self.dock.enable_all()
+            #self.dock.enable_all()
 
+        ## finalize layout
+        self.vboxCenter.addLayout(hbl)
+        self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
 
@@ -669,4 +657,3 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.activateWindow()
         self.mainWidget.update()
         self.show()
-        #QtCore.QCoreApplication.processEvents()
