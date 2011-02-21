@@ -18,6 +18,8 @@ from MenuFunctions import create_menubar_toolbar, create_action, add_actions
 from ScatterPlotter import ScatterPlotter
 from MultiplePlotter import MultiplePlotter
 from TwoWayViewer import TwoWayViewer
+from ThreeWayViewer import ThreeWayViewer
+from FourWayViewer import FourWayViewer
 
 from ThumbnailViewer import ThumbnailViewer
 from ModelCenter import ModelCenter

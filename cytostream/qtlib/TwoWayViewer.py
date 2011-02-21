@@ -6,12 +6,12 @@ from cytostream.qtlib import MultiplePlotter
 
 class TwoWayViewer(QtGui.QWidget):
 
-    def __init__(self,homeDir,selectedFile,channel1,channel2,subsample,modelName=None,parent=None,background=False,modelType=None,mode='qa'):
+    def __init__(self,homeDir,selectedFile,chans1,chans2,subsample,modelName=None,parent=None,background=False,modelType=None,mode='qa'):
 
         QtGui.QWidget.__init__(self,parent)
 
         ## input variables
-        self.setWindowTitle('Multiple Plotter')
+        self.setWindowTitle('Two Way Plotter')
         self.homeDir = homeDir
         self.subsample = subsample
         self.parent = parent
@@ -20,8 +20,6 @@ class TwoWayViewer(QtGui.QWidget):
         self.mode = mode
 
         ## class variables 
-        self.selectedChannel1 = int(channel1)
-        self.selectedChannel2 = int(channel2)
         self.selectedFile = selectedFile
         self.selectedModelName = modelName
         self.selectedHighlight = "None"
@@ -32,12 +30,14 @@ class TwoWayViewer(QtGui.QWidget):
         self.hbl = QtGui.QHBoxLayout()
         self.hbl.setAlignment(QtCore.Qt.AlignCenter)
         
-        self.mp1 = MultiplePlotter(self.homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
-                                   modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self)
+        self.mp1 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[0],chans2[0],self.subsample,background=self.background,
+                                   modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
+                                   showNavBar=False)
         self.hbl.addWidget(self.mp1)
 
-        self.mp2 = MultiplePlotter(self.homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
-                                   modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self)
+        self.mp2 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[1],chans2[1],self.subsample,background=self.background,
+                                   modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
+                                   showNavBar=False)
         self.hbl.addWidget(self.mp2)
 
         ## finalize layout
@@ -63,7 +63,6 @@ if __name__ == '__main__':
     modelChk = os.path.join(baseDir,'..','projects','utest','models','%s_%s.log'%(selectedFile,modelName))
     if os.path.isfile(modelChk) == False:
         print "ERROR: Model not present - (Re)run unit tests"
-        print modelChk
         sys.exit()
 
     app = QtGui.QApplication(sys.argv)
@@ -71,7 +70,9 @@ if __name__ == '__main__':
     if mode == 'qa':
         modelType,modelName = None, None
 
-    twv = TwoWayViewer(homeDir,selectedFile,channel1,channel2,subsample,background=True,modelName=modelName,modelType=modelType,mode=mode)
+    chans1 = [channel1,channel1]
+    chans2 = [channel2,channel2]
+    twv = TwoWayViewer(homeDir,selectedFile,chans1,chans2,subsample,background=True,modelName=modelName,modelType=modelType,mode=mode)
 
     twv.show()
     sys.exit(app.exec_())

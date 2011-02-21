@@ -4,14 +4,14 @@ from random import randint
 
 from cytostream.qtlib import MultiplePlotter
 
-class FourWayViewer(QtGui.QWidget):
+class ThreeWayViewer(QtGui.QWidget):
 
     def __init__(self,homeDir,selectedFile,chans1,chans2,subsample,modelName=None,parent=None,background=False,modelType=None,mode='qa'):
 
         QtGui.QWidget.__init__(self,parent)
 
         ## input variables
-        self.setWindowTitle('Four Way Plotter')
+        self.setWindowTitle('Three Way Plotter')
         self.homeDir = homeDir
         self.subsample = subsample
         self.parent = parent
@@ -27,34 +27,26 @@ class FourWayViewer(QtGui.QWidget):
         ## setup layouts
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.setAlignment(QtCore.Qt.AlignCenter)
-        self.hbl1 = QtGui.QHBoxLayout()
-        self.hbl1.setAlignment(QtCore.Qt.AlignCenter)
-        self.hbl2 = QtGui.QHBoxLayout()
-        self.hbl2.setAlignment(QtCore.Qt.AlignCenter)
-
+        self.hbl = QtGui.QHBoxLayout()
+        self.hbl.setAlignment(QtCore.Qt.AlignCenter)
+        
         self.mp1 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[0],chans2[0],self.subsample,background=self.background,
                                    modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
                                    showNavBar=False)
-        self.hbl1.addWidget(self.mp1)
+        self.hbl.addWidget(self.mp1)
 
         self.mp2 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[1],chans2[1],self.subsample,background=self.background,
                                    modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
                                    showNavBar=False)
-        self.hbl1.addWidget(self.mp2)
+        self.hbl.addWidget(self.mp2)
 
         self.mp3 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[2],chans2[2],self.subsample,background=self.background,
                                    modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
                                    showNavBar=False)
-        self.hbl2.addWidget(self.mp3)
-
-        self.mp4 = MultiplePlotter(self.homeDir,self.selectedFile,chans1[3],chans2[3],self.subsample,background=self.background,
-                                   modelName=self.selectedModelName,modelType=self.modelType,mode=self.mode,parent=self,
-                                   showNavBar=False)
-        self.hbl2.addWidget(self.mp4)
+        self.hbl.addWidget(self.mp3)
 
         ## finalize layout
-        self.vbl.addLayout(self.hbl1)
-        self.vbl.addLayout(self.hbl2)
+        self.vbl.addLayout(self.hbl)
         self.setLayout(self.vbl)
 
 ### Run the tests 
@@ -83,9 +75,9 @@ if __name__ == '__main__':
     if mode == 'qa':
         modelType,modelName = None, None
 
-    chans1 = [channel1,channel1,channel1,channel1]
-    chans2 = [channel2,channel2,channel2,channel1]
-    fwv = FourWayViewer(homeDir,selectedFile,chans1,chans2,subsample,background=True,modelName=modelName,modelType=modelType,mode=mode)
+    chans1 = [channel1,channel1,channel1]
+    chans2 = [channel2,channel2,channel2]
+    twv = ThreeWayViewer(homeDir,selectedFile,chans1,chans2,subsample,background=True,modelName=modelName,modelType=modelType,mode=mode)
 
-    fwv.show()
-    sys.exit(app.exec_())
+    twv.show()
+    sys.exit(app.exec_())    
