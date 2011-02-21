@@ -31,11 +31,18 @@ class OneDimViewer(QtGui.QWidget):
     def __init__(self, homeDir, subset='original', parent=None, channelDefault=None, callBack=None,background=True):
         QtGui.QWidget.__init__(self,parent)
 
+        ## error checking
+        if os.path.isdir(homeDir) == False:
+            print "ERROR: specified homedir is not a directory:", homeDir
+            return False
+
         ## declare variables
         self.setWindowTitle('1-D Viewer')
         self.subset = subset
         self.background = background
         self.callBack = callBack
+        self.homeDir = homeDir
+        self.colors = ['b','orange','k','g','r','c','m','y']
 
         ## initialize model
         projectID = os.path.split(homeDir)[-1]
@@ -46,7 +53,6 @@ class OneDimViewer(QtGui.QWidget):
 
         ## additional class-wide variables
         self.fcsFileList = get_fcs_file_names(homeDir)
-        #self.fcsFileLabels = [re.sub("\.fcs","",f) for f in self.fcsFileList]
         self.masterChannelList = model.get_master_channel_list() 
 
         ## setup layouts
@@ -62,12 +68,20 @@ class OneDimViewer(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignCenter)
         hbox3 = QtGui.QHBoxLayout()
         hbox3.setAlignment(QtCore.Qt.AlignCenter)
+        hbox4 = QtGui.QHBoxLayout()
+        hbox4.setAlignment(QtCore.Qt.AlignCenter)
 
         ## create checkboxes for each file
         self.chkBoxes = {}
         first = True
+        count = -1
+        #lab = QtGui.QLabel("blah", self)
+        #print dir(lab)
+
         for fcsFileName in self.fcsFileList:
+            count+=1
             fcsFileName = re.sub(".\fcs","",fcsFileName)
+            color = count % len(self.colors)
             self.chkBoxes[fcsFileName] = QtGui.QCheckBox(fcsFileName, self)
             self.chkBoxes[fcsFileName].setFocusPolicy(QtCore.Qt.NoFocus)
 
@@ -95,19 +109,24 @@ class OneDimViewer(QtGui.QWidget):
             else:
                 print "ERROR: in OneDimViewerDoc - bad specified channelDefault"
 
-        if callBack == None:
-            self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.generic_callback)
-        else:
-            self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_callback)
+        #if callBack == None:
+        #    self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.generic_callback)
+        #else:
+        self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_callback)
 
         ## create the drawer
         self.odv = OneDimDraw(self.fcsFileList,self.masterChannelList,model,log,subset=subset,background=True,parent=self)
         hbox3.addWidget(self.odv)
 
+        ## add a mpl navigation toolbar
+        ntb = NavigationToolbar(self.odv,self)
+        hbox4.addWidget(ntb)
+
         ## finalize layout
         vbox1.addLayout(hbox1)
         vbox2.addLayout(hbox2)
         vbox2.addLayout(hbox3)
+        vbox2.addLayout(hbox4)
         hl.addLayout(vbox1)
         hl.addLayout(vbox2)
         self.setLayout(hl)
@@ -118,19 +137,19 @@ class OneDimViewer(QtGui.QWidget):
     def channel_callback(self):
         cInd = self.channelSelector.currentIndex()
         c = str(self.channelSelector.currentText())
-        self.callBack(channel=c)
-
+        self.odv.paint(channel=c)
+        
     def fcs_file_callback(self,fcsFileName=None):
         if fcsFileName != None:
-            print 'fcs callback', fcsFileName,self.fcsFileList.index(fcsFileName)
-
             fcsIndices = [0 for i in range(len(self.fcsFileList))]
 
             for fcsFileName in self.fcsFileList:
                 if self.chkBoxes[fcsFileName].isChecked() == True:
                     fcsIndices[self.fcsFileList.index(fcsFileName)] = 1
 
-            self.callBack(fcsIndices=fcsIndices)
+            channel = self.channelSelector.currentText()
+            self.odv.paint(channel=channel,fcsIndices=fcsIndices)
+
 
     def get_results_mode(self):
         return self.resultsMode
@@ -166,12 +185,7 @@ class OneDimDraw(FigureCanvas):
 
     '''
 
-    def __init__(self, fcsFileList,masterChannelList,model,log,subset="original",parent=None,altDir=None, modelName=None, background=False, modelType=None):
-
-        ## error checking
-        if os.path.isdir(homeDir) == False:
-            print "ERROR: specified homedir is not a directory:", homeDir
-            return False
+    def __init__(self,fcsFileList,masterChannelList,model,log,subset="original",parent=None,altDir=None, modelName=None, background=False, modelType=None):
 
         ## prepare plot environment
         self.fig = Figure()
@@ -182,20 +196,10 @@ class OneDimDraw(FigureCanvas):
         self.colors = ['b','orange','k','g','r','c','m','y']
         self.lines = ['-','.','--','-.','o','d','s','^']
 
-        ## initialize model
-        #projectID = os.path.split(homeDir)[-1]
-        #log = Logger()
-        #log.initialize(projectID,homeDir,load=True)
-        #model = Model()
-        #model.initialize(projectID,homeDir)
-
+        ## declare variables
         self.fcsFileList = fcsFileList
         self.masterChannelList = masterChannelList
-
-        ## additional class-wide variables
-        #self.fcsFileList = get_fcs_file_names(homeDir)
-        #self.fcsFileLabels = [re.sub("\.fcs","",f) for f in self.fcsFileList]
-        #self.masterChannelList = model.get_master_channel_list() 
+        self.subset = subset
 
         ## create the plot
         self.make_plot(model,log,subset)
@@ -220,6 +224,17 @@ class OneDimDraw(FigureCanvas):
         self.plotDict = {}
         self.tagDict = {}
         
+        ## determine max val for each channel
+        self.maxVal = 0
+        for fcsFileInd in range(len(self.fcsFileList)):
+            fcsFileName = re.sub("\.fcs|\.pickle|\.csv","",self.fcsFileList[fcsFileInd])
+            for channelInd in range(len(self.masterChannelList)):
+                data,labels = fetch_plotting_events(fcsFileName,model,log,self.subset)
+                events = [float(d) for d in data[:, channelInd]]
+                newMax = np.max(events)
+                if newMax > self.maxVal:
+                    self.maxVal = newMax
+
         for fcsFileInd in range(len(self.fcsFileList)):
             for channelInd in range(len(self.masterChannelList)):
                 if fcsFileInd == 0 and channelInd == 0:
@@ -235,7 +250,7 @@ class OneDimDraw(FigureCanvas):
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
         ## determine subset of events
-        data,labels = fetch_plotting_events(fcsFileName,model,log,subsample)
+        data,labels = fetch_plotting_events(fcsFileName,model,log,self.subset)
         events = [float(d) for d in data[:, channelInd]]
         fileChannelList = model.get_file_channel_list(fcsFileName)
 
@@ -243,7 +258,7 @@ class OneDimDraw(FigureCanvas):
         #n, bins, patches = self.ax.hist(events, 50, normed=True,facecolor='blue', alpha=0.75)
 
         ## find the kernel density function
-        self.pdfX = np.linspace(-200, np.max(events),300) #np.min(events)
+        self.pdfX = np.linspace(-200, self.maxVal,300) #np.min(events)
         approxPdf = gaussian_kde(events)
         if self.plotDict.has_key(str(fcsFileInd)) == False:
             self.plotDict[str(fcsFileInd)] = {}
@@ -253,8 +268,6 @@ class OneDimDraw(FigureCanvas):
         if visible == True:
             color,lineStyle  = self.get_line_attrs(fcsFileInd)
             self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
-            
-
             #self.draw()
         
     def paint(self,channel=None,fcsIndices=None):
@@ -268,6 +281,7 @@ class OneDimDraw(FigureCanvas):
             self.selectedFileIndices = np.where(np.array(fcsIndices) == 1)[0]
 
         self.ax.clear()
+        
         currentPlts = []
         currentLabs = []
         for fcsIndex in self.selectedFileIndices:
@@ -276,11 +290,12 @@ class OneDimDraw(FigureCanvas):
             pt = self.ax.plot(self.pdfX,approxPdf(self.pdfX),color=color,linestyle=lineStyle,linewidth=2.0,alpha=0.90)
             currentPlts.append(pt)
             currentLabs.append(self.fcsFileList[fcsIndex])
-            
-        self.fig.legend( currentPlts, currentLabs, 'upper right', shadow=True)
+
+        #if len(self.selectedFileIndices) > 0:
+        #    self.fig.legend( currentPlts, currentLabs, 'upper right', shadow=True)
+        
         self.draw()
         
-
 if __name__ == '__main__':
 
     ## prepare args

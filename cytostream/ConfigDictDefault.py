@@ -8,9 +8,10 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
+plotsToView = [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6)]
 configDictDefault = {
     ########### state variables ##############################################################
-    'current_state'                         : 'Initial',    # do not change
+    'current_state'                         : 'Initial',            # do not change
     'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
     'selected_model'                        : 'None',               # do not change
@@ -34,6 +35,7 @@ configDictDefault = {
     'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
     'selected_k'                            : '16',                 # an int divisible by 8
     'results_mode'                          : 'modes',              # modes, components
+    'plots_to_view'                         : plotsToView,          # defined above'
     'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                 # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
@@ -49,5 +51,5 @@ configDictDefault = {
     'model_reference_run_id'                : 'None',               # a run id i.e. run1
     'channel_view'                          : 'normal',             # normal, custom
     'app_color'                             : '#999999',            # a color
-    'visualization_mode'                    : 'thumbnails',             # thumbs, 1D-viewer etc
+    'visualization_mode'                    : 'thumbnails',         # thumbs, 1D-viewer etc
 }

@@ -5,7 +5,7 @@ from PyQt4 import QtCore
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callBackFn=None,color='white'):
+    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white'):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
@@ -25,8 +25,8 @@ class RadioBtnWidget(QtGui.QWidget):
             self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.set_selected(item))
             vbox.addWidget(self.btns[bLabel])
 
-            if callBackFn != None:
-                self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callBackFn(item=item))
+            if callbackFn != None:
+                self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callbackFn(item=item))
 
             if default != None and bLabel == default:
                 self.btns[bLabel].setChecked(True)

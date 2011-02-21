@@ -31,7 +31,7 @@ class TestCase3(unittest.TestCase):
         ## run the initial model for all files
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1200
-        configDict['thumbnails_to_view'] = [(0,2),(0,3)]
+        configDict['plots_to_view'] = [(0,2),(0,3)]
         configDict['model_mode'] = 'onefit'
         configDict['model_reference'] = "3FITC_4PE_004"
         configDict['model_reference_run_id'] = 'run1'

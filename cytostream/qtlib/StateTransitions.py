@@ -16,10 +16,11 @@ from PyQt4 import QtGui,QtCore
 
 from cytostream import get_fcs_file_names, get_project_names
 from cytostream.qtlib import remove_left_dock, add_left_dock
-from cytostream.qtlib import ProgressBar, Imager
+from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
+from cytostream.qtlib import OneDimViewer
 
 def move_to_initial(mainWindow):
 
@@ -31,14 +32,13 @@ def move_to_initial(mainWindow):
         
     ## set the state
     mainWindow.controller.log.log['current_state'] = 'Initial'
+    mainWindow.reset_layout()
 
     ## adds if not initial initial
     if mainWindow.controller.homeDir != None:
         add_left_dock(mainWindow)
         
     ## declare layouts
-    vbl = QtGui.QVBoxLayout()
-    vbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl1 = QtGui.QHBoxLayout()
     hbl1.setAlignment(QtCore.Qt.AlignCenter)
     hbl2 = QtGui.QHBoxLayout()
@@ -55,13 +55,13 @@ def move_to_initial(mainWindow):
     hbl2.addWidget(si)
 
     ## finalize layout
-    vbl.addLayout(hbl1)
-    vbl.addWidget(QtGui.QLabel(""))
-    vbl.addLayout(hbl2)
-    mainWindow.mainWidget.setLayout(vbl)
+    mainWindow.vboxCenter.addLayout(hbl1)
+    mainWindow.vboxCenter.addLayout(hbl2)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
 def move_to_open(mainWindow):
+
     if mainWindow.controller.projectID != None:
         reply = QtGui.QMessageBox.question(mainWindow, mainWindow.controller.appName,
                                            "Are you sure you want to close the current project - '%s'?"%mainWindow.controller.projectID,
@@ -72,6 +72,8 @@ def move_to_open(mainWindow):
             mainWindow.controller.save()
     
     mainWindow.controller.reset_workspace()
+    mainWindow.reset_layout()
+
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
@@ -92,9 +94,11 @@ def move_to_open(mainWindow):
     add_left_dock(mainWindow)
 
     ## layout
-    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl.addWidget(mainWindow.existingProjectOpener)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
 def move_to_results_navigation(mainWindow,runNew=False):
@@ -165,6 +169,9 @@ def move_to_quality_assurance(mainWindow,mode='thumbs'):
         mainWindow.display_info("No files have been loaded -- so quality assurance cannot be carried out")
         return False
        
+    ## clean the layout
+    mainWindow.reset_layout()
+
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
     
@@ -204,9 +211,11 @@ def move_to_quality_assurance(mainWindow,mode='thumbs'):
     mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
 
     ## handle layout
-    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl.addWidget(mainWindow.qac)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
     ## handle state transfer
@@ -223,6 +232,9 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
         mainWindow.display_info('To begin either load an existing project or create a new one')
         return False
 
+    ## clean the layout
+    mainWindow.reset_layout()
+
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
@@ -233,6 +245,10 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
 
     ## create a edit menu function
     def move_to_edit_menu(mainWindow):
+
+        ## clean the layout
+        mainWindow.reset_layout()
+
         if mainWindow.pDock != None:
             mainWindow.pDock.unset_all_highlights()
         if mainWindow.dockWidget != None:
@@ -253,9 +269,11 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
         mainWindow.editMenu.set_enable_disable()
 
         ## layout
-        hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-        hbl.setAlignment(QtCore.Qt.AlignTop)
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
         hbl.addWidget(mainWindow.editMenu)
+        mainWindow.vboxCenter.addLayout(hbl)
+        mainWindow.mainWidget.setLayout(mainWindow.vbl)
         mainWindow.refresh_main_widget()
 
     ## ready a DataProcessingCenter class
@@ -290,9 +308,11 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     mainWindow.dpc.set_enable_disable()
 
     ## handle layout
-    hbl = QtGui.QHBoxLayout(mainWindow.mainWidget)
-    hbl.setAlignment(QtCore.Qt.AlignTop)
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl.addWidget(mainWindow.dpc)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
     
     ## handle state transfer
@@ -307,25 +327,34 @@ def move_to_one_dim_viewer(mainWindow):
         mainWindow.display_info('To begin either load an existing project or create a new one')
         return False
 
+    ## clean the layout
     move_transition(mainWindow,repaint=True)
+    mainWindow.reset_layout()
 
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
 
-    if mainWindow.pDock != None:
-        mainWindow.pDock.unset_all_highlights()
-
+    if mainWindow.log.log['current_state'] == 'Initial':
+        pass
+    elif mainWindow.log.log['current_state'] == 'Quality Assurance':
+        excludedFiles = mainWindow.log.log['excluded_files_qa']
+        subsample = mainWindow.log.log['subsample_qa']
+    else:
+        excludedFiles = mainWindow.log.log['excluded_files_analysis']
+        subsample = mainWindow.log.log['subsample_analysis']
+    
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    mainWindow.odv = OneDimViewer(mainWindow.controller.homeDir,subset=mainWindow.log.log['subsample'],background=True,parent=mainWindow.mainWidget)
-    bp.change_label('1D Data Viewer')
-    ntb = NavigationToolbar(mainWindow.odv,mainWindow.mainWidget)
-    vbl.addWidget(mainWindow.odv)
-    vbl.addWidget(ntb)
-    mainWindow.mainWidget.setLayout(vbl)
-    QtCore.QCoreApplication.processEvents()
-    mainWindow.log.log['current_state'] = "OneDimViewer"
-    mainWindow.refresh_main_widget()
+    mainWindow.odv = OneDimViewer(mainWindow.controller.homeDir,subset=subsample,background=True,parent=mainWindow.mainWidget)
     add_left_dock(mainWindow)
+    mainWindow.plots_enable_disable(mode='histogram')
+
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    hbl.addWidget(mainWindow.odv)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
+    mainWindow.refresh_main_widget()
+
 
 def move_to_results_summary(mainWindow,runNew=False):
     mainWindow.display_info("This stage is not available yet")
