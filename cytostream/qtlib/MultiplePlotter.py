@@ -10,7 +10,7 @@ from cytostream import Model, Logger, get_fcs_file_names
 
 class MultiplePlotter(QtGui.QWidget):
     def __init__(self,homeDir,selectedFile,channel1,channel2,subsample,modelName=None,parent=None,
-                 background=False,modelType=None,mode='qa'):
+                 background=False,modelType=None,mode='qa',showNavBar=True):
 
         #super(MultiplePlotter, self).__init__()
         QtGui.QWidget.__init__(self,parent)
@@ -70,13 +70,15 @@ class MultiplePlotter(QtGui.QWidget):
         self.hbl2.addWidget(self.plot)
 
         ## add the navigation toolbar
-        self.ntb = NavigationToolbar(self.plot, self)
-        self.hbl3.addWidget(self.ntb)
+        if showNavBar == True:
+            self.ntb = NavigationToolbar(self.plot, self)
+            self.hbl3.addWidget(self.ntb)
 
         ## finalize layout
         self.vbl.addLayout(self.hbl1)
         self.vbl.addLayout(self.hbl2)
-        self.vbl.addLayout(self.hbl3)
+        if showNavBar == True:
+            self.vbl.addLayout(self.hbl3)
         self.setLayout(self.vbl)
 
     def initChannel1(self):
@@ -89,8 +91,8 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan1Layout.setAlignment(QtCore.Qt.AlignCenter)
         
         ## create label
-        self.labelChan1 = QtGui.QLabel("x-axis", self)
-        self.chan1LayoutA.addWidget(self.labelChan1)
+        #self.labelChan1 = QtGui.QLabel("x-axis", self)
+        #self.chan1LayoutA.addWidget(self.labelChan1)
 
         ## create combobox
         self.channel1Selector = QtGui.QComboBox(self)
@@ -103,7 +105,7 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan1LayoutB.addWidget(self.channel1Selector)
 
         ## finalize layout
-        self.chan1Layout.addLayout(self.chan1LayoutA)
+        #self.chan1Layout.addLayout(self.chan1LayoutA)
         self.chan1Layout.addLayout(self.chan1LayoutB)
 
     def initChannel2(self):
@@ -116,8 +118,8 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan2Layout.setAlignment(QtCore.Qt.AlignCenter)
         
         ## create label
-        self.labelChan2 = QtGui.QLabel("y-axis", self)
-        self.chan2LayoutA.addWidget(self.labelChan2)
+        #self.labelChan2 = QtGui.QLabel("y-axis", self)
+        #self.chan2LayoutA.addWidget(self.labelChan2)
 
         ## create combobox
         self.channel2Selector = QtGui.QComboBox(self)
@@ -130,7 +132,7 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan2LayoutB.addWidget(self.channel2Selector)
 
         ## finalize layout
-        self.chan2Layout.addLayout(self.chan2LayoutA)
+        #self.chan2Layout.addLayout(self.chan2LayoutA)
         self.chan2Layout.addLayout(self.chan2LayoutB)
  
     def initFileSelector(self):
@@ -143,8 +145,8 @@ class MultiplePlotter(QtGui.QWidget):
         self.filesLayout.setAlignment(QtCore.Qt.AlignCenter)
         
         ## create label
-        self.labelFiles = QtGui.QLabel("file selector", self)
-        self.filesLayoutA.addWidget(self.labelFiles)
+        #self.labelFiles = QtGui.QLabel("file selector", self)
+        #self.filesLayoutA.addWidget(self.labelFiles)
 
         ## create combobox
         self.fileSelector = QtGui.QComboBox(self)
@@ -157,7 +159,7 @@ class MultiplePlotter(QtGui.QWidget):
         self.filesLayoutB.addWidget(self.fileSelector)
 
         ## finalize layout
-        self.filesLayout.addLayout(self.filesLayoutA)
+        #self.filesLayout.addLayout(self.filesLayoutA)
         self.filesLayout.addLayout(self.filesLayoutB)
     
     def initHighlight(self,uniqueLabels):
@@ -188,13 +190,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayout.addLayout(self.highlightLayoutB)
 
     def create_plot(self):
-        print 'modelName', self.selectedModelName
-        print 'modelType', self.modelType
-        print 'selectedFile', self.selectedFile
-        print 'chan1', self.selectedChannel1
-        print 'chan2', self.selectedChannel2
-        print 'background', self.background
-
         self.plot = ScatterPlotter(self.homeDir,self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,background=self.background,
                                    modelName=self.selectedModelName,modelType=self.modelType, parent=self.parent)
         

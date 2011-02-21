@@ -34,7 +34,7 @@ from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock
-from cytostream.qtlib import ThumbnailViewer, MultiplePlotter
+from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, TwoWayViewer,ThreeWayViewer,FourWayViewer
 
 __version__ = "0.2"
 
@@ -354,7 +354,7 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-5','plot-6']
+        modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
         
         if item == 'histogram':
             move_to_one_dim_viewer(self)
@@ -364,8 +364,14 @@ class MainWindow(QtGui.QMainWindow):
             print 'should be moving to results navigation thumbs'
         elif item == 'plot-1':
             self.handle_show_scatter()
-
-        print 'item', item
+        elif item == 'plot-2':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-3':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-4':
+            self.handle_nway_viewer(item)
+        else:
+            self.display_info("not available yet")
 
     def update_highest_state(self):
         '''
@@ -449,10 +455,13 @@ class MainWindow(QtGui.QMainWindow):
         self.modeSelector.set_checked(mode)
 
     def display_thumbnails(self,runNew=False):
-        
+        ''' 
+        displays thumbnail images for quality assurance or results navigation states
+
+        '''
+
         ## enable/disable
         mode = self.log.log['current_state']
-        self.plots_enable_disable(mode='thumbnails')
 
         ## setup layout
         self.reset_layout()
@@ -506,6 +515,7 @@ class MainWindow(QtGui.QMainWindow):
             print "ERROR: bad mode specified in display thumbnails"
 
         ## for either mode
+        self.plots_enable_disable(mode='thumbnails')
         hbl.addWidget(self.tv)
         self.vboxCenter.addLayout(hbl)
         self.mainWidget.setLayout(self.vbl)
@@ -576,10 +586,10 @@ class MainWindow(QtGui.QMainWindow):
         self.set_selected_file()
         
         ## layout
-        self.reset_layout()
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         move_transition(self,repaint=True)
+        self.reset_layout()
 
         if img != None:
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
@@ -597,10 +607,6 @@ class MainWindow(QtGui.QMainWindow):
             print "ERROR: lastChanI or lastChanJ not defined"
             return False
 
-        ## enable/disable
-        self.plots_enable_disable(mode='plot-1') 
-
-        
         if mode == "Quality Assurance":
             self.mainWidget = QtGui.QWidget(self)
             subsample=self.log.log['subsample_qa']
@@ -631,6 +637,55 @@ class MainWindow(QtGui.QMainWindow):
         
             ## enable buttons
             #self.dock.enable_all()
+
+        ## enable/disable
+        self.plots_enable_disable(mode='plot-1') 
+
+        ## finalize layout
+        self.vboxCenter.addLayout(hbl)
+        self.mainWidget.setLayout(self.vbl)
+        self.refresh_main_widget()
+        QtCore.QCoreApplication.processEvents()
+
+    def handle_nway_viewer(self,viewMode):
+        mode = self.log.log['current_state']
+        self.set_selected_file()
+        
+        ## layout
+        hbl = QtGui.QHBoxLayout()
+        hbl.setAlignment(QtCore.Qt.AlignCenter)
+        move_transition(self,repaint=True)
+        self.reset_layout()
+
+        plotsToView = self.log.log['plots_to_view']
+        chans1 = [plt[0] for plt in plotsToView]
+        chans2 = [plt[1] for plt in plotsToView]
+
+        if mode == "Quality Assurance":
+            mode = 'qa'
+            subsample=self.log.log['subsample_qa']
+            modelType,modelName= None,None
+        if mode == "ReultsNavigation":
+            mode = 'results'
+            subsample=self.log.log['subsample_qa']
+            modelType,modelName= None,None
+
+        self.mainWidget = QtGui.QWidget(self)
+        masterChannelList = self.model.get_master_channel_list()
+        if viewMode == 'plot-2':
+           nwv = TwoWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
+                              modelType=modelType,mode=mode,modelName=modelName)
+        elif viewMode == 'plot-3':
+            nwv = ThreeWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
+                                 modelType=modelType,mode=mode,modelName=modelName)
+        elif viewMode == 'plot-4':
+            nwv = FourWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
+                                 modelType=modelType,mode=mode,modelName=modelName)
+
+        hbl.addWidget(nwv)
+
+        ## enable/disable
+        self.plots_enable_disable(mode=viewMode) 
 
         ## finalize layout
         self.vboxCenter.addLayout(hbl)

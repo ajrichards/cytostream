@@ -8,7 +8,7 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
-plotsToView = [(0,1),(0,2),(0,3),(0,4),(0,5),(0,6)]
+plotsToView = [(0,1),(0,2),(0,3),(1,1),(1,2),(1,3)]
 configDictDefault = {
     ########### state variables ##############################################################
     'current_state'                         : 'Initial',            # do not change
