@@ -79,8 +79,11 @@ class DataProcessingCenter(QtGui.QWidget):
             self.channels_save_callback()
             self.files_save_callback()
 
-    ## enable/disable buttons
     def set_enable_disable(self):
+        '''
+        enable/disable buttons
+        '''
+    
         if self.showProgressBar == True and self.mainWindow !=None:
             if self.nfLoadBtn != None:
                 self.nfLoadBtn.setEnabled(False)
@@ -324,7 +327,7 @@ class DataProcessingCenter(QtGui.QWidget):
             item2.setEditable(False)
             item3.setEditable(True)
             item4.setEditable(False)
-            item4.setEditable(False)
+            item5.setEditable(False)
             self.modelFiles.appendRow([item1,item2,item3,item4,item5])
 
         ## setup the header

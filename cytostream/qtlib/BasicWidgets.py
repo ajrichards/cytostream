@@ -36,7 +36,6 @@ class RadioBtnWidget(QtGui.QWidget):
     def set_selected(self,item=None):
         if item !=None:
             self.selectedItem = item
-            print 'setting selected item', item
 
 
 class Slider(QtGui.QWidget):

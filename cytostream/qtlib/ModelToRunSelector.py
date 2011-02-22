@@ -1,9 +1,9 @@
 #!/usr/bin/python                                                                                                                                                               
 '''
 Cytostream
-modeSelector
+modelToRunSelector
 
-A bar of radio widgets to select from different visualization modes
+A bar of radio widgets to select from different models to run
 
 '''
 
@@ -13,14 +13,14 @@ import sys,re
 from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import RadioBtnWidget
 
-class ModeSelector(QtGui.QWidget):
+class ModelToRunSelector(QtGui.QWidget):
     '''
     Class that handles the users selection of subsets. Upon selection variables corresponding to the
     selected subsets are changed.  These actions are carried out by functions in the MainWindow widget.
 
     '''
 
-    def __init__(self, modeList, color='white', parent=None, modeDefault=None, modeVizCallback=None):
+    def __init__(self, mtrList, color='white', parent=None, mtrDefault=None, mtrCallback=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -28,14 +28,13 @@ class ModeSelector(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## error checking
-        if modeDefault != None and modeList.__contains__(modeDefault) == False:
-            print "ERROR: RadioBtnWidget - bad default specified",modeDefault
+        if mtrDefault != None and mtrList.__contains__(mtrDefault) == False:
+            print "ERROR: RadioBtnWidget - bad default specified",mtrDefault
             return None
 
         ## variables
-        self.modeList = modeList
+        self.modelToRunList = mtrList
         self.color = color
-        self.modeList = modeList
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
 
@@ -46,12 +45,12 @@ class ModeSelector(QtGui.QWidget):
         hbox2 = QtGui.QHBoxLayout()
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
         
-        ## mode selector
-        hbox1.addWidget(QtGui.QLabel('visualization mode'))
-        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=modeVizCallback)
-        hbox2.addWidget(self.modeSelector)
-        if modeDefault != None:
-            self.set_checked(modeDefault)
+        ## modelToRun selector
+        hbox1.addWidget(QtGui.QLabel('Model'))
+        self.modelToRunSelector = RadioBtnWidget(self.modelToRunList,parent=self,callbackFn=mtrCallback)
+        hbox2.addWidget(self.modelToRunSelector)
+        if mtrDefault != None:
+            self.set_checked(mtrDefault)
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -64,12 +63,12 @@ class ModeSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
-    def set_checked(self,modeLabel):
-        if self.modeList.__contains__(modeLabel) == False:
-            print "ERROR: ModeSelector - bad mode label in set_checked"
+    def set_checked(self,modelToRunLabel):
+        if self.modelToRunList.__contains__(modelToRunLabel) == False:
+            print "ERROR: ModelToRunSelector - bad modelToRun label in set_checked"
             return None
 
-        self.modeSelector.btns[modeLabel].setChecked(True)
+        self.modelToRunSelector.btns[modelToRunLabel].setChecked(True)
 
     def generic_callback(self):
         print 'callback does not do anything yet'
@@ -77,7 +76,7 @@ class ModeSelector(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
-    modeList = ['mode1', 'mode2']
-    ms = ModeSelector(modeList)
+    mtrList = ['modelToRun1', 'modelToRun2']
+    ms = ModelToRunSelector(mtrList)
     ms.show()
     sys.exit(app.exec_())

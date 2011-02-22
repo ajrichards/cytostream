@@ -2,12 +2,11 @@
 '''
   This program or module is free software: you can redistribute it and/or
   modify it under the terms of the GNU General Public License as published
-  by the Free Software Foundation, either version 2 of the License, or
-  version 3 of the License, or (at your option) any later version. It is
-  provided for educational purposes and is distributed in the hope that
-  it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-  the GNU General Public License for more details.
+  by the Free Software Foundation version 3 of the License, or 
+  (at your option) any later version. It is provided for educational purposes 
+  and is distributed in the hope that it will be useful, but WITHOUT ANY 
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
   Adam Richards
   adam.richards@stat.duke.edu
@@ -33,8 +32,10 @@ from cytostream import Controller
 from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
+from cytostream.qtlib import move_to_model, move_to_results_navigation
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock
 from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, TwoWayViewer,ThreeWayViewer,FourWayViewer
+from cytostream.qtlib import SixWayViewer
 
 __version__ = "0.2"
 
@@ -327,27 +328,43 @@ class MainWindow(QtGui.QMainWindow):
     #################################################
 
     def set_num_components(self,value):
-        diff = value % 8
+        diff = value % 16
         if diff == 0:
             newValue = value
-        elif (value - diff) % 8 == 0:
+        elif (value - diff) % 16 == 0:
             newValue = value - diff
-        elif (value + diff) % 8 == 0:
+        elif (value + diff) % 16 == 0:
             newValue = value + diff
 
         self.log.log['selected_k'] = newValue
 
-    def set_model_to_run(self):
-        #sm, smInd = self.dock.get_model_to_run()
-        #if sm == 'DPMM':
-        #    self.log.log['model_to_run'] = 'dpmm'
-        #elif sm == 'K-means':
-        #    self.log.log['model_to_run'] = 'kmeans'
-        #else:
-        #    print "ERROR: invalid selection for modelToRun"
-        print 'INFO: need to setup model to run'
-        self.log.log['model_to_run'] = 'dpmm'
+    def handle_model_to_run_callback(self,item=None):
+        '''
+        handles the selection of model to run
 
+        '''
+
+        if item in ['dpmm']:
+            self.log.log['model_to_run'] == item
+        else:
+            self.display_info("Selected model is not yet available")
+            self.modelToRunSelector.set_checked('dpmm')
+
+    def handle_model_mode_callback(self,item=None):
+        '''
+        handles the selection of model to run
+        normal, onefit, pooled, target
+
+        '''
+        if item in ['normal']:
+            self.log.log['model_mode'] == item
+            self.log.log('file_in_focus','all')
+        else:
+            self.display_info("Selected model mode is not yet available")
+            self.modelModeSelector.set_checked('normal')
+
+        print 'handeling model mode callback'
+    
     def handle_visualization_modes(self,item=None):
         '''
         handles the switching between visualization modes for qa and results
@@ -359,7 +376,7 @@ class MainWindow(QtGui.QMainWindow):
         if item == 'histogram':
             move_to_one_dim_viewer(self)
         elif item == 'thumbnails' and self.log.log['current_state'] == 'Quality Assurance':
-            move_to_quality_assurance(self)
+            move_to_quality_assurance(self,mode='thumbnails')
         elif item == 'thumbnails' and self.log.log['current_state'] == 'Results Navigaiton':
             print 'should be moving to results navigation thumbs'
         elif item == 'plot-1':
@@ -369,6 +386,8 @@ class MainWindow(QtGui.QMainWindow):
         elif item == 'plot-3':
             self.handle_nway_viewer(item)
         elif item == 'plot-4':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-6':
             self.handle_nway_viewer(item)
         else:
             self.display_info("not available yet")
@@ -409,17 +428,17 @@ class MainWindow(QtGui.QMainWindow):
         if mode == 'Model':
             self.set_model_to_run()
             self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
-            remove_left_dock(self)
-            self.mainWidget = QtGui.QWidget(self)
-            self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
-            self.progressBar.set_callback(self.create_results_thumbs)
-            add_left_dock(self)
-            hbl = QtGui.QHBoxLayout()
-            hbl.setAlignment(QtCore.Qt.AlignCenter)
-            hbl.addWidget(self.progressBar)
-            self.vboxCenter.addLayout(hbl)
-            self.mainWidget.setLayout(self.vbl)
-            self.refresh_main_widget()
+            #remove_left_dock(self)
+            #self.mainWidget = QtGui.QWidget(self)
+            #self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
+            #self.progressBar.set_callback(self.create_results_thumbs)
+            #add_left_dock(self)
+            #hbl = QtGui.QHBoxLayout()
+            #hbl.setAlignment(QtCore.Qt.AlignCenter)
+            #hbl.addWidget(self.progressBar)
+            #self.vboxCenter.addLayout(hbl)
+            #self.mainWidget.setLayout(self.vbl)
+            #self.refresh_main_widget()
 
     def create_results_thumbs(self):
         self.controller.process_images('results',progressBar=self.progressBar,view=self)
@@ -447,13 +466,19 @@ class MainWindow(QtGui.QMainWindow):
         if self.dockWidget == None:
             add_left_dock(self)
 
-        self.subsetSelector.setEnabled(False)
+        if self.pDock == None:
+            self.add_pipeline_dock()
+
+        self.subsampleSelector.setEnabled(False)
         self.fileSelector.setEnabled(True)
         self.recreateBtn.setEnabled(True)
         self.modeSelector.setEnabled(True)
         self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
         self.modeSelector.set_checked(mode)
-
+        
+        if self.log.log['current_state'] == 'Quality Assurance':
+            self.pDock.enable_continue_btn(lambda a=self: move_to_model(a))
+        
     def display_thumbnails(self,runNew=False):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
@@ -502,8 +527,8 @@ class MainWindow(QtGui.QMainWindow):
             if self.log.log['subsample_analysis'] == 'original':
                 imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
             else:
-                subset = str(int(float(self.log.log['subsample_analysis'])))
-                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subset,self.log.log['selected_model']))
+                subsample = str(int(float(self.log.log['subsample_analysis'])))
+                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subsample,self.log.log['selected_model']))
             
             if os.path.isdir(imgDir) == False:
                 print "ERROR: a bad imgDir has been specified", imgDir
@@ -513,6 +538,12 @@ class MainWindow(QtGui.QMainWindow):
         
         else:
             print "ERROR: bad mode specified in display thumbnails"
+
+        ## ensure docks are present
+        if self.dockWidget != None:
+            add_left_dock(self)
+        if self.pDock == None:
+            self.add_pipeline_dock()
 
         ## for either mode
         self.plots_enable_disable(mode='thumbnails')
@@ -543,25 +574,20 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        selectedSubset, selectedSubsetInd = self.subsetSelector.get_selected_subset() 
-        if selectedSubset == 'All Data':
-            selectedSubset = 'original'
+        selectedSubsample, selectedSubsampleInd = self.subsampleSelector.get_selected_subsample() 
+        if selectedSubsample == 'All Data':
+            selectedSubsample = 'original'
 
-        print 'setting selected subset...', selectedSubset, self.log.log['current_state']
+        print 'setting selected subsample...', selectedSubsample, self.log.log['current_state']
 
         if self.log.log['current_state'] == 'Quality Assurance':
-            self.log.log['subsample_qa'] = selectedSubset
+            self.log.log['subsample_qa'] = selectedSubsample
         if self.log.log['current_state'] == 'Model':
-            self.log.log['subsample_analysis'] = selectedSubset
+            self.log.log['subsample_analysis'] = selectedSubsample
             
         self.controller.save()
 
-    def set_selected_model(self):
-        print 'setting selected model'
-        #selectedModel, selectedModleInd = self.fileSelector.get_selected_model()
-        #self.log.log['selected_model'] = selectedModel
-
-    def refresh_state(self,withProgressBar=False,qaMode='thumbs'):
+    def refresh_state(self,withProgressBar=False,qaMode='thumbnails'):
         '''
         given the current state return to normal widget view
 
@@ -681,7 +707,9 @@ class MainWindow(QtGui.QMainWindow):
         elif viewMode == 'plot-4':
             nwv = FourWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
                                  modelType=modelType,mode=mode,modelName=modelName)
-
+        elif viewMode == 'plot-6':
+            nwv = SixWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
+                                 modelType=modelType,mode=mode,modelName=modelName)
         hbl.addWidget(nwv)
 
         ## enable/disable

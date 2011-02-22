@@ -172,8 +172,8 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayout.setAlignment(QtCore.Qt.AlignCenter)
         
         ## create label
-        self.labelHighlight = QtGui.QLabel("highlight", self)
-        self.highlightLayoutA.addWidget(self.labelHighlight)
+        #self.labelHighlight = QtGui.QLabel("highlight", self)
+        #self.highlightLayoutA.addWidget(self.labelHighlight)
 
         ## create combobox
         self.highlightSelector = QtGui.QComboBox(self)
@@ -186,7 +186,7 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayoutB.addWidget(self.highlightSelector)
 
         ## finalize layout
-        self.highlightLayout.addLayout(self.highlightLayoutA)
+        #self.highlightLayout.addLayout(self.highlightLayoutA)
         self.highlightLayout.addLayout(self.highlightLayoutB)
 
     def create_plot(self):
