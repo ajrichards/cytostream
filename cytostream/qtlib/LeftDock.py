@@ -14,7 +14,8 @@ import sys,os
 from PyQt4 import QtGui,QtCore
 
 from cytostream import get_fcs_file_names
-from cytostream.qtlib import FileSelector,SubsetSelector, ModeSelector
+from cytostream.qtlib import FileSelector,SubsampleSelector, ModeSelector, ModelToRunSelector
+from cytostream.qtlib import ModelTypeSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -31,7 +32,7 @@ def add_left_dock(mainWindow):
         masterChannelList = mainWindow.model.get_master_channel_list()
 
     ## declare variables
-    subsetList = ["1e03", "1e04","5e04","All Data"]
+    subsampleList = ["1e03", "1e04","5e04","All Data"]
     if mainWindow.controller.projectID == None:
         projectID = "no project loaded"
     else:
@@ -106,26 +107,26 @@ def add_left_dock(mainWindow):
         mainWindow.fileSelector.setMaximumWidth(alignWidth)
         mainWindow.fileSelector.setMinimumWidth(alignWidth)
        
-    ## subset selector
-    if mainWindow.log.log['current_state'] in ['Quality Assurance']:
+    ## subsample selector
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model']:
 
         if mainWindow.log.log['current_state'] == 'Data Processing':
-            subsetDefault = mainWindow.log.log['subsample_qa']
+            subsampleDefault = mainWindow.log.log['subsample_qa']
         else:
-            subsetDefault = mainWindow.log.log['subsample_analysis']
+            subsampleDefault = mainWindow.log.log['subsample_analysis']
 
-        mainWindow.subsetSelector = SubsetSelector(subsetList,parent=mainWindow.dockWidget,
+        mainWindow.subsampleSelector = SubsampleSelector(subsampleList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.set_selected_subsample,
-                                               subsetDefault=subsetDefault)
+                                               subsampleDefault=subsampleDefault)
         ssLayout = QtGui.QHBoxLayout()
         ssLayout.setAlignment(QtCore.Qt.AlignLeft)
-        ssLayout.addWidget(mainWindow.subsetSelector)
+        ssLayout.addWidget(mainWindow.subsampleSelector)
         vboxTop.addLayout(ssLayout)
-        mainWindow.subsetSelector.setAutoFillBackground(True)
-        mainWindow.subsetSelector.setMaximumWidth(alignWidth)
-        mainWindow.subsetSelector.setMinimumWidth(alignWidth)
+        mainWindow.subsampleSelector.setAutoFillBackground(True)
+        mainWindow.subsampleSelector.setMaximumWidth(alignWidth)
+        mainWindow.subsampleSelector.setMinimumWidth(alignWidth)
        
-    ## mode selector
+    ## visualization mode selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
         visualizationMode = mainWindow.log.log['visualization_mode']
         btnLabels = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
@@ -140,9 +141,49 @@ def add_left_dock(mainWindow):
         mainWindow.modeSelector.setMaximumWidth(alignWidth)
         mainWindow.modeSelector.setMinimumWidth(alignWidth)
 
+    ## model mode (type) selector
+    if mainWindow.log.log['current_state'] in ['Model']:
+        mmDefault = mainWindow.log.log['model_mode']
+        btnLabels = ['normal','onefit','pooled','target']
+        mmCallback = mainWindow.handle_model_mode_callback
+        mainWindow.modelModeSelector = ModelTypeSelector(btnLabels,parent=mainWindow.dockWidget,modelTypeDefault=mmDefault,
+                                                         modelTypeCallback=mmCallback)
+        rbwLayout = QtGui.QHBoxLayout()
+        rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
+        rbwLayout.addWidget(mainWindow.modelModeSelector)
+        vboxCenter.addLayout(rbwLayout)
+        mainWindow.modelModeSelector.setAutoFillBackground(True)
+        mainWindow.modelModeSelector.setMaximumWidth(alignWidth)
+        mainWindow.modelModeSelector.setMinimumWidth(alignWidth)
+
+    ## model to run selector
+    if mainWindow.log.log['current_state'] in ['Model']:
+        mtrDefault = mainWindow.log.log['model_to_run']
+        btnLabels = ['dpmm','k-means','upload']
+        mtrCallback = mainWindow.handle_model_to_run_callback
+        mainWindow.modelToRunSelector = ModelToRunSelector(btnLabels,parent=mainWindow.dockWidget,mtrDefault=mtrDefault,
+                                                           mtrCallback=mtrCallback)
+        rbwLayout = QtGui.QHBoxLayout()
+        rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
+        rbwLayout.addWidget(mainWindow.modelToRunSelector)
+        vboxCenter.addLayout(rbwLayout)
+        mainWindow.modelToRunSelector.setAutoFillBackground(True)
+        mainWindow.modelToRunSelector.setMaximumWidth(alignWidth)
+        mainWindow.modelToRunSelector.setMinimumWidth(alignWidth)
+    
+    ## more info btn
+    if mainWindow.log.log['current_state'] in ['Model']:
+        mainWindow.modelSettingsBtn = QtGui.QPushButton("Edit settings")
+        mainWindow.modelSettingsBtn.setMaximumWidth(120)
+        mainWindow.modelSettingsBtn.setMinimumWidth(120)
+        miLayout = QtGui.QHBoxLayout()
+        miLayout.setAlignment(QtCore.Qt.AlignCenter)
+        miLayout.addWidget(mainWindow.modelSettingsBtn)
+        vboxCenter.addLayout(miLayout)
+
     ## more recreate figures
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
-        mainWindow.recreateBtn = QtGui.QPushButton("recreate figures")
+        mainWindow.recreateBtn = QtGui.QPushButton("Recreate figures")
         mainWindow.recreateBtn.setMaximumWidth(120)
         mainWindow.recreateBtn.setMinimumWidth(120)
         
@@ -152,8 +193,8 @@ def add_left_dock(mainWindow):
         vboxBottom.addLayout(rbLayout)
 
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance']:
-        mainWindow.moreInfoBtn = QtGui.QPushButton("more info")
+    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model']:
+        mainWindow.moreInfoBtn = QtGui.QPushButton("More info")
         mainWindow.moreInfoBtn.setMaximumWidth(120)
         mainWindow.moreInfoBtn.setMinimumWidth(120)
         miLayout = QtGui.QHBoxLayout()

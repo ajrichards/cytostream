@@ -15,7 +15,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,filePathList,useSubsample=False,makeQaFigs=True,configDict=None):
+    def __init__(self,projectID,filePathList,useSubsample=True,makeQaFigs=True,configDict=None):
         """
           class constructor 
 

@@ -75,7 +75,7 @@ class QualityAssuranceCenter(QtGui.QWidget):
         self.mainWindow.recreateBtn.setEnabled(False)
         self.mainWindow.fileSelector.setEnabled(False)
         self.mainWindow.modeSelector.setEnabled(False)
-        self.mainWindow.subsetSelector.setEnabled(True)
+        self.mainWindow.subsampleSelector.setEnabled(True)
         self.mainWindow.pDock.enable_disable_states()
         
     def init_progressbar_view(self):

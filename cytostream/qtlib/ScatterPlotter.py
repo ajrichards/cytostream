@@ -195,6 +195,10 @@ class ScatterPlotter(FigureCanvas):
         self.ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
         self.ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
 
+        
+        self.ax.set_aspect(1./self.ax.get_data_ratio())
+
+
         ## save file
         fileName = selectedFile
         self.ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)

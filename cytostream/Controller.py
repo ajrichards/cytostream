@@ -428,13 +428,13 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None,view=None,useSubsample=False,cleanBorderEvents=True):
+    def run_selected_model(self,progressBar=None,view=None,useSubsample=True,cleanBorderEvents=True):
         
         ## determine the data in focus
         fileInFocus = self.log.log['file_in_focus']
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
-        numComponents = int(self.log.log['selected_k'])
+        numComponents = int(self.log.log['dpmm_k'])
         subsample = self.log.log['subsample_analysis']
         fileList = get_fcs_file_names(self.homeDir)
         percentDone = 0

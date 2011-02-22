@@ -33,7 +33,7 @@ configDictDefault = {
     'subsample_qa'                          : '1e3',                # any float, int or string
     'subsample_analysis'                    : '1e3',                # any float, int or string
     'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
-    'selected_k'                            : '16',                 # an int divisible by 8
+    'dpmm_k'                                : '16',                 # an int divisible by 16
     'results_mode'                          : 'modes',              # modes, components
     'plots_to_view'                         : plotsToView,          # defined above'
     'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
@@ -46,7 +46,7 @@ configDictDefault = {
     'alternate_file_labels'                 : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
     'filter_in_focus'                       : 'None',               # all or e.g. '1000_filter1'
-    'model_mode'                            : 'normal',             # normal, onefit, pooled
+    'model_mode'                            : 'normal',             # normal,onefit,pooled,target
     'model_reference'                       : 'None',               # fileName, pooled
     'model_reference_run_id'                : 'None',               # a run id i.e. run1
     'channel_view'                          : 'normal',             # normal, custom
