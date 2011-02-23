@@ -76,8 +76,8 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## save the initial results for alternate channels and files
         if self.showProgressBar == False:
-            self.channels_save_callback()
-            self.files_save_callback()
+            self.channels_save_callback(msg=False)
+            self.files_save_callback(msg=False)
 
     def set_enable_disable(self):
         '''
@@ -374,7 +374,7 @@ class DataProcessingCenter(QtGui.QWidget):
     def generic_callback(self):
         print "generic callback"
 
-    def channels_save_callback(self):
+    def channels_save_callback(self,msg=True):
         ''' 
         saves alternate channel names
         saves excluded channels for quality assurance
@@ -390,14 +390,18 @@ class DataProcessingCenter(QtGui.QWidget):
             self.log.log['alternate_channel_labels'] = altLabels
             self.log.log['excluded_channels_qa'] = excludedChannels
             self.controller.save()
-        
+
+        if msg == True:
+            msg = "Alternate channel names have been saved"
+            reply = QtGui.QMessageBox.information(self, "Information", msg)
+
     def files_add_callback(self):
         if self.mainWindow != None:
             self.load_data_files()
         else:
             print 'load data file btn'
 
-    def files_save_callback(self):
+    def files_save_callback(self,msg=True):
         '''
         saves alternate file names
 
@@ -411,6 +415,11 @@ class DataProcessingCenter(QtGui.QWidget):
             self.controller.save()
         else:
             print 'alternate file names', altFiles
+
+        if msg == True:
+            msg = "Alternate file names have been saved"
+            reply = QtGui.QMessageBox.information(self, "Information", msg)
+
 
     def files_remove_callback(self):
         '''

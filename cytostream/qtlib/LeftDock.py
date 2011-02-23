@@ -180,6 +180,8 @@ def add_left_dock(mainWindow):
         miLayout.setAlignment(QtCore.Qt.AlignCenter)
         miLayout.addWidget(mainWindow.modelSettingsBtn)
         vboxCenter.addLayout(miLayout)
+        msBtnFn = mainWindow.handle_model_edit_callback
+        mainWindow.connect(mainWindow.modelSettingsBtn,QtCore.SIGNAL('clicked()'),msBtnFn)
 
     ## more recreate figures
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:

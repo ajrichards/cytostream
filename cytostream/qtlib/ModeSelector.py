@@ -15,8 +15,8 @@ from cytostream.qtlib import RadioBtnWidget
 
 class ModeSelector(QtGui.QWidget):
     '''
-    Class that handles the users selection of subsets. Upon selection variables corresponding to the
-    selected subsets are changed.  These actions are carried out by functions in the MainWindow widget.
+    Class that handles the users selection of the visualization mode. Upon selection appropriate 
+    changes are made to enable smooth transitions from one visualization mode to another.
 
     '''
 
@@ -35,7 +35,6 @@ class ModeSelector(QtGui.QWidget):
         ## variables
         self.modeList = modeList
         self.color = color
-        self.modeList = modeList
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
 
