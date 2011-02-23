@@ -8,6 +8,8 @@ from SubsampleSelector import SubsampleSelector
 from ModeSelector import ModeSelector
 from ModelToRunSelector import ModelToRunSelector
 from ModelTypeSelector import ModelTypeSelector
+from KSelector import KSelector
+from TextEntry import TextEntry
 from OneDimViewer import OneDimViewer
 
 ## files requireing only 1st level deps

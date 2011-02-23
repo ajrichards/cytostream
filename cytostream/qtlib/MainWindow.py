@@ -362,9 +362,15 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.display_info("Selected model mode is not yet available")
             self.modelModeSelector.set_checked('normal')
+            
+    def handle_model_edit_callback(self):
+        '''
+        handles the model edit callback
 
-        print 'handeling model mode callback'
-    
+        '''
+
+        move_to_model(self,modelMode='edit')
+
     def handle_visualization_modes(self,item=None):
         '''
         handles the switching between visualization modes for qa and results
@@ -475,7 +481,9 @@ class MainWindow(QtGui.QMainWindow):
         self.modeSelector.setEnabled(True)
         self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
         self.modeSelector.set_checked(mode)
-        
+        self.pDock.contBtn.setEnabled(True)
+
+
         if self.log.log['current_state'] == 'Quality Assurance':
             self.pDock.enable_continue_btn(lambda a=self: move_to_model(a))
         

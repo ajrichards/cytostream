@@ -9,13 +9,15 @@ The main widget for the model state
 
 __author__ = "A Richards"
 
-import sys
+import sys,re
+import numpy as np
 from PyQt4 import QtGui, QtCore
-from cytostream.qtlib import ProgressBar
+from cytostream.qtlib import ProgressBar, KSelector, TextEntry
 
 class ModelCenter(QtGui.QWidget):
     def __init__(self, fileList, channelList, mode='progressbar',parent=None, runModelFn=None, mainWindow=None, 
-                 alternateFiles=None, alternateChannels=None, excludedChannels=[], excludedFiles=[]):
+                 alternateFiles=None, excludedChannels=[], excludedFiles=[],modelToRun='dpmm',
+                 returnBtnFn=None):
         QtGui.QWidget.__init__(self,parent)
 
         ## variables
@@ -25,8 +27,26 @@ class ModelCenter(QtGui.QWidget):
         self.mode = mode
         self.excludedChannels = excludedChannels
         self.excludedFiles = excludedFiles
-        self.alternateFiles = alternateFiles
-        self.alternateChannels = alternateChannels
+        self.modelToRun = modelToRun
+
+        ## handle alternate names
+        if self.mainWindow == None:
+            self.alternateFiles = [f for f in self.fileList]
+            self.alternateChannels = [c for c in self.masterChannelList]
+        else:
+            self.alternateFiles = self.mainWindow.log.log['alternate_file_labels']
+            self.alternateChannels = self.mainWindow.log.log['alternate_channel_labels']     
+
+        if self.mainWindow != None:
+            self.numItersMCMC = self.mainWindow.log.log['num_iters_mcmc']
+            self.dpmmK = int(self.mainWindow.log.log['dpmm_k'])
+        else:
+            self.numItersMCMC = '1100'
+            self.dpmmK = 16
+
+        print 'alternate', self.alternateChannels
+        print 'alternate', self.alternateFiles
+
 
         ## error checking
         if self.mode not in ['progressbar', 'edit']:
@@ -39,23 +59,34 @@ class ModelCenter(QtGui.QWidget):
         self.hbox = QtGui.QHBoxLayout()
         self.hbox.setAlignment(QtCore.Qt.AlignTop)
 
-        ## variable preparation
-        if self.alternateFiles == None:
-            self.alternateFiles = [f for f in self.fileList]
-        if self.alternateChannels == None:
-            self.alternateChannels = [c for c in self.masterChannelList]
-
         ## initialize view 
         if self.mode == 'progressbar':
             self.init_progressbar_view()
         if self.mode == 'edit':
+            self.add_model_specific_settings()
             self.make_channels_sheet()
             self.make_files_sheet()
 
+            ## save button
+            btnBox = QtGui.QHBoxLayout()
+            btnBox.setAlignment(QtCore.Qt.AlignCenter)
+            self.saveBtn = QtGui.QPushButton("save changes")
+            self.saveBtn.setMaximumWidth(100)
+            self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.save_callback)
+            btnBox.addWidget(self.saveBtn)
+       
+            ## return button
+            self.returnBtn = QtGui.QPushButton("return")
+            self.returnBtn.setMaximumWidth(100)
+            if returnBtnFn != None:
+                self.connect(self.returnBtn, QtCore.SIGNAL('clicked()'),self.returnBtnFn)
+            btnBox.addWidget(self.returnBtn)
+       
         ## finalize layout
         vbox.addLayout(self.hbox)
+        if self.mode == 'edit':
+            vbox.addLayout(btnBox)
         self.setLayout(vbox)
-
 
     def set_enable_disable(self):
         '''
@@ -68,7 +99,7 @@ class ModelCenter(QtGui.QWidget):
             self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         elif self.mode == 'edit' and self.mainWindow !=None:
-            self.mainWindow.fileSelector.setEnables(False)
+            self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(True)
             self.mainWindow.pDock.inactivate_all()
@@ -144,11 +175,9 @@ class ModelCenter(QtGui.QWidget):
         ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
         ssLayout2 = QtGui.QHBoxLayout()
         ssLayout2.setAlignment(QtCore.Qt.AlignCenter)
-        ssLayout3 = QtGui.QHBoxLayout()
-        ssLayout3.setAlignment(QtCore.Qt.AlignCenter)
 
         ## set up the label
-        self.chksSummaryLabel = QtGui.QLabel('Select included channels and edit labels')
+        self.chksSummaryLabel = QtGui.QLabel('Channels to include in model')
 
         ## create the excluded channels panel 
         self.modelChannels = QtGui.QStandardItemModel()
@@ -157,8 +186,7 @@ class ModelCenter(QtGui.QWidget):
             channel = self.masterChannelList[row]
             altChannel = self.alternateChannels[row]
             item0 = QtGui.QStandardItem(str(row+1))
-            item1 = QtGui.QStandardItem('%s' % channel)
-            item2 = QtGui.QStandardItem('%s' % altChannel)
+            item1 = QtGui.QStandardItem('%s' % altChannel)
 
             ## set which ones are checked
             check = QtCore.Qt.UnChecked if row in self.excludedChannels else QtCore.Qt.Checked
@@ -166,30 +194,20 @@ class ModelCenter(QtGui.QWidget):
             item0.setCheckable(True)
             item0.setEditable(False)
             item1.setEditable(False)
-            item2.setEditable(True)
-            self.modelChannels.appendRow([item0,item1,item2])
+            self.modelChannels.appendRow([item0,item1])
 
         viewChannels = QtGui.QTreeView()
         viewChannels.setModel(self.modelChannels)
         self.modelChannels.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('channel'))
         self.modelChannels.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelChannels.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('original'))
+        self.modelChannels.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('name'))
         self.modelChannels.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelChannels.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant('alternate '))
-        self.modelChannels.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-
-        ## setup save btn 
-        self.saveBtn = QtGui.QPushButton("save changes")
-        self.saveBtn.setMaximumWidth(100)
-        self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.channels_save_callback)
 
         ## finalize layouts    
         ssLayout1.addWidget(self.chksSummaryLabel)
-        ssLayout3.addWidget(self.saveBtn)
         ssLayout2.addWidget(viewChannels)
         ssLayout.addLayout(ssLayout1)
         ssLayout.addLayout(ssLayout2)
-        ssLayout.addLayout(ssLayout3)
         self.hbox.addLayout(ssLayout)
 
     def make_files_sheet(self,firstRun=True):
@@ -201,10 +219,8 @@ class ModelCenter(QtGui.QWidget):
             ssLayout1.setAlignment(QtCore.Qt.AlignCenter)
             ssLayout2 = QtGui.QHBoxLayout()
             ssLayout2.setAlignment(QtCore.Qt.AlignCenter)
-            ssLayout3 = QtGui.QHBoxLayout()
-            ssLayout3.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.fileSummaryLabel = QtGui.QLabel('Select files to include in model run')
+        self.fileSummaryLabel = QtGui.QLabel('Files to include in model')
 
         ## create the file list panel 
         if firstRun == True:
@@ -214,8 +230,7 @@ class ModelCenter(QtGui.QWidget):
             fileName = self.fileList[row]
             altFileName = self.alternateFiles[row]
             item1 = QtGui.QStandardItem(str(row+1))
-            item2 = QtGui.QStandardItem('%s'%fileName)
-            item3 = QtGui.QStandardItem('%s'%altFileName)
+            item2 = QtGui.QStandardItem('%s'%altFileName)
 
             ## set which ones are checked
             check = QtCore.Qt.UnChecked if row in self.excludedFiles else QtCore.Qt.Checked
@@ -223,127 +238,156 @@ class ModelCenter(QtGui.QWidget):
             item1.setCheckable(True)
             item1.setEditable(False)
             item2.setEditable(False)
-            item3.setEditable(True)
-            self.modelFiles.appendRow([item1,item2,item3])
+            self.modelFiles.appendRow([item1,item2])
 
         ## setup the header 
         self.modelFiles.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('file'))
         self.modelFiles.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelFiles.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('original'))
+        self.modelFiles.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('name'))
         self.modelFiles.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelFiles.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant('alternate'))
-        self.modelFiles.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
         
         viewFiles = QtGui.QTreeView()
         viewFiles.setModel(self.modelFiles)
-
-        ## setup save btn
-        if firstRun == True:
-            self.saveFilesBtn = QtGui.QPushButton("save changes")
-            self.saveFilesBtn.setMaximumWidth(100)
-            self.connect(self.saveFilesBtn, QtCore.SIGNAL('clicked()'),self.files_save_callback)
 
         ## finalize layout   
         if firstRun == True:
             ssLayout1.addWidget(self.fileSummaryLabel)
             ssLayout2.addWidget(viewFiles)
-            ssLayout3.addWidget(self.saveFilesBtn)
             ssLayout.addLayout(ssLayout1)
             ssLayout.addLayout(ssLayout2)
-            ssLayout.addLayout(ssLayout3)
             self.hbox.addLayout(ssLayout)
 
-    def channels_save_callback(self):
+    def add_model_specific_settings(self):
         '''
-        saves alternate channel names
-        saves excluded channels for quality assurance
-        
+        initializes the first of three vertical panels 
+        the widgets are specific to the selected model 
+        to run
+
         '''
 
+        mssLayout = QtGui.QVBoxLayout()
+        mssLayout1 = QtGui.QVBoxLayout()
+        mssLayout1.setAlignment(QtCore.Qt.AlignTop)
+        mssLayout1 = QtGui.QVBoxLayout()
+        mssLayout1.setAlignment(QtCore.Qt.AlignTop)
+        mssLayout2 = QtGui.QVBoxLayout()
+        mssLayout2.setAlignment(QtCore.Qt.AlignCenter)
+
+        if self.modelToRun in ['dpmm','k-means']:
+            self.parametersLabel = QtGui.QLabel('Edit parameters')
+            hbox1 = QtGui.QHBoxLayout()
+            hbox1.setAlignment(QtCore.Qt.AlignCenter)
+            hbox1.addWidget(self.parametersLabel)
+            mssLayout1.addLayout(hbox1)
+            
+            self.kSelector = KSelector(parent=self,kDefault=self.dpmmK)
+            hbox2a = QtGui.QHBoxLayout()
+            hbox2a.setAlignment(QtCore.Qt.AlignCenter)
+            hbox2a.addWidget(QtGui.QLabel(" "))
+            hbox2a.addWidget(self.kSelector)
+            hbox2a.addWidget(QtGui.QLabel(" "))
+            mssLayout1.addLayout(hbox2a)
+
+        if self.modelToRun == 'dpmm':
+            hbox2b = QtGui.QHBoxLayout()
+            hbox2b.setAlignment(QtCore.Qt.AlignCenter)
+            teDefault = self.numItersMCMC
+            self.mcmcItersEntry = TextEntry("MCMC iterations",textEntryDefault=teDefault) 
+            hbox2b.addWidget(QtGui.QLabel(" "))
+            hbox2b.addWidget(self.mcmcItersEntry)
+            hbox2b.addWidget(QtGui.QLabel(" "))
+            mssLayout1.addLayout(hbox2b)
+            
+        ## finalize layout
+        mssLayout.addLayout(mssLayout1)
+        mssLayout.addLayout(mssLayout2)
+        self.hbox.addLayout(mssLayout)
+
+    def save_callback(self):
+        '''
+        saves model parameters
+        saves excluded channels
+        saves excluded files
+      
+        '''
+
+        ## save parameters
+        if self.modelToRun == 'dpmm':
+            numItersMCMC = self.mcmcItersEntry.get_text()
+            dpmmK = self.kSelector.get_text()
+
+            if re.search("\D",numItersMCMC):
+                msg = "The number of iterations for MCMC must be a numeric value"
+                reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+                return None
+
+            if self.mainWindow != None:
+                self.mainWindow.log.log['num_mcmc_iters'] = numItersMCMC
+                self.mainWindow.log.log['dpmm_k'] = dpmmK
+                self.mainWindow.controller.save()
+
+        ## excluded channels save
         n = len(self.masterChannelList)
-        altLabels = [str(self.modelChannels.data(self.modelChannels.index(i,2)).toString()) for i in range(n)]
         checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
         excludedChannels = np.where(np.array([i for i in checkStates]) == 0)[0].tolist()
-
-        if self.log != None:
-            self.log.log['alternate_channel_labels'] = altLabels
-            self.log.log['excluded_channels_qa'] = excludedChannels
-            self.controller.save()
-
-    def files_add_callback(self):
+        print 'excluded channels', excludedChannels
+        
         if self.mainWindow != None:
-            self.load_data_files()
-        else:
-            print 'load data file btn'
+            self.mainWindow.log.log['excluded_channels_analysis'] = excludedChannels
+            self.mainWindow.controller.save()
 
-    def files_save_callback(self):
-        '''
-        saves alternate file names
-        
-        '''
+        #
+        #if self.log != None:
+        #    self.log.log['alternate_channel_labels'] = altLabels
+        #    self.log.log['excluded_channels_qa'] = excludedChannels
+        #    self.controller.save()
 
-        n = len(self.fileList)
-        altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
+        ## excluded files save
+        #n = len(self.fileList)
+        #altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
+        #
+        #if self.log != None:
+        #    self.log.log['alternate_file_labels'] = altFiles
+        #    self.controller.save()
+        #else:
+        #    print 'alternate file names', altFiles
 
-        if self.log != None:
-            self.log.log['alternate_file_labels'] = altFiles
-            self.controller.save()
-        else:
-            print 'alternate file names', altFiles
-
-    def files_remove_callback(self):
-        '''
-        remove selected files from list
-        
-        '''
-
-        n = len(self.fileList)
-        checkStates = [self.modelFiles.itemFromIndex(self.modelFiles.index(i,0)).checkState() for i in range(n)]
-        filesToRemove = np.where(np.array([i for i in checkStates]) == 2)[0].tolist()
-
-        if len(filesToRemove) > 0:
-            includedIndices = list(set(range(n)).difference(set(filesToRemove)))
-            
-            if len(filesToRemove) > 1:
-                reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
-                                                   "Are you sure you want to completely remove %s files?"%(len(filesToRemove)),
-                                                   QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
-            else:
-                reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
-                                                   "Are you sure you want to completely remove this file?",QtGui.QMessageBox.Yes,
-                                                   QtGui.QMessageBox.No)
-                
-            if reply == QtGui.QMessageBox.Yes:
-                ## remove all files associated with each fcs file
-                if self.log != None:
-                    for indToRemove in filesToRemove:
-                        fileToRemove = self.fileList[indToRemove]
-                        self.controller.rm_fcs_file(fileToRemove)
-
-                ## reset file list and recreate widget
-                self.fileList = np.array(self.fileList)[includedIndices].tolist()
-                self.modelFiles.clear()
-                self.make_files_sheet(firstRun=False)
-
-            ## refresh log
-            self.files_save_callback()
-        else:
-            msg = "Select one or more files in order to carry out file removal"
-            reply = QtGui.QMessageBox.warning(self, "Warning", msg)
-
-
-
-
+        #n = len(self.fileList)
+        #checkStates = [self.modelFiles.itemFromIndex(self.modelFiles.index(i,0)).checkState() for i in range(n)]
+        #filesToRemove = np.where(np.array([i for i in checkStates]) == 2)[0].tolist()
+        #
+        #if len(filesToRemove) > 0:
+        #    includedIndices = list(set(range(n)).difference(set(filesToRemove)))
+        #    
+        #    if len(filesToRemove) > 1:
+        #        reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
+        #                                           "Are you sure you want to completely remove %s files?"%(len(filesToRemove)),
+        #                                           QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
+        #    else:
+        #        reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
+        #                                           "Are you sure you want to completely remove this file?",QtGui.QMessageBox.Yes,
+        #                                           QtGui.QMessageBox.No)
+        #        
+        #    if reply == QtGui.QMessageBox.Yes:
+        #        ## remove all files associated with each fcs file
+        #        if self.log != None:
+        #            for indToRemove in filesToRemove:
+        #                fileToRemove = self.fileList[indToRemove]
+        #                self.controller.rm_fcs_file(fileToRemove)
+        # 
+        #        ## reset file list and recreate widget
+        #        self.fileList = np.array(self.fileList)[includedIndices].tolist()
+        #        self.modelFiles.clear()
+        #        self.make_files_sheet(firstRun=False)
+        #
+        #    ## refresh log
+        #    self.files_save_callback()
+        #else:
+        #    msg = "Select one or more files in order to carry out file removal"
+        #    reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
     def generic_callback(self):
         print 'This button does nothing'
-
-    def set_message(self,msg):
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        self.msg = QtGui.QLabel(msg)
-        hbl.addWidget(self.msg)
-        self.vbl.addLayout(hbl)
 
 ### Run the tests 
 if __name__ == '__main__':
