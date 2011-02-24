@@ -386,6 +386,11 @@ class DataProcessingCenter(QtGui.QWidget):
         checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
         excludedChannels = np.where(np.array([i for i in checkStates]) == 0)[0].tolist()
 
+        if len(altLabels) != len(np.unique(altLabels)):
+            msg = "Two or more channels have been assigned the same name\n\nChanges were not saved"
+            reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+            return None
+
         if self.log != None:
             self.log.log['alternate_channel_labels'] = altLabels
             self.log.log['excluded_channels_qa'] = excludedChannels
@@ -409,6 +414,11 @@ class DataProcessingCenter(QtGui.QWidget):
 
         n = len(self.fileList)
         altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
+        
+        if len(altFiles) != len(np.unique(altFiles)):
+            msg = "Two or more files have been assigned the same name\n\nChanges were not saved"
+            reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+            return None
 
         if self.log != None:
             self.log.log['alternate_file_labels'] = altFiles
@@ -455,7 +465,7 @@ class DataProcessingCenter(QtGui.QWidget):
                 self.make_files_sheet(firstRun=False)
 
             ## refresh log
-            self.files_save_callback()
+            self.files_save_callback(msg=False)
         else:
             msg = "Select one or more files in order to carry out file removal"
             reply = QtGui.QMessageBox.warning(self, "Warning", msg)

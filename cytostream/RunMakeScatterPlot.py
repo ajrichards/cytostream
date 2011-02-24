@@ -86,7 +86,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     colors = get_all_colors()
 
     ## specify channels
-    fileChannels = model.get_file_channel_list(selectedFile)
+    fileChannels = log.log['alternate_channel_labels']
     index1 = int(channel1Ind)
     index2 = int(channel2Ind) 
     channel1 = fileChannels[index1]

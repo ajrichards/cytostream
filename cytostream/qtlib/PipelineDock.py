@@ -83,7 +83,7 @@ class PipelineDock(QtGui.QWidget):
         self.dataProcessingBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.dataProcessingTip = Tooltip(msg="Carry out channel selection, labeling, transformation and more",parent=self.dataProcessingBtn)
         hboxTop.addWidget(self.dataProcessingBtn)
-        self.connect(self.dataProcessingBtn, QtCore.SIGNAL('clicked()'),lambda x='data processing': self.btn_callback(x))
+        self.connect(self.dataProcessingBtn, QtCore.SIGNAL('clicked()'),lambda x='Data Processing': self.btn_callback(x))
 
         ## quality assurance
         self.qualityAssuranceBtn = QtGui.QPushButton("QA")
@@ -93,7 +93,7 @@ class PipelineDock(QtGui.QWidget):
         self.qualityAssuranceBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.qualityAssuranceTip = Tooltip(msg="Assess the quality of each file",parent=self.qualityAssuranceBtn)
         hboxTop.addWidget(self.qualityAssuranceBtn)
-        self.connect(self.qualityAssuranceBtn, QtCore.SIGNAL('clicked()'),lambda x='quality assurance': self.btn_callback(x))
+        self.connect(self.qualityAssuranceBtn, QtCore.SIGNAL('clicked()'),lambda x='Quality Assurance': self.btn_callback(x))
 
         ## model
         self.modelBtn = QtGui.QPushButton("Model")
@@ -103,7 +103,7 @@ class PipelineDock(QtGui.QWidget):
         self.modelBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.modelTip = Tooltip(msg="Run a model on the fcs files",parent=self.modelBtn)
         hboxTop.addWidget(self.modelBtn)
-        self.connect(self.modelBtn, QtCore.SIGNAL('clicked()'),lambda x='model': self.btn_callback(x))
+        self.connect(self.modelBtn, QtCore.SIGNAL('clicked()'),lambda x='Model': self.btn_callback(x))
 
         ## results navigation
         self.resultsNavigationBtn = QtGui.QPushButton("Results")
@@ -113,7 +113,7 @@ class PipelineDock(QtGui.QWidget):
         self.resultsNavigationTip = Tooltip(msg="Navigate the results of models run",parent=self.resultsNavigationBtn)
         self.resultsNavigationBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         hboxTop.addWidget(self.resultsNavigationBtn)
-        self.connect(self.resultsNavigationBtn, QtCore.SIGNAL('clicked()'),lambda x='results navigation': self.btn_callback(x))
+        self.connect(self.resultsNavigationBtn, QtCore.SIGNAL('clicked()'),lambda x='Results Navigation': self.btn_callback(x))
 
         ## summary and reports
         self.resultsSummaryBtn = QtGui.QPushButton("Summary")
@@ -123,10 +123,9 @@ class PipelineDock(QtGui.QWidget):
         self.resultsSummaryBtn.setFocusPolicy(QtCore.Qt.NoFocus)
         self.resultsSummaryTip = Tooltip(msg="View summaries of the models and produce reports",parent=self.resultsSummaryBtn)
         hboxTop.addWidget(self.resultsSummaryBtn)
-        self.connect(self.resultsSummaryBtn, QtCore.SIGNAL('clicked()'),lambda x='results summary': self.btn_callback(x))
+        self.connect(self.resultsSummaryBtn, QtCore.SIGNAL('clicked()'),lambda x='Results Summary': self.btn_callback(x))
 
-
-         ## continue btn      
+        ## continue btn      
         self.contBtn = QtGui.QPushButton("continue")
         self.contBtn.setMaximumWidth(100)
         hboxBottom.addWidget(self.contBtn)
@@ -149,46 +148,41 @@ class PipelineDock(QtGui.QWidget):
         QtCore.QCoreApplication.processEvents()
 
     def set_btn_highlight(self,btnName):
-        btnName = btnName.lower()
-        if btnName == 'data processing':
+        if btnName == 'Data Processing':
             self.unset_all_highlights()
             self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'quality assurance':
+        elif btnName == 'Quality Assurance':
             self.unset_all_highlights()
             self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'model':
+        elif btnName == 'Model':
             self.unset_all_highlights()
             self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'results navigation':
+        elif btnName == 'Results Navigation':
             self.unset_all_highlights()
             self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'results summary':
+        elif btnName == 'Results Summary':
             self.unset_all_highlights()
             self.resultsSummaryBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
         else:
-            print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
+            print 'ERROR: Invalid value in button callback - pipelinedock - %s'%btnName
 
         QtCore.QCoreApplication.processEvents()
 
     def btn_callback(self,btnName):
         goFlag = False
-        btnName = btnName.lower()
-        if btnName == 'data processing':
+        if btnName == 'Data Processing':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[0]()
-           
-        elif btnName == 'quality assurance':
+        elif btnName == 'Quality Assurance':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[1]()
-
-        elif btnName == 'model':
+        elif btnName == 'Model':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[2]()
-
-        elif btnName == 'results navigation':
+        elif btnName == 'Results Navigation':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[3]()
-        elif btnName == 'results summary':
+        elif btnName == 'Results Summary':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[4]()
         else:

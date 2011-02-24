@@ -66,7 +66,7 @@ def create_menubar_toolbar(mainWindow):
     fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
                                    "Ctrl+Q", "filequit", "Close the application")
     ## edit menu actions
-    editDataProcessing= create_action(mainWindow,"&Data Processing", lambda a=mainWindow: mainWindow.move_to_data_processing(a),
+    editDataProcessing= create_action(mainWindow,"&Data Processing", lambda a=mainWindow: move_to_data_processing(a),
                                                  "Ctrl+D", "dataprocessing", "Move to Data Processing")
     editQualityAssurance= create_action(mainWindow,"Quality &Assurance", lambda a=mainWindow: move_to_quality_assurance(a),
                                                    "Ctrl+A", "qualityassurance", "Move to Quality Assurance")
