@@ -28,6 +28,7 @@ class ModelCenter(QtGui.QWidget):
         self.excludedChannels = excludedChannels
         self.excludedFiles = excludedFiles
         self.modelToRun = modelToRun
+        self.runModelFn = runModelFn
 
         ## handle alternate names
         if self.mainWindow == None:
@@ -43,10 +44,6 @@ class ModelCenter(QtGui.QWidget):
         else:
             self.numItersMCMC = '1100'
             self.dpmmK = 16
-
-        print 'alternate', self.alternateChannels
-        print 'alternate', self.alternateFiles
-
 
         ## error checking
         if self.mode not in ['progressbar', 'edit']:
@@ -96,12 +93,30 @@ class ModelCenter(QtGui.QWidget):
         if self.mode == 'progressbar' and self.mainWindow !=None:
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(True)
-            self.mainWindow.fileSelector.setEnabled(False)
+            #self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         elif self.mode == 'edit' and self.mainWindow !=None:
-            self.mainWindow.fileSelector.setEnabled(False)
+            #self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(True)
+            self.mainWindow.pDock.inactivate_all()
+
+    def set_disable(self):
+        '''
+        disable buttons
+        '''
+
+        if self.mode == 'progressbar' and self.mainWindow !=None:
+            self.progressBar.button.setText('Please wait...')
+            self.progressBar.button.setEnabled(False)
+            self.widgetSubtitle.setText("Running model...")
+            self.mainWindow.pDock.contBtn.setEnabled(False)
+            self.mainWindow.moreInfoBtn.setEnabled(False)
+            #self.mainWindow.fileSelector.setEnabled(False)
+            self.mainWindow.subsampleSelector.setEnabled(False)
+            self.mainWindow.modelToRunSelector.setEnabled(False)
+            self.mainWindow.modelModeSelector.setEnabled(False)
+            self.mainWindow.modelSettingsBtn.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
 
     def init_progressbar_view(self):
@@ -119,8 +134,10 @@ class ModelCenter(QtGui.QWidget):
         pbLayout4.setAlignment(QtCore.Qt.AlignCenter)
 
         ## label widget
-        pbLayout2a.addWidget(QtGui.QLabel('Data Modeling'))
-        pbLayout2b.addWidget(QtGui.QLabel('Select model for loaded data'))
+        self.widgetTitle = QtGui.QLabel('Data Modeling')
+        self.widgetSubtitle = QtGui.QLabel('Select model for loaded data')
+        pbLayout2a.addWidget(self.widgetTitle)
+        pbLayout2b.addWidget(self.widgetSubtitle)
 
         ## show the progress bar
         self.init_progressbar()
@@ -140,9 +157,7 @@ class ModelCenter(QtGui.QWidget):
         ## add progress bar if loading
         self.progressBar = ProgressBar(parent=self,buttonLabel="Run",withLabel='Start model')
         if self.mainWindow != None:
-            pass
-        else:
-            self.progressBar.set_callback(lambda x=self.progressBar: self.generic_callback)
+            self.progressBar.set_callback(self.mainWindow.run_progress_bar)
 
         buffer1 = QtGui.QLabel('\t\t\t')
         buffer2 = QtGui.QLabel('\t\t\t')

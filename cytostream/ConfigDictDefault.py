@@ -14,7 +14,7 @@ configDictDefault = {
     'current_state'                         : 'Initial',            # do not change
     'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
-    'selected_model'                        : 'None',               # do not change
+    'selected_model'                        : 'run1',               # do not change
     'models_run_count'                      : '0',                  # do not change
     'filters_run_count'                     : '{}',                 # do not change
 

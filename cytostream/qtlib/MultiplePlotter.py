@@ -49,7 +49,7 @@ class MultiplePlotter(QtGui.QWidget):
         model = Model()
         model.initialize(projectID,self.homeDir)
         channelView = log.log['channel_view']
-        self.channelList = model.get_file_channel_list(selectedFile)
+        self.channelList = log.log['alternate_channel_labels']
         
         ## initialize widgets
         self.initChannel1()

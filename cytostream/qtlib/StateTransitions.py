@@ -101,6 +101,8 @@ def move_to_open(mainWindow):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+
+'''
 def move_to_results_navigation(mainWindow,runNew=False):
     if mainWindow.controller.verbose == True:
         print "moving to results navigation"
@@ -129,7 +131,69 @@ def move_to_results_navigation(mainWindow,runNew=False):
     if mainWindow.pDock != None:
         mainWindow.pDock.set_btn_highlight('results navigation')
     return True
+'''
 
+def move_to_results_navigation(mainWindow,mode='menu'):
+    if mainWindow.controller.verbose == True:
+        print "moving to results navigation", mode
+
+    ## error checking
+    modeList = ['menu']
+
+    if mode not in modeList:
+        print "ERROR: move_to_results_navigation - bad mode", mode
+
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    if len(fileList) == 0:
+        mainWindow.display_info("No files have been loaded -- so results navigation mode cannot be displayed")
+        return False
+
+    ## check that thumbs are made
+    if mainWindow.log.log['selected_file'] == None:
+        mainWindow.log.log['selected_file'] = fileList[0]
+
+    runID = 'run1'
+    thumbDir = os.path.join(mainWindow.controller.homeDir,"figs",runID,mainWindow.log.log['selected_file']+"_thumbs")
+
+    if os.path.isdir(thumbDir) == False or len(os.listdir(thumbDir)) == 0:
+        print 'ERROR: move_to_results_navigation -- results have not been produced'
+
+    ## clean the layout
+    mainWindow.reset_layout()
+
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+    
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    
+    ## prepare variables
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+
+    if mainWindow.pDock == None:
+        mainWindow.add_pipeline_dock()
+
+    ## handle state
+    mainWindow.controller.log.log['current_state'] = 'Results Navigation'
+    mainWindow.update_highest_state()
+    mainWindow.controller.save()
+    masterChannelList = mainWindow.controller.masterChannelList
+    mainWindow.rnc = ResultsNavigationCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,mode=mode,
+                                             mainWindow=mainWindow)
+    ## add left dock
+    add_left_dock(mainWindow)
+    mainWindow.rnc.set_enable_disable()
+    #mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
+
+    ## handle layout
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    hbl.addWidget(mainWindow.rnc)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
+    mainWindow.refresh_main_widget()
+
+    return True
 
 def move_to_model(mainWindow,modelMode='progressbar'):
     if mainWindow.controller.verbose == True:
@@ -138,7 +202,7 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     ## error checking
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     if len(fileList) == 0:
-        mainWindow.display_info("No files have been loaded -- so quality assurance cannot be carried out")
+        mainWindow.display_info("No files have been loaded -- so model stage cannot be displayed")
         return False
     
     ## clean the layout
@@ -154,10 +218,9 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     mainWindow.controller.save()
 
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    channelList = mainWindow.model.get_master_channel_list()
+    channelList = mainWindow.controller.masterChannelList
     mainWindow.mc = ModelCenter(fileList,channelList,mode=modelMode,parent=mainWindow.mainWidget,
                                 runModelFn=mainWindow.run_progress_bar,mainWindow=mainWindow)
-
     ## handle docks
     add_left_dock(mainWindow)
     
@@ -165,6 +228,7 @@ def move_to_model(mainWindow,modelMode='progressbar'):
         mainWindow.add_pipeline_dock()
 
     mainWindow.mc.set_enable_disable()
+    mainWindow.pDock.enable_disable_states()
 
     ## finalize layout
     hbl = QtGui.QHBoxLayout()
@@ -214,7 +278,7 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     
     ## prepare variables
-    masterChannelList = mainWindow.model.get_master_channel_list()
+    masterChannelList = mainWindow.controller.masterChannelList
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
@@ -261,7 +325,7 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
         remove_left_dock(mainWindow)
 
     ## prepare variables
-    masterChannelList = mainWindow.model.get_master_channel_list()
+    masterChannelList = mainWindow.controller.masterChannelList
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 

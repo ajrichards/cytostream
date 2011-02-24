@@ -89,7 +89,7 @@ class ScatterPlotter(FigureCanvas):
         filterInFocus = self.log.log['filter_in_focus']
 
         ## specify channels
-        fileChannels = self.model.get_file_channel_list(selectedFile)
+        fileChannels = self.log.log['alternate_channel_labels']
         index1 = int(channel1Ind)
         index2 = int(channel2Ind)
         channel1 = fileChannels[index1]

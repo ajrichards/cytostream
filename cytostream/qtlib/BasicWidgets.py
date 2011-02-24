@@ -74,8 +74,7 @@ class ProgressBar(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
 
         self.running = False
-        vbl = QtGui.QVBoxLayout()#self
-        vbl.setAlignment(QtCore.Qt.AlignTop)
+        vbl = QtGui.QVBoxLayout()
         hbl1 = QtGui.QHBoxLayout()
         hbl1.setAlignment(QtCore.Qt.AlignCenter)
         hbl2 = QtGui.QHBoxLayout()
@@ -115,7 +114,8 @@ class ProgressBar(QtGui.QWidget):
             if self.button != None:
                 self.button.setText('Please wait...')
                 self.button.setEnabled(False)
-                
+                QtCore.QCoreApplication.processEvents()
+
             self.running = True
             
     def move_bar(self,step):
@@ -125,7 +125,7 @@ class ProgressBar(QtGui.QWidget):
         QtCore.QCoreApplication.processEvents()
 
     def set_callback(self,callback):
-        self.connect(self.button, QtCore.SIGNAL('clicked()'),callback)
+        self.connect(self.button,QtCore.SIGNAL('clicked()'),callback)
 
 class Tooltip(QtGui.QWidget):
     def __init__(self, msg='This is a tooltip', parent=None):

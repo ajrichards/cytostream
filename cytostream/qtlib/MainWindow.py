@@ -88,6 +88,7 @@ class MainWindow(QtGui.QMainWindow):
         self.lastChanI = None
         self.lastChanJ = None
         self.allFilePaths = []
+        self.controller.masterChannelList = None
         self.reset_layout()
 
     def reset_layout(self):
@@ -206,22 +207,30 @@ class MainWindow(QtGui.QMainWindow):
         ## initialize and load project
         goFlag = False
         self.controller.initialize_project(projectID)
+        self.controller.masterChannelList = self.model.get_master_channel_list()
+
         goFlag = self.controller.create_new_project(projectID)
         if goFlag == True:
             move_to_data_processing(self)
         else:
             print "ERROR: create new project did not succeed"
 
+
+
     def open_existing_project(self):
         '''
         a reference function to move to the open screen
+
         '''
+
         move_to_open(self)
 
     def open_existing_project_handler(self):
         '''
         from the open projects page open a selected project
+
         '''
+
         selectedProject = self.existingProjectOpener.selectedProject 
         if selectedProject == None:
             print "ERROR: mainWindow.open_existing_projects_handler - selected project is none"
@@ -232,10 +241,9 @@ class MainWindow(QtGui.QMainWindow):
         ## remove old docks
         remove_left_dock(self)
         self.removeDockWidget(self.pipelineDock)
-
-        self.controller.initialize_project(projectID,loadExisting=True)
         self.reset_view_workspace()
-        
+        self.controller.initialize_project(projectID,loadExisting=True)
+        self.controller.masterChannelList = self.model.get_master_channel_list()
         move_transition(self)
         self.refresh_state()
         
@@ -257,29 +265,38 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_state()
 
     def fileSave(self):
+        '''
+        saves current state of software
+
+        '''
+
         if self.controller.homeDir != None:
             self.controller.save()
         else:
             self.display_warning("Must open project first before saving")
+            return None
+
+        self.display_info("Progress saved")
 
     def fileSaveAs(self):
-        self.display_info("This function is not yet implimented")
+        self.display_info("This function is not yet implemented")
 
     def filePrint(self):
-        if self.image.isNull():
-            return
-        if self.printer is None:
-            self.printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-            self.printer.setPageSize(QtGui.QPrinter.Letter)
-        form = QtGui.QPrintDialog(self.printer, self)
-        if form.exec_():
-            painter = QtGui.QPainter(self.printer)
-            rect = painter.viewport()
-            size = self.image.size()
-            size.scale(rect.size(), QtCore.Qt.KeepAspectRatio)
-            painter.setViewport(rect.x(), rect.y(), size.width(),
-                                size.height())
-            painter.drawImage(0, 0, self.image)
+        self.display_info("This function is not yet implemented")
+        #if self.image.isNull():
+        #    return
+        #if self.printer is None:
+        #    self.printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
+        #    self.printer.setPageSize(QtGui.QPrinter.Letter)
+        #form = QtGui.QPrintDialog(self.printer, self)
+        #if form.exec_():
+        #    painter = QtGui.QPainter(self.printer)
+        #    rect = painter.viewport()
+        #    size = self.image.size()
+        #    size.scale(rect.size(), QtCore.Qt.KeepAspectRatio)
+        #    painter.setViewport(rect.x(), rect.y(), size.width(),
+        #                        size.height())
+        #    painter.drawImage(0, 0, self.image)
 
     def helpAbout(self):
         QtGui.QMessageBox.about(self, "About %s"%self.controller.appName,
@@ -413,8 +430,7 @@ class MainWindow(QtGui.QMainWindow):
     def run_progress_bar(self):
         mode = self.log.log['current_state']
         
-        ## save selected variables
-        self.set_selected_file()                                                                                                                          
+        ## save necessary variables
         self.set_selected_subsample()   
 
         ## handle subsampling
@@ -423,33 +439,30 @@ class MainWindow(QtGui.QMainWindow):
         else:
             subsample = self.log.log['subsample_analysis']
 
-        print 'running for subsample', subsample
-
         self.controller.handle_subsampling(subsample)
 
         fileList = get_fcs_file_names(self.controller.homeDir)
         if mode == 'Quality Assurance':
+            self.qac.progressBar.button.setText('Please wait...')
+            self.qac.progressBar.button.setEnabled(False)
+            QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
         if mode == 'Model':
-            self.set_model_to_run()
+            self.mc.set_disable()
+            QtCore.QCoreApplication.processEvents()
             self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
-            #remove_left_dock(self)
-            #self.mainWidget = QtGui.QWidget(self)
-            #self.progressBar = ProgressBar(parent=self.mainWidget,buttonLabel="Create the figures")
-            #self.progressBar.set_callback(self.create_results_thumbs)
-            #add_left_dock(self)
-            #hbl = QtGui.QHBoxLayout()
-            #hbl.setAlignment(QtCore.Qt.AlignCenter)
-            #hbl.addWidget(self.progressBar)
-            #self.vboxCenter.addLayout(hbl)
-            #self.mainWidget.setLayout(self.vbl)
-            #self.refresh_main_widget()
+            move_to_model(self,modelMode='progressbar')
+            self.mc.set_disable()
+            QtCore.QCoreApplication.processEvents()
+            self.mc.widgetSubtitle.setText("Creating figures...")
+            self.mc.progressBar.progressLabel.setText("Creating figures...")
+            subsample = self.controller.log.log['subsample_analysis']
+            modelRunID = 'run' + str(self.log.log['models_run_count'])
+            self.controller.handle_subsampling(subsample)
+            self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
+            move_to_results_navigation(self,mode='menu')
 
-    def create_results_thumbs(self):
-        self.controller.process_images('results',progressBar=self.progressBar,view=self)
-        move_to_results_navigation(self,runNew=True)
- 
     def recreate_figures(self):
         '''
         call back from state transtions to enable thumbnail figure recreation
@@ -461,6 +474,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.log.log['current_state'] == 'Quality Assurance':
             move_to_quality_assurance(self,mode='progressbar')
         elif self.log.log['current_state'] == 'Results Navigation':
+            move_to_model(self,modelMode='progressbar')
             print 'should be moving to results navigation progress bar'
 
     def plots_enable_disable(self,mode='thumbnails'):
@@ -469,12 +483,18 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
+        ## error check
+        if self.log.log['current_state'] not in ['Quality Assurance', 'Results Navigation']:
+            print "ERROR: MainWindow: plots_enable_disable -- called from bad state"
+
+        ## docks check
         if self.dockWidget == None:
             add_left_dock(self)
 
         if self.pDock == None:
             self.add_pipeline_dock()
 
+        ## enable/disable
         self.subsampleSelector.setEnabled(False)
         self.fileSelector.setEnabled(True)
         self.recreateBtn.setEnabled(True)
@@ -482,7 +502,7 @@ class MainWindow(QtGui.QMainWindow):
         self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
         self.modeSelector.set_checked(mode)
         self.pDock.contBtn.setEnabled(True)
-
+        mainWindow.pDock.set_btn_highlight(self.log.log['current_state'])
 
         if self.log.log['current_state'] == 'Quality Assurance':
             self.pDock.enable_continue_btn(lambda a=self: move_to_model(a))
@@ -601,7 +621,6 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        print 'refreshing state', self.log.log['current_state']
         if self.log.log['current_state'] == "Data Processing":
             move_to_data_processing(self,withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
@@ -633,9 +652,8 @@ class MainWindow(QtGui.QMainWindow):
             self.lastChanI = chanI
             self.lastChanJ = chanJ
         elif self.lastChanI == None or self.lastChanJ == None:
-            masterChannelList = self.model.get_master_channel_list()
-            self.lastChanI = masterChannelList[0]
-            self.lastChanJ = masterChannelList[1]
+            self.lastChanI = self.controller.masterChannelList[0]
+            self.lastChanJ = self.controller.masterChannelList[1]
 
         if self.lastChanI == None or self.lastChanJ == None:
             print "ERROR: lastChanI or lastChanJ not defined"
@@ -645,9 +663,8 @@ class MainWindow(QtGui.QMainWindow):
             self.mainWidget = QtGui.QWidget(self)
             subsample=self.log.log['subsample_qa']
             modelType=None
-            masterChannelList = self.model.get_master_channel_list()
-            channelI = masterChannelList.index(self.lastChanI)
-            channelJ = masterChannelList.index(self.lastChanJ)
+            channelI = self.controller.masterChannelList.index(self.lastChanI)
+            channelJ = self.controller.masterChannelList.index(self.lastChanJ)
             mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
                                  modelType=modelType,mode='qa')
             hbl.addWidget(mp)
@@ -705,7 +722,6 @@ class MainWindow(QtGui.QMainWindow):
             modelType,modelName= None,None
 
         self.mainWidget = QtGui.QWidget(self)
-        masterChannelList = self.model.get_master_channel_list()
         if viewMode == 'plot-2':
            nwv = TwoWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
                               modelType=modelType,mode=mode,modelName=modelName)

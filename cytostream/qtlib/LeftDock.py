@@ -72,14 +72,6 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget.setMaximumWidth(widgetWidth)
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
-    ## check to see if fileList needs adjusting
-    if mainWindow.log.log['current_state'] in ['Results Navigation']:
-        showModelSelector = True
-        modelsRun = get_models_run(mainWindow.controller.homeDir,mainWindow.possibleModels)
-    else:
-        showModelSelector = False
-        modelsRun = None
-
     if mainWindow.log.log['current_state'] == 'Initial':
         pass
     elif mainWindow.log.log['current_state'] == 'Quality Assurance':
@@ -95,7 +87,7 @@ def add_left_dock(mainWindow):
             fileList.remove(f)
 
     ## file selector
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.set_selected_file,
                                                fileDefault=mainWindow.log.log['selected_file'])
@@ -184,7 +176,7 @@ def add_left_dock(mainWindow):
         mainWindow.connect(mainWindow.modelSettingsBtn,QtCore.SIGNAL('clicked()'),msBtnFn)
 
     ## more recreate figures
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance']:
         mainWindow.recreateBtn = QtGui.QPushButton("Recreate figures")
         mainWindow.recreateBtn.setMaximumWidth(120)
         mainWindow.recreateBtn.setMinimumWidth(120)
@@ -195,7 +187,7 @@ def add_left_dock(mainWindow):
         vboxBottom.addLayout(rbLayout)
 
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model']:
+    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model', 'Results Navigation']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("More info")
         mainWindow.moreInfoBtn.setMaximumWidth(120)
         mainWindow.moreInfoBtn.setMinimumWidth(120)
