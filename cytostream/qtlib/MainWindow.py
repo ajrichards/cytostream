@@ -207,15 +207,12 @@ class MainWindow(QtGui.QMainWindow):
         ## initialize and load project
         goFlag = False
         self.controller.initialize_project(projectID)
-        self.controller.masterChannelList = self.model.get_master_channel_list()
 
         goFlag = self.controller.create_new_project(projectID)
         if goFlag == True:
             move_to_data_processing(self)
         else:
             print "ERROR: create new project did not succeed"
-
-
 
     def open_existing_project(self):
         '''
@@ -495,14 +492,19 @@ class MainWindow(QtGui.QMainWindow):
             self.add_pipeline_dock()
 
         ## enable/disable
-        self.subsampleSelector.setEnabled(False)
+        if self.log.log['current_state'] == 'Quality Assurance':
+            self.subsampleSelector.setEnabled(False)
+            self.recreateBtn.setEnabled(True)
+            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
+
+        if self.log.log['current_state'] == 'Results Navigation':
+            self.pDock.contBtn.setEnabled(False)
+
         self.fileSelector.setEnabled(True)
-        self.recreateBtn.setEnabled(True)
         self.modeSelector.setEnabled(True)
-        self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
         self.modeSelector.set_checked(mode)
         self.pDock.contBtn.setEnabled(True)
-        mainWindow.pDock.set_btn_highlight(self.log.log['current_state'])
+        self.pDock.enable_disable_states()
 
         if self.log.log['current_state'] == 'Quality Assurance':
             self.pDock.enable_continue_btn(lambda a=self: move_to_model(a))
@@ -537,33 +539,15 @@ class MainWindow(QtGui.QMainWindow):
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
             
         elif mode == 'Results Navigation':
-            ## error checking
-            modelsRun = get_models_run(self.controller.homeDir,self.possibleModels)
-            if len(modelsRun) == 0:
-                self.display_info("No models have been run yet -- so results cannot be viewed")
-                return False
-
-            self.log.log['selected_model'] = modelsRun[0] 
-
-            if self.log.log['selected_model'] not in modelsRun:
-                print "ERROR selected model not in models run"
-
-            ## thumbs viewer
             self.mainWidget = QtGui.QWidget(self)
             fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
-
-            if self.log.log['subsample_analysis'] == 'original':
-                imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
-            else:
-                subsample = str(int(float(self.log.log['subsample_analysis'])))
-                imgDir = os.path.join(self.controller.homeDir,'figs',"sub%s_%s"%(subsample,self.log.log['selected_model']))
+            imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
             
             if os.path.isdir(imgDir) == False:
-                print "ERROR: a bad imgDir has been specified", imgDir
+                print "ERROR: MainWindow.display_thumbnails -- a bad imgDir has been specified", imgDir
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
-        
         else:
             print "ERROR: bad mode specified in display thumbnails"
 
@@ -587,6 +571,14 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
+    def file_selector_callback(self):
+        self.set_selected_file()
+        
+        ## get vis mode
+        
+
+
+
     def set_selected_file(self):
         '''
         set the selecte file
@@ -606,7 +598,7 @@ class MainWindow(QtGui.QMainWindow):
         if selectedSubsample == 'All Data':
             selectedSubsample = 'original'
 
-        print 'setting selected subsample...', selectedSubsample, self.log.log['current_state']
+        #print 'setting selected subsample...', selectedSubsample, self.log.log['current_state']
 
         if self.log.log['current_state'] == 'Quality Assurance':
             self.log.log['subsample_qa'] = selectedSubsample
@@ -614,6 +606,17 @@ class MainWindow(QtGui.QMainWindow):
             self.log.log['subsample_analysis'] = selectedSubsample
             
         self.controller.save()
+
+    def get_master_channel_list(self):
+        ''' 
+        returns the master channels list
+
+        '''
+
+        if self.controller.masterChannelList == None or len(self.controller.masterChannelList) == 0:
+            self.controller.masterChannelList = self.model.get_master_channel_list()
+        return self.controller.masterChannelList
+
 
     def refresh_state(self,withProgressBar=False,qaMode='thumbnails'):
         '''
@@ -643,6 +646,7 @@ class MainWindow(QtGui.QMainWindow):
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         move_transition(self,repaint=True)
         self.reset_layout()
+        masterChannelList = self.get_master_channel_list()
 
         if img != None:
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
@@ -652,45 +656,32 @@ class MainWindow(QtGui.QMainWindow):
             self.lastChanI = chanI
             self.lastChanJ = chanJ
         elif self.lastChanI == None or self.lastChanJ == None:
-            self.lastChanI = self.controller.masterChannelList[0]
-            self.lastChanJ = self.controller.masterChannelList[1]
+            self.lastChanI = masterChannelList[0]
+            self.lastChanJ = masterChannelList[1]
 
         if self.lastChanI == None or self.lastChanJ == None:
             print "ERROR: lastChanI or lastChanJ not defined"
             return False
 
         if mode == "Quality Assurance":
-            self.mainWidget = QtGui.QWidget(self)
             subsample=self.log.log['subsample_qa']
-            modelType=None
-            channelI = self.controller.masterChannelList.index(self.lastChanI)
-            channelJ = self.controller.masterChannelList.index(self.lastChanJ)
-            mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
-                                 modelType=modelType,mode='qa')
-            hbl.addWidget(mp)
+            modelType,modelName=None,None
+            modelMode='qa'
+        elif mode == "Results Navigation":     
+            subsample=self.log.log['subsample_analysis']
+            modelType=self.log.log['results_mode']
+            modelName=self.log.log['selected_model']
+            modelMode='results'
 
-        elif mode == "Results Navigation":
-            print 'should be handling results nav scatter'
-            #self.set_selected_model()
-            #self.mainWidget = QtGui.QWidget(self)
-            #
-            #if self.log.log['subsample_analysis'] == 'original':
-            #    modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + self.log.log['selected_model']
-            #else:
-            #    subset = str(int(float(self.log.log['subsample'])))
-            #    modelName = re.sub("\.pickle|\.fcs","",self.log.log['selected_file']) + "_" + "sub%s_%s"%(subset,self.log.log['selectedModel'])
-            #
-            #sp = ScatterPlotter(self.controller.homeDir,self.log.log['selected_file'],self.lastChanI,self.lastChanJ,subset=self.log.log['subsample'],
-            #                    modelName=modelName,modelType=self.log.log['results_mode'],parent=self.mainWidget)
-            #ntb = NavigationToolbar(sp, self.mainWidget)
-            #vbl.addWidget(sp)
-            #vbl.addWidget(ntb)
-        
-            ## enable buttons
-            #self.dock.enable_all()
+        self.mainWidget = QtGui.QWidget(self)
+        channelI = masterChannelList.index(self.lastChanI)
+        channelJ = masterChannelList.index(self.lastChanJ)
+        mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
+                             modelType=modelType,mode=modelMode,modelName=modelName)
+        hbl.addWidget(mp)
 
         ## enable/disable
-        self.plots_enable_disable(mode='plot-1') 
+        self.plots_enable_disable(mode='plot-1')
 
         ## finalize layout
         self.vboxCenter.addLayout(hbl)
@@ -716,10 +707,11 @@ class MainWindow(QtGui.QMainWindow):
             mode = 'qa'
             subsample=self.log.log['subsample_qa']
             modelType,modelName= None,None
-        if mode == "ReultsNavigation":
+        if mode == "Results Navigation":
             mode = 'results'
-            subsample=self.log.log['subsample_qa']
-            modelType,modelName= None,None
+            subsample=self.log.log['subsample_analysis']
+            modelType=self.log.log['results_mode']
+            modelName=self.log.log['selected_model']
 
         self.mainWidget = QtGui.QWidget(self)
         if viewMode == 'plot-2':

@@ -67,15 +67,15 @@ class DataProcessingCenter(QtGui.QWidget):
         if len(self.fileList) > 0 and self.showProgressBar == False:
             self.make_channels_sheet()
             self.make_files_sheet()
-            vbox.addLayout(self.hbox)
         else:
             self.init_no_file_view()
-            vbox.addLayout(self.hbox)
 
-        self.setLayout(vbox)
+        if self.mainWindow == None:
+            vbox.addLayout(self.hbox)
+            self.setLayout(vbox)
 
         ## save the initial results for alternate channels and files
-        if self.showProgressBar == False:
+        if len(self.fileList) > 0 and self.showProgressBar == False:
             self.channels_save_callback(msg=False)
             self.files_save_callback(msg=False)
 
@@ -123,9 +123,11 @@ class DataProcessingCenter(QtGui.QWidget):
         nfLayout2a.addWidget(QtGui.QLabel('Welcome to cytostream'))
         
         if self.showProgressBar == False:
-            nfLayout2b.addWidget(QtGui.QLabel('To begin a project load your file(s)'))
+            self.widgetSubtitle = QtGui.QLabel('To begin a project load your file(s)') 
         else:
-            nfLayout2b.addWidget(QtGui.QLabel('File compensation and transformation'))
+            self.widgetSubtitle = QtGui.QLabel('File compensation and transformation')
+
+        nfLayout2b.addWidget(self.widgetSubtitle)
 
         ## button widgets
         self.nfLoadBtn = QtGui.QPushButton("Load Files")
@@ -176,16 +178,28 @@ class DataProcessingCenter(QtGui.QWidget):
             self.init_progressbar()
 
         ## finalize layout
-        nfLayout2.addLayout(nfLayout2a)
-        nfLayout2.addLayout(nfLayout2b)
-        nfLayout1.addLayout(nfLayout2)
-        nfLayout1.addLayout(nfLayout3)
-        nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
-        nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
-        nfLayout1.addLayout(nfLayout4)
-        if self.progressBar != None:
-            nfLayout1.addLayout(self.pbarLayout1)
-        self.hbox.addLayout(nfLayout1)
+        if self.mainWindow == None:
+            nfLayout2.addLayout(nfLayout2a)
+            nfLayout2.addLayout(nfLayout2b)
+            nfLayout1.addLayout(nfLayout2)
+            nfLayout1.addLayout(nfLayout3)
+            nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
+            nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
+            nfLayout1.addLayout(nfLayout4)
+            if self.progressBar != None:
+                nfLayout1.addLayout(self.pbarLayout1)
+            self.hbox.addLayout(nfLayout1)
+        else:
+            self.mainWindow.vboxTop.addLayout(nfLayout2a)
+            self.mainWindow.vboxTop.addLayout(nfLayout2b)
+            self.mainWindow.vboxTop.addLayout(nfLayout2)
+            self.mainWindow.vboxCenter.addLayout(nfLayout3)
+            self.mainWindow.vboxCenter.addWidget(QtGui.QLabel('\t\t\t'))
+            self.mainWindow.vboxCenter.addWidget(QtGui.QLabel('\t\t\t'))
+            self.mainWindow.vboxCenter.addLayout(nfLayout4)
+            if self.progressBar != None:
+                self.mainWindow.vboxCenter.addLayout(self.pbarLayout1)
+            self.mainWindow.vboxCenter.addLayout(nfLayout1)
         
     def init_progressbar(self):
         ## add progress bar if loading
@@ -290,7 +304,10 @@ class DataProcessingCenter(QtGui.QWidget):
         ssLayout.addLayout(ssLayout1)
         ssLayout.addLayout(ssLayout2)
         ssLayout.addLayout(ssLayout3)
-        self.hbox.addLayout(ssLayout)
+        if self.mainWindow == None:
+            self.hbox.addLayout(ssLayout)
+        else:
+            self.mainWindow.vboxCenter.addLayout(ssLayout)
 
     def make_files_sheet(self,firstRun=True):
         ## setup layouts
@@ -369,7 +386,10 @@ class DataProcessingCenter(QtGui.QWidget):
             ssLayout.addLayout(ssLayout1)
             ssLayout.addLayout(ssLayout2)
             ssLayout.addLayout(ssLayout3)
-            self.hbox.addLayout(ssLayout)
+            if self.mainWindow == None:
+                self.hbox.addLayout(ssLayout)
+            else:
+                self.mainWindow.vboxCenter.addLayout(ssLayout)
 
     def generic_callback(self):
         print "generic callback"
