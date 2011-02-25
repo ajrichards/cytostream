@@ -101,38 +101,6 @@ def move_to_open(mainWindow):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
-
-'''
-def move_to_results_navigation(mainWindow,runNew=False):
-    if mainWindow.controller.verbose == True:
-        print "moving to results navigation"
- 
-    ## error checking
-    modelsRun = get_models_run(mainWindow.controller.homeDir,mainWindow.possibleModels)
-    if len(modelsRun) == 0:
-        mainWindow.display_info("No models have been run yet -- so results cannot be viewed")
-        return False
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-    mainWindow.log.log['current_state'] = "Results Navigation"
-    goFlag = mainWindow.display_thumbnails(runNew)
-
-    if goFlag == False:
-        print "WARNING: failed to display thumbnails not moving to results navigation"
-        return False
-
-    add_left_dock(mainWindow)
-
-    ## disable buttons
-    mainWindow.dock.disable_all()
-    mainWindow.track_highest_state()
-    mainWindow.controller.save()
-    if mainWindow.pDock != None:
-        mainWindow.pDock.set_btn_highlight('results navigation')
-    return True
-'''
-
 def move_to_results_navigation(mainWindow,mode='menu'):
     if mainWindow.controller.verbose == True:
         print "moving to results navigation", mode
@@ -177,7 +145,7 @@ def move_to_results_navigation(mainWindow,mode='menu'):
     mainWindow.controller.log.log['current_state'] = 'Results Navigation'
     mainWindow.update_highest_state()
     mainWindow.controller.save()
-    masterChannelList = mainWindow.controller.masterChannelList
+    masterChannelList = mainWindow.get_master_channel_list()
     mainWindow.rnc = ResultsNavigationCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,mode=mode,
                                              mainWindow=mainWindow)
     ## add left dock
@@ -218,7 +186,7 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     mainWindow.controller.save()
 
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
-    channelList = mainWindow.controller.masterChannelList
+    channelList = mainWindow.get_master_channel_list()
     mainWindow.mc = ModelCenter(fileList,channelList,mode=modelMode,parent=mainWindow.mainWidget,
                                 runModelFn=mainWindow.run_progress_bar,mainWindow=mainWindow)
     ## handle docks
@@ -278,7 +246,7 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     
     ## prepare variables
-    masterChannelList = mainWindow.controller.masterChannelList
+    masterChannelList = mainWindow.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
@@ -325,7 +293,8 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
         remove_left_dock(mainWindow)
 
     ## prepare variables
-    masterChannelList = mainWindow.controller.masterChannelList
+    masterChannelList = mainWindow.get_master_channel_list()
+
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 

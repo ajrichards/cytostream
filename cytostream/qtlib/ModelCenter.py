@@ -93,10 +93,8 @@ class ModelCenter(QtGui.QWidget):
         if self.mode == 'progressbar' and self.mainWindow !=None:
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(True)
-            #self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
         elif self.mode == 'edit' and self.mainWindow !=None:
-            #self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(True)
             self.mainWindow.pDock.inactivate_all()
@@ -112,7 +110,6 @@ class ModelCenter(QtGui.QWidget):
             self.widgetSubtitle.setText("Running model...")
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
-            #self.mainWindow.fileSelector.setEnabled(False)
             self.mainWindow.subsampleSelector.setEnabled(False)
             self.mainWindow.modelToRunSelector.setEnabled(False)
             self.mainWindow.modelModeSelector.setEnabled(False)
@@ -345,61 +342,10 @@ class ModelCenter(QtGui.QWidget):
         n = len(self.masterChannelList)
         checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
         excludedChannels = np.where(np.array([i for i in checkStates]) == 0)[0].tolist()
-        print 'excluded channels', excludedChannels
         
         if self.mainWindow != None:
             self.mainWindow.log.log['excluded_channels_analysis'] = excludedChannels
             self.mainWindow.controller.save()
-
-        #
-        #if self.log != None:
-        #    self.log.log['alternate_channel_labels'] = altLabels
-        #    self.log.log['excluded_channels_qa'] = excludedChannels
-        #    self.controller.save()
-
-        ## excluded files save
-        #n = len(self.fileList)
-        #altFiles = [str(self.modelFiles.data(self.modelFiles.index(i,2)).toString()) for i in range(n)]
-        #
-        #if self.log != None:
-        #    self.log.log['alternate_file_labels'] = altFiles
-        #    self.controller.save()
-        #else:
-        #    print 'alternate file names', altFiles
-
-        #n = len(self.fileList)
-        #checkStates = [self.modelFiles.itemFromIndex(self.modelFiles.index(i,0)).checkState() for i in range(n)]
-        #filesToRemove = np.where(np.array([i for i in checkStates]) == 2)[0].tolist()
-        #
-        #if len(filesToRemove) > 0:
-        #    includedIndices = list(set(range(n)).difference(set(filesToRemove)))
-        #    
-        #    if len(filesToRemove) > 1:
-        #        reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
-        #                                           "Are you sure you want to completely remove %s files?"%(len(filesToRemove)),
-        #                                           QtGui.QMessageBox.Yes,QtGui.QMessageBox.No)
-        #    else:
-        #        reply = QtGui.QMessageBox.question(self, self.mainWindow.controller.appName,
-        #                                           "Are you sure you want to completely remove this file?",QtGui.QMessageBox.Yes,
-        #                                           QtGui.QMessageBox.No)
-        #        
-        #    if reply == QtGui.QMessageBox.Yes:
-        #        ## remove all files associated with each fcs file
-        #        if self.log != None:
-        #            for indToRemove in filesToRemove:
-        #                fileToRemove = self.fileList[indToRemove]
-        #                self.controller.rm_fcs_file(fileToRemove)
-        # 
-        #        ## reset file list and recreate widget
-        #        self.fileList = np.array(self.fileList)[includedIndices].tolist()
-        #        self.modelFiles.clear()
-        #        self.make_files_sheet(firstRun=False)
-        #
-        #    ## refresh log
-        #    self.files_save_callback()
-        #else:
-        #    msg = "Select one or more files in order to carry out file removal"
-        #    reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
     def generic_callback(self):
         print 'This button does nothing'

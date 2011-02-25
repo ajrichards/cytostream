@@ -88,8 +88,9 @@ def add_left_dock(mainWindow):
 
     ## file selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+        fsCallback = mainWindow.file_selector_callback
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
-                                               selectionFn=mainWindow.set_selected_file,
+                                               selectionFn=mainWindow.file_selector_callback,
                                                fileDefault=mainWindow.log.log['selected_file'])
         fsLayout = QtGui.QHBoxLayout()
         fsLayout.setAlignment(QtCore.Qt.AlignLeft)
