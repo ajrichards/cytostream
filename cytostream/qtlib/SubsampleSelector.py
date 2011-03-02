@@ -50,7 +50,8 @@ class SubsampleSelector(QtGui.QWidget):
             subsampleDefault = "All Data"
 
         if subsampleDefault != None:
-            subsampleDefault = str(int(float(subsampleDefault)))
+            if subsampleDefault != "All Data":
+                subsampleDefault = str(int(float(subsampleDefault)))
             if subsampleList.__contains__(subsampleDefault):
                 self.subsampleSelector.setCurrentIndex(subsampleList.index(subsampleDefault))
             else:

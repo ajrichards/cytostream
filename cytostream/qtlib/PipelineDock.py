@@ -13,6 +13,7 @@ class PipelineDock(QtGui.QWidget):
         self.eSize = eSize
         self.log = log
         self.allStates = allStates
+        self.dataProcessingBtn = None
 
         ## declared variables
         self.buff = 2.0
@@ -31,6 +32,10 @@ class PipelineDock(QtGui.QWidget):
         self.setAutoFillBackground(True)
 
     def enable_disable_states(self):
+        
+        if self.dataProcessingBtn == None:
+            return
+
         highestStateInd = int(self.log.log['highest_state'])
         currentState = self.log.log['current_state']
         highestState = self.allStates[highestStateInd]

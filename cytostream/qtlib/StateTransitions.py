@@ -13,23 +13,19 @@ __author__ = "A Richards"
 import os,sys,re
 import numpy as np
 from PyQt4 import QtGui,QtCore
-
 from cytostream import get_fcs_file_names, get_project_names
 from cytostream.qtlib import remove_left_dock, add_left_dock
 from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
-from cytostream.qtlib import OneDimViewer
+from cytostream.qtlib import OneDimViewer, Preferences
 
 def move_to_initial(mainWindow):
 
-    ## remove docks
-    if mainWindow.pDock != None:
-        mainWindow.removeDockWidget(mainWindow.pipelineDock)
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-        
+    ## handle docks
+    mainWindow.restore_docks()
+   
     ## set the state
     mainWindow.controller.log.log['current_state'] = 'Initial'
     mainWindow.reset_layout()
@@ -71,27 +67,22 @@ def move_to_open(mainWindow):
         else:
             mainWindow.controller.save()
     
+    ## clean the layout
     mainWindow.controller.reset_workspace()
     mainWindow.reset_layout()
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-
-    closeBtnFn = lambda a=mainWindow: move_to_initial(a)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+
+    ## create open widget
+    closeBtnFn = lambda a=mainWindow: move_to_initial(a)
     projectList = get_project_names(mainWindow.controller.baseDir)
     mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
                                                            closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
-    ## add right dock
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
+    ## handle docks
+    mainWindow.restore_docks(override=True)
 
     ## enable disable other widgets
     mainWindow.pDock.inactivate_all()
     mainWindow.pDock.contBtn.setEnabled(False)
-
-    ## add left dock
-    add_left_dock(mainWindow)
 
     ## layout
     hbl = QtGui.QHBoxLayout()
@@ -126,32 +117,24 @@ def move_to_results_navigation(mainWindow,mode='menu'):
     if os.path.isdir(thumbDir) == False or len(os.listdir(thumbDir)) == 0:
         print 'ERROR: move_to_results_navigation -- results have not been produced'
 
-    ## clean the layout
+    ## clean the layout and declare variables
     mainWindow.reset_layout()
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-    
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-    
-    ## prepare variables
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
-
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
 
     ## handle state
     mainWindow.controller.log.log['current_state'] = 'Results Navigation'
     mainWindow.update_highest_state()
     mainWindow.controller.save()
+
+    ## create center widget
     masterChannelList = mainWindow.get_master_channel_list()
     mainWindow.rnc = ResultsNavigationCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,mode=mode,
                                              mainWindow=mainWindow)
-    ## add left dock
-    add_left_dock(mainWindow)
-    mainWindow.rnc.set_enable_disable()
-    #mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
+    ## handle docks
+    mainWindow.restore_docks()
+    ##mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
 
     ## handle layout
     hbl = QtGui.QHBoxLayout()
@@ -175,9 +158,6 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     
     ## clean the layout
     mainWindow.reset_layout()
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow) 
     
     ## manage the state
@@ -185,18 +165,14 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     mainWindow.update_highest_state()
     mainWindow.controller.save()
 
+    ## create center widget
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     channelList = mainWindow.get_master_channel_list()
     mainWindow.mc = ModelCenter(fileList,channelList,mode=modelMode,parent=mainWindow.mainWidget,
                                 runModelFn=mainWindow.run_progress_bar,mainWindow=mainWindow)
-    ## handle docks
-    add_left_dock(mainWindow)
-    
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
 
-    mainWindow.mc.set_enable_disable()
-    mainWindow.pDock.enable_disable_states()
+    ## handle docks
+    mainWindow.restore_docks()
 
     ## finalize layout
     hbl = QtGui.QHBoxLayout()
@@ -238,11 +214,7 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
         return True
 
     ## clean the layout
-    mainWindow.reset_layout()
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-    
+    mainWindow.reset_layout()    
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     
     ## prepare variables
@@ -250,23 +222,19 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
-
     ## handle state
     mainWindow.controller.log.log['current_state'] = 'Quality Assurance'
     mainWindow.update_highest_state()
     mainWindow.controller.save()
 
+    ## create center widget
     mainWindow.qac = QualityAssuranceCenter(fileList,masterChannelList,parent=mainWindow.mainWidget,
                                             mainWindow=mainWindow)
     
     mainWindow.qac.progressBar.set_callback(mainWindow.run_progress_bar)
 
-    ## add left dock
-    add_left_dock(mainWindow)
-    mainWindow.qac.set_enable_disable()
-    mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
+    ## handle docks
+    mainWindow.restore_docks()
 
     ## handle layout
     hbl = QtGui.QHBoxLayout()
@@ -286,23 +254,18 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
         mainWindow.display_info('To begin either load an existing project or create a new one')
         return False
 
-    ## clean the layout
+    ## clean the layout and prepare variables
     mainWindow.reset_layout()
-
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-
-    ## prepare variables
-    masterChannelList = mainWindow.get_master_channel_list()
-
-    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    masterChannelList = mainWindow.get_master_channel_list()
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
 
     ## create a edit menu function
     def move_to_edit_menu(mainWindow):
 
         ## clean the layout
         mainWindow.reset_layout()
+        mainWindow.mainWidget = QtGui.QWidget(mainWindow)
 
         if mainWindow.pDock != None:
             mainWindow.pDock.unset_all_highlights()
@@ -310,18 +273,12 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
             remove_left_dock(mainWindow)
 
         closeBtnFn = lambda a=mainWindow: move_to_data_processing(a)
-        mainWindow.mainWidget = QtGui.QWidget(mainWindow)
         defaultTransform = mainWindow.log.log['selected_transform']
         mainWindow.editMenu = EditMenu(parent=mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
                                        mainWindow=mainWindow)
 
-        ## add right dock
-        if mainWindow.pDock == None:
-            mainWindow.add_pipeline_dock()
-
-        ## add left dock
-        add_left_dock(mainWindow)
-        mainWindow.editMenu.set_enable_disable()
+        ## handle dock widgets
+        mainWindow.restore_docks()
 
         ## layout
         hbl = QtGui.QHBoxLayout()
@@ -340,8 +297,7 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
 
         return allFiles
 
-    showProgressBar = False
-
+    ## determine whether or not to show progress bar
     if len(mainWindow.allFilePaths) > 0 or withProgressBar == True:
         showProgressBar = True
     else:
@@ -352,16 +308,12 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     mainWindow.update_highest_state()
     mainWindow.controller.save()
 
-    ## create widgets
+    ## create center widget
     mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=mainWindow.mainWidget,
                                           mainWindow=mainWindow,showProgressBar=showProgressBar,editBtnFn=lambda a=mainWindow: move_to_edit_menu(a))
 
     ## handle docks
-    add_left_dock(mainWindow)
-    if mainWindow.pDock == None:
-        mainWindow.add_pipeline_dock()
-
-    mainWindow.dpc.set_enable_disable()
+    mainWindow.restore_docks()
 
     ## handle layout
     hbl = QtGui.QHBoxLayout()
@@ -371,8 +323,6 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
     
-    ## handle state transfer
-    mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
     return True
 
 def move_to_one_dim_viewer(mainWindow):
@@ -387,9 +337,6 @@ def move_to_one_dim_viewer(mainWindow):
     move_transition(mainWindow,repaint=True)
     mainWindow.reset_layout()
 
-    if mainWindow.dockWidget != None:
-        remove_left_dock(mainWindow)
-
     if mainWindow.log.log['current_state'] == 'Initial':
         pass
     elif mainWindow.log.log['current_state'] == 'Quality Assurance':
@@ -401,9 +348,12 @@ def move_to_one_dim_viewer(mainWindow):
     
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     mainWindow.odv = OneDimViewer(mainWindow.controller.homeDir,subset=subsample,background=True,parent=mainWindow.mainWidget)
-    add_left_dock(mainWindow)
+
+    ## handle docks
+    mainWindow.restore_docks()
     mainWindow.plots_enable_disable(mode='histogram')
 
+    ## handle layout
     hbl = QtGui.QHBoxLayout()
     hbl.setAlignment(QtCore.Qt.AlignCenter)
     hbl.addWidget(mainWindow.odv)
@@ -411,6 +361,29 @@ def move_to_one_dim_viewer(mainWindow):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+def move_to_preferences(mainWindow):
+    if mainWindow.controller.verbose == True:
+        print "moving to preferences"
+
+    ## clean the layout
+    move_transition(mainWindow,repaint=True)
+    mainWindow.reset_layout()
+
+    ## preferences widget    
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    mainWindow.preferences = Preferences(parent=mainWindow.mainWidget)
+
+    ## handle docks
+    mainWindow.restore_docks()
+    mainWindow.plots_enable_disable(mode='histogram')
+
+    ## handle layout
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    hbl.addWidget(mainWindow.preferences)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
+    mainWindow.refresh_main_widget()
 
 def move_to_results_summary(mainWindow,runNew=False):
     mainWindow.display_info("This stage is not available yet")

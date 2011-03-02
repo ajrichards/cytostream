@@ -33,7 +33,7 @@ from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
 from cytostream.qtlib import move_to_model, move_to_results_navigation
-from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock
+from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
 from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, TwoWayViewer,ThreeWayViewer,FourWayViewer
 from cytostream.qtlib import SixWayViewer
 
@@ -125,7 +125,16 @@ class MainWindow(QtGui.QMainWindow):
     #
     #################################################
     
+    def restore_docks(self,override=False):
+        '''
+        a dummy function to restore the application docks
+        '''
+
+        restore_docks(self,override=override)
+
     def add_pipeline_dock(self,noBtns=False):
+        
+        ## prepare widget
         self.pipelineDock = QtGui.QDockWidget(self)
         self.pipelineDock.setObjectName("PipelineDockWidget")
         self.pipelineDock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea|QtCore.Qt.BottomDockWidgetArea)
@@ -199,6 +208,7 @@ class MainWindow(QtGui.QMainWindow):
 
         ## check to see if project creation was canceled
         if projectID == '':
+            self.status.showMessage("New project creation aborted", 5000)
             return None
 
         if self.controller.verbose == True:
@@ -211,6 +221,7 @@ class MainWindow(QtGui.QMainWindow):
         goFlag = self.controller.create_new_project(projectID)
         if goFlag == True:
             move_to_data_processing(self)
+            self.status.showMessage("New project successfully created", 5000)
         else:
             print "ERROR: create new project did not succeed"
 
@@ -221,6 +232,7 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         move_to_open(self)
+        self.status.showMessage("Existing project successfully loaded", 5000)
 
     def open_existing_project_handler(self):
         '''
@@ -385,6 +397,14 @@ class MainWindow(QtGui.QMainWindow):
 
         move_to_model(self,modelMode='edit')
 
+    def handle_model_edit_return(self):
+        '''
+        handles the model edit return
+
+        '''
+        move_to_model(self,modelMode='progressbar')
+
+
     def handle_visualization_modes(self,item=None):
         '''
         handles the switching between visualization modes for qa and results
@@ -411,6 +431,7 @@ class MainWindow(QtGui.QMainWindow):
             self.handle_nway_viewer(item)
         else:
             self.display_info("not available yet")
+            print "ERROR: mainWindow.handle_visualization_modes -- bad item", item
 
     def update_highest_state(self):
         '''
@@ -571,12 +592,13 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
         return True
 
-    def file_selector_callback(self):
+    def file_selector_callback(self,item=None):
         self.set_selected_file()
         
         ## get vis mode
+        vizMode = str(self.modeSelector.get_selected())
         
-
+        self.handle_visualization_modes(item=vizMode)
 
 
     def set_selected_file(self):

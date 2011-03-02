@@ -75,8 +75,8 @@ class ModelCenter(QtGui.QWidget):
             ## return button
             self.returnBtn = QtGui.QPushButton("return")
             self.returnBtn.setMaximumWidth(100)
-            if returnBtnFn != None:
-                self.connect(self.returnBtn, QtCore.SIGNAL('clicked()'),self.returnBtnFn)
+            if self.mainWindow != None:
+                self.connect(self.returnBtn, QtCore.SIGNAL('clicked()'),self.mainWindow.handle_model_edit_return)
             btnBox.addWidget(self.returnBtn)
        
         ## finalize layout

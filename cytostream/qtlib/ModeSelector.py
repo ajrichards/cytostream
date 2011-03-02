@@ -63,12 +63,16 @@ class ModeSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
+    def get_selected(self):
+        return self.modeSelector.selectedItem
+
     def set_checked(self,modeLabel):
         if self.modeList.__contains__(modeLabel) == False:
             print "ERROR: ModeSelector - bad mode label in set_checked"
             return None
 
         self.modeSelector.btns[modeLabel].setChecked(True)
+        self.modeSelector.selectedItem = modeLabel
 
     def generic_callback(self):
         print 'callback does not do anything yet'
