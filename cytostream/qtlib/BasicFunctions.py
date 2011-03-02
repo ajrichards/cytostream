@@ -40,8 +40,7 @@ def move_transition(mainWindow,repaint=False):
     mainWindow.refresh_main_widget()
 
     if repaint == True:
-        QtCore.QCoreApplication.processEvents() 
-
+        QtCore.QCoreApplication.processEvents()
 
 ### Run the tests 
 if __name__ == '__main__':

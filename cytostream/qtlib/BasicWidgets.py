@@ -30,6 +30,7 @@ class RadioBtnWidget(QtGui.QWidget):
 
             if default != None and bLabel == default:
                 self.btns[bLabel].setChecked(True)
+                self.selectedItem = bLabel
 
         self.setLayout(vbox)
 

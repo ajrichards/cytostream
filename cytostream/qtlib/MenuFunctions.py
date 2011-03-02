@@ -3,6 +3,50 @@
 import sys,re,os
 from PyQt4 import QtGui,QtCore
 from cytostream.qtlib import remove_left_dock, add_left_dock
+from cytostream.qtlib import move_to_preferences
+from cytostream.qtlib import move_to_quality_assurance
+
+def restore_docks(mainWindow,override=False,mode=None):
+    '''
+    a general function to restore dock presence 
+
+    '''
+
+    if mainWindow.log.log['current_state'] == "Initial" and override == False:
+        return None
+
+    ## remove old if necessary
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+    if mainWindow.pDock != None:
+        mainWindow.removeDockWidget(mainWindow.pipelineDock)
+
+    ## add new
+    mainWindow.add_pipeline_dock()
+    add_left_dock(mainWindow)
+    
+    if mainWindow.controller.homeDir == None:
+        return
+
+    currentState = mainWindow.log.log['current_state']
+    
+    if currentState == 'Data Processing':
+        mainWindow.dpc.set_enable_disable()
+        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+    elif currentState == 'Quality Assurance':
+        mainWindow.qac.set_enable_disable()
+        mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
+    elif currentState == 'Model':
+        mainWindow.mc.set_enable_disable()
+        mainWindow.pDock.inactivate_all()
+    elif currentState == 'Results Navigation':
+        mainWindow.rnc.set_enable_disable()
+    elif currentState == 'Results Summary':
+        pass
+    else:
+        mainWindow.pDock.inactivate_all()
+
+    #mainWindow.pDock.enable_disable_states()
 
 def add_actions(mainWindow, target, actions):
     '''
@@ -16,8 +60,7 @@ def add_actions(mainWindow, target, actions):
             target.addAction(action)
 
 def create_action(mainWindow, text, slot=None, shortcut=None, icon=None,
-                  tip=None, checkable=False, signal="triggered()"):
-    
+                  tip=None, checkable=False, signal="triggered()"):    
     '''
     create menu actions
 
@@ -66,14 +109,11 @@ def create_menubar_toolbar(mainWindow):
     fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
                                    "Ctrl+Q", "filequit", "Close the application")
     ## edit menu actions
-    editDataProcessing= create_action(mainWindow,"&Data Processing", lambda a=mainWindow: move_to_data_processing(a),
-                                                 "Ctrl+D", "dataprocessing", "Move to Data Processing")
-    editQualityAssurance= create_action(mainWindow,"Quality &Assurance", lambda a=mainWindow: move_to_quality_assurance(a),
-                                                   "Ctrl+A", "qualityassurance", "Move to Quality Assurance")
-    editModel= create_action(mainWindow,"&Model", lambda a=mainWindow: move_to_model(a),
-                             "Ctrl+M", "model", "Move to Model")
-    editResultsNavigation = create_action(mainWindow,"&Results Navigation", lambda a=mainWindow: move_to_results_navigation(a),
-                                          "Ctrl+R", "resultsnavigation", "Move to Results Navigation")
+    editPreferences = create_action(mainWindow,"&Preferences", lambda a=mainWindow: move_to_preferences(a),
+                                    "Ctrl+P", None, "Application preferences")
+    editRestoreDocks = create_action(mainWindow,"&Restore docks", lambda a=mainWindow: restore_docks(a),
+                                     "Ctrl+R", None, "Restore Docks")
+
     ## tool menu actions
     OneDimViewerAction = create_action(mainWindow,"One Dimenstional Viewer ", lambda a=mainWindow: move_to_one_dim_viewer(a))
     ResultsHeatmapSummary = create_action(mainWindow,"Results Heatmap Summary ", lambda a=mainWindow: move_to_results_heatmap_summary(a))
@@ -84,10 +124,6 @@ def create_menubar_toolbar(mainWindow):
     helpHelpAction = create_action(mainWindow,"&Help", mainWindow.helpHelp,
                                    QtGui.QKeySequence.HelpContents)
 
-    #################################
-    # Menu definations
-    #################################
-
     ## define file menu
     mainWindow.fileMenu = mainWindow.menuBar().addMenu("&File")
     mainWindow.fileMenuActions = (fileNewAction,fileOpenAction,
@@ -96,9 +132,9 @@ def create_menubar_toolbar(mainWindow):
     add_actions(mainWindow,mainWindow.fileMenu,mainWindow.fileMenuActions)
 
     ## define edit menu
-    editMenu = mainWindow.menuBar().addMenu("&Edit")
-    mirrorMenu = editMenu.addMenu(QtGui.QIcon(":/editmirror.png"),"&Go to")
-    add_actions(mainWindow,mirrorMenu, (editDataProcessing,editQualityAssurance, editModel, editResultsNavigation))
+    mainWindow.editMenu = mainWindow.menuBar().addMenu("&Edit")
+    mainWindow.editMenuActions = ([editPreferences,editRestoreDocks])
+    add_actions(mainWindow,mainWindow.editMenu,mainWindow.editMenuActions)
 
     ## define tool menu
     mainWindow.toolMenu = mainWindow.menuBar().addMenu("&Tools")

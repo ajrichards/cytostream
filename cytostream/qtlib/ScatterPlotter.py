@@ -178,7 +178,7 @@ class ScatterPlotter(FigureCanvas):
                     if xPos < 0 or yPos <0:
                         continue
 
-                    if clusterColor in ['#FFFFAA','y','#33FF77']:
+                    if clusterColor in ['#FFFFAA','y','#33FF77','#CCFFAA']:
                         self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
