@@ -19,6 +19,7 @@ from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
+from cytostream.qtlib import FileAlignerCenter
 from cytostream.qtlib import OneDimViewer, Preferences
 
 def move_to_initial(mainWindow):
@@ -92,6 +93,8 @@ def move_to_open(mainWindow):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+    mainWindow.status.showMessage("Open an existing project", 5000)
+
 def move_to_results_navigation(mainWindow,mode='menu'):
     if mainWindow.controller.verbose == True:
         print "moving to results navigation", mode
@@ -144,7 +147,10 @@ def move_to_results_navigation(mainWindow,mode='menu'):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+    mainWindow.status.showMessage("Results Navigation", 5000)
+
     return True
+
 
 def move_to_model(mainWindow,modelMode='progressbar'):
     if mainWindow.controller.verbose == True:
@@ -182,7 +188,11 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+    mainWindow.status.showMessage("Model selection and run", 5000)
+
     return True  
+
+
 
 def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     if mainWindow.controller.verbose == True:
@@ -244,6 +254,8 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+    mainWindow.status.showMessage("Quality Assurance", 5000)
+
     return True
 
 def move_to_data_processing(mainWindow,withProgressBar=False):
@@ -292,8 +304,10 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     def load_files():
         allFiles = QtGui.QFileDialog.getOpenFileNames(mainWindow, 'Open file(s)')
         for fileName in allFiles:
-            if not re.search("\.fcs|\.csv",os.path.split(str(fileName))[-1]):
-                print "WARNING: loaded file is not of type fcs or csv", fileName
+            if not re.search("\.fcs|\.csv|\.txt",os.path.split(str(fileName))[-1]):
+                print "WARNING: loaded file is of unknown extension", fileName
+
+        mainWindow.status.showMessage("Files selected", 5000)
 
         return allFiles
 
@@ -323,6 +337,8 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
     
+    mainWindow.status.showMessage("Data Processing", 5000)
+
     return True
 
 def move_to_one_dim_viewer(mainWindow):
@@ -352,6 +368,7 @@ def move_to_one_dim_viewer(mainWindow):
     ## handle docks
     mainWindow.restore_docks()
     mainWindow.plots_enable_disable(mode='histogram')
+    mainWindow.fileSelector.setEnabled(False)
 
     ## handle layout
     hbl = QtGui.QHBoxLayout()
@@ -360,6 +377,8 @@ def move_to_one_dim_viewer(mainWindow):
     mainWindow.vboxCenter.addLayout(hbl)
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
+
+    mainWindow.status.showMessage("Histogram viewer", 5000)
 
 def move_to_preferences(mainWindow):
     if mainWindow.controller.verbose == True:
@@ -385,5 +404,46 @@ def move_to_preferences(mainWindow):
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 
+    mainWindow.status.showMessage("Application preferences", 5000)
+
 def move_to_results_summary(mainWindow,runNew=False):
     mainWindow.display_info("This stage is not available yet")
+
+def move_to_file_aligner(mainWindow,faMode='progressbar'):
+    if mainWindow.controller.verbose == True:
+        print "moving to file aligner", mode
+
+    ## error checking
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    if len(fileList) == 0:
+        mainWindow.display_info("No files have been loaded -- so model stage cannot be displayed")
+        return False
+    
+    ## clean the layout
+    mainWindow.reset_layout()
+    mainWindow.mainWidget = QtGui.QWidget(mainWindow) 
+    
+    ## manage the state
+    mainWindow.log.log['current_state'] = "File Alignment"
+    mainWindow.update_highest_state()
+    mainWindow.controller.save()
+
+    ## create center widget
+    fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+    channelList = mainWindow.get_master_channel_list()
+    mainWindow.fac = FileAlignerCenter(fileList,channelList,mode=faMode,parent=mainWindow.mainWidget,
+                                       runFileAlignerFn=mainWindow.run_file_aligner,mainWindow=mainWindow)
+    ## handle docks
+    mainWindow.restore_docks()
+
+    ## finalize layout
+    hbl = QtGui.QHBoxLayout()
+    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    hbl.addWidget(mainWindow.fac)
+    mainWindow.vboxCenter.addLayout(hbl)
+    mainWindow.mainWidget.setLayout(mainWindow.vbl)
+    mainWindow.refresh_main_widget()
+
+    mainWindow.status.showMessage("File Alignment", 5000)
+
+    return True

@@ -81,7 +81,7 @@ class Model:
             self.pythonPath = os.path.join("C:\Python27\python")
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
-    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None):
+    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None):
         """
         about: 
             This is a handler function for the script LoadFile.py which loads an fcs
@@ -105,6 +105,10 @@ class Model:
             os.mkdir(os.path.join(self.homeDir,"data"))
             print "INFO: making home dir from Model"
 
+        if dataType != 'fcs' and fileChannelPath==None:
+            print "ERROR: if data input type is not fcs must specify the fileChannelPath"
+            return None
+
         ## create script
         script = os.path.join(self.homeDir,"..","..","LoadFile.py")
 
@@ -115,7 +119,8 @@ class Model:
             if progressBar != None:
                 progressBar.progressLabel.setText("loading %s..."%os.path.split(filePath)[-1])
 
-            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,transform),
+            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
+                                                                           transform,fileChannelPath),
                                     shell=True,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)

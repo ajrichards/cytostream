@@ -120,6 +120,16 @@ class PipelineDock(QtGui.QWidget):
         hboxTop.addWidget(self.resultsNavigationBtn)
         self.connect(self.resultsNavigationBtn, QtCore.SIGNAL('clicked()'),lambda x='Results Navigation': self.btn_callback(x))
 
+        ## file alignern
+        self.fileAlignerBtn = QtGui.QPushButton("Alignment")
+        self.fileAlignerBtn.setMaximumWidth(self.eSize)
+        self.fileAlignerBtn.setMinimumWidth(self.eSize)
+        self.fileAlignerBtn.setAutoFillBackground(True)
+        self.fileAlignerTip = Tooltip(msg="Align the results of multiple files",parent=self.fileAlignerBtn)
+        self.fileAlignerBtn.setFocusPolicy(QtCore.Qt.NoFocus)
+        hboxTop.addWidget(self.fileAlignerBtn)
+        self.connect(self.fileAlignerBtn, QtCore.SIGNAL('clicked()'),lambda x='File Alignment': self.btn_callback(x))
+
         ## summary and reports
         self.resultsSummaryBtn = QtGui.QPushButton("Summary")
         self.resultsSummaryBtn.setMaximumWidth(self.eSize)
@@ -149,6 +159,7 @@ class PipelineDock(QtGui.QWidget):
         self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % None)
+        self.fileAlignerBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.resultsSummaryBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         QtCore.QCoreApplication.processEvents()
 
@@ -165,6 +176,9 @@ class PipelineDock(QtGui.QWidget):
         elif btnName == 'Results Navigation':
             self.unset_all_highlights()
             self.resultsNavigationBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+        elif btnName == 'File Alignment':
+            self.unset_all_highlights()
+            self.fileAlignerBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
         elif btnName == 'Results Summary':
             self.unset_all_highlights()
             self.resultsSummaryBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
@@ -187,9 +201,12 @@ class PipelineDock(QtGui.QWidget):
         elif btnName == 'Results Navigation':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[3]()
-        elif btnName == 'Results Summary':
+        elif btnName == 'File Alignment':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[4]()
+        elif btnName == 'Results Summary':
+            if self.btnCallBacks != None:
+                goFlag = self.btnCallBacks[5]()
         else:
             print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
 
@@ -203,6 +220,7 @@ class PipelineDock(QtGui.QWidget):
         self.qualityAssuranceBtn.setEnabled(False)
         self.modelBtn.setEnabled(False)
         self.resultsNavigationBtn.setEnabled(False)
+        self.fileAlignerBtn.setEnabled(False)
         self.resultsSummaryBtn.setEnabled(False)
 
     def activate_all(self):
@@ -210,6 +228,7 @@ class PipelineDock(QtGui.QWidget):
         self.qualityAssuranceBtn.setEnabled(True)
         self.modelBtn.setEnabled(True)
         self.resultsNavigationBtn.setEnabled(True)
+        self.fileAlignerBtn.setEnabled(True)
         self.resultsSummaryBtn.setEnabled(True)
 
 

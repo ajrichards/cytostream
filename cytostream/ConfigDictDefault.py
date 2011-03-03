@@ -19,12 +19,12 @@ configDictDefault = {
     'filters_run_count'                     : '{}',                 # do not change
 
     ########### immutable variables ##########################################################
-    'input_data_type'                       : 'fcs',                # fcs, txt
+    'input_data_type'                       : 'fcs',                # fcs, comma, tab
     'setting_max_scatter_display'           : '2e4',                # any float, int or string
     'selected_transform'                    : 'log',                # log, logicle
     'num_iters_mcmc'                        : '1100',               # an int
     'thumbnail_results_default'             : 'modes',              # modes, components
-    'scatter_marker_size'                   : '1',                  # mpl scatter marker size
+    'scatter_marker_size'                   : '2',                  # mpl scatter marker size
     'font_size'                             : '12',                 # int
     'font_name'                             : 'arial',              # font name
     'plot_type'                             : 'png',                # png, pdf, jpg
@@ -52,4 +52,7 @@ configDictDefault = {
     'channel_view'                          : 'normal',             # normal, custom
     'app_color'                             : '#999999',            # a color
     'visualization_mode'                    : 'thumbnails',         # thumbs, 1D-viewer etc
+    'fa_phi_range'                          : '[0.4]',              # a list or np.array of phis
+    'fa_min_merge_sil_value'                : '0.3',                # min silhouette value for merge    
+    'fa_distance_metric'                    : 'mahalanobis'         # mahalanobis or euclidean
 }

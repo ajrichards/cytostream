@@ -88,7 +88,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     ## specify channels
     fileChannels = log.log['alternate_channel_labels']
     index1 = int(channel1Ind)
-    index2 = int(channel2Ind) 
+    index2 = int(channel2Ind)
     channel1 = fileChannels[index1]
     channel2 = fileChannels[index2]
 
@@ -105,7 +105,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     if labels != None:
         centroids,variances,sizes = get_file_sample_stats(events,labels)
 
-    ## make plot 
+    ## make plot
     totalPoints = 0
     if labels == None:
         ax.scatter([events[:,index1]],[events[:,index2]],color='blue',s=markerSize)
@@ -129,7 +129,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
                 continue
             ax.scatter(x,y,color=clusterColor,s=markerSize)
 
-            ## handle centroids if present                                                                                                                                   
+            ## handle centroids if present    
             prefix = ''
             alphaVal = 0.8
 

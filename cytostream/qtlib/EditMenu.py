@@ -9,18 +9,22 @@ __author__ = "A Richards"
 
 import sys
 from PyQt4 import QtGui, QtCore
+from cytostream.qtlib import RadioBtnWidget
 
 class EditMenu(QtGui.QWidget):
-    def __init__(self, parent=None, openBtnFn=None,closeBtnFn=None,defaultTransform=None,mainWindow=None):
+    def __init__(self, parent=None, openBtnFn=None,closeBtnFn=None,defaultTransform='log',mainWindow=None,defaultInputType='fcm'):
         QtGui.QWidget.__init__(self,parent)
 
         ## variables
         self.transformsList = ['log','logicle']
+        self.inputTypeList   = ['fcm','tab-delimited','comma-delimited']
         self.defaultTransform = defaultTransform
+        self.defaultInputType = defaultInputType
         self.selectedProject = None
         self.openBtnFn = openBtnFn
         self.parent = parent
         self.selectedTransform = None
+        self.selectedInputDataType = None
         self.mainWindow = mainWindow
 
         ## setup layouts
@@ -33,28 +37,33 @@ class EditMenu(QtGui.QWidget):
         self.hbl3 = QtGui.QHBoxLayout()
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
 
-        ## set up main widget label
-        self.hbl1.addWidget(QtGui.QLabel('select transformation'))
-        
         ## set default transform
-        if self.defaultTransform == None:
-            self.defaultTransform = 'log'
-        elif self.defaultTransform not in self.transformsList:
+        if self.defaultTransform not in self.transformsList:
             print "ERROR: EditMenu -- specified defaultTransform not in transformList"
             self.defaultTransform = 'log'
             
-        ## add transformations as option
-        self.btns = {}
-        vbox = QtGui.QVBoxLayout()
-        for bLabel in self.transformsList:
-            rad = QtGui.QRadioButton(bLabel)
-            self.btns[bLabel] = rad
-            self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.transformation_callback(item))
-            vbox.addWidget(self.btns[bLabel])
+        ## create selector widget
+        self.transformSelector = RadioBtnWidget(self.transformsList,parent=self,callbackFn=self.transformation_callback,
+                                                widgetLabel="Select transformation",default=self.defaultTransform)
 
-            if self.defaultTransform != None and bLabel == self.defaultTransform:
-                self.btns[bLabel].setChecked(True)
-        self.hbl2.addLayout(vbox)
+        self.hbl1.addWidget(self.transformSelector)
+        
+        ## set default input data type
+        if self.defaultInputType == 'tab':
+            self.defaultInputType = 'tab-delimited'
+        elif self.defaultInputType == 'comma':
+            self.defaultInputType = 'comma-delimited'
+
+        ## set default input type
+        if self.defaultInputType not in self.inputTypeList:
+            print "ERROR: EditMenu -- specified defaultInputType not in input type list"
+            self.defaultInputType = 'fcm'
+        
+        ## input selector widget
+        self.inputTypeSelector = RadioBtnWidget(self.inputTypeList,parent=self,callbackFn=self.input_type_callback,
+                                                widgetLabel="Select input data type",default=self.defaultInputType)
+            
+        self.hbl2.addWidget(self.inputTypeSelector)
 
         ## create the buttons
         self.closeBtn = QtGui.QPushButton("save and return", self)
@@ -96,6 +105,25 @@ class EditMenu(QtGui.QWidget):
 
             if self.mainWindow != None:
                 self.mainWindow.log.log['selected_transform'] = self.selectedTransform
+                self.mainWindow.controller.save()
+    
+    def input_type_callback(self,item=None):
+        '''
+        input data type selection 
+        
+        '''
+        
+        if item !=None:
+
+            if item == 'comma-delimited':
+                item = 'comma'
+            elif item == 'tab-delimited':
+                item = 'tab'
+
+            self.selectedInputDataType = item
+
+            if self.mainWindow != None:
+                self.mainWindow.log.log['input_data_type'] = self.selectedInputDataType
                 self.mainWindow.controller.save()
 
 ### Run the tests

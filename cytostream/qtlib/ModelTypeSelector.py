@@ -47,8 +47,8 @@ class ModelTypeSelector(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
         
         ## modelType selector
-        hbox1.addWidget(QtGui.QLabel('Model mode'))
-        self.modelTypeSelector = RadioBtnWidget(self.modelTypeList,parent=self,callbackFn=modelTypeCallback)
+        self.modelTypeSelector = RadioBtnWidget(self.modelTypeList,parent=self,callbackFn=modelTypeCallback,
+                                                widgetLabel='Model Mode')
         hbox2.addWidget(self.modelTypeSelector)
         if modelTypeDefault != None:
             self.set_checked(modelTypeDefault)

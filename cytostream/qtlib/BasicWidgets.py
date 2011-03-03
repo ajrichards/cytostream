@@ -5,14 +5,21 @@ from PyQt4 import QtCore
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white'):
+    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white',widgetLabel=None):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
             print "ERROR: RadioBtnWidget - bad default specified",default 
             return None
 
+        btnBox = QtGui.QVBoxLayout()
         vbox = QtGui.QVBoxLayout()
+        hbox1 = QtGui.QHBoxLayout()
+        hbox2 = QtGui.QHBoxLayout()
+        if widgetLabel != None:
+            self.widgetLabel = QtGui.QLabel(widgetLabel)
+            hbox1.addWidget(self.widgetLabel) 
+
         self.selectedItem = None
         self.btnLabels = btnLabels
         self.btns = {}
@@ -23,7 +30,7 @@ class RadioBtnWidget(QtGui.QWidget):
             rad = QtGui.QRadioButton(bLabel)
             self.btns[bLabel] = rad
             self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.set_selected(item))
-            vbox.addWidget(self.btns[bLabel])
+            btnBox.addWidget(self.btns[bLabel])
 
             if callbackFn != None:
                 self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callbackFn(item=item))
@@ -32,6 +39,9 @@ class RadioBtnWidget(QtGui.QWidget):
                 self.btns[bLabel].setChecked(True)
                 self.selectedItem = bLabel
 
+        vbox.addLayout(hbox1)
+        hbox2.addLayout(btnBox)
+        vbox.addLayout(hbox2)
         self.setLayout(vbox)
 
     def set_selected(self,item=None):

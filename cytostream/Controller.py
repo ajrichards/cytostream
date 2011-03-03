@@ -8,9 +8,9 @@ A.Richards
 
 '''
 
-import csv,sys,time,re,shutil
+import re,os,csv,sys,time,re
+import subprocess, cPickle
 import numpy as np
-#from PIL import Image
 import Image
 
 try:
@@ -19,9 +19,8 @@ try:
 except:
     pythonPath = 'python'
 
-import re,os,sys,csv,webbrowser,cPickle
+from PyQt4 import QtGui
 from Model import Model
-import subprocess
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
 from Logging import Logger
 
@@ -37,6 +36,7 @@ class Controller:
             self.baseDir = re.sub("MacOS","Resources",self.baseDir)
         else:
             self.baseDir = os.path.dirname(__file__)
+        
         ## basic application wide variables 
         self.viewType = viewType
         self.appName = "cytostream"
@@ -52,6 +52,7 @@ class Controller:
         self.model = Model(verbose=self.verbose)
         self.log = Logger()
         self.subsampleIndices = None
+        self.fileChannelPath = None
                               
     def save(self):
         self.log.write()
@@ -73,6 +74,15 @@ class Controller:
             print "ERROR: controller.process_images - modelRun must be specified"
             return None
 
+        ## declare variables
+        fileList = get_fcs_file_names(self.homeDir)
+        numImagesToCreate = 0
+
+        ## ensure alternate_labels have been selected
+        if len(self.log.log['alternate_channel_labels']) == 0:
+            self.log.log['alternate_channel_labels'] = self.model.get_master_channel_list()
+            self.save()
+
         ## determine mode specific variables
         if mode == 'qa':
             subsample = self.log.log['subsample_qa']
@@ -86,9 +96,6 @@ class Controller:
         if subsample == 'original':
             maxViewSubsample = self.log.log['setting_max_scatter_display']
             self.handle_subsampling(maxViewSubsample)
-        
-        fileList = get_fcs_file_names(self.homeDir)
-        numImagesToCreate = 0
         
         ## specify which images to create NOTE: assumption that all channel indices are always the same 
         comparisons = self.log.log['thumbnails_to_view']
@@ -325,18 +332,24 @@ class Controller:
                 if re.search(searchKey4,dirFile):
                     os.remove(os.path.join(figsDir,dirName,dirFile))
 
-    def load_files_handler(self,fileList,progressBar=None):
+    def load_files_handler(self,fileList,progressBar=None,view=None):
         if type(fileList) != type([]):
             print "INPUT ERROR: load_files_handler: takes as input a list of file paths"
   
         dataType = self.log.log['input_data_type']
 
-        if dataType not in ['fcs','txt']:
+        if dataType not in ['fcs','comma','tab']:
             print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' or 'txt'"
+
+        if dataType in ['comma','tab']:
+            if self.fileChannelPath == None:
+                allFiles = QtGui.QFileDialog.getOpenFileNames(view,'Load the channels file')
+                self.fileChannelPath = str(allFiles[0])
 
         ## used the selected transform
         transform = self.log.log['selected_transform']
-        self.model.load_files(fileList,progressBar=progressBar)
+        
+        self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath)
 
     def get_component_states(self):
         try:

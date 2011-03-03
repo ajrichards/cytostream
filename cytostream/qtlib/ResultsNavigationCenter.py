@@ -93,8 +93,12 @@ class ResultsNavigationCenter(QtGui.QWidget):
         enable/disable buttons
         
         '''
+        
+        if len(self.modelsRunList) > 1:
+            self.mainWindow.pDock.contBtn.setEnabled(True)
+        else:
+            self.mainWindow.pDock.contBtn.setEnabled(False)
 
-        self.mainWindow.pDock.contBtn.setEnabled(False)
         self.mainWindow.moreInfoBtn.setEnabled(True)
         self.mainWindow.fileSelector.setEnabled(False)
         self.mainWindow.modeSelector.setEnabled(False)
