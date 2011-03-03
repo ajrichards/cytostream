@@ -233,6 +233,10 @@ class DataProcessingCenter(QtGui.QWidget):
     def load_data_files(self):
         self.mainWindow.allFilePaths = [str(pathName) for pathName in self.loadFileFn()]
 
+        if len(self.mainWindow.allFilePaths) == 0:
+            self.mainWindow.status.showMessage("File load canceled", 5000)
+            return
+            
         ## check to make sure that file do not contain a file that has already been loaded
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
         for filePath in self.mainWindow.allFilePaths:

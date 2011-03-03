@@ -165,15 +165,19 @@ def add_left_dock(mainWindow):
         mainWindow.modelToRunSelector.setMinimumWidth(alignWidth)
     
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Model']:
+    if mainWindow.log.log['current_state'] in ['Model','File Alignment']:
         mainWindow.modelSettingsBtn = QtGui.QPushButton("Edit settings")
         mainWindow.modelSettingsBtn.setMaximumWidth(120)
         mainWindow.modelSettingsBtn.setMinimumWidth(120)
-        miLayout = QtGui.QHBoxLayout()
-        miLayout.setAlignment(QtCore.Qt.AlignCenter)
-        miLayout.addWidget(mainWindow.modelSettingsBtn)
-        vboxCenter.addLayout(miLayout)
-        msBtnFn = mainWindow.handle_model_edit_callback
+        msbLayout = QtGui.QHBoxLayout()
+        msbLayout.setAlignment(QtCore.Qt.AlignCenter)
+        msbLayout.addWidget(mainWindow.modelSettingsBtn)
+        if mainWindow.log.log['current_state'] in ['Model']:
+            vboxCenter.addLayout(msbLayout)
+        else:
+            vboxBottom.addLayout(msbLayout)
+
+        msBtnFn = mainWindow.handle_edit_settings_callback
         mainWindow.connect(mainWindow.modelSettingsBtn,QtCore.SIGNAL('clicked()'),msBtnFn)
 
     ## more recreate figures
@@ -181,14 +185,26 @@ def add_left_dock(mainWindow):
         mainWindow.recreateBtn = QtGui.QPushButton("Recreate figures")
         mainWindow.recreateBtn.setMaximumWidth(120)
         mainWindow.recreateBtn.setMinimumWidth(120)
-        
         rbLayout = QtGui.QHBoxLayout()
         rbLayout.setAlignment(QtCore.Qt.AlignCenter)
         rbLayout.addWidget(mainWindow.recreateBtn)
         vboxBottom.addLayout(rbLayout)
 
+    ## models run btn
+    if mainWindow.log.log['current_state'] in ['Results Navigation']:
+        mainWindow.modelsRunBtn = QtGui.QPushButton("Models run")
+        mainWindow.modelsRunBtn.setMaximumWidth(120)
+        mainWindow.modelsRunBtn.setMinimumWidth(120)
+        mrbLayout = QtGui.QHBoxLayout()
+        mrbLayout.setAlignment(QtCore.Qt.AlignCenter)
+        mrbLayout.addWidget(mainWindow.modelsRunBtn)
+        vboxBottom.addLayout(mrbLayout)
+        modelsRunBtnFn = mainWindow.models_run_btn_callback
+        mainWindow.connect(mainWindow.modelsRunBtn,QtCore.SIGNAL('clicked()'),modelsRunBtnFn)
+
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model', 'Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model', 'Results Navigation',
+                                               'File Alignment']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("More info")
         mainWindow.moreInfoBtn.setMaximumWidth(120)
         mainWindow.moreInfoBtn.setMinimumWidth(120)
@@ -196,6 +212,8 @@ def add_left_dock(mainWindow):
         miLayout.setAlignment(QtCore.Qt.AlignCenter)
         miLayout.addWidget(mainWindow.moreInfoBtn)
         vboxBottom.addLayout(miLayout)
+        moreInfoBtnFn = mainWindow.show_more_info_info
+        mainWindow.connect(mainWindow.moreInfoBtn,QtCore.SIGNAL('clicked()'),moreInfoBtnFn)
 
     ## finalize alignments
     vbl.addLayout(vboxTop)

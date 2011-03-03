@@ -42,18 +42,24 @@ class FileAlignerTest1(unittest.TestCase):
 
         ## run it
         timeBegin = time.time()
-        fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,distanceMetric='mahalanobis',baseDir=BASEDIR)
+        fa = FileAligner(expListNames,expListData,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],
+                         verbose=VERBOSE,distanceMetric='mahalanobis',baseDir=BASEDIR)
         timeEnd = time.time()
 
         if VERBOSE == True:
             print "time taken for alignment: ", timeEnd - timeBegin 
             print 'creating figures'
 
+        #print dir(fa)
+        #print 'mus', fa.sampleStats['mus']
+        #print 'sigmas', fa.sampleStats['sigmas']
+        #sys.exit()
+
         ## make plots
         beforeStats = fa.get_sample_statistics(expListLabels)
         beforeFig = os.path.join(BASEDIR,"alignfigs","unaligned","TestCase1Before.png")
         make_plots_as_subplots(expListNames,expListData,expListLabels,centroids=beforeStats['mus'],showCentroids=True,
-                       figTitle='Before File Alignment',saveas=beforeFig,refFile=fa.refFile,subplotRows=2,subplotCols=3,asData=True)
+                               figTitle='Before File Alignment',saveas=beforeFig,refFile=fa.refFile,subplotRows=2,subplotCols=3,asData=True)
 
         for phi in phiRange:
             afterStats = fa.get_sample_statistics(fa.newLabelsAll[str(round(phi,4))])

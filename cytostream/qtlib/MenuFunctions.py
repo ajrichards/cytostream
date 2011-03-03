@@ -5,6 +5,7 @@ from PyQt4 import QtGui,QtCore
 from cytostream.qtlib import remove_left_dock, add_left_dock
 from cytostream.qtlib import move_to_preferences
 from cytostream.qtlib import move_to_quality_assurance
+from cytostream.qtlib import move_to_file_aligner
 
 def restore_docks(mainWindow,override=False,mode=None):
     '''
@@ -41,8 +42,11 @@ def restore_docks(mainWindow,override=False,mode=None):
         mainWindow.pDock.inactivate_all()
     elif currentState == 'Results Navigation':
         mainWindow.rnc.set_enable_disable()
+        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_file_aligner(a))
     elif currentState == 'Results Summary':
         pass
+    elif currentState == 'File Aligner':
+        mainWindow.fac.set_enable_disable()
     else:
         mainWindow.pDock.inactivate_all()
 

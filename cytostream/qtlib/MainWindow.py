@@ -32,7 +32,7 @@ from cytostream import Controller
 from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
-from cytostream.qtlib import move_to_model, move_to_results_navigation
+from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
 from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, TwoWayViewer,ThreeWayViewer,FourWayViewer
 from cytostream.qtlib import SixWayViewer
@@ -55,7 +55,8 @@ class MainWindow(QtGui.QMainWindow):
         self.controller = Controller()
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Initial','Data Processing', 'Quality Assurance', 'Model', 'Results Navigation','Summary and Reports']
+        self.stateList = ['Initial','Data Processing', 'Quality Assurance', 'Model', 'Results Navigation',
+                          'File Alignment','Summary and Reports']
         self.possibleModels = ['dpmm']
         self.resultsModeList = ['modes','components']
         
@@ -149,6 +150,7 @@ class MainWindow(QtGui.QMainWindow):
                         lambda a=self:move_to_quality_assurance(a), 
                         lambda a=self:move_to_model(a), 
                         lambda a=self:move_to_results_navigation(a), 
+                        lambda a=self:move_to_file_aligner(a), 
                         lambda a=self:move_to_results_summary(a)]
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
                                   appColor=appColor,noBtns=noBtns)
@@ -268,7 +270,7 @@ class MainWindow(QtGui.QMainWindow):
         if len(self.allFilePaths) < 1:
             print "WARNING: MainWindow -- load_files_with_progressbar -- allFilePaths is empty"
 
-        self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar)
+        self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar,view=self)
         self.allFilePaths = []
         move_transition(self)
         self.refresh_state()
@@ -338,6 +340,12 @@ class MainWindow(QtGui.QMainWindow):
         #                                             modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
         #                  )
 
+    def show_more_info_info(self):
+        currentState = self.log.log['current_state']
+        msg = """<br>Helpful information not yet present... %s"""%currentState
+
+        QtGui.QMessageBox.about(self, "%s - Information"%self.controller.appName,msg)
+        
     def helpHelp(self):
         self.display_info("The help is not yet implimented")
         #form = helpform.HelpForm("index.html", self)
@@ -364,6 +372,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.log.log['selected_k'] = newValue
 
+    
     def handle_model_to_run_callback(self,item=None):
         '''
         handles the selection of model to run
@@ -389,13 +398,15 @@ class MainWindow(QtGui.QMainWindow):
             self.display_info("Selected model mode is not yet available")
             self.modelModeSelector.set_checked('normal')
             
-    def handle_model_edit_callback(self):
+    def handle_edit_settings_callback(self):
         '''
         handles the model edit callback
 
         '''
-
-        move_to_model(self,modelMode='edit')
+        if self.log.log['current_state'] == 'Model':
+            move_to_model(self,modelMode='edit')
+        elif self.log.log['current_state'] == 'File Alignment':
+            move_to_file_aligner(self,faMode='edit')
 
     def handle_model_edit_return(self):
         '''
@@ -412,13 +423,16 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
-        
+        currentState = self.log.log['current_state']
+
         if item == 'histogram':
             move_to_one_dim_viewer(self)
-        elif item == 'thumbnails' and self.log.log['current_state'] == 'Quality Assurance':
+        elif item == 'thumbnails' and  currentState == 'Quality Assurance':
             move_to_quality_assurance(self,mode='thumbnails')
-        elif item == 'thumbnails' and self.log.log['current_state'] == 'Results Navigaiton':
-            print 'should be moving to results navigation thumbs'
+        elif item == 'thumbnails' and currentState == 'Results Navigation':
+            self.display_thumbnails()
+        elif item == 'thumbnails':
+            print "ERROR: MainWindow.handle_visualization_modes -- thumbnails with bad state", currentState
         elif item == 'plot-1':
             self.handle_show_scatter()
         elif item == 'plot-2':
@@ -444,6 +458,15 @@ class MainWindow(QtGui.QMainWindow):
             if self.stateList.index(self.log.log['current_state']) > int(self.log.log['highest_state']):
                 self.log.log['highest_state'] = self.stateList.index(self.log.log['current_state'])
                 self.controller.save()
+    
+    def run_file_aligner(self):
+        '''
+        handles the running of the file aligner
+
+        '''
+
+        print 'this is where we run the file aligner'
+
 
     def run_progress_bar(self):
         mode = self.log.log['current_state']
@@ -463,6 +486,8 @@ class MainWindow(QtGui.QMainWindow):
         if mode == 'Quality Assurance':
             self.qac.progressBar.button.setText('Please wait...')
             self.qac.progressBar.button.setEnabled(False)
+            self.subsampleSelector.setEnabled(False)
+            self.moreInfoBtn.setEnabled(False)
             QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
@@ -555,13 +580,13 @@ class MainWindow(QtGui.QMainWindow):
         if mode == 'Quality Assurance':
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
-            fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
+            fileChannels = self.log.log['alternate_channel_labels']
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
             
         elif mode == 'Results Navigation':
             self.mainWidget = QtGui.QWidget(self)
-            fileChannels = self.model.get_file_channel_list(self.log.log['selected_file']) 
+            fileChannels = self.log.log['alternate_channel_labels']
             imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
             
             if os.path.isdir(imgDir) == False:
@@ -591,6 +616,12 @@ class MainWindow(QtGui.QMainWindow):
 
         QtCore.QCoreApplication.processEvents()
         return True
+    def models_run_btn_callback(self):
+        '''
+        Left dock button callback to return to Results Nav. menu
+        '''
+
+        move_to_results_navigation(self)
 
     def file_selector_callback(self,item=None):
         self.set_selected_file()
@@ -599,7 +630,6 @@ class MainWindow(QtGui.QMainWindow):
         vizMode = str(self.modeSelector.get_selected())
         
         self.handle_visualization_modes(item=vizMode)
-
 
     def set_selected_file(self):
         '''
@@ -654,6 +684,8 @@ class MainWindow(QtGui.QMainWindow):
             move_to_model(self)
         elif self.log.log['current_state'] == "Results Navigation":
             move_to_results_navigation(self)
+        elif self.log.log['current_state'] == "File Alignment":
+            move_to_file_aligner(self)
         elif self.log.log['current_state'] == "Results Summary":
             move_to_results_summary(self)
 
@@ -696,8 +728,9 @@ class MainWindow(QtGui.QMainWindow):
             modelMode='results'
 
         self.mainWidget = QtGui.QWidget(self)
-        channelI = masterChannelList.index(self.lastChanI)
-        channelJ = masterChannelList.index(self.lastChanJ)
+        fileChannels = self.log.log['alternate_channel_labels']
+        channelI = fileChannels.index(self.lastChanI)
+        channelJ = fileChannels.index(self.lastChanJ)
         mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
                              modelType=modelType,mode=modelMode,modelName=modelName)
         hbl.addWidget(mp)

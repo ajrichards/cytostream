@@ -46,8 +46,7 @@ class ModelToRunSelector(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
         
         ## modelToRun selector
-        hbox1.addWidget(QtGui.QLabel('Model'))
-        self.modelToRunSelector = RadioBtnWidget(self.modelToRunList,parent=self,callbackFn=mtrCallback)
+        self.modelToRunSelector = RadioBtnWidget(self.modelToRunList,parent=self,callbackFn=mtrCallback,widgetLabel="Model")
         hbox2.addWidget(self.modelToRunSelector)
         if mtrDefault != None:
             self.set_checked(mtrDefault)

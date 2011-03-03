@@ -6,25 +6,25 @@
 
 import getopt,sys,os,re,csv
 import numpy as np
-
-## important line to fix popup error in mac osx
-#import matplotlib
-#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator
 from cytostream.tools import read_txt_to_file_channels,read_txt_into_array,get_file_data
 import fcm
 
-def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow                                                       
-    "breaks any matplotlib cmap into n colors"
+def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow 
+    '''
+    breaks any matplotlib cmap into n colors
+ 
+    '''
     cmap = cm.get_cmap(cmapName,n)
     return cmap(np.arange(n))
 
 def rgb_to_hex(rgb):
-    """                                                                                                                                                                      
-    converts a rgb 3-tuple into hex                                                                                                                                          
-    """
+    '''
+    converts a rgb 3-tuple into hex
+          
+    '''
 
     return '#%02x%02x%02x' % rgb[:3]
 
@@ -39,9 +39,9 @@ def get_file_channel_list(filePath):
     return channels
 
 def get_all_colors():
-    colors =  ['#990066','b','#CC6600','g','r','c','m',"#CCFFAA",'y','k','orange',"#991188","#990033",'#FF6600',"#CCCCCC","#660033",
-               '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",
-               '#FA58AC','#8A0808','#D8D8D8',"#CC2277",'#336666','#996633',"#FFCCCC","#CC0011","#FFBB33","#DDDDDD",
+    colors =  ['b','#CC6600','g','r','c','m',"#002200",'y','k','orange',"#CC55FF","#990033",'#FF6600',"#CCCCCC","#660033",
+               '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",'#990066',
+               '#FA58AC','#8A0808','#D8D8D8',"#CC2277",'#336666','#996633',"#FFCCCC","#CC0011","#FFBB33","#DDDDDD","#991188"
                "#FF9966","#009999","#FF0099","#996633","#990000","#660000","#9900BB","#330033","#FF5544","#9966CC",
                "#330066","#99FF99","#FF99FF","#333333","#CC3333","#CC9900","#99DD22","#3322BB","#663399","#002255",
                "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF","#00EE33","#337722","#CCBBFF","#FF3300",

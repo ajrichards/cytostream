@@ -20,7 +20,6 @@ class ThumbnailViewer(QtGui.QWidget):
         elif len(fileChannels) > 7:
             self.thumbSize = 70
 
-
         #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
         #print self.thumbSize
 

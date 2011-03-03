@@ -14,6 +14,7 @@ from scipy.spatial.distance import pdist,cdist,squareform
 import scipy.stats as stats
 from cytostream.tools import calculate_intercluster_score 
 from cytostream.stats import SilValueGenerator,DistanceCalculator
+from cytostream.stats import GaussianDistn, kullback_leibler
 from scipy.cluster.vq import whiten
 
 class FileAligner():
@@ -510,8 +511,17 @@ class FileAligner():
 
                         ## save the results DEBUG
                         #print patient1,cluster1-1,patient2,cluster2-1,percentOverlap1, percentOverlap2
+                        
 
-                        results = np.array(([pIndex1, pIndex2, cluster1,cluster2, np.max([percentOverlap1,percentOverlap2])]))
+                        ## caluclate kl-divergence
+                        cluster1Str = str(int(cluster1))
+                        cluster2Str = str(int(cluster2))
+                        gd1 = GaussianDistn(self.sampleStats['mus'][patient1][cluster1Str],self.sampleStats['sigmas'][patient1][cluster1Str])
+                        gd2 = GaussianDistn(self.sampleStats['mus'][patient2][cluster2Str],self.sampleStats['sigmas'][patient2][cluster2Str])
+                        klDist = kullback_leibler(gd1,gd2)
+                        klDist = klDist.mean()
+               
+                        results = np.array(([pIndex1, pIndex2, cluster1,cluster2, np.max([percentOverlap1,percentOverlap2]),klDist]))
                         if matchResults == None:
                             matchResults = results
                         else:
@@ -598,7 +608,8 @@ class FileAligner():
                             continue
 
                         self.newLabelsAll[str(round(phi,4))][int(bestMatch[0])][indicesToChange] = nextLabel
-                        self.logFile.writerow([phi,'nonref-match',self.expListNames[int(bestMatch[0])], int(bestMatch[1]),'NA',nextLabel,indicesToChange.size,"NA",clusterSilValue])
+                        self.logFile.writerow([phi,'nonref-match',self.expListNames[int(bestMatch[0])], int(bestMatch[1]),'NA',nextLabel,
+                                               indicesToChange.size,"NA",clusterSilValue])
                         clustersLeft.remove((bestMatch[0],-1*bestMatch[1]))                
                         
                 nextLabel += 1
@@ -709,7 +720,7 @@ class FileAligner():
                 eventsRefFile1 = refFileData[np.where(refFileLabels==cluster1)[0],:]
                 eventsRefFile2 = refFileData[np.where(refFileLabels==cluster2)[0],:]
                 
-                ## calculate within cluster distances                                                                                                                                                                               
+                ## calculate within cluster distances      
                 dc1 = DistanceCalculator(distType=self.distanceMetric)
                 dc1.calculate(eventsRefFile1)
                 withinDistances1 = dc1.get_distances()
@@ -718,7 +729,7 @@ class FileAligner():
                 dc2.calculate(eventsRefFile2)
                 withinDistances2 = dc2.get_distances()
 
-                ## calculate between distances                                                                                                                                                                                      
+                ## calculate between distances     
                 dc3 = DistanceCalculator(distType=self.distanceMetric)
                 if self.distanceMetric == 'mahalanobis':
                     inverseCov = dc3.get_inverse_covariance(eventsRefFile1)
@@ -768,7 +779,13 @@ class FileAligner():
                 alreadyRenamed.append(str(cluster1))
                 
                 ## save the results
-                results = np.array(([cluster1,cluster2, percentOverlap]))
+                cluster1Str = str(int(cluster1))
+                cluster2Str = str(int(cluster2))
+                gd1 = GaussianDistn(self.sampleStats['mus'][refFile][cluster1Str],self.sampleStats['sigmas'][refFile][cluster1Str])
+                gd2 = GaussianDistn(self.sampleStats['mus'][refFile][cluster2Str],self.sampleStats['sigmas'][refFile][cluster2Str])
+                klDist = kullback_leibler(gd1,gd2)
+                klDist = klDist.mean()
+                results = np.array(([cluster1,cluster2, percentOverlap, klDist]))
 
                 ## silvalue testing for merge
                 clusterSilValue1 = self.silValues[self.expListNames[refFileInd]][str(cluster1)]
@@ -801,6 +818,7 @@ class FileAligner():
             silVal1 = self.silValues[self.expListNames[refFileInd]][str(cluster1)]
             silVal2 = self.silValues[self.expListNames[refFileInd]][str(cluster2)]
             pOverlap = fResult[2]
+            klDivg = fResult[3]
 
             orderedClusters = np.sort(np.array([cluster1,cluster2]))
 
@@ -812,18 +830,32 @@ class FileAligner():
             if silVal1 < self.minMergeSilValue:
                 pass
             elif filteringDict.has_key(cluster1):
-                filteringDict[cluster1].append(pOverlap)
+                filteringDict[cluster1].append(klDivg)
             else:
-                filteringDict[cluster1] = [pOverlap]
+                filteringDict[cluster1] = [klDivg]
 
             if silVal2 < self.minMergeSilValue:
                 pass
             elif filteringDict.has_key(cluster2):
-                filteringDict[cluster2].append(pOverlap)
+                filteringDict[cluster2].append(klDivg)
             else:
-                filteringDict[cluster2] = [pOverlap]
+                filteringDict[cluster2] = [klDivg]
 
-        ## loop through all labels    
+            #if silVal1 < self.minMergeSilValue:
+            #    pass
+            #elif filteringDict.has_key(cluster1):
+            #    filteringDict[cluster1].append(pOverlap)
+            #else:
+            #    filteringDict[cluster1] = [pOverlap]
+            #
+            #if silVal2 < self.minMergeSilValue:
+            #    pass
+            #elif filteringDict.has_key(cluster2):
+            #    filteringDict[cluster2].append(pOverlap)
+            #else:
+            #    filteringDict[cluster2] = [pOverlap]
+
+        ## loop through all labels
         beenMatched = []
         for label in sortedLabels:
             matches = []
@@ -834,14 +866,21 @@ class FileAligner():
                 cluster1 = rowElements[0]
                 cluster2 = rowElements[1]
                 pOverlap = rowElements[2]
+                klDiverg = rowElements[3]
 
                 if cluster1 != int(label) and cluster2 != int(label):
                     continue
 
-                if cluster1 == int(label) and np.array(filteringDict[cluster1]).min() == pOverlap:
+                #if cluster1 == int(label) and np.array(filteringDict[cluster1]).min() == pOverlap:
+                #    matches.append(cluster2)
+                    
+                #if cluster2 == int(label) and np.array(filteringDict[cluster2]).min() == pOverlap:
+                #    matches.append(cluster1)
+
+                if cluster1 == int(label) and np.array(filteringDict[cluster1]).min() == klDiverg:
                     matches.append(cluster2)
                     
-                if cluster2 == int(label) and np.array(filteringDict[cluster2]).min() == pOverlap:
+                if cluster2 == int(label) and np.array(filteringDict[cluster2]).min() == klDiverg:
                     matches.append(cluster1)
 
             for clustToChange in matches:
@@ -866,7 +905,6 @@ class FileAligner():
         refFileData = self.expListData[refFileInd]
         refLabels = np.sort(np.unique(refFileLabels))
   
-      
         if filteredResults == None:
             print "INFO: no files merged in reference comparisions"
             return None
@@ -979,6 +1017,7 @@ class FileAligner():
             silVal1 = self.silValues[self.expListNames[int(fResult[0])]][str(int(fResult[2]))]
             silVal2 = self.silValues[self.expListNames[int(fResult[1])]][str(int(fResult[3]))]
             pOverlap = fResult[4]
+            klDivg = fResult[5]
 
             ##if non-ref compare keep percent overlap
             if refComparison == False:
@@ -987,18 +1026,36 @@ class FileAligner():
                 elif  silVal1 < self.minMergeSilValue:
                     pass
                 elif filteringDict.has_key(key1):
-                    filteringDict[key1].append(pOverlap)
+                    filteringDict[key1].append(klDivg)
                 else:
-                    filteringDict[key1] = [pOverlap]
+                    filteringDict[key1] = [klDivg]
                 
                 if pOverlap < phi:
                     pass
                 elif silVal2 < self.minMergeSilValue:
                     pass
                 elif filteringDict.has_key(key2):
-                    filteringDict[key2].append(pOverlap)
+                    filteringDict[key2].append(klDivg)
                 else:
-                    filteringDict[key2] = [pOverlap]
+                    filteringDict[key2] = [klDivg]
+
+                #if pOverlap < phi:
+                #    pass
+                #elif  silVal1 < self.minMergeSilValue:
+                #    pass
+                #elif filteringDict.has_key(key1):
+                #    filteringDict[key1].append(pOverlap)
+                #else:
+                #    filteringDict[key1] = [pOverlap]
+                #
+                #if pOverlap < phi:
+                #    pass
+                #elif silVal2 < self.minMergeSilValue:
+                #    pass
+                #elif filteringDict.has_key(key2):
+                #    filteringDict[key2].append(pOverlap)
+                #else:
+                #    filteringDict[key2] = [pOverlap]
 
             if refComparison == True:
                 file1ClusterSize = self.sampleStats['n'][self.expListNames[int(fResult[0])]][str(int(fResult[2]))]
@@ -1010,18 +1067,36 @@ class FileAligner():
                 elif  silVal1 < self.minMergeSilValue:
                     pass
                 elif filteringDict.has_key(key1):
-                    filteringDict[key1].append(sizeSimilarity)
+                    filteringDict[key1].append(klDivg)
                 else:
-                    filteringDict[key1] = [sizeSimilarity]
+                    filteringDict[key1] = [klDivg]
             
                 if pOverlap < phi:
                     pass
                 elif silVal2 < self.minMergeSilValue:
                     pass
                 elif filteringDict.has_key(key2):
-                    filteringDict[key2].append(sizeSimilarity)
+                    filteringDict[key2].append(klDivg)
                 else:
-                    filteringDict[key2] = [sizeSimilarity]
+                    filteringDict[key2] = [klDivg]
+            
+                #if pOverlap < phi:
+                #    pass
+                #elif  silVal1 < self.minMergeSilValue:
+                #    pass
+                #elif filteringDict.has_key(key1):
+                #    filteringDict[key1].append(sizeSimilarity)
+                #else:
+                #    filteringDict[key1] = [sizeSimilarity]
+                # 
+                #if pOverlap < phi:
+                #    pass
+                #elif silVal2 < self.minMergeSilValue:
+                #    pass
+                #elif filteringDict.has_key(key2):
+                #    filteringDict[key2].append(sizeSimilarity)
+                #else:
+                #    filteringDict[key2] = [sizeSimilarity]
             
         ## use filtering dictionary and threshold percent overlap to filter results    
         filteredResults = None
@@ -1049,20 +1124,26 @@ class FileAligner():
 
                 # discard results not above percent overlap
                 pOverlap = result[4]
+                klDivg = result[5]
+                
                 if pOverlap < phi:
                     continue
             
-                # discard results not equal to mminimum overlap
-                #mimimalOverlap = np.array(filteringDict[key]).min()
-                #if pOverlap != mimimalOverlap:
-                #    continue
-            
-                file1ClusterSize = self.sampleStats['n'][self.expListNames[int(result[0])]][str(int(result[2]))]
-                file2ClusterSize = self.sampleStats['n'][self.expListNames[int(result[1])]][str(int(result[3]))]
-                sizeSimilarity = np.abs(float(file1ClusterSize) - float(file2ClusterSize))
-
-                if sizeSimilarity != np.array(filteringDict[key]).min():
+                minimalKlDivg = np.array(filteringDict[key]).min()
+                if klDivg != minimalKlDivg:
                     continue
+            
+                ## discard results not equal to mminimum overlap
+                ##mimimalOverlap = np.array(filteringDict[key]).min()
+                ##if pOverlap != mimimalOverlap:
+                ##    continue
+            
+                #file1ClusterSize = self.sampleStats['n'][self.expListNames[int(result[0])]][str(int(result[2]))]
+                #file2ClusterSize = self.sampleStats['n'][self.expListNames[int(result[1])]][str(int(result[3]))]
+                #sizeSimilarity = np.abs(float(file1ClusterSize) - float(file2ClusterSize))
+                
+                #if sizeSimilarity != np.array(filteringDict[key]).min():
+                #    continue
                 
             else:
                 # discard results not above percent overlap
