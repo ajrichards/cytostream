@@ -1,15 +1,17 @@
 #!/usr/bin/python
 #
 # to run an example
-# python RunMakeFigures.py -p Demo -i 0 -j 1 -f 3FITC_4PE_004.fcs -h ./projects/Demo
+# python RunMakeScatterPlot.py -p utest -i 0 -j 1 -f 3FITC_4PE_004 -h ./projects/utest -s 1000
 #
 
 import getopt,sys,os,re
 import numpy as np
+import matplotlib as mpl
 
 ## important line to fix popup error in mac osx
-import matplotlib
-matplotlib.use('Agg')
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
+
 from cytostream import Model, Logger
 from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats
 import matplotlib.pyplot as plt
@@ -95,6 +97,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     ## get events
     events,labels = fetch_plotting_events(selectedFile,model,log,subsample,labels=labels)
 
+
     if labels != None:
         n,d = events.shape
         if n != labels.size:
@@ -172,7 +175,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     else:
         fileName = os.path.join(altDir,"%s_%s_%s.%s"%(selectedFile,channel1,channel2,plotType))
         fig.savefig(fileName,transparent=False,dpi=50)
-
+  
 
 ## error checking
 if altDir == 'None':

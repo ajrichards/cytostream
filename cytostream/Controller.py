@@ -155,10 +155,10 @@ class Controller:
                 if progressBar != None:
                     progressBar.move_bar(int(round(percentDone)))
                     #print 'moving', percentDone
-                    
+
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
-            
+
     def create_thumbs(self,imgDir,thumbDir,fileName,thumbsClean=True):
         # test to see if thumbs dir needs to be made
         if os.path.isdir(thumbDir) == False:

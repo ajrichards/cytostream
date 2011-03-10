@@ -1,9 +1,9 @@
 #!/usr/bin/python 
 import unittest,sys,os,getopt
 
-import matplotlib
-if matplotlib.get_backend() != 'Agg':
-    matplotlib.use('Agg')
+import matplotlib as mpl
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
 
 from unittests import *
 unittest.main()

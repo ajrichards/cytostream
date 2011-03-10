@@ -2,6 +2,11 @@
 
 import sys,os,unittest,time,re
 from cytostream import Controller
+import matplotlib as mpl
+
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
+
 
 ## test class for the main window function
 class ControllerTest(unittest.TestCase):
