@@ -3,11 +3,10 @@
 import sys,os,unittest,time,re
 from PyQt4 import QtGui, QtCore
 import subprocess
+import matplotlib as mpl
 
-import sys
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg')
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
 
 from cytostream import Controller, get_fcs_file_names
 import numpy as np

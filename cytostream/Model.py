@@ -22,6 +22,10 @@ adam.richards@stat.duke.edu
 """
 
 import sys,csv,os,re,cPickle,subprocess,time
+import matplotlib as mpl
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
+
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
@@ -79,6 +83,8 @@ class Model:
         ## set python path
         if sys.platform == 'win32':
             self.pythonPath = os.path.join("C:\Python27\python")
+        if sys.platform == 'darwin':
+            self.pythonPath = os.path.join("/","usr","local","bin","python")
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
     def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None):
@@ -305,7 +311,7 @@ class Model:
     def create_thumbnail(self,indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType):
         """
         about:
-            handler function for RunMakeFigures.
+            handler function for RunMakeScatterPlot.py.
         args:
             indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType
         return:
@@ -316,7 +322,7 @@ class Model:
         
         ## error checking
         if os.path.isfile(script) == False:
-            print 'ERROR: cannot find RunMakeFigures'
+            print 'ERROR: cannot find RunMakeScatterPlot.py'
         else:
             pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(self.pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
                                                                                     imgDir,modelRunID,modelType,self.homeDir)

@@ -6,6 +6,11 @@
 
 import getopt,sys,os,re,csv
 import numpy as np
+import matplotlib as mpl
+
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator

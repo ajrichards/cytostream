@@ -8,12 +8,15 @@ A. Richards
 
 import sys, getopt, os
 from PyQt4 import QtGui
+import matplotlib as mpl
 from cytostream.qtlib import MainWindow
 
-import sys
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg')
+#if sys.platform == 'darwin':
+#    import matplotlib
+#    matplotlib.use('Agg')
+if mpl.get_backend() == 'MacOSX':
+    mpl.use('Agg')
+
 
 class Main():
     def __init__(self):
