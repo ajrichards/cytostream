@@ -1,7 +1,31 @@
 #!/usr/bin/env python
 
-import os,re,cPickle
-import fcm
+import os,re,csv,time
+
+def add_project_to_log(baseDir,homeDir,status):
+    logFile = os.path.join(baseDir,'projects', 'projects.log')
+    if os.path.exists(logFile) == False:
+        writeHeader = True
+    else:
+        writeHeader = False
+   
+    fid = csv.writer(open(logFile,'a'))
+    
+    if writeHeader == True:
+        fid.writerow(['project','time','status'])
+    fid.writerow([homeDir,time.asctime(),status])
+
+def read_project_log(baseDir):
+    logFile = os.path.join(baseDir,'projects', 'projects.log')
+    fid = csv.reader(open(logFile,'r'))
+    header = fid.next()
+    
+    projectsList = []
+
+    for linja in fid:
+        projectsList.append(linja)
+    
+    return projectsList
 
 def get_fcs_file_names(homeDir,excludedFiles=[]):
     '''

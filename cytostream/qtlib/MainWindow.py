@@ -176,7 +176,6 @@ class MainWindow(QtGui.QMainWindow):
 
         reply = QtGui.QMessageBox.question(self, self.controller.appName,
                                            "Are you sure you want to completely remove '%s'?"%projectID, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-
         if reply == QtGui.QMessageBox.Yes:
             homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
             self.controller.remove_project(homeDir)
@@ -190,11 +189,32 @@ class MainWindow(QtGui.QMainWindow):
         projectID = re.sub("\s+","_",str(projectID))
         idValid = True
 
-        ## ensure project name is valid and not already used
-        existingProjects = get_project_names(self.controller.baseDir)
-        if projectID in existingProjects:
-            idValid = False
+        if projectID == '':
+            self.status.showMessage("New project creation aborted", 5000)
+            return None
+
+        self.display_info("Select a directory where you want your project to be saved")
+
+        projectDir = QtGui.QFileDialog.getExistingDirectory(self, self.controller.appName, 'Select a directory to save your project:')
+        projectDir = str(projectDir)
+
+        if projectDir == '':
+            self.status.showMessage("New project creation aborted", 5000)
+            return None
         
+        if os.path.isdir(projectDir) == False:
+            print "ERROR: MainWindow - specified project directory does not exist"
+            self.status.showMessage("New project creation aborted", 5000)
+            return None
+
+        print 'projectID', projectID
+        print 'projectDir', projectDir
+
+        ## ensure project name is valid and not already used
+        homeDir = os.path.join(projectDir,projectID)
+        if os.path.isdir == True:
+            idValid = False
+
         while idValid == False: 
             reply = QtGui.QMessageBox.question(self, 'Message', "A project named '%s' already exists. \nDo you want to overwrite it?"%projectID, 
                                                QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
@@ -218,9 +238,8 @@ class MainWindow(QtGui.QMainWindow):
         
         ## initialize and load project
         goFlag = False
-        self.controller.initialize_project(projectID)
-
-        goFlag = self.controller.create_new_project(projectID)
+        #self.controller.initialize_project(homeDir)
+        goFlag = self.controller.create_new_project(homeDir)
         if goFlag == True:
             move_to_data_processing(self)
             self.status.showMessage("New project successfully created", 5000)

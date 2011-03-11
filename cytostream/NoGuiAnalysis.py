@@ -14,27 +14,28 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,projectID,filePathList,useSubsample=True,makeQaFigs=True,configDict=None):
+    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True):
         """
           class constructor 
 
         """
 
-
         ## error checking
         if type(filePathList) != type([]):
             print "INPUT ERROR: filePathList in NoGuiAnalysis input must be of type list"
             return None
-        if type(projectID) != type('abc'):
-            print "INPUT ERROR: projectID in NoGuiAnalysis input must be of type str"
+        if type(homeDir) != type('abc'):
+            print "INPUT ERROR: homedir in NoGuiAnalysis input must be of type str", homeDir
             return None
 
         ## declare variables
-        self.projectID = projectID
+        self.homeDir = homeDir
+        self.projectID = os.path.split(self.homeDir)[-1]
         self.filePathList = filePathList
         self.makeQaFigs = makeQaFigs
         self.configDict = configDict
         self.useSubsample = useSubsample
+        self.record = record
 
         ## initialize
         self.initialize()
@@ -54,9 +55,8 @@ class NoGuiAnalysis():
         initializes a project
         """
 
-        self.controller = Controller(configDict=self.configDict) 
-        self.controller.initialize_project(self.projectID)
-        self.controller.create_new_project(self.projectID)
+        self.controller = Controller(configDict=self.configDict)
+        self.controller.create_new_project(self.homeDir,record=self.record)
         
     def load_files(self):
         """

@@ -25,14 +25,15 @@ class TestCase1(unittest.TestCase):
         ## run the no gui analysis
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
-        
+        homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
+
         ## run the initial model for all files
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1200
         configDict['subsample_qa'] = 500
         configDict['subsample_analysis'] = 500
 
-        self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True)
+        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
         fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files

@@ -10,18 +10,12 @@ A.Richards
 
 import re,os,csv,sys,time,re
 import subprocess, cPickle
-import numpy as np
 import Image
-
-try:
-    from config_cs import configCS
-    pythonPath = configCS['pythonPath']
-except:
-    pythonPath = 'python'
-
+import numpy as np
 from PyQt4 import QtGui
 from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from FileControls import add_project_to_log
 from Logging import Logger
 
 class Controller:
@@ -30,36 +24,30 @@ class Controller:
         construct an instance of the controller class
         to use invoke the method initialize
         '''
-        ## get base directory
-        if hasattr(sys, 'frozen'):
-            self.baseDir = os.path.dirname(sys.executable)
-            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
-        else:
-            self.baseDir = os.path.dirname(__file__)
-        
+
         ## basic application wide variables 
         self.viewType = viewType
         self.appName = "cytostream"
-        self.fontName = 'Arial' #'Helvetica'
-        self.verbose = False
+        self.verbose = True
         self.configDict = configDict
         self.reset_workspace()
 
     def reset_workspace(self):
         self.projectID = None
         self.homeDir = None
-
         self.model = Model(verbose=self.verbose)
         self.log = Logger()
         self.subsampleIndices = None
         self.fileChannelPath = None
-                              
+        self.baseDir = self.model.baseDir
+        self.pythonPath = self.model.pythonPath                           
+        
     def save(self):
         self.log.write()
 
-    def initialize_project(self,projectID,loadExisting=False):
-        self.projectID = projectID
-        self.homeDir = os.path.join(self.baseDir,"projects",self.projectID)
+    def initialize_project(self,homeDir,loadExisting=False):
+        self.projectID = os.path.split(homeDir)[-1]
+        self.homeDir = homeDir
         self.log.initialize(self.projectID,self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.projectID,self.homeDir)
 
@@ -133,7 +121,7 @@ class Controller:
 
             if os.path.isdir(imgDir) == False:
                 if self.verbose == True:
-                    print 'making img dir', imgDir
+                    print 'INFO: making img dir', imgDir
                 os.mkdir(imgDir)
         
             ## progress point information 
@@ -244,20 +232,15 @@ class Controller:
     #
     ##################################################################################################
            
-    def create_new_project(self,projectID):
+    def create_new_project(self,homeDir,record=True):
 
-        ## create projects dir if necssary
-        if os.path.isdir(os.path.join(self.baseDir,'projects')) == False:
-            print "INFO: projects dir did not exist. creating..."
-            os.mkdir(os.path.join(self.baseDir,'projects'))
-        
         ## initialize project
-        self.initialize_project(projectID)
+        self.initialize_project(homeDir)
 
-        ## remove previous 
-        if self.homeDir != None and os.path.exists(self.homeDir) == True:
+        ## remove previous
+        if os.path.exists(self.homeDir) == True:
             if self.verbose == True:
-                print 'INFO: overwriting old project of same name...', self.homeDir
+                print 'INFO: overwriting project of same name...', self.homeDir
             self.remove_project(self.homeDir)
 
         if self.homeDir != None:
@@ -266,6 +249,10 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"figs"))
             os.mkdir(os.path.join(self.homeDir,"models"))
             os.mkdir(os.path.join(self.homeDir,"results"))
+
+        ## record project creation in log
+        if record == True:
+            add_project_to_log(self.baseDir,self.homeDir,'created')
 
         ## save progress
         self.save()
@@ -475,7 +462,7 @@ class Controller:
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s -c %s"%(pythonPath,script,self.homeDir,fileName,numComponents,subsample,cbe), 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s -c %s"%(self.pythonPath,script,self.homeDir,fileName,numComponents,subsample,cbe), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)

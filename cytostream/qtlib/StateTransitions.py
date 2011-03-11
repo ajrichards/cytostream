@@ -154,7 +154,7 @@ def move_to_results_navigation(mainWindow,mode='menu'):
 
 def move_to_model(mainWindow,modelMode='progressbar'):
     if mainWindow.controller.verbose == True:
-        print "moving to model", mode
+        print "moving to model", modelMode
 
     ## error checking
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
@@ -411,7 +411,7 @@ def move_to_results_summary(mainWindow,runNew=False):
 
 def move_to_file_aligner(mainWindow,faMode='progressbar'):
     if mainWindow.controller.verbose == True:
-        print "moving to file aligner", mode
+        print "moving to file aligner", faMode
 
     ## error checking
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
