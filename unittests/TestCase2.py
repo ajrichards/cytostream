@@ -27,6 +27,7 @@ class TestCase2(unittest.TestCase):
         ## necessary variables   
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
+        homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
 
         ## run the initial model for all files
         configDict = configDictDefault.copy()
@@ -34,7 +35,7 @@ class TestCase2(unittest.TestCase):
         configDict['subsample_analysis'] = 1000
         configDict['plots_to_view'] = [(0,2),(0,3)]
 
-        self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True)
+        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
         fileNameList = self.nga.get_file_names()
 
         ## create all pairwise figs for all files

@@ -27,7 +27,8 @@ class TestCase3(unittest.TestCase):
                         os.path.join(BASEDIR,"cytostream","example_data", "duplicate.fcs")]
 
         projectID = 'utest'
-        
+        homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
+
         ## run the initial model for all files
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1200
@@ -36,7 +37,7 @@ class TestCase3(unittest.TestCase):
         configDict['model_reference'] = "3FITC_4PE_004"
         configDict['model_reference_run_id'] = 'run1'
 
-        self.nga = NoGuiAnalysis(projectID,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True)
+        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
         fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files

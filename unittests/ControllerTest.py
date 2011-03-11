@@ -20,24 +20,24 @@ class ControllerTest(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         self.projectID = 'utest'
-        self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
+        #self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
+        self.homeDir = os.path.join("/","home","clemmys","Desktop","utest")
+        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")    
         self.controller = Controller()
-        self.controller.initialize_project("utest") 
-        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")
-
+        self.controller.create_new_project(self.homeDir,record=False)
+        self.controller.load_files_handler([self.fcsFileName])
+    
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
 
     def testCreateNewProject(self):
         ## test creation of a project
-        self.controller.create_new_project(self.projectID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))
     
         ## test that files can be loaded
-        self.controller.load_files_handler([self.fcsFileName])
         self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,"data"))) != 2)
     
         ## test that events and channels may be retrieved
@@ -69,11 +69,15 @@ class ControllerTest(unittest.TestCase):
 
     def testRunModel(self):
         excludedChannelInd = 1
+        subsample = '1e3'
         self.controller.log.log['num_iters_mcmc'] = 1100
         self.controller.log.log['selected_k'] = 16
         self.controller.log.log['model_to_run'] = 'dpmm'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
-        self.controller.log.log['subsample_analysis'] = '1e3'
+        self.controller.log.log['subsample_analysis'] = subsample
+        
+        ## run model
+        self.controller.handle_subsampling(subsample)
         self.controller.run_selected_model(useSubsample=True,cleanBorderEvents=True)
         fileName = "3FITC_4PE_004"
         fileChannels = self.controller.model.get_file_channel_list(fileName)    

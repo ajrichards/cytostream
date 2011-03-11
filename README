@@ -1,22 +1,34 @@
-NOTES
-The software currently has been tested only under GNU/Linux systems
-However, binaries will be made available in the future
+cytostream
+
+Information and documentation can be found on the project homepage:
+http://code.google.com/p/cytostream/
+
+
+INSTALL
+
+    Source
+    Refer to the wiki -- tag 'installation'
+    http://code.google.com/p/cytostream/w/list
+
+    Installables
+    http://code.google.com/p/cytostream/downloads/list
+    If you are using an installable then the information contained herein is not relevant
 
 PREREQUISITES
 
 For cytostream
-
     Python     - www.python.org
+    Qt SDK     - http://qt.nokia.com
     PyQt4      - http://www.riverbankcomputing.co.uk/software/pyqt/intr0
-    Numpy      - http://numpy.scipy.org/
-    Matplotlib - http://matplotlib.sourceforge.net/
-    fcm        - http://code.google.com/p/py-fcm/
+    PIL        - http://www.pythonware.com/products/pil
+    fcm        - http://code.google.com/p/py-fcm
 
 For fcm
-    SciPy      - http://www.scipy.org/
-    traits     - http://code.enthought.com/projects/traits/
+    Numpy      - http://numpy.scipy.org
+    SciPy      - http://www.scipy.org
+    Matplotlib - http://matplotlib.sourceforge.net
 
-ON MECURIAL
+MECURIAL
 
 A good start for the .hginore file would be somthing like
 
@@ -40,3 +52,14 @@ default = https://<username>%%40gmail.com:<generated.passkey@cytostream.googleco
 
 [ui]
 username = <username>@gmail.com
+
+PYTHONPATH
+
+If you would like to specify your python path
+
+    ~$ cd cytostream
+    ~$ mv config_cs.py config_cs.py
+
+Then edit the file and change the following variable to something like
+    
+    configCS = {'python_path':'/usr/local/bin/python'}

@@ -23,8 +23,15 @@ adam.richards@stat.duke.edu
 
 import sys,csv,os,re,cPickle,subprocess,time
 import matplotlib as mpl
+
 if mpl.get_backend() == 'MacOSX':
     mpl.use('Agg')
+
+try:
+    from config_cs import configCS
+    pythonPath = configCS['python_path']
+except:
+    pythonPath = None
 
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
@@ -57,6 +64,27 @@ class Model:
         self.homeDir = None
         self.verbose = verbose
 
+        ## get base directory 
+        if hasattr(sys, 'frozen'):
+            self.baseDir = os.path.dirname(sys.executable)
+            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
+        else:
+            self.baseDir = os.path.dirname(__file__)
+
+        ## set python path
+        if pythonPath != None: 
+            if os.path.exists(pythonPath) == False:
+                print "ERROR: bad specified python path in config.py... using default"
+                self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
+            else:
+                self.pythonPath = pythonPath
+        elif sys.platform == 'win32':
+            self.pythonPath = os.path.join("C:\Python27\python")
+        elif sys.platform == 'darwin':
+            self.pythonPath = os.path.join("/","usr","local","bin","python")
+        else:
+            self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
+
     def initialize(self,projectID,homeDir):
         """
         about:
@@ -72,21 +100,7 @@ class Model:
         ## initialize project
         self.projectID = projectID
         self.homeDir = homeDir
-        
-        ## get base directory 
-        if hasattr(sys, 'frozen'):
-            self.baseDir = os.path.dirname(sys.executable)
-            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
-        else:
-            self.baseDir = os.path.dirname(__file__)
-
-        ## set python path
-        if sys.platform == 'win32':
-            self.pythonPath = os.path.join("C:\Python27\python")
-        if sys.platform == 'darwin':
-            self.pythonPath = os.path.join("/","usr","local","bin","python")
-        else:
-            self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
+            
     def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None):
         """
         about: 
@@ -116,7 +130,7 @@ class Model:
             return None
 
         ## create script
-        script = os.path.join(self.homeDir,"..","..","LoadFile.py")
+        script = os.path.join(self.baseDir,"LoadFile.py")
 
         fileCount = 0
         for filePath in fileList:
@@ -277,6 +291,8 @@ class Model:
             tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'r')
             subsampleIndices = cPickle.load(tmp)
             tmp.close()
+            if self.verbose == True:
+                print 'INFO: using pickled subsampled indices'
             return subsampleIndices
 
         ## otherwise create the pickle file

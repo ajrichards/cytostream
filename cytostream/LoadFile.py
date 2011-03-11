@@ -63,7 +63,7 @@ elif dataType == 'comma':
 elif dataType == 'tab':
     fcsData = read_txt_into_array(filePath,delim='\t')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
-    
+
 ## save the np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
