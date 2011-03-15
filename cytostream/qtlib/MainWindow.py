@@ -28,20 +28,19 @@ else:
     baseDir = os.path.dirname(__file__)
 sys.path.append(os.path.join(baseDir,'qtlib'))
 
-from cytostream import Controller
+from cytostream import Controller,SaveSubplots
 from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
 from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
-from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, TwoWayViewer,ThreeWayViewer,FourWayViewer
-from cytostream.qtlib import SixWayViewer
+from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, NWayViewer
 
 __version__ = "0.2"
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self):
+    def __init__(self,debug=False):
         '''
         constructor
 
@@ -52,7 +51,7 @@ class MainWindow(QtGui.QMainWindow):
         
         ## variables
         self.buff = 2.0
-        self.controller = Controller()
+        self.controller = Controller(debug=debug)
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
         self.stateList = ['Initial','Data Processing', 'Quality Assurance', 'Model', 'Results Navigation',
@@ -185,7 +184,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def create_new_project(self):
         ## ask for project name
-        projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter the name of your new project:')
+        projectID, ok = QtGui.QInputDialog.getText(self, 'Name designation', 'Enter the name of your new project:')
         projectID = re.sub("\s+","_",str(projectID))
         idValid = True
 
@@ -193,9 +192,9 @@ class MainWindow(QtGui.QMainWindow):
             self.status.showMessage("New project creation aborted", 5000)
             return None
 
-        self.display_info("Select a directory where you want your project to be saved")
-
-        projectDir = QtGui.QFileDialog.getExistingDirectory(self, self.controller.appName, 'Select a directory to save your project:')
+        defaultDir = self.controller.defaultDir
+        projectDir = QtGui.QFileDialog.getExistingDirectory(self, 'Select a location to save your project', 
+                                                            options=QtGui.QFileDialog.ShowDirsOnly, directory=defaultDir)
         projectDir = str(projectDir)
 
         if projectDir == '':
@@ -207,26 +206,24 @@ class MainWindow(QtGui.QMainWindow):
             self.status.showMessage("New project creation aborted", 5000)
             return None
 
-        print 'projectID', projectID
-        print 'projectDir', projectDir
 
         ## ensure project name is valid and not already used
         homeDir = os.path.join(projectDir,projectID)
-        if os.path.isdir == True:
+        if os.path.isdir(homeDir) == True:
             idValid = False
 
         while idValid == False: 
-            reply = QtGui.QMessageBox.question(self, 'Message', "A project named '%s' already exists. \nDo you want to overwrite it?"%projectID, 
+            reply = QtGui.QMessageBox.question(self, 'Message', "A project named\n'%s'\nalready exists. Do you want to overwrite it?"%homeDir, 
                                                QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
                 idValid = True
                 if self.controller.verbose == True:
                     print 'INFO: overwriting old project'
             else:
-                projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter another project name:')
-                projectID = re.sub("\s+","_",str(projectID))
-                if projectID not in existingProjects:
-                    idValid = True
+                #projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter another project name:')
+                #projectID = re.sub("\s+","_",str(projectID))
+                self.status.showMessage("New project creation aborted", 5000)
+                return None
 
         ## check to see if project creation was canceled
         if projectID == '':
@@ -237,8 +234,6 @@ class MainWindow(QtGui.QMainWindow):
             print 'INFO: creating new project', projectID
         
         ## initialize and load project
-        goFlag = False
-        #self.controller.initialize_project(homeDir)
         goFlag = self.controller.create_new_project(homeDir)
         if goFlag == True:
             move_to_data_processing(self)
@@ -255,26 +250,33 @@ class MainWindow(QtGui.QMainWindow):
         move_to_open(self)
         self.status.showMessage("Existing project successfully loaded", 5000)
 
-    def open_existing_project_handler(self):
+    def open_existing_project_handler(self,homeDir):
         '''
         from the open projects page open a selected project
 
         '''
 
-        selectedProject = self.existingProjectOpener.selectedProject 
-        if selectedProject == None:
-            print "ERROR: mainWindow.open_existing_projects_handler - selected project is none"
+        ## error check
+        if homeDir == None:
+            print "ERROR: mainWindow.open_existing_projects_handler - homeDir is None"
             return
-        else:
-            projectID = selectedProject
-
-        ## remove old docks
-        remove_left_dock(self)
-        self.removeDockWidget(self.pipelineDock)
-        self.reset_view_workspace()
-        self.controller.initialize_project(projectID,loadExisting=True)
-        self.controller.masterChannelList = self.model.get_master_channel_list()
+        
+        if os.path.isdir(homeDir) == False:
+            print "ERROR: mainWindow.open_existing_projects_handler - homeDir does not exist"
+            return
+    
+        projectID = os.path.split(homeDir)[-1]
+        projectLog = os.path.join(homeDir,projectID+".log")
+        if os.path.exists(projectLog) == False:
+            print "ERROR: mainWindow.open_existing_projects_handler - homeDir not a cytostream project"
+            self.display_warning("Specified project dir is not a valid cytostream project")
+            return
+    
+        ## prepare variables and move        
         move_transition(self)
+        self.reset_view_workspace()
+        self.controller.initialize_project(homeDir,loadExisting=True)
+        self.controller.masterChannelList = self.model.get_master_channel_list()
         self.refresh_state()
         
     def load_files_with_progressbar(self,progressBar):
@@ -443,6 +445,12 @@ class MainWindow(QtGui.QMainWindow):
 
         modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
         currentState = self.log.log['current_state']
+        self.controller.currentPlotView = item
+
+        if item in ['plot-1','plot-2','plot-3','plot-4','plot-6']:
+            self.saveImgsBtn.setEnabled(True)
+        else:
+            self.saveImgsBtn.setEnabled(False)
 
         if item == 'histogram':
             move_to_one_dim_viewer(self)
@@ -465,6 +473,33 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.display_info("not available yet")
             print "ERROR: mainWindow.handle_visualization_modes -- bad item", item
+
+    def handle_save_images_callback(self):
+
+        if self.log.log['current_state'] == 'Quality Assurance':
+            figMode = 'qa'
+        else:
+            figMode = 'analysis'
+
+        validViews = ['plot-1','plot-2','plot-3','plot-4','plot-5','plot-6','plot-7',
+                      'plot-8','plot-9','plot-10','plot-11','plot-12']
+        currentPlotView = str(self.controller.currentPlotView)
+
+        if currentPlotView in validViews:
+            defaultDir = os.path.join(self.controller.homeDir,'documents')
+            fileFilter = "*.png;;*.jpg;;*.pdf"
+            imgFileName, extension = QtGui.QFileDialog.getSaveFileNameAndFilter(self, 'Save As', directory=defaultDir, filter=fileFilter) 
+            imgFileName = str(imgFileName)
+            extension = str(extension)[1:]
+            figName = re.sub(extension,"",imgFileName) + extension    
+            numSubplots = int(re.sub('plot-','',currentPlotView))
+            #figMode = 'qa'
+            #figName = os.path.join(self.baseDir,'unittests','subplots_test_qa.png')
+            figTitle = None
+            ss = SaveSubplots(self.controller.homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
+            print 'plot saved as ', figName
+        else:
+            print "WARNING: MainWindow.handle_save_images_callback - call to save from invalid mode",
 
     def update_highest_state(self):
         '''
@@ -669,8 +704,6 @@ class MainWindow(QtGui.QMainWindow):
         if selectedSubsample == 'All Data':
             selectedSubsample = 'original'
 
-        #print 'setting selected subsample...', selectedSubsample, self.log.log['current_state']
-
         if self.log.log['current_state'] == 'Quality Assurance':
             self.log.log['subsample_qa'] = selectedSubsample
         if self.log.log['current_state'] == 'Model':
@@ -764,7 +797,6 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
 
     def handle_nway_viewer(self,viewMode):
-        mode = self.log.log['current_state']
         self.set_selected_file()
         
         ## layout
@@ -773,33 +805,26 @@ class MainWindow(QtGui.QMainWindow):
         move_transition(self,repaint=True)
         self.reset_layout()
 
-        plotsToView = self.log.log['plots_to_view']
-        chans1 = [plt[0] for plt in plotsToView]
-        chans2 = [plt[1] for plt in plotsToView]
+        plotsToViewChannels = self.log.log['plots_to_view_channels']
+        plotsToViewFiles = self.log.log['plots_to_view_files']
+        plotsToViewRuns = self.log.log['plots_to_view_runs']
+        plotsToViewHighlights = self.log.log['plots_to_view_highlights']
 
-        if mode == "Quality Assurance":
-            mode = 'qa'
+        if self.log.log['current_state'] == "Quality Assurance":
+            figMode = 'qa'
             subsample=self.log.log['subsample_qa']
-            modelType,modelName= None,None
-        if mode == "Results Navigation":
-            mode = 'results'
+        if self.log.log['current_state'] == "Results Navigation":
+            figMode = 'analysis'
             subsample=self.log.log['subsample_analysis']
-            modelType=self.log.log['results_mode']
-            modelName=self.log.log['selected_model']
 
         self.mainWidget = QtGui.QWidget(self)
-        if viewMode == 'plot-2':
-           nwv = TwoWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
-                              modelType=modelType,mode=mode,modelName=modelName)
-        elif viewMode == 'plot-3':
-            nwv = ThreeWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
-                                 modelType=modelType,mode=mode,modelName=modelName)
-        elif viewMode == 'plot-4':
-            nwv = FourWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
-                                 modelType=modelType,mode=mode,modelName=modelName)
-        elif viewMode == 'plot-6':
-            nwv = SixWayViewer(self.controller.homeDir,self.log.log['selected_file'],chans1,chans2,subsample,background=True,
-                                 modelType=modelType,mode=mode,modelName=modelName)
+        
+        numSubplots = int(re.sub('plot-','',viewMode))
+        modelType = self.log.log['results_mode']
+
+        nwv = NWayViewer(self.controller.homeDir,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
+                         subsample,numSubplots,figMode=figMode,background=True,modelType=modelType,mainWindow=self)
+
         hbl.addWidget(nwv)
 
         ## enable/disable
@@ -816,7 +841,7 @@ class MainWindow(QtGui.QMainWindow):
         display info
         generic function to display info to user
         '''
-        reply = QtGui.QMessageBox.information(self, 'Information',msg)
+        reply = QtGui.QMessageBox.information(self,'Information',msg)
 
     def display_warning(self,msg):
         '''

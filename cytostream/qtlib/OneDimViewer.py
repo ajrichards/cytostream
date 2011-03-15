@@ -47,9 +47,9 @@ class OneDimViewer(QtGui.QWidget):
         ## initialize model
         projectID = os.path.split(homeDir)[-1]
         log = Logger()
-        log.initialize(projectID,homeDir,load=True)
+        log.initialize(homeDir,load=True)
         model = Model()
-        model.initialize(projectID,homeDir)
+        model.initialize(homeDir)
 
         ## additional class-wide variables
         self.fcsFileList = get_fcs_file_names(homeDir)

@@ -33,9 +33,8 @@ class TestCase2(unittest.TestCase):
         configDict = configDictDefault.copy()
         configDict['subsample_qa'] = 1000
         configDict['subsample_analysis'] = 1000
-        configDict['plots_to_view'] = [(0,2),(0,3)]
 
-        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
+        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
         fileNameList = self.nga.get_file_names()
 
         ## create all pairwise figs for all files
@@ -75,10 +74,6 @@ class TestCase2(unittest.TestCase):
         ## get events
         events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa'])))
-
-        ## check that qa figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 7)
-        self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
         
         ## check that model results can be retrieved
         modelRunID = 'run1'

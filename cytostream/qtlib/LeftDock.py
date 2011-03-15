@@ -167,8 +167,8 @@ def add_left_dock(mainWindow):
     ## more info btn
     if mainWindow.log.log['current_state'] in ['Model','File Alignment']:
         mainWindow.modelSettingsBtn = QtGui.QPushButton("Edit settings")
-        mainWindow.modelSettingsBtn.setMaximumWidth(120)
-        mainWindow.modelSettingsBtn.setMinimumWidth(120)
+        mainWindow.modelSettingsBtn.setMaximumWidth(140)
+        mainWindow.modelSettingsBtn.setMinimumWidth(140)
         msbLayout = QtGui.QHBoxLayout()
         msbLayout.setAlignment(QtCore.Qt.AlignCenter)
         msbLayout.addWidget(mainWindow.modelSettingsBtn)
@@ -183,8 +183,8 @@ def add_left_dock(mainWindow):
     ## more recreate figures
     if mainWindow.log.log['current_state'] in ['Quality Assurance']:
         mainWindow.recreateBtn = QtGui.QPushButton("Recreate figures")
-        mainWindow.recreateBtn.setMaximumWidth(120)
-        mainWindow.recreateBtn.setMinimumWidth(120)
+        mainWindow.recreateBtn.setMaximumWidth(140)
+        mainWindow.recreateBtn.setMinimumWidth(140)
         rbLayout = QtGui.QHBoxLayout()
         rbLayout.setAlignment(QtCore.Qt.AlignCenter)
         rbLayout.addWidget(mainWindow.recreateBtn)
@@ -193,8 +193,8 @@ def add_left_dock(mainWindow):
     ## models run btn
     if mainWindow.log.log['current_state'] in ['Results Navigation']:
         mainWindow.modelsRunBtn = QtGui.QPushButton("Models run")
-        mainWindow.modelsRunBtn.setMaximumWidth(120)
-        mainWindow.modelsRunBtn.setMinimumWidth(120)
+        mainWindow.modelsRunBtn.setMaximumWidth(140)
+        mainWindow.modelsRunBtn.setMinimumWidth(140)
         mrbLayout = QtGui.QHBoxLayout()
         mrbLayout.setAlignment(QtCore.Qt.AlignCenter)
         mrbLayout.addWidget(mainWindow.modelsRunBtn)
@@ -202,12 +202,25 @@ def add_left_dock(mainWindow):
         modelsRunBtnFn = mainWindow.models_run_btn_callback
         mainWindow.connect(mainWindow.modelsRunBtn,QtCore.SIGNAL('clicked()'),modelsRunBtnFn)
 
+    ## save images
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+        mainWindow.saveImgsBtn = QtGui.QPushButton("Save figures")
+        mainWindow.saveImgsBtn.setMaximumWidth(140)
+        mainWindow.saveImgsBtn.setMinimumWidth(140)
+        sibLayout = QtGui.QHBoxLayout()
+        sibLayout.setAlignment(QtCore.Qt.AlignCenter)
+        sibLayout.addWidget(mainWindow.saveImgsBtn)
+        vboxBottom.addLayout(sibLayout)
+        mainWindow.saveImgsBtn.setEnabled(False)
+        saveImgsBtnFn = mainWindow.handle_save_images_callback
+        mainWindow.connect(mainWindow.saveImgsBtn,QtCore.SIGNAL('clicked()'),saveImgsBtnFn)
+
     ## more info btn
     if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model', 'Results Navigation',
                                                'File Alignment']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("More info")
-        mainWindow.moreInfoBtn.setMaximumWidth(120)
-        mainWindow.moreInfoBtn.setMinimumWidth(120)
+        mainWindow.moreInfoBtn.setMaximumWidth(140)
+        mainWindow.moreInfoBtn.setMinimumWidth(140)
         miLayout = QtGui.QHBoxLayout()
         miLayout.setAlignment(QtCore.Qt.AlignCenter)
         miLayout.addWidget(mainWindow.moreInfoBtn)

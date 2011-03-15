@@ -76,28 +76,33 @@ def move_to_open(mainWindow):
     ## create open widget
     closeBtnFn = lambda a=mainWindow: move_to_initial(a)
     projectList = get_project_names(mainWindow.controller.baseDir)
-    mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
-                                                           closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
+    
+    #mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
+    #                                                       closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
     ## handle docks
-    mainWindow.restore_docks(override=True)
+    #mainWindow.restore_docks(override=True)
+
+    ## remove docks if necessary 
+    if mainWindow.dockWidget != None:
+        remove_left_dock(mainWindow)
+    if mainWindow.pDock != None:
+        mainWindow.removeDockWidget(mainWindow.pipelineDock)
 
     ## enable disable other widgets
-    mainWindow.pDock.inactivate_all()
-    mainWindow.pDock.contBtn.setEnabled(False)
-
-    ## layout
-    hbl = QtGui.QHBoxLayout()
-    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    hbl.addWidget(mainWindow.existingProjectOpener)
-    mainWindow.vboxCenter.addLayout(hbl)
-    mainWindow.mainWidget.setLayout(mainWindow.vbl)
-    mainWindow.refresh_main_widget()
-
+    move_to_initial(mainWindow)
     mainWindow.status.showMessage("Open an existing project", 5000)
+
+    ## get the project directory
+    defaultDir = mainWindow.controller.defaultDir
+    projectDir = QtGui.QFileDialog.getExistingDirectory(mainWindow, 'Select the project folder', 
+                                                        options=QtGui.QFileDialog.ShowDirsOnly,directory=defaultDir)
+    projectDir = str(projectDir)
+
+    mainWindow.open_existing_project_handler(projectDir)
 
 def move_to_results_navigation(mainWindow,mode='menu'):
     if mainWindow.controller.verbose == True:
-        print "moving to results navigation", mode
+        print "INFO: moving to results navigation", mode
 
     ## error checking
     modeList = ['menu']
@@ -154,7 +159,7 @@ def move_to_results_navigation(mainWindow,mode='menu'):
 
 def move_to_model(mainWindow,modelMode='progressbar'):
     if mainWindow.controller.verbose == True:
-        print "moving to model", modelMode
+        print "INFO: moving to model", modelMode
 
     ## error checking
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
@@ -196,7 +201,7 @@ def move_to_model(mainWindow,modelMode='progressbar'):
 
 def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     if mainWindow.controller.verbose == True:
-        print "moving to quality assurance", mode
+        print "INFO: moving to quality assurance", mode
 
     ## error checking
     modeList = ['progressbar','histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
@@ -260,7 +265,7 @@ def move_to_quality_assurance(mainWindow,mode='thumbnails'):
 
 def move_to_data_processing(mainWindow,withProgressBar=False):
     if mainWindow.controller.verbose == True:
-        print "moving to data processing"
+        print "INFO: moving to data processing"
     
     if mainWindow.controller.homeDir == None:
         mainWindow.display_info('To begin either load an existing project or create a new one')
@@ -343,7 +348,7 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
 
 def move_to_one_dim_viewer(mainWindow):
     if mainWindow.controller.verbose == True:
-        print "moving to one dim viewer"
+        print "INFO: moving to one dim viewer"
 
     if mainWindow.controller.homeDir == None:
         mainWindow.display_info('To begin either load an existing project or create a new one')
@@ -382,7 +387,7 @@ def move_to_one_dim_viewer(mainWindow):
 
 def move_to_preferences(mainWindow):
     if mainWindow.controller.verbose == True:
-        print "moving to preferences"
+        print "INFO: moving to preferences"
 
     ## clean the layout
     move_transition(mainWindow,repaint=True)
@@ -411,7 +416,7 @@ def move_to_results_summary(mainWindow,runNew=False):
 
 def move_to_file_aligner(mainWindow,faMode='progressbar'):
     if mainWindow.controller.verbose == True:
-        print "moving to file aligner", faMode
+        print "INFO: moving to file aligner", faMode
 
     ## error checking
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)

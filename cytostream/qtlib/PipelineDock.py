@@ -141,7 +141,7 @@ class PipelineDock(QtGui.QWidget):
         self.connect(self.resultsSummaryBtn, QtCore.SIGNAL('clicked()'),lambda x='Results Summary': self.btn_callback(x))
 
         ## continue btn      
-        self.contBtn = QtGui.QPushButton("continue")
+        self.contBtn = QtGui.QPushButton("Continue")
         self.contBtn.setMaximumWidth(100)
         hboxBottom.addWidget(self.contBtn)
 

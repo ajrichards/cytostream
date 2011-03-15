@@ -17,6 +17,7 @@ from ConfigDictDefault import configDictDefault
 from Logging import Logger
 from Model import Model
 from Controller import Controller
+from SaveSubplots import SaveSubplots
 from NoGuiAnalysis import NoGuiAnalysis
 import qtlib
 import tools

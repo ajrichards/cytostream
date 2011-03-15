@@ -73,7 +73,7 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     ## declare variables
     markerSize = int(log.log['scatter_marker_size'])
     fontName = log.log['font_name']
-    fontSize = log.log['font_size']
+    fontSize = int(log.log['font_size'])
     filterInFocus = log.log['filter_in_focus']
     plotType = log.log['plot_type']
     alphaVal = 0.5
@@ -118,7 +118,6 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
 
         numLabels = np.unique(labels).size
         maxLabel = np.max(labels)
-        cmp = model.get_n_color_colorbar(maxLabel+1)
 
         for l in np.sort(np.unique(labels)):
             clusterColor = colors[l]
@@ -162,12 +161,16 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
     ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
     ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
-
+        
     ## save file
     fileName = selectedFile
     ax.set_title("%s_%s_%s"%(channel1,channel2,fileName),fontname=fontName,fontsize=fontSize)
     ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
     ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+    xticklabels = plt.getp(plt.gca(),'xticklabels')
+    yticklabels = plt.getp(plt.gca(),'yticklabels')
+    plt.setp(xticklabels, fontsize=fontSize-1, fontname=fontName)
+    plt.setp(yticklabels, fontsize=fontSize-1, fontname=fontName)
     
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile,channel1,channel2,plotType))
@@ -207,9 +210,9 @@ if altDir != None and os.path.isdir(altDir) == False:
 if run == True:
     ## initialize a logger and a model to get specified files and channels     
     log = Logger()
-    log.initialize(projectID,homeDir,load=True)
+    log.initialize(homeDir,load=True)
     model = Model()
-    model.initialize(projectID,homeDir)
+    model.initialize(homeDir)
 
     if modelRunID == None:
         make_scatter_plot(model,log,selectedFile,channel1,channel2,subsample=subsample,altDir=altDir)

@@ -31,8 +31,8 @@ class Logger():
 
         self.log = {'current_state':'Initial'}
 
-    def initialize(self,projectID,homeDir,load=False,configDict=None):
-        self.projectID = projectID
+    def initialize(self,homeDir,load=False,configDict=None):
+        self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
         self.modelDir = os.path.join(self.homeDir,'models')
         self.figDir  = os.path.join(self.homeDir, 'figs')
@@ -80,6 +80,7 @@ class Logger():
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
         projLog = os.path.join(self.homeDir,self.projectID+".log")
+        
         if os.path.isfile(projLog) == False:
             print "ERROR: invalid model logfile specified",projLog
             return None
@@ -92,7 +93,7 @@ class Logger():
                     try:
                         linja[1] = ast.literal_eval(str(linja[1]))
                     except:
-                        print '....................this is a weird string', linja[1]
+                        print 'ERROR: Logger -- string literal conversion failed', linja[1]
 
                 logFileDict[linja[0]] = linja[1]
 

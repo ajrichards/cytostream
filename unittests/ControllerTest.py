@@ -20,10 +20,9 @@ class ControllerTest(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         self.projectID = 'utest'
-        #self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
-        self.homeDir = os.path.join("/","home","clemmys","Desktop","utest")
+        self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
         self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")    
-        self.controller = Controller()
+        self.controller = Controller(debug=False)
         self.controller.create_new_project(self.homeDir,record=False)
         self.controller.load_files_handler([self.fcsFileName])
     
@@ -36,6 +35,7 @@ class ControllerTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))
+        self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"documents")))
     
         ## test that files can be loaded
         self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,"data"))) != 2)

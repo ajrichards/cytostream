@@ -85,7 +85,7 @@ class Model:
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
 
-    def initialize(self,projectID,homeDir):
+    def initialize(self,homeDir):
         """
         about:
             Associates a class with a project and home directory. The function
@@ -98,7 +98,7 @@ class Model:
         """
 
         ## initialize project
-        self.projectID = projectID
+        self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
             
     def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None):
