@@ -3,11 +3,10 @@ import unittest,getopt,sys,os
 
 ## parse inputs                                                                                                                      
 try:
-    optlist, args = getopt.getopt(sys.argv[1:],'va')
+    optlist, args = getopt.getopt(sys.argv[1:],'v')
 except getopt.GetoptError:
     print getopt.GetoptError
-    print sys.argv[0] + "-a -v"
-    print "Note: fileName (-a) flag to run all tests (default is a subset)"
+    print sys.argv[0] + "-a"
     print "      projName (-v) verbose flag (default is False)"
     sys.exit()
 
@@ -17,27 +16,6 @@ RUNALL = False
 for o, a in optlist:
     if o == '-v':
         VERBOSE = True
-
-#if o == '-a':
-#    RUNALL = True
-
-#if VERBOSE == True:
-#    ### GUI Visual Tests
-#    from MainWindowTest import *
-#    MainWindowTestSuite = unittest.TestLoader().loadTestsFromTestCase(MainWindowTest)
-#    mainWindowSuite = unittest.TestSuite([MainWindowTestSuite])
-#
-#    from DataProcessingCenterTest import *
-#    DataProcessingCenterTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingCenterTest)
-#    dataProcessingCenterSuite = unittest.TestSuite([DataProcessingCenterTestSuite])
-#
-#    from DataProcessingDockTest import *
-#    DataProcessingDockTestSuite = unittest.TestLoader().loadTestsFromTestCase(DataProcessingDockTest)
-#    dataProcessingDockSuite = unittest.TestSuite([DataProcessingDockTestSuite])
-#
-#    from ThumbnailViewerTest import *
-#    ThumbnailViewerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ThumbnailViewerTest)
-#   thumbnailViewerdataSuite = unittest.TestSuite([ThumbnailViewerTestSuite])
 
 ### non GUI Tests
 from ControllerTest import *
@@ -55,6 +33,14 @@ runSuite = unittest.TestSuite([TestCase1Suite])
 from TestCase2 import *
 TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
 runSuite = unittest.TestSuite([TestCase2Suite])
+
+from TestCase3 import *
+TestCase3Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase3)
+runSuite = unittest.TestSuite([TestCase3Suite])
+
+from TestCase4 import *
+TestCase4Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase4)
+runSuite = unittest.TestSuite([TestCase4Suite])
 
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)

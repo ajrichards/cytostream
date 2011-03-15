@@ -32,26 +32,17 @@ class TestCase3(unittest.TestCase):
         ## run the initial model for all files
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1200
-        configDict['plots_to_view'] = [(0,2),(0,3)]
         configDict['model_mode'] = 'onefit'
         configDict['model_reference'] = "3FITC_4PE_004"
         configDict['model_reference_run_id'] = 'run1'
 
-        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
+        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
         fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files
         for fileName in fileNameList:
             self.nga.make_results_figures(fileName,'run1')
-        
-        ## run the model again this time for only one file while using more of the config file functionality
-        #fileName = "3FITC_4PE_004"
-        #self.nga.set('model_mode','onefit')
-        #self.nga.set('thumbnails_to_view', [(0,2),(0,3)])
-        #self.nga.set('file_in_focus',fileName)
-        #self.nga.run_model()
-        #self.nga.make_results_figures(fileName,'run2')
-                
+                        
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
@@ -64,10 +55,6 @@ class TestCase3(unittest.TestCase):
         ## get events
         events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
-
-        ## check that qa figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs','qa'))) != 6)
-        self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
         
         ## check that model results can be retrieved
         modelRunID = 'run1'
@@ -81,7 +68,7 @@ class TestCase3(unittest.TestCase):
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 6)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 14)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
         ## check that model file used 'onefit' and that the reference is nonzero

@@ -8,7 +8,11 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
-plotsToView = [(0,1),(0,2),(0,3),(1,1),(1,2),(1,3)]
+plotsToViewChannels =   [(0,1),(0,2),(0,3),(1,1),(1,2),(1,3),(2,0),(2,1),(2,3),(0,0),(2,2),(3,3)]
+plotsToViewFiles =      [0,0,0,0,0,0,0,0,0,0,0,0]
+plotsToViewRuns =       ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
+plotsToViewHighlights = [None,None,None,None,None,None,None,None,None,None,None,None]
+
 configDictDefault = {
     ########### state variables ##############################################################
     'current_state'                         : 'Initial',            # do not change
@@ -35,7 +39,10 @@ configDictDefault = {
     'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
     'dpmm_k'                                : '16',                 # an int divisible by 16
     'results_mode'                          : 'modes',              # modes, components
-    'plots_to_view'                         : plotsToView,          # defined above'
+    'plots_to_view_channels'                : plotsToViewChannels,  # defined above'
+    'plots_to_view_files'                   : plotsToViewFiles,     # defined above'
+    'plots_to_view_runs'                    : plotsToViewRuns,      # defined above'
+    'plots_to_view_highlights'              : plotsToViewHighlights,# defined above'
     'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                 # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  

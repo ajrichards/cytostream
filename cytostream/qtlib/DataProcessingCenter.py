@@ -130,17 +130,25 @@ class DataProcessingCenter(QtGui.QWidget):
         nfLayout2b.addWidget(self.widgetSubtitle)
 
         ## button widgets
-        self.nfLoadBtn = QtGui.QPushButton("Load Files")
-        self.nfLoadBtn.setMaximumWidth(100)
+        self.nfLoadBtn = QtGui.QPushButton("Load file(s)")
+        self.nfLoadBtn.setMaximumWidth(130)
         nfLayout3.addWidget(self.nfLoadBtn)
         if self.loadFileFn == None:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
         else:
             self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.load_data_files)
 
+        self.nfRemoveBtn = QtGui.QPushButton("Remove file(s)")
+        self.nfRemoveBtn.setMaximumWidth(130)
+        nfLayout3.addWidget(self.nfRemoveBtn)
+        #if self.loadFileFn == None:
+        #    self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
+        #else:
+        self.connect(self.nfRemoveBtn, QtCore.SIGNAL('clicked()'),self.remove_file_from_load_list)
+
         if self.mainWindow != None and int(self.mainWindow.log.log['highest_state']) == 1:
-            self.nfEditBtn = QtGui.QPushButton("Edit Settings")
-            self.nfEditBtn.setMaximumWidth(100)
+            self.nfEditBtn = QtGui.QPushButton("Edit settings")
+            self.nfEditBtn.setMaximumWidth(130)
             nfLayout3.addWidget(self.nfEditBtn)
 
             if self.editBtnFn == None:
@@ -149,10 +157,10 @@ class DataProcessingCenter(QtGui.QWidget):
             self.connect(self.nfEditBtn, QtCore.SIGNAL('clicked()'),self.editBtnFn)
         
         ## show files to be loaded 
-        if self.showProgressBar == True and self.mainWindow!=None:
-            nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
-            self.modelLoad = QtGui.QStandardItemModel()
+        nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
+        self.modelLoad = QtGui.QStandardItemModel()
 
+        if self.mainWindow != None:
             for p in range(len(self.mainWindow.allFilePaths)):
                 fullPath = self.mainWindow.allFilePaths[p]
                 fileName = os.path.split(fullPath)[-1]
@@ -163,29 +171,43 @@ class DataProcessingCenter(QtGui.QWidget):
                 item0.setEditable(False)
                 item1.setEditable(False)
                 self.modelLoad.appendRow([item0,item1])
-            
-            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('#'))
-            self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
-            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('files to load'))
-            self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+        else:
+            for p in range(len(self.fileList)):
+                fileName = self.fileList[p]
+                item0 = QtGui.QStandardItem(str(p+1))
+                item1 = QtGui.QStandardItem('%s'%fileName)
 
-            viewLoad = QtGui.QTreeView()
-            viewLoad.setModel(self.modelLoad)
-            nfLayout4.addWidget(viewLoad)
-            nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
+                ## populate model
+                item0.setEditable(False)
+                item1.setEditable(False)
+                self.modelLoad.appendRow([item0,item1])
+    
+        self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('#'))
+        self.modelLoad.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
+        self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('files to load'))
+        self.modelLoad.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignLeft),QtCore.Qt.TextAlignmentRole)
 
-            ## show the progress bar
+        self.viewLoad = QtGui.QTreeView()
+        self.viewLoad.setModel(self.modelLoad)
+        nfLayout4.addWidget(self.viewLoad)
+        nfLayout4.addWidget(QtGui.QLabel('\t\t\t'))
+
+        ## show the progress bar
+        if self.showProgressBar == True:
             self.init_progressbar()
+        else:
+            self.nfRemoveBtn.setEnabled(False)
 
         ## finalize layout
         if self.mainWindow == None:
             nfLayout2.addLayout(nfLayout2a)
             nfLayout2.addLayout(nfLayout2b)
             nfLayout1.addLayout(nfLayout2)
-            nfLayout1.addLayout(nfLayout3)
+            #nfLayout1.addLayout(nfLayout3)
             nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
             nfLayout1.addWidget(QtGui.QLabel('\t\t\t'))
             nfLayout1.addLayout(nfLayout4)
+            nfLayout1.addLayout(nfLayout3)
             if self.progressBar != None:
                 nfLayout1.addLayout(self.pbarLayout1)
             self.hbox.addLayout(nfLayout1)
@@ -193,10 +215,11 @@ class DataProcessingCenter(QtGui.QWidget):
             self.mainWindow.vboxTop.addLayout(nfLayout2a)
             self.mainWindow.vboxTop.addLayout(nfLayout2b)
             self.mainWindow.vboxTop.addLayout(nfLayout2)
-            self.mainWindow.vboxCenter.addLayout(nfLayout3)
+            #self.mainWindow.vboxCenter.addLayout(nfLayout3)
             self.mainWindow.vboxCenter.addWidget(QtGui.QLabel('\t\t\t'))
             self.mainWindow.vboxCenter.addWidget(QtGui.QLabel('\t\t\t'))
             self.mainWindow.vboxCenter.addLayout(nfLayout4)
+            self.mainWindow.vboxCenter.addLayout(nfLayout3)
             if self.progressBar != None:
                 self.mainWindow.vboxCenter.addLayout(self.pbarLayout1)
             self.mainWindow.vboxCenter.addLayout(nfLayout1)
@@ -297,8 +320,8 @@ class DataProcessingCenter(QtGui.QWidget):
         self.modelChannels.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
 
         ## setup save btn
-        self.saveBtn = QtGui.QPushButton("save changes")
-        self.saveBtn.setMaximumWidth(100)
+        self.saveBtn = QtGui.QPushButton("Save changes")
+        self.saveBtn.setMaximumWidth(120)
         self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.channels_save_callback)
 
         ## finalize layouts
@@ -368,15 +391,15 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## setup save btn
         if firstRun == True:
-            self.saveFilesBtn = QtGui.QPushButton("save changes")
-            self.saveFilesBtn.setMaximumWidth(100)
+            self.saveFilesBtn = QtGui.QPushButton("Save changes")
+            self.saveFilesBtn.setMaximumWidth(120)
             self.connect(self.saveFilesBtn, QtCore.SIGNAL('clicked()'),self.files_save_callback)
                 
-            self.addFileBtn = QtGui.QPushButton("add")
+            self.addFileBtn = QtGui.QPushButton("Add")
             self.addFileBtn.setMaximumWidth(100)
             self.connect(self.addFileBtn, QtCore.SIGNAL('clicked()'),self.files_add_callback)
 
-            self.removeFileBtn = QtGui.QPushButton("remove")
+            self.removeFileBtn = QtGui.QPushButton("Remove")
             self.removeFileBtn.setMaximumWidth(100)
             self.connect(self.removeFileBtn, QtCore.SIGNAL('clicked()'),self.files_remove_callback)
 
@@ -455,6 +478,19 @@ class DataProcessingCenter(QtGui.QWidget):
             reply = QtGui.QMessageBox.information(self, "Information", msg)
 
 
+    def remove_file_from_load_list(self):
+        selectedIndexes = self.viewLoad.selectedIndexes()
+
+        if selectedIndexes == []:
+            msg = "No files were selected for removal"
+            reply = QtGui.QMessageBox.warning(self, "Warning", msg)
+        else:
+            indexToRemove = int(selectedIndexes[1].row())
+            self.modelLoad.removeRow(indexToRemove)
+            
+            if self.mainWindow != None:
+                self.mainWindow.allFilePaths.remove(self.mainWindow.allFilePaths[indexToRemove])
+
     def files_remove_callback(self):
         '''
         remove selected files from list
@@ -529,7 +565,9 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
     fileList = ['file1','file2','file3']
-    dpc = DataProcessingCenter(fileList, masterChannelList)
+    #fileList = []
+    showProgressBar= True
+    dpc = DataProcessingCenter(fileList, masterChannelList,showProgressBar=showProgressBar)
     dpc.show()
     sys.exit(app.exec_())
     

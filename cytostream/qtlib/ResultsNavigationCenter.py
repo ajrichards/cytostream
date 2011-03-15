@@ -100,6 +100,7 @@ class ResultsNavigationCenter(QtGui.QWidget):
             self.mainWindow.pDock.contBtn.setEnabled(False)
 
         self.mainWindow.moreInfoBtn.setEnabled(True)
+        self.mainWindow.saveImgsBtn.setEnabled(False)
         self.mainWindow.fileSelector.setEnabled(False)
         self.mainWindow.modeSelector.setEnabled(False)
         self.mainWindow.pDock.enable_disable_states()

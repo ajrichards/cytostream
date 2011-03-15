@@ -76,7 +76,7 @@ else:
 
 ## initialize a logger and a model to get specified files and channels
 log = Logger()
-log.initialize(projectID,homeDir,load=True)
+log.initialize(homeDir,load=True)
 selectedTransform = log.log['selected_transform']
 
 ## check to see if this is a filtering step
@@ -92,7 +92,7 @@ modelReferenceRunID =  log.log['model_reference_run_id']
 
 ## prepare model
 model = Model()
-model.initialize(projectID,homeDir)
+model.initialize(homeDir)
 modelNum = "run%s"%int(log.log['models_run_count'])
 numItersMCMC =  int(log.log['num_iters_mcmc'])
 

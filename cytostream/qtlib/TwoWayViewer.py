@@ -6,7 +6,7 @@ from cytostream.qtlib import MultiplePlotter
 
 class TwoWayViewer(QtGui.QWidget):
 
-    def __init__(self,homeDir,selectedFile,chans1,chans2,subsample,modelName=None,parent=None,background=False,modelType=None,mode='qa'):
+    def __init__(self,homeDir,selectedFiles,channels,subsample,modelName=None,parent=None,background=False,modelType=None,mode='qa'):
 
         QtGui.QWidget.__init__(self,parent)
 

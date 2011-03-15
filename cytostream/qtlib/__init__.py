@@ -27,10 +27,11 @@ from StateTransitions import move_to_preferences
 from MenuFunctions import create_menubar_toolbar, create_action, add_actions, restore_docks
 from ScatterPlotter import ScatterPlotter
 from MultiplePlotter import MultiplePlotter
-from TwoWayViewer import TwoWayViewer
-from ThreeWayViewer import ThreeWayViewer
-from FourWayViewer import FourWayViewer
-from SixWayViewer import SixWayViewer
+from NWayViewer import NWayViewer
+#from TwoWayViewer import TwoWayViewer
+#from ThreeWayViewer import ThreeWayViewer
+#from FourWayViewer import FourWayViewer
+#from SixWayViewer import SixWayViewer
 
 from ThumbnailViewer import ThumbnailViewer
 from PipelineDock import PipelineDock

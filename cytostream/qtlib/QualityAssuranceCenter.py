@@ -75,7 +75,9 @@ class QualityAssuranceCenter(QtGui.QWidget):
         self.mainWindow.recreateBtn.setEnabled(False)
         self.mainWindow.fileSelector.setEnabled(False)
         self.mainWindow.modeSelector.setEnabled(False)
+        self.mainWindow.saveImgsBtn.setEnabled(False)
         self.mainWindow.subsampleSelector.setEnabled(True)
+        self.mainWindow.saveImgsBtn.setEnabled(False)
         self.mainWindow.pDock.enable_disable_states()
         
     def init_progressbar_view(self):
@@ -112,7 +114,7 @@ class QualityAssuranceCenter(QtGui.QWidget):
         
     def init_progressbar(self):
         ## add progress bar if loading
-        self.progressBar = ProgressBar(parent=self,buttonLabel="create",withLabel='Render images for all files in project')
+        self.progressBar = ProgressBar(parent=self,buttonLabel="Create",withLabel='Render images for all files in project')
         if self.mainWindow != None:
             pass
         else:

@@ -10,7 +10,7 @@ from cytostream import Model, Logger, get_fcs_file_names
 
 class MultiplePlotter(QtGui.QWidget):
     def __init__(self,homeDir,selectedFile,channel1,channel2,subsample,modelName=None,parent=None,
-                 background=False,modelType=None,mode='qa',showNavBar=True):
+                 background=False,modelType=None,mode='qa',showNavBar=True,mainWindow=None,subplotIndex=0):
 
         #super(MultiplePlotter, self).__init__()
         QtGui.QWidget.__init__(self,parent)
@@ -23,6 +23,8 @@ class MultiplePlotter(QtGui.QWidget):
         self.background = background
         self.modelType = modelType
         self.mode = mode
+        self.subplotIndex = subplotIndex
+        self.mainWindow = mainWindow
 
         ## class variables
         self.selectedChannel1 = int(channel1)
@@ -45,9 +47,9 @@ class MultiplePlotter(QtGui.QWidget):
         ## get file channels
         projectID = os.path.split(self.homeDir)[-1]
         log = Logger()
-        log.initialize(projectID,self.homeDir,load=True)
+        log.initialize(self.homeDir,load=True)
         model = Model()
-        model.initialize(projectID,self.homeDir)
+        model.initialize(self.homeDir)
         channelView = log.log['channel_view']
         self.channelList = log.log['alternate_channel_labels']
         
@@ -199,6 +201,12 @@ class MultiplePlotter(QtGui.QWidget):
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
                                     modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
+        
+        if self.mainWindow != None:
+            origTuple = self.mainWindow.log.log['plots_to_view_channels'][self.subplotIndex]
+            newTuple = (self.channelList.index(selectedTxt),int(origTuple[1]))
+            self.mainWindow.log.log['plots_to_view_channels'][self.subplotIndex] = newTuple
+            self.mainWindow.controller.save()
 
     def channel2_selector_callback(self,selectedInd):
         selectedTxt = str(self.channel2Selector.currentText())
@@ -206,6 +214,12 @@ class MultiplePlotter(QtGui.QWidget):
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
                                     modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
+        
+        if self.mainWindow != None:
+            origTuple = self.mainWindow.log.log['plots_to_view_channels'][self.subplotIndex]
+            newTuple = (int(origTuple[0]),self.channelList.index(selectedTxt))
+            self.mainWindow.log.log['plots_to_view_channels'][self.subplotIndex] = newTuple
+            self.mainWindow.controller.save()
 
     def file_selector_callback(self,selectedInd):
         selectedTxt = str(self.fileSelector.currentText())
@@ -213,13 +227,23 @@ class MultiplePlotter(QtGui.QWidget):
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
                                     modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
-        
+
+        if self.mainWindow != None:
+            fileNames = get_fcs_file_names(self.mainWindow.controller.homeDir)
+            selectedIndex = fileNames.index(selectedTxt)
+            self.mainWindow.log.log['plots_to_view_files'][self.subplotIndex] = selectedIndex
+            self.mainWindow.controller.save()
+
     def highlight_selector_callback(self,selectedInd):
         selectedTxt = str(self.highlightSelector.currentText())
         self.selectedHighlight = selectedTxt
         self.plot.make_scatter_plot(self.selectedFile,self.selectedChannel1,self.selectedChannel2,self.subsample,
                                     modelName=self.selectedModelName,highlight=self.selectedHighlight)
         self.plot.draw()
+
+        if self.mainWindow != None:
+            self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
+            self.mainWindow.controller.save()
 
     def get_selected(self,selectorID):
         if selectorID == 'channel1':
@@ -258,7 +282,6 @@ if __name__ == '__main__':
         
     mp = MultiplePlotter(homeDir,selectedFile,channel1,channel2,subsample,background=True,
                          modelName=modelName,modelType=modelType,mode=mode)
-
     mp.show()
     sys.exit(app.exec_())
 

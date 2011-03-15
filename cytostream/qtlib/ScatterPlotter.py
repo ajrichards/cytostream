@@ -58,9 +58,9 @@ class ScatterPlotter(FigureCanvas):
         ## prepare model
         projectID = os.path.split(homeDir)[-1]        
         self.log = Logger()
-        self.log.initialize(projectID,homeDir,load=True)
+        self.log.initialize(homeDir,load=True)
         self.model = Model()
-        self.model.initialize(projectID,homeDir)
+        self.model.initialize(homeDir)
 
         ## create initial scatter plot
         self.make_scatter_plot(selectedFile,channel1,channel2,subset,modelName=modelName)
@@ -88,7 +88,7 @@ class ScatterPlotter(FigureCanvas):
         ## declare variables
         fontName = self.log.log['font_name']
         markerSize = int(self.log.log['scatter_marker_size'])
-        fontSize = self.log.log['font_size']
+        fontSize = int(self.log.log['font_size'])
         plotType = self.log.log['plot_type']
         filterInFocus = self.log.log['filter_in_focus']
 
@@ -143,7 +143,6 @@ class ScatterPlotter(FigureCanvas):
 
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
-            cmp = self.model.get_n_color_colorbar(maxLabel+1)
 
             for l in np.sort(np.unique(labels)):
                 clusterColor = self.colors[l]
@@ -152,7 +151,7 @@ class ScatterPlotter(FigureCanvas):
                 ## handle highlighted clusters      
                 if highlight != None and str(int(highlight)) == str(int(l)):
                     alphaVal = 0.8
-                    markerSize =  int(self.log.log['scatter_marker_size']) + 4
+                    markerSize =  markerSize+4
                 elif highlight !=None and str(int(highlight)) != str(int(l)):
                     alphaVal = 0.5
                     clusterColor = "#CCCCCC"
@@ -198,10 +197,11 @@ class ScatterPlotter(FigureCanvas):
         bufferY = buff * (events[:,index2].max() - events[:,index2].min())
         self.ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
         self.ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
+        #self.ax.set_xticklabels(fontsize=fontSize-1,fontname=fontName)
+        #self.ax.set_yticklabels(fontsize=fontSize-1,fontname=fontName)
 
-        
+        ## force square axes
         self.ax.set_aspect(1./self.ax.get_data_ratio())
-
 
         ## save file
         fileName = selectedFile

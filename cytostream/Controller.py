@@ -19,7 +19,7 @@ from FileControls import add_project_to_log
 from Logging import Logger
 
 class Controller:
-    def __init__(self,viewType=None,configDict=None):
+    def __init__(self,viewType=None,configDict=None,debug=False):
         '''
         construct an instance of the controller class
         to use invoke the method initialize
@@ -28,9 +28,20 @@ class Controller:
         ## basic application wide variables 
         self.viewType = viewType
         self.appName = "cytostream"
-        self.verbose = True
+
+        ## set debug mode
+        self.debug = debug
+
+        if self.debug == True:
+            print 'DEBUG ON'
+            self.verbose = True
+        else:
+            self.verbose = False
+
+        ## application variables
         self.configDict = configDict
         self.reset_workspace()
+
 
     def reset_workspace(self):
         self.projectID = None
@@ -40,6 +51,16 @@ class Controller:
         self.subsampleIndices = None
         self.fileChannelPath = None
         self.baseDir = self.model.baseDir
+        self.currentPlotView = None
+
+        if self.debug == True:
+            print 'DEBUG ON'
+            self.verbose = True
+            self.defaultDir = os.path.join(self.baseDir,'projects')
+        else:
+            self.verbose = False
+            self.defaultDir = os.getenv("HOME")
+
         self.pythonPath = self.model.pythonPath                           
         
     def save(self):
@@ -48,8 +69,8 @@ class Controller:
     def initialize_project(self,homeDir,loadExisting=False):
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
-        self.log.initialize(self.projectID,self.homeDir,load=loadExisting,configDict=self.configDict) 
-        self.model.initialize(self.projectID,self.homeDir)
+        self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
+        self.model.initialize(self.homeDir)
 
     def process_images(self,mode,modelRunID=None,progressBar=None,view=None):
 
@@ -249,7 +270,8 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"figs"))
             os.mkdir(os.path.join(self.homeDir,"models"))
             os.mkdir(os.path.join(self.homeDir,"results"))
-
+            os.mkdir(os.path.join(self.homeDir,"documents"))
+            
         ## record project creation in log
         if record == True:
             add_project_to_log(self.baseDir,self.homeDir,'created')
@@ -347,7 +369,8 @@ class Controller:
     def handle_filtering(self,fileName,filteringDict):
 
         subsample = self.log.log['subsample_analysis']
-        print 'handling filtering...', subsample
+        if self.verbose == True:
+            print 'INFO: handling filtering...', subsample
 
         ## declare variables
         if not re.search('filter', str(subsample)):
@@ -475,6 +498,9 @@ class Controller:
                         ## to debug uncomment the following 2 lines
                         if not re.search("it =",next_line):
                             print next_line
+                        
+                        if re.search("Error|error|ERROR",next_line) and view != None:
+                            view.display_error("There was a problem with your cuda device\n%s"%next_line)
 
                         if re.search("it =",next_line):
                             progress = 1.0 / totalIters

@@ -16,7 +16,7 @@ class ModelTest(unittest.TestCase):
         self.projectID = 'utest'
         self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
         self.model = Model()
-        self.model.initialize(self.projectID, self.homeDir)
+        self.model.initialize(self.homeDir)
         self.fcsFilePathName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")
         self.fileName = "3FITC_4PE_004.fcs"
         self.assertTrue(os.path.isfile(self.fcsFilePathName))
