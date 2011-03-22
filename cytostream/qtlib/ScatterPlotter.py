@@ -3,8 +3,8 @@ from PyQt4 import QtGui
 import numpy as np
 import matplotlib as mpl
 
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 from matplotlib.figure import Figure  
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas

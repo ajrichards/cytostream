@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
+
 import sys,os,unittest,time,re
-from cytostream import Controller
+
 import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    print '...........', mpl.get_backend()
+    mpl.use('agg')
+    print '...........'
 
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
-
+from cytostream import Controller
 
 ## test class for the main window function
 class ControllerTest(unittest.TestCase):
@@ -78,7 +81,7 @@ class ControllerTest(unittest.TestCase):
         
         ## run model
         self.controller.handle_subsampling(subsample)
-        self.controller.run_selected_model(useSubsample=True,cleanBorderEvents=True)
+        self.controller.run_selected_model(useSubsample=True)
         fileName = "3FITC_4PE_004"
         fileChannels = self.controller.model.get_file_channel_list(fileName)    
         excludedChannel = fileChannels[excludedChannelInd]

@@ -3,10 +3,8 @@ import sys,os,unittest,time,re
 from cytostream import NoGuiAnalysis, configDictDefault
 
 '''
-description - Shows the user how to run an original set of files using one set of parameters.  Then 
-              a new set of parameters are given in the form of a configDict and the model is run again -- this
-              time only on a single file.
-
+description - Shows the user how import a custom config file to specify one set of parameters.  Then 
+              the paramerters are altered and the model is run again -- this time only on a single file.
 
 A. Richards
 '''
@@ -34,6 +32,7 @@ class TestCase1(unittest.TestCase):
         configDict['subsample_analysis'] = 500
 
         self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
+        self.nga.run_model()
         fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files

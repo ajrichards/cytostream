@@ -8,8 +8,8 @@ import getopt,sys,os,re,csv
 import numpy as np
 import matplotlib as mpl
 
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm

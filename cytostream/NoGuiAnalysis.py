@@ -5,8 +5,8 @@ from PyQt4 import QtGui, QtCore
 import subprocess
 import matplotlib as mpl
 
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 from cytostream import Controller, get_fcs_file_names
 import numpy as np
@@ -14,7 +14,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True):
+    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True,verbose=False):
         """
           class constructor 
 
@@ -36,6 +36,7 @@ class NoGuiAnalysis():
         self.configDict = configDict
         self.useSubsample = useSubsample
         self.record = record
+        self.verbose = verbose
 
         ## initialize
         self.initialize()
@@ -48,14 +49,14 @@ class NoGuiAnalysis():
             self.make_qa_figures()
 
         ## run model
-        self.run_model()
+        #self.run_model()
 
     def initialize(self):
         """
         initializes a project
         """
 
-        self.controller = Controller(configDict=self.configDict)
+        self.controller = Controller(configDict=self.configDict,debug=self.verbose)
         self.controller.create_new_project(self.homeDir,record=self.record)
         
     def load_files(self):

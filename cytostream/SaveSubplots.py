@@ -13,14 +13,13 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 import matplotlib as mpl
 
-## important line to fix popup error in mac osx
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 import matplotlib.pyplot as plt
 from cytostream import Logger, Model, get_fcs_file_names
+from cytostream import NoGuiAnalysis
 from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats, get_file_data
-
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
@@ -310,12 +309,16 @@ if __name__ == '__main__':
     '''
     
     homeDir = os.path.join("projects","utest")
+    run1File = os.path.join("projects","utest","models","3FITC_4PE_004_run1_modes.pickle")
     figName = os.path.join(os.getenv("HOME"),'test')
 
-    if os.path.isdir(homeDir) == False:
-        print "ERROR: you must run the unittests in order to run SaveSubplotsCenter"
-    else:
-        figMode = 'analysis'
-        numSubplots = 12
-        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle='Example title',forceScale=True)
-        print 'plot saved as ', figName
+    if os.path.exists(run1File) == False:
+        print "utest model run was not found.....running"
+        filePathList = [os.path.join(".","example_data","3FITC_4PE_004.fcs")]
+        nga = NoGuiAnalysis(homeDir,filePathList,useSubsample=True,makeQaFigs=False,record=False,verbose=False)
+
+    #else:
+    figMode = 'analysis'
+    numSubplots = 12
+    ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle='Example title',forceScale=True)
+    print 'plot saved as ', figName

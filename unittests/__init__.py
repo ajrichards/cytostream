@@ -1,5 +1,7 @@
 import unittest,getopt,sys,os
-
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 ## parse inputs                                                                                                                      
 try:

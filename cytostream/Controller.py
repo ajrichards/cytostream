@@ -12,6 +12,10 @@ import re,os,csv,sys,time,re
 import subprocess, cPickle
 import Image
 import numpy as np
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 from PyQt4 import QtGui
 from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
@@ -451,7 +455,7 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None,view=None,useSubsample=True,cleanBorderEvents=True):
+    def run_selected_model(self,progressBar=None,view=None,useSubsample=True):
         
         ## determine the data in focus
         fileInFocus = self.log.log['file_in_focus']
@@ -469,10 +473,10 @@ class Controller:
         if useSubsample == False:
             subsample = 'original'
 
-        if cleanBorderEvents == True:
-            cbe = 't'
-        else:
-            cbe = 'f'
+        #if cleanBorderEvents == True:
+        #    cbe = 't'
+        #else:
+        #    cbe = 'f'
 
         ## set the data in focus
         if fileInFocus != 'all' and fileInFocus not in fileList:
@@ -485,7 +489,7 @@ class Controller:
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s -c %s"%(self.pythonPath,script,self.homeDir,fileName,numComponents,subsample,cbe), 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(self.pythonPath,script,self.homeDir,fileName,numComponents,subsample), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
