@@ -48,6 +48,9 @@ class NoGuiAnalysis():
         if self.makeQaFigs == True:
             self.make_qa_figures()
 
+        self.set('current_state', 'Model')
+        self.set('highest_state', '3')
+
         ## run model
         #self.run_model()
 
@@ -145,9 +148,12 @@ class NoGuiAnalysis():
 
         """
 
-
+        subsample = self.controller.log.log['subsample_analysis']
+        self.controller.handle_subsampling(subsample)
         self.controller.run_selected_model(useSubsample=self.useSubsample)
-    
+        self.set('current_state', 'Results Navigation')
+        self.set('highest_state', '4')
+
     def get_model_results(self,fileName,modelRunID,modelType):
         """
         returns model results
@@ -181,6 +187,12 @@ class NoGuiAnalysis():
         make the results figures for a given file and a given model run
 
         """
+
+        ## error checking
+        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.pickle'%(fileName,modelRunID))
+        if os.path.exists(modelPath) == False:
+            print "ERROR: model path does not exist did you run the model?"
+            return None
 
         fileList = self.get_file_names()
         if fileName not in fileList:

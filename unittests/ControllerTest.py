@@ -67,7 +67,6 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
-        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs','qa'))) != 7)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
 
     def testRunModel(self):
@@ -102,8 +101,6 @@ class ControllerTest(unittest.TestCase):
         subsample = self.controller.log.log['subsample_analysis']
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
-
-        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,'figs', modelRunID))) != 4)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
 ### Run the tests

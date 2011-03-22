@@ -37,7 +37,6 @@ class Controller:
         self.debug = debug
 
         if self.debug == True:
-            print 'DEBUG ON'
             self.verbose = True
         else:
             self.verbose = False
@@ -186,8 +185,9 @@ class Controller:
         for img in os.listdir(imgDir):
             if os.path.isfile(os.path.join(imgDir,img)) == True:
                 imgFile = os.path.join(imgDir,img)
-                thumbFile = self.make_thumb(imgFile,thumbDir,fileName)
-            
+                self.make_thumb(imgFile,thumbDir,fileName)
+                os.remove(imgFile)
+
     def make_thumb(self,imgFile,thumbDir,fileName):
         if os.path.isfile(imgFile) == True:
             fileChannels = self.model.get_file_channel_list(fileName)
@@ -200,8 +200,14 @@ class Controller:
                 thumbSize = 120
             elif len(fileChannels) == 7:
                 thumbSize = 90
-            elif len(fileChannels) > 7:
+            elif len(fileChannels) == 8:
                 thumbSize = 70
+            elif len(fileChannels) == 9:
+                thumbSize = 60
+            elif len(fileChannels) == 10:
+                thumbSize = 50
+            elif len(fileChannels) > 10:
+                thumbSize = 40
           
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
             thumbFile = os.path.join(thumbDir,thumbFile)
@@ -472,11 +478,6 @@ class Controller:
 
         if useSubsample == False:
             subsample = 'original'
-
-        #if cleanBorderEvents == True:
-        #    cbe = 't'
-        #else:
-        #    cbe = 'f'
 
         ## set the data in focus
         if fileInFocus != 'all' and fileInFocus not in fileList:

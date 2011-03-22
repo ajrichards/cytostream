@@ -17,9 +17,15 @@ class ThumbnailViewer(QtGui.QWidget):
             self.thumbSize = 120
         elif len(fileChannels) == 7:
             self.thumbSize = 90
-        elif len(fileChannels) > 7:
+        elif len(fileChannels) == 8:
             self.thumbSize = 70
-
+        elif len(fileChannels) == 9:
+            self.thumbSize = 60
+        elif len(fileChannels) == 10:
+            self.thumbSize = 50
+        elif len(fileChannels) > 10:
+            self.thumbSize = 40
+        
         #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
         #print self.thumbSize
 
@@ -57,7 +63,8 @@ class ThumbnailViewer(QtGui.QWidget):
                     continue
                 img = None
                 for t in thumbs:
-                    if re.search(chanI,t) and re.search(chanJ,t):
+                    normalThumb = re.sub("#","_",t)
+                    if re.search(chanI,normalThumb) and re.search(chanJ,normalThumb):
                         img = t
                 
                 imgBtn = QtGui.QPushButton()
