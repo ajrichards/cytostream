@@ -21,6 +21,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+import numpy as np
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
@@ -199,7 +200,7 @@ class MainWindow(QtGui.QMainWindow):
         defaultDir = self.controller.defaultDir
         projectDir = QtGui.QFileDialog.getExistingDirectory(self, 'Select a location to save your project', 
                                                             options=QtGui.QFileDialog.ShowDirsOnly, directory=defaultDir)
-        projectDir = str(projectDir)
+        projectID = re.sub("\s+","_",str(projectID))
 
         if projectDir == '':
             self.status.showMessage("New project creation aborted", 5000)
@@ -209,7 +210,6 @@ class MainWindow(QtGui.QMainWindow):
             print "ERROR: MainWindow - specified project directory does not exist"
             self.status.showMessage("New project creation aborted", 5000)
             return None
-
 
         ## ensure project name is valid and not already used
         homeDir = os.path.join(projectDir,projectID)
@@ -224,8 +224,6 @@ class MainWindow(QtGui.QMainWindow):
                 if self.controller.verbose == True:
                     print 'INFO: overwriting old project'
             else:
-                #projectID, ok = QtGui.QInputDialog.getText(self, self.controller.appName, 'Enter another project name:')
-                #projectID = re.sub("\s+","_",str(projectID))
                 self.status.showMessage("New project creation aborted", 5000)
                 return None
 
@@ -636,13 +634,16 @@ class MainWindow(QtGui.QMainWindow):
         self.log.log['selected_file'] == re.sub("\.txt|\.fcs","",fileList[0])
 
         if mode == 'Quality Assurance':
+            excludedChannels = self.log.log['excluded_channels_qa']
             self.mainWidget = QtGui.QWidget(self)
             imgDir = os.path.join(self.controller.homeDir,"figs")
             fileChannels = self.log.log['alternate_channel_labels']
+            channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
             
         elif mode == 'Results Navigation':
+            excludedChannels = self.log.log['excluded_channels_analysis']
             self.mainWidget = QtGui.QWidget(self)
             fileChannels = self.log.log['alternate_channel_labels']
             imgDir = os.path.join(self.controller.homeDir,'figs',self.log.log['selected_model'])
@@ -651,7 +652,9 @@ class MainWindow(QtGui.QMainWindow):
                 print "ERROR: MainWindow.display_thumbnails -- a bad imgDir has been specified", imgDir
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
+
+            channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_scatter)
         else:
             print "ERROR: bad mode specified in display thumbnails"
 
@@ -756,18 +759,19 @@ class MainWindow(QtGui.QMainWindow):
         hbl.setAlignment(QtCore.Qt.AlignCenter)
         move_transition(self,repaint=True)
         self.reset_layout()
-        masterChannelList = self.get_master_channel_list()
+        #masterChannelList = self.get_master_channel_list()
+        fileChannels = self.log.log['alternate_channel_labels']
 
         if img != None:
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
-            self.lastChanI = chanI
-            self.lastChanJ = chanJ
+            self.lastChanI = re.sub("#","_",chanI)
+            self.lastChanJ = re.sub("#","_",chanJ)
         elif self.lastChanI == None or self.lastChanJ == None:
-            self.lastChanI = masterChannelList[0]
-            self.lastChanJ = masterChannelList[1]
+            self.lastChanI = re.sub("#","_",fileChannels[0])
+            self.lastChanJ = re.sub("#","_",fileChannels[1])
 
         if self.lastChanI == None or self.lastChanJ == None:
             print "ERROR: lastChanI or lastChanJ not defined"

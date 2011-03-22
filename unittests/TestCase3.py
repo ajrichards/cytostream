@@ -67,7 +67,7 @@ class TestCase3(unittest.TestCase):
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 14)
+        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,'figs', modelRunID))) != 2)
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
         ## check that model file used 'onefit' and that the reference is nonzero

@@ -172,6 +172,9 @@ def make_scatter_plot(model,log,selectedFile,channel1Ind,channel2Ind,subsample='
     plt.setp(xticklabels, fontsize=fontSize-1, fontname=fontName)
     plt.setp(yticklabels, fontsize=fontSize-1, fontname=fontName)
     
+    channel1 = re.sub("_","#",channel1)
+    channel2 = re.sub("_","#",channel2)
+    
     if altDir == None:
         fileName = os.path.join(model.homeDir,'figs',"%s_%s_%s.%s"%(selectedFile,channel1,channel2,plotType))
         fig.savefig(fileName,transparent=False,dpi=50)

@@ -45,7 +45,7 @@ class TestCase4(unittest.TestCase):
         figName = os.path.join(self.baseDir,'unittests','subplots_test_qa.png')
         figTitle = "testing qualitiy assurance plots"
         ss = SaveSubplots(self.homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
-        print 'plot saved as ', figName
+        os.remove(figName)
 
         ## change several subplots indices
         plotsToViewChannels = [(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1)]
@@ -62,7 +62,7 @@ class TestCase4(unittest.TestCase):
         figName = os.path.join(self.baseDir,'unittests','subplots_test_run1a.png')
         figTitle = "testing run1 plots"
         ss = SaveSubplots(self.homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
-        print 'plot saved as ', figName
+        os.remove(figName)
 
         ## show use of highlighting and how to change the number of subplots
         plotsToViewHighlights = [0,1,2,3,None,None,None,None,None,None,None,None]
@@ -71,8 +71,7 @@ class TestCase4(unittest.TestCase):
         figName = os.path.join(self.baseDir,'unittests','subplots_test_run1b.png')
         figTitle = "testing run1 plots highlighting"
         ss = SaveSubplots(self.homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
-        print 'plot saved as ', figName
-
+        os.remove(figName)
 
 ### Run the tests 
 if __name__ == '__main__':
