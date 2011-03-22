@@ -8,11 +8,14 @@ A. Richards
 
 ## make imports
 import sys,getopt
-if sys.platform == 'darwin':
-    import matplotlib
-    matplotlib.use('Agg') 
-
 from PyQt4 import QtGui
+
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    print '......Main.py', mpl.get_backend()
+    mpl.use('agg')
+    print '......'
+
 from cytostream.qtlib import MainWindow
 
 ## check for the debug flag

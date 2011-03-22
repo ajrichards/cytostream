@@ -45,6 +45,11 @@ class ModelCenter(QtGui.QWidget):
             self.numItersMCMC = '1100'
             self.dpmmK = 16
 
+        if self.mainWindow != None:
+            self.cleanBorderEvents = self.mainWindow.log.log['clean_border_events']
+        else:
+            self.cleanBorderEvents = True
+
         ## error checking
         if self.mode not in ['progressbar', 'edit']:
             print "ERROR: ModelCenter -- bad input mode", self.mode
@@ -303,12 +308,23 @@ class ModelCenter(QtGui.QWidget):
         if self.modelToRun == 'dpmm':
             hbox2b = QtGui.QHBoxLayout()
             hbox2b.setAlignment(QtCore.Qt.AlignCenter)
+            hbox2c = QtGui.QHBoxLayout()
+            hbox2c.setAlignment(QtCore.Qt.AlignCenter)
             teDefault = self.numItersMCMC
             self.mcmcItersEntry = TextEntry("MCMC iterations",textEntryDefault=teDefault) 
             hbox2b.addWidget(QtGui.QLabel(" "))
             hbox2b.addWidget(self.mcmcItersEntry)
             hbox2b.addWidget(QtGui.QLabel(" "))
+            self.cleanBorderEventsBox = QtGui.QCheckBox("Clean border events")
+            self.cleanBorderEventsBox.setCheckable(True)
+
+            if self.cleanBorderEvents == True:
+                self.cleanBorderEventsBox.setCheckState(QtCore.Qt.Checked)
+
+            self.connect(self.cleanBorderEventsBox,QtCore.SIGNAL('clicked()'),self.clean_border_events_callback)
+            hbox2c.addWidget(self.cleanBorderEventsBox)
             mssLayout1.addLayout(hbox2b)
+            mssLayout1.addLayout(hbox2c)
             
         ## finalize layout
         mssLayout.addLayout(mssLayout1)
@@ -350,6 +366,14 @@ class ModelCenter(QtGui.QWidget):
     def generic_callback(self):
         print 'This button does nothing'
 
+    def clean_border_events_callback(self):
+        print 'clean border events'
+        #print dir(self.cleanBorderEventsBox)
+        state = str(self.cleanBorderEventsBox.isChecked())
+        
+        if self.mainWindow != None:
+            self.mainWindow.log.log['clean_border_events'] = state
+        
 ### Run the tests 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

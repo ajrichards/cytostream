@@ -1,9 +1,11 @@
 import sys,os,re
 from PyQt4 import QtGui, QtCore
 import numpy as np
+import matplotlib as mpl
 
-from matplotlib.figure import Figure  
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from cytostream.qtlib import ScatterPlotter
 from cytostream import Model, Logger, get_fcs_file_names

@@ -1,6 +1,6 @@
 #!/usr/bin/env python                                                                                                                                                                                                                       
 import sys,os,unittest,time,re
-from cytostream import NoGuiAnalysis, configDictDefault
+from cytostream import NoGuiAnalysis
 
 '''
 description - Shows the user how to run an original set of files using one set of parameters.  Then 
@@ -30,16 +30,15 @@ class TestCase3(unittest.TestCase):
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
 
         ## run the initial model for all files
-        configDict = configDictDefault.copy()
-        configDict['num_iters_mcmc'] = 1200
-        configDict['model_mode'] = 'onefit'
-        configDict['model_reference'] = "3FITC_4PE_004"
-        configDict['model_reference_run_id'] = 'run1'
+        self.nga = NoGuiAnalysis(homeDir,filePathList,useSubsample=True,makeQaFigs=False,record=False)
+        self.nga.set('num_iters_mcmc', 1200)
+        self.nga.set('model_mode', 'onefit')
+        self.nga.set('model_reference', "3FITC_4PE_004")
+        self.nga.set('model_reference_run_id', 'run1')
+        self.nga.run_model()
 
-        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
-        fileNameList = self.nga.get_file_names()
-    
         ## create all pairwise figs for all files
+        fileNameList = self.nga.get_file_names()
         for fileName in fileNameList:
             self.nga.make_results_figures(fileName,'run1')
                         

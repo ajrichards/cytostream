@@ -14,6 +14,10 @@ import sys,os,re
 from PyQt4 import QtGui,QtCore
 import numpy as np
 
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar

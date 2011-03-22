@@ -16,6 +16,10 @@ __author__ = "A Richards"
 
 import os,sys,time,re
 import platform
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from PyQt4 import QtCore
 from PyQt4 import QtGui

@@ -9,8 +9,8 @@ import numpy as np
 import matplotlib as mpl
 
 ## important line to fix popup error in mac osx
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 from cytostream import Model, Logger
 from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats

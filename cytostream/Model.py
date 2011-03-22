@@ -24,8 +24,8 @@ adam.richards@stat.duke.edu
 import sys,csv,os,re,cPickle,subprocess,time
 import matplotlib as mpl
 
-if mpl.get_backend() == 'MacOSX':
-    mpl.use('Agg')
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
 
 try:
     from config_cs import configCS

@@ -15,12 +15,17 @@ A. Richards
 
 import sys,getopt,os,re,cPickle,time,csv
 import numpy as np
+
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 import fcm
 import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -c cleanBorderEvents -v"
+    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -v"
     sys.exit()
 
 try:
@@ -32,14 +37,12 @@ except getopt.GetoptError:
     print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
     print " subsample     (-s) subsample is t or f"
-    print " clean         (-c) clean border events"
     print " verbose       (-v) verbose flag"
     sys.exit()
 
 k = 16
 name = None
 verbose = False
-cleanBorderEvents = True
 for o, a in optlist:
     if o == '-f':
         fileName = a
@@ -51,12 +54,6 @@ for o, a in optlist:
         subsample = a
     if o == '-v':
         verbose = True
-    if o == '-c':
-        a = a.lower()
-        if re.search('t|true',a):
-            cleanBorderEvents = True
-        else:
-            cleanBorderEvents = False
 
 ## initial error checking
 print 'running dpmm with %s'%k
@@ -95,6 +92,7 @@ model = Model()
 model.initialize(homeDir)
 modelNum = "run%s"%int(log.log['models_run_count'])
 numItersMCMC =  int(log.log['num_iters_mcmc'])
+cleanBorderEvents = log.log['clean_border_events']
 
 ## get events
 if re.search('filter',str(subsample)):

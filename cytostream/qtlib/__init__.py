@@ -1,3 +1,4 @@
+
 ## files requiring no cytostream deps
 from BasicWidgets import Slider, ProgressBar, Imager, RadioBtnWidget
 from BasicFunctions import move_transition
@@ -28,11 +29,8 @@ from MenuFunctions import create_menubar_toolbar, create_action, add_actions, re
 from ScatterPlotter import ScatterPlotter
 from MultiplePlotter import MultiplePlotter
 from NWayViewer import NWayViewer
-#from TwoWayViewer import TwoWayViewer
-#from ThreeWayViewer import ThreeWayViewer
-#from FourWayViewer import FourWayViewer
-#from SixWayViewer import SixWayViewer
 
 from ThumbnailViewer import ThumbnailViewer
 from PipelineDock import PipelineDock
 from MainWindow import MainWindow
+

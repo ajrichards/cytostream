@@ -1,6 +1,6 @@
 #!/usr/bin/env python                                                                                                                                                                                                                       
 import sys,os,unittest,time,re
-from cytostream import NoGuiAnalysis, configDictDefault, SaveSubplots
+from cytostream import NoGuiAnalysis,SaveSubplots
 
 '''
 description - Shows the user how to run a simple model then several subplots are generated to 
@@ -8,7 +8,6 @@ description - Shows the user how to run a simple model then several subplots are
 
 A. Richards
 '''
-
 
 class TestCase4(unittest.TestCase):
     def setUp(self):
@@ -28,13 +27,12 @@ class TestCase4(unittest.TestCase):
         self.baseDir = BASEDIR
 
         ## run the initial model for all files
-        configDict = configDictDefault.copy()
-        configDict['num_iters_mcmc'] = 1200
+        self.nga = NoGuiAnalysis(self.homeDir,filePathList,useSubsample=True,makeQaFigs=False,record=False)
+        self.nga.set('num_iters_mcmc',1200)
+        self.nga.run_model()
 
-        self.nga = NoGuiAnalysis(self.homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
-        fileNameList = self.nga.get_file_names()
-    
         ## create all pairwise figs for within cytostream visualization
+        fileNameList = self.nga.get_file_names()
         for fileName in fileNameList:
             self.nga.make_results_figures(fileName,'run1')
     

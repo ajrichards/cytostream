@@ -7,7 +7,6 @@ from cytostream.stats import FileAligner
 from SimulatedData1 import case1, case2, case3, case4, case5, case6
 from SimulatedData1 import case1Labels, case2Labels, case3Labels, case4Labels, case5Labels, case6Labels
 
-
 ## check for verbose flag
 VERBOSE=False
 optlist, args = getopt.getopt(sys.argv[1:], 'v')

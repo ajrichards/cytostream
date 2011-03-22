@@ -7,6 +7,11 @@ cluster indices are forced to begin with 1
 
 import os,csv,re,sys,cPickle
 import numpy as np
+
+import matplotlib as mpl
+if mpl.get_backend() != 'agg':
+    mpl.use('agg')
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 from matplotlib.ticker import MaxNLocator
