@@ -23,7 +23,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from scipy.stats import gaussian_kde
 from cytostream import get_fcs_file_names, Logger, Model
-from cytostream.tools import fetch_plotting_events
+from cytostream.tools import fetch_plotting_events, get_all_colors
 from matplotlib.widgets import CheckButtons
 
 class OneDimViewer(QtGui.QWidget):
@@ -46,7 +46,7 @@ class OneDimViewer(QtGui.QWidget):
         self.background = background
         self.callBack = callBack
         self.homeDir = homeDir
-        self.colors = ['b','orange','k','g','r','c','m','y']
+        self.colors = get_all_colors()
 
         ## initialize model
         projectID = os.path.split(homeDir)[-1]
@@ -57,7 +57,8 @@ class OneDimViewer(QtGui.QWidget):
 
         ## additional class-wide variables
         self.fcsFileList = get_fcs_file_names(homeDir)
-        self.masterChannelList = model.get_master_channel_list() 
+        #self.masterChannelList = model.get_master_channel_list() 
+        self.masterChannelList = log.log['alternate_channel_labels']
 
         ## setup layouts
         hl = QtGui.QHBoxLayout()
@@ -79,8 +80,6 @@ class OneDimViewer(QtGui.QWidget):
         self.chkBoxes = {}
         first = True
         count = -1
-        #lab = QtGui.QLabel("blah", self)
-        #print dir(lab)
 
         for fcsFileName in self.fcsFileList:
             count+=1
@@ -94,8 +93,9 @@ class OneDimViewer(QtGui.QWidget):
                 first = False
 
             vbox1.addWidget(self.chkBoxes[fcsFileName])
-            self.connect(self.chkBoxes[fcsFileName], QtCore.SIGNAL('clicked()'),lambda x=fcsFileName: self.fcs_file_callback(fcsFileName=x))
-
+            self.connect(self.chkBoxes[fcsFileName], 
+                         QtCore.SIGNAL('clicked()'),lambda x=fcsFileName: self.fcs_file_callback(fcsFileName=x))
+        
         ## channel selector
         self.channelSelector = QtGui.QComboBox(self)
         self.channelSelector.setMaximumWidth(180)
@@ -113,9 +113,6 @@ class OneDimViewer(QtGui.QWidget):
             else:
                 print "ERROR: in OneDimViewerDoc - bad specified channelDefault"
 
-        #if callBack == None:
-        #    self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.generic_callback)
-        #else:
         self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_callback)
 
         ## create the drawer
@@ -189,7 +186,8 @@ class OneDimDraw(FigureCanvas):
 
     '''
 
-    def __init__(self,fcsFileList,masterChannelList,model,log,subset="original",parent=None,altDir=None, modelName=None, background=False, modelType=None):
+    def __init__(self,fcsFileList,masterChannelList,model,log,subset="original",parent=None,altDir=None, 
+                 modelName=None, background=False, modelType=None):
 
         ## prepare plot environment
         self.fig = Figure()
@@ -197,8 +195,8 @@ class OneDimDraw(FigureCanvas):
         self.fig.set_frameon(background)
         self.selectedChannelInd = 0
         self.selectedFileIndices = [0]
-        self.colors = ['b','orange','k','g','r','c','m','y']
-        self.lines = ['-','.','--','-.','o','d','s','^']
+        self.colors = get_all_colors()
+        self.lines = ['-','.','--','-.','o','d','s','^'] * 10
 
         ## declare variables
         self.fcsFileList = fcsFileList
@@ -230,7 +228,10 @@ class OneDimDraw(FigureCanvas):
         
         ## determine max val for each channel
         self.maxVal = 0
+
+        count = 0
         for fcsFileInd in range(len(self.fcsFileList)):
+            count+=1
             fcsFileName = re.sub("\.fcs|\.pickle|\.csv","",self.fcsFileList[fcsFileInd])
             for channelInd in range(len(self.masterChannelList)):
                 data,labels = fetch_plotting_events(fcsFileName,model,log,self.subset)
