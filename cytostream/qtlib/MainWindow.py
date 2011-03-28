@@ -206,12 +206,14 @@ class MainWindow(QtGui.QMainWindow):
             self.status.showMessage("New project creation aborted", 5000)
             return None
         
+        projectDir = str(projectDir)
+
         if os.path.isdir(projectDir) == False:
             print "ERROR: MainWindow - specified project directory does not exist"
             self.status.showMessage("New project creation aborted", 5000)
             return None
 
-        ## ensure project name is valid and not already used
+        ## ensure project name is valid and not alreaedy used
         homeDir = os.path.join(projectDir,projectID)
         if os.path.isdir(homeDir) == True:
             idValid = False

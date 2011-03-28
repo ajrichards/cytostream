@@ -77,11 +77,6 @@ def move_to_open(mainWindow):
     closeBtnFn = lambda a=mainWindow: move_to_initial(a)
     projectList = get_project_names(mainWindow.controller.baseDir)
     
-    #mainWindow.existingProjectOpener = OpenExistingProject(projectList,parent=mainWindow.mainWidget,openBtnFn=mainWindow.open_existing_project_handler,
-    #                                                       closeBtnFn=closeBtnFn,rmBtnFn=mainWindow.remove_project)
-    ## handle docks
-    #mainWindow.restore_docks(override=True)
-
     ## remove docks if necessary 
     if mainWindow.dockWidget != None:
         remove_left_dock(mainWindow)
@@ -97,6 +92,9 @@ def move_to_open(mainWindow):
     projectDir = QtGui.QFileDialog.getExistingDirectory(mainWindow, 'Select the project folder', 
                                                         options=QtGui.QFileDialog.ShowDirsOnly,directory=defaultDir)
     projectDir = str(projectDir)
+
+    if projectDir == '' or projectDir == None:
+        return None
 
     mainWindow.open_existing_project_handler(projectDir)
 
@@ -356,18 +354,10 @@ def move_to_one_dim_viewer(mainWindow):
 
     ## clean the layout
     move_transition(mainWindow,repaint=True)
-    mainWindow.reset_layout()
-
-    if mainWindow.log.log['current_state'] == 'Initial':
-        pass
-    elif mainWindow.log.log['current_state'] == 'Quality Assurance':
-        excludedFiles = mainWindow.log.log['excluded_files_qa']
-        subsample = mainWindow.log.log['subsample_qa']
-    else:
-        excludedFiles = mainWindow.log.log['excluded_files_analysis']
-        subsample = mainWindow.log.log['subsample_analysis']
-    
+    mainWindow.reset_layout()    
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
+    subsample = 1000
+    mainWindow.controller.handle_subsampling(subsample)
     mainWindow.odv = OneDimViewer(mainWindow.controller.homeDir,subset=subsample,background=True,parent=mainWindow.mainWidget)
 
     ## handle docks
