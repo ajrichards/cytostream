@@ -351,14 +351,20 @@ class Controller:
                 if re.search(searchKey4,dirFile):
                     os.remove(os.path.join(figsDir,dirName,dirFile))
 
-    def load_files_handler(self,fileList,progressBar=None,view=None):
+    def load_files_handler(self,fileList,progressBar=None,view=None,inputChannels=None):
         if type(fileList) != type([]):
             print "INPUT ERROR: load_files_handler: takes as input a list of file paths"
   
         dataType = self.log.log['input_data_type']
 
-        if dataType not in ['fcs','comma','tab']:
-            print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' or 'txt'"
+        if dataType not in ['fcs','comma','tab','array']:
+            print "INPUT ERROR: load_files_handler: dataType must be of type 'fsc' 'comma','tab','array'"
+
+        if dataType in ['array'] and inputChannels == None:
+            print "ERROR: Controller -- inputChannels must be specified if dType is array"
+            return None
+        else:
+            self.fileChannelPath = inputChannels
 
         if dataType in ['comma','tab']:
             if self.fileChannelPath == None:

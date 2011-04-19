@@ -109,28 +109,30 @@ class Model:
             carried out using the fcm python module.  This method is called by
             controlller.load_files_handler.
         input:
-            fileList - a list of full paths to fcs or txt files
-            dataType - may be any of the following: fcs,txt
-            transform - may be any of the follwing: log 
+            fileList - a list of full paths, or a list of array objects
+            dataType - may be any of the following: fcs,comma,tab,array
+            transform - may be any of the follwing: log, logicle 
         return:
             None
         """
 
         ## error checking
         if type(fileList) != type([]):
-            print "INPUT ERROR: load_files: takes as input a list of file paths"
+            print "INPUT ERROR: Model -- load_files: takes as input a list of file paths"
             return None
         if os.path.isdir(self.homeDir) == False:
             os.mkdir(self.homeDir)
             os.mkdir(os.path.join(self.homeDir,"data"))
             print "INFO: making home dir from Model"
 
-        if dataType != 'fcs' and fileChannelPath==None:
-            print "ERROR: if data input type is not fcs must specify the fileChannelPath"
+        if dataType != ['comma','tab'] and fileChannelPath==None:
+            print "ERROR: Model -- if data input type is not fcs must specify the fileChannelPath"
             return None
 
         ## create script
         script = os.path.join(self.baseDir,"LoadFile.py")
+
+        #print 'debug', dataType, type(filePath), fileChannelPath
 
         fileCount = 0
         for filePath in fileList:
@@ -139,22 +141,39 @@ class Model:
             if progressBar != None:
                 progressBar.progressLabel.setText("loading %s..."%os.path.split(filePath)[-1])
 
-            proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
-                                                                           transform,fileChannelPath),
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
-            while True:
-                try:
-                    next_line = proc.stdout.readline()
-                    if next_line == '' and proc.poll() != None:
+            ## if data is of type array
+            if dataType == 'array':
+                fileChannels = fileChannelPath
+                data = filePath
+                existingFiles = get_fcs_file_names(self.homeDir)
+                numFiles = len(existingFiles)
+                newDataFileName = 'array'+ str(numFiles+1) + "_data_original.pickle"
+                newChanFileName = 'array'+ str(numFiles+1) + "_channels_original.pickle"
+                tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
+                tmp2 = open(os.path.join(self.homeDir,'data',newChanFileName),'w')
+                cPickle.dump(data,tmp1)
+                cPickle.dump([chan for chan in fileChannels],tmp2)
+                tmp1.close()
+                tmp2.close()
+
+            ## if data is not of type array
+            else:
+                proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
+                                                                               transform,fileChannelPath),
+                                        shell=True,
+                                        stdout=subprocess.PIPE,
+                                        stdin=subprocess.PIPE)
+                while True:
+                    try:
+                        next_line = proc.stdout.readline()
+                        if next_line == '' and proc.poll() != None:
+                            break
+
+                        ## to debug uncomment the following line
+                        print next_line
+
+                    except:
                         break
-
-                    ## to debug uncomment the following line
-                    print next_line
-
-                except:
-                    break
             
             fileCount+=1
             percentDone = float(fileCount) / float(len(fileList)) * 100.0
@@ -163,18 +182,19 @@ class Model:
                 progressBar.move_bar(int(round(percentDone)))
                 progressBar.show()
                 QtCore.QCoreApplication.processEvents()
-                time.sleep(2)
+                #time.sleep(2)
 
-            ## check to see that files were made             
-            newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
-            newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
-            newDataFileName = newFileName +"_data_original.pickle"
-            newChanFileName = newFileName +"_channels_original.pickle"
+            ## check to see that files were made
+            if dataType not in ['array']:
+                newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
+                newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
+                newDataFileName = newFileName +"_data_original.pickle"
+                newChanFileName = newFileName +"_channels_original.pickle"
 
-            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
-                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
+                if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                    print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+                if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
+                    print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
     def get_events(self,fileName,subsample='original'):
         """

@@ -264,7 +264,7 @@ class DataProcessingCenter(QtGui.QWidget):
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
         for filePath in self.mainWindow.allFilePaths:
             fileName = os.path.split(filePath)[-1]
-            fileName = re.sub("\.fcs|\.txt","",fileName)
+            fileName = re.sub("\.fcs|\.txt|\.csv","",fileName)
         
             if fileList.__contains__(fileName):
                 msg = "The following file name has already been used\n%s\n\nfile(s) not loaded"%fileName

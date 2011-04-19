@@ -23,7 +23,7 @@ configDictDefault = {
     'filters_run_count'                     : '{}',                 # do not change
 
     ########### immutable variables ##########################################################
-    'input_data_type'                       : 'fcs',                # fcs, comma, tab
+    'input_data_type'                       : 'fcs',                # fcs, comma, tab, array
     'setting_max_scatter_display'           : '2e4',                # any float, int or string
     'selected_transform'                    : 'log',                # log, logicle
     'num_iters_mcmc'                        : '1100',               # an int

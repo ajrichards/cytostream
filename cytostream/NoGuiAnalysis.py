@@ -14,7 +14,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True,verbose=False):
+    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True,verbose=False,dType='fcs',inputChannels=None):
         """
           class constructor 
 
@@ -37,9 +37,18 @@ class NoGuiAnalysis():
         self.useSubsample = useSubsample
         self.record = record
         self.verbose = verbose
+        self.inputChannels = inputChannels
 
         ## initialize
         self.initialize()
+
+        ## set the data type
+        print 'NoGuiAnalysis: Initializing %s files of data type %s'%(len(filePathList),dType)
+        if dType not in ['fcs','comma','tab','array']:
+            print "ERROR in NoGuiAnalysis -- bad input data type", 
+            return None
+        else:
+            self.set('input_data_type',dType)
 
         ## load files
         self.load_files()
@@ -50,9 +59,6 @@ class NoGuiAnalysis():
 
         self.set('current_state', 'Model')
         self.set('highest_state', '3')
-
-        ## run model
-        #self.run_model()
 
     def initialize(self):
         """
@@ -68,7 +74,7 @@ class NoGuiAnalysis():
 
         """
 
-        self.controller.load_files_handler(self.filePathList)
+        self.controller.load_files_handler(self.filePathList,inputChannels=self.inputChannels)
         self.controller.handle_subsampling(self.controller.log.log['subsample_qa'])
         self.controller.handle_subsampling(self.controller.log.log['subsample_analysis'])
 
