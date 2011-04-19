@@ -56,7 +56,6 @@ for o, a in optlist:
         verbose = True
 
 ## initial error checking
-print 'running dpmm with %s'%k
 if os.path.isdir(homeDir) == False:
     print "INPUT ERROR: not a valid project", homeDir
     sys.exit()

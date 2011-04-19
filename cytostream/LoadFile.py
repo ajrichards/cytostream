@@ -43,7 +43,7 @@ if os.path.isfile(filePath) == False:
     print "INPUT ERROR: file path does not exist", filePath
     sys.exit()
 
-if dataType not in ['fcs','tab','comma']:
+if dataType not in ['fcs','tab','comma','array']:
     print "INPUT ERROR: bad data type specified", dataType
     sys.exit()
 
@@ -63,7 +63,8 @@ elif dataType == 'comma':
 elif dataType == 'tab':
     fcsData = read_txt_into_array(filePath,delim='\t')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
-
+elif dataType == 'array':
+    
 ## save the np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)

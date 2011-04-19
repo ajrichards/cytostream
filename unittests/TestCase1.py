@@ -84,7 +84,6 @@ class TestCase1(unittest.TestCase):
         modelRunID = 'run2'
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
-
 ### Run the tests 
 if __name__ == '__main__':
     unittest.main()
