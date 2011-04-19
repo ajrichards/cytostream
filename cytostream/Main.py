@@ -11,9 +11,7 @@ from PyQt4 import QtGui
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
-    print '......Main', mpl.get_backend()
     mpl.use('agg')
-    print '......'
 from cytostream.qtlib import MainWindow
 
 class Main():
