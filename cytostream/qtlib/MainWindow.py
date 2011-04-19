@@ -815,11 +815,16 @@ class MainWindow(QtGui.QMainWindow):
         move_transition(self,repaint=True)
         self.reset_layout()
 
+        ## set the model runs to view to be currently selected model
+        self.log.log['plots_to_view_runs'] = [self.log.log['selected_model'] for i in self.log.log['plots_to_view_runs']]
+        self.controller.save()
+
         plotsToViewChannels = self.log.log['plots_to_view_channels']
         plotsToViewFiles = self.log.log['plots_to_view_files']
         plotsToViewRuns = self.log.log['plots_to_view_runs']
         plotsToViewHighlights = self.log.log['plots_to_view_highlights']
 
+        
         if self.log.log['current_state'] == "Quality Assurance":
             figMode = 'qa'
             subsample=self.log.log['subsample_qa']

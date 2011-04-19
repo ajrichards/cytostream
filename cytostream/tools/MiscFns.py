@@ -175,6 +175,7 @@ def read_txt_into_array(filePath,header=False,delim='\t'):
 
 
 def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
+    
     ## declare variables
     fontName = log.log['font_name']
     markerSize = int(log.log['scatter_marker_size'])

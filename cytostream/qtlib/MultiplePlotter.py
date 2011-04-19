@@ -109,7 +109,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan1LayoutB.addWidget(self.channel1Selector)
 
         ## finalize layout
-        #self.chan1Layout.addLayout(self.chan1LayoutA)
         self.chan1Layout.addLayout(self.chan1LayoutB)
 
     def initChannel2(self):
@@ -121,10 +120,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan2Layout = QtGui.QVBoxLayout()
         self.chan2Layout.setAlignment(QtCore.Qt.AlignCenter)
         
-        ## create label
-        #self.labelChan2 = QtGui.QLabel("y-axis", self)
-        #self.chan2LayoutA.addWidget(self.labelChan2)
-
         ## create combobox
         self.channel2Selector = QtGui.QComboBox(self)
         for channel in self.channelList:
@@ -136,7 +131,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.chan2LayoutB.addWidget(self.channel2Selector)
 
         ## finalize layout
-        #self.chan2Layout.addLayout(self.chan2LayoutA)
         self.chan2Layout.addLayout(self.chan2LayoutB)
  
     def initFileSelector(self):
@@ -148,10 +142,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.filesLayout = QtGui.QVBoxLayout()
         self.filesLayout.setAlignment(QtCore.Qt.AlignCenter)
         
-        ## create label
-        #self.labelFiles = QtGui.QLabel("file selector", self)
-        #self.filesLayoutA.addWidget(self.labelFiles)
-
         ## create combobox
         self.fileSelector = QtGui.QComboBox(self)
         for f in self.fileList:
@@ -175,10 +165,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayout = QtGui.QVBoxLayout()
         self.highlightLayout.setAlignment(QtCore.Qt.AlignCenter)
         
-        ## create label
-        #self.labelHighlight = QtGui.QLabel("highlight", self)
-        #self.highlightLayoutA.addWidget(self.labelHighlight)
-
         ## create combobox
         self.highlightSelector = QtGui.QComboBox(self)
         for hl in ["None"] + uniqueLabels:
@@ -190,7 +176,6 @@ class MultiplePlotter(QtGui.QWidget):
         self.highlightLayoutB.addWidget(self.highlightSelector)
 
         ## finalize layout
-        #self.highlightLayout.addLayout(self.highlightLayoutA)
         self.highlightLayout.addLayout(self.highlightLayoutB)
 
     def create_plot(self):
@@ -244,7 +229,10 @@ class MultiplePlotter(QtGui.QWidget):
         self.plot.draw()
 
         if self.mainWindow != None:
-            self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
+            if self.selectedHighlight == 'None':
+                self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = 'None'
+            else:
+                self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
             self.mainWindow.controller.save()
 
     def get_selected(self,selectorID):
@@ -253,7 +241,6 @@ class MultiplePlotter(QtGui.QWidget):
             selectedTxt = str(self.channelSelector1.currentText())
 
         return selectedTxt, selectedInd
-
 
 ### Run the tests 
 if __name__ == '__main__':
