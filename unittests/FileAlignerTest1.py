@@ -40,12 +40,12 @@ class FileAlignerTest1(unittest.TestCase):
 
         ## setup class to run model
         self.nga = NoGuiAnalysis(homeDir,arrayList,useSubsample=True,makeQaFigs=False,record=False,dType='array',inputChannels=channelList)
-        #self.nga.run_model()
-        #fileNameList = self.nga.get_file_names()
+        self.nga.run_model()
+        fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files
-        #for fileName in fileNameList:
-        #    self.nga.make_results_figures(fileName,'run1')
+        for fileName in fileNameList:
+            self.nga.make_results_figures(fileName,'run1')
         
         ## run the model again this time for only one file while using more of the config file functionality
         #fileName = "3FITC_4PE_004"
