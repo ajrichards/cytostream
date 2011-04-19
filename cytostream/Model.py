@@ -125,8 +125,9 @@ class Model:
             os.mkdir(os.path.join(self.homeDir,"data"))
             print "INFO: making home dir from Model"
 
-        if dataType != ['comma','tab'] and fileChannelPath==None:
-            print "ERROR: Model -- if data input type is not fcs must specify the fileChannelPath"
+        if dataType in ['comma','tab'] and fileChannelPath==None:
+            print "ERROR: Model -- if data input type is comma|tab you must specify the fileChannelPath"
+            print "\t data type was", dataType
             return None
 
         ## create script
