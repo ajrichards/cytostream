@@ -38,7 +38,6 @@ class ResultsNavigationCenter(QtGui.QWidget):
             maxModelRun = int(mainWindow.log.log['models_run_count'])
             selectedFile = mainWindow.log.log['selected_file']
             self.modelsRunList = ['run'+str(i+1) for i in range(maxModelRun)]
-            modelRunID = 'run1'
             self.modelLogList = []
             for modelRunID in self.modelsRunList:
                 modelLog = self.mainWindow.controller.model.load_model_results_log(selectedFile,modelRunID)
@@ -76,11 +75,6 @@ class ResultsNavigationCenter(QtGui.QWidget):
         ## initialize view
         self.init_results_navigation_menu_view()
         
-        ## add dummy vars
-        #self.vboxTop.addWidget(QtGui.QLabel("blah"))
-        #self.vboxCenter.addWidget(QtGui.QLabel("blah"))
-        #self.vboxBottom.addWidget(QtGui.QLabel("blah"))
-
         ## finalize layout
         if self.mainWindow == None:
             vbl.addLayout(self.vboxTop)
