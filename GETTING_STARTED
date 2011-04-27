@@ -1,0 +1,18 @@
+GETTING_STARTED
+
+## first install cytostream 
+$ python setup.py install
+
+
+## to start the application
+$ python
+> from cytostream import Main
+> Main()
+
+or from ~/.../cytostream/cytostream/
+$ python Main.py
+
+or from	 ~/.../cytostream/
+NOTE: under osx 10.6 this is the only stable method
+
+$ python cytostream
