@@ -159,11 +159,11 @@ class Model:
 
             ## if data is not of type array
             else:
-                proc = subprocess.Popen("%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
-                                                                               transform,fileChannelPath),
-                                        shell=True,
-                                        stdout=subprocess.PIPE,
-                                        stdin=subprocess.PIPE)
+                cmd = "%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
+                                                             transform,fileChannelPath)
+
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                
                 while True:
                     try:
                         next_line = proc.stdout.readline()
@@ -334,9 +334,9 @@ class Model:
                 minNumObs = n
 
             ## check to see that the specified subsample is <= the number of events
-            if subsample > minNumObs:
-                print "WARNING: subsample greater than minimum num events in file --- using all events", fileName
-                subsample = minNumObs
+            #if subsample > minNumObs:
+            #    print "WARNING: subsample greater than minimum num events in file --- using all events", fileName
+            #    subsample = minNumObs
            
         ## get the random ints and save as a pickle
         randEvents = np.random.random_integers(0,minNumObs-1,subsample)

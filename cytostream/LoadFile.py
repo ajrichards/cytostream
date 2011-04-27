@@ -50,7 +50,8 @@ if dataType not in ['fcs','tab','comma','array']:
 if transform not in ['logicle','log']:
     print "INPUT ERROR: bas data transform specified ", dataType
     sys.exit()
-    
+
+
 ## variables
 projName = os.path.split(homeDir)[-1]
 

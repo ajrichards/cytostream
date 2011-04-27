@@ -474,6 +474,18 @@ class MainWindow(QtGui.QMainWindow):
             self.handle_nway_viewer(item)
         elif item == 'plot-6':
             self.handle_nway_viewer(item)
+        elif item == 'plot-7':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-8':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-9':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-10':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-11':
+            self.handle_nway_viewer(item)
+        elif item == 'plot-12':
+            self.handle_nway_viewer(item)
         else:
             self.display_info("not available yet")
             print "ERROR: mainWindow.handle_visualization_modes -- bad item", item

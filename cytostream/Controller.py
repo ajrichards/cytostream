@@ -45,7 +45,6 @@ class Controller:
         self.configDict = configDict
         self.reset_workspace()
 
-
     def reset_workspace(self):
         self.projectID = None
         self.homeDir = None

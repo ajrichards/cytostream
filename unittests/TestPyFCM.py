@@ -7,12 +7,11 @@ import pickle
 import numpy as np
 
 #print 'listing shared library depens.'
-#os.system("ldd /home/clemmys/research/py-fcm-cpu/src/statistics/_cdp.so")
-
+#os.system("ldd /home/clemmys/research/py-fcm-gpu/src/statistics/_cdp.so")
 
 print 'loading data'
 #fileNameFCS = os.path.join("..","cytostream","example_data","3FITC_4PE_004.fcs")
-fileNameFCS = os.path.join("/","home","clemmys","research","analyses","angina","raw","normal","ACS-T-Pt 5_SEB.fcs")
+fileNameFCS = "/home/clemmys/research/eqapol/donors/../materials/EQAPOL_4c_ICS_Donor_Screening/Assay_Data/EQAPOL_4c_ICS_08Apr11/FCS files/H6904VB6_01 Costim 3 C3.031"
 fileFCS = fcm.loadFCS(fileNameFCS)
 
 print 'get subsample'
@@ -24,7 +23,7 @@ data = fileFCS[subsampleIndices,:]
 
 print 'loading model'
 mod = fcm.statistics.DPMixtureModel(data, 16)
-print 'cuda device', mod.cdp.getdevice()
+print 'cuda device:', mod.cdp.getdevice()
 
 print 'running model'
 modelRunStart = time.time()
@@ -32,19 +31,11 @@ mod.fit(verbose=False)
 modelRunStop = time.time()
 print "model run time: %s"%(modelRunStop - modelRunStart)
 
-
-
-#print 'loading data'
-#fileNameFCS = os.path.join("..","cytostream","example_data","3FITC_4PE_004.fcs")
-#file = fcm.loadFCS(fileNameFCS)
-#print 'loading model'
-#mod = fcm.statistics.DPMixtureModel(file, 16)
-#mod.fit(verbose=True)
-
-
 #full = mod.get_results()
-#
 #print full.pis
+#classifyComponents = full.classify(data)
+#modes = full.make_modal()
+#classifyModes = modes.classify(data)
 
 
 #print 'dumping fit'

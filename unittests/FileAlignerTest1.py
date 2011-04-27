@@ -32,7 +32,6 @@ class FileAlignerTest1(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         ## run the no gui analysis
-        #filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         arrayList = [case1,case2,case3,case4,case5,case6]
         channelList = ['channel1','channel2']
         projectID = 'falign'
@@ -40,43 +39,46 @@ class FileAlignerTest1(unittest.TestCase):
 
         ## setup class to run model
         self.nga = NoGuiAnalysis(homeDir,arrayList,useSubsample=True,makeQaFigs=False,record=False,dType='array',inputChannels=channelList)
-        #self.nga.run_model()
-        #fileNameList = self.nga.get_file_names()
-    
+        self.nga.set("subsample_analysis", "original")
+        self.nga.set("thumbnail_results_default","components")        
+        self.nga.run_model()
+        
+        ## set up the plots 
+        #plotsToViewChannels = [(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1)]
+        #self.nga.set("plots_to_view_channels",plotsToViewChannels)
+        #plotsToViewFiles = [0,1,2,3,4,5,0,0,0,0,0,0]
+        #self.nga.set("plots_to_view_files",plotsToViewFiles)
+
         ## create all pairwise figs for all files
+        #fileNameList = self.nga.get_file_names()
         #for fileName in fileNameList:
         #    self.nga.make_results_figures(fileName,'run1')
-        
-        ## run the model again this time for only one file while using more of the config file functionality
-        #fileName = "3FITC_4PE_004"
-        #configDict['imput_data_type'] = 'array'
-        #self.nga.set('excluded_channels_analysis',[1])
-        #self.nga.set('thumbnails_to_view', [(0,2),(0,3)])
-        #self.nga.set('file_in_focus',fileName)
-        #self.nga.run_model()
-        #self.nga.make_results_figures(fileName,'run2')
-        
-        ## if file_in_focus is changed return it to the original state
-        #self.nga.set('file_in_focus','all')                
+ 
+        ## gather required data for file alignment
+        expListNames = ['case1','case2','case3','case4','case5','case6']
+        expListLabels = [case1Labels,case2Labels,case3Labels,case4Labels,case5Labels,case6Labels]
+        modelName = 'dpmm'
+        phiRange = [0.2,0.8]
 
+        ## run file alignment 
+        timeBegin = time.time()
+        self.fa = FileAligner(expListNames,arrayList,expListLabels,modelName,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,
+                              distanceMetric='mahalanobis',baseDir=BASEDIR)
+        timeEnd = time.time()
+        print "time taken for alignment: ", timeEnd - timeBegin
+        
+        
     def test_model_run(self):
+
+        ## tests 
+        #self.assertEqual(self.fa.globalScoreDict['0.2'], 6400.0)
+        #self.assertEqual(self.fa.globalScoreDict['0.8'], 2200.0)
+
+        print self.fa.globalScoreDict['0.2']
+        print self.fa.globalScoreDict['0.8']
         print 'testing complete'
 
     '''
-    def setUp(self):
-        cwd = os.getcwd()
-        if os.path.split(cwd)[1] == 'unittests':
-            BASEDIR = os.path.split(cwd)[0]
-        elif os.path.split(cwd)[1] == 'cytostream':
-            BASEDIR = cwd
-        else:
-            print "ERROR: Model test cannot find home dir -- cwd", cwd
-
-        ## run the no gui analysis
-        projectID = 'utest'
-        self.homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
-        self.baseDir = BASEDIR
-
     def test_file_aligner_data_1(self):
         ## declare variables 
         modelName = 'cdp'
@@ -134,9 +136,6 @@ class FileAlignerTest1(unittest.TestCase):
         
         #bestPhi, bestScore = fa.get_best_match()
         #print 'bestphi,bestscore',bestPhi, bestScore
-
-
-
         ## tests
         #self.assertEqual(bestScore,85600.0)
         #scatterFilePath = os.path.join(BASEDIR,"alignfigs",str(bestPhi),"TestCase1After.png")

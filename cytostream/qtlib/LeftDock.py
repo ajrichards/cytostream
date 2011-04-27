@@ -122,7 +122,7 @@ def add_left_dock(mainWindow):
     ## visualization mode selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
         visualizationMode = mainWindow.log.log['visualization_mode']
-        btnLabels = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
+        btnLabels = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-5','plot-6','plot-7','plot-8','plot-9','plot-10','plot-11','plot-12']
         modeVizCallback = mainWindow.handle_visualization_modes
         mainWindow.modeSelector = ModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
                                                modeVizCallback=modeVizCallback)

@@ -8,7 +8,7 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
-plotsToViewChannels =   [(0,1),(0,2),(0,3),(1,1),(1,2),(1,3),(2,0),(2,1),(2,3),(0,0),(2,2),(3,3)]
+plotsToViewChannels =   [(0,1),(1,0),(0,0),(1,1),(0,0),(0,1),(1,0),(0,0),(1,1),(0,1),(1,0),(0,0)]
 plotsToViewFiles =      [0,0,0,0,0,0,0,0,0,0,0,0]
 plotsToViewRuns =       ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
 plotsToViewHighlights = [None,None,None,None,None,None,None,None,None,None,None,None]

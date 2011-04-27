@@ -6,14 +6,20 @@ class BlankPage(QtGui.QWidget):
     def __init__(self, parent, openBtnFn=None,closeBtnFn=None,rmBtnFn=None):
         QtGui.QWidget.__init__(self,parent)
 
+        ## setup layout
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.setAlignment(QtCore.Qt.AlignCenter)
         self.hbl1 = QtGui.QHBoxLayout()
         self.hbl1.setAlignment(QtCore.Qt.AlignCenter)
         self.label = QtGui.QLabel('Loading...')
         self.hbl1.addWidget(self.label)
+
+        ## finalize layout
         self.vbl.addLayout(self.hbl1)
         self.setLayout(self.vbl)
+
+
+
 
     def change_label(self,newLabel):
         self.label.setText(newLabel)
