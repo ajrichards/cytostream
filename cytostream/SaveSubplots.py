@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
-                 forceScale=False,fontSize=8,markerSize=1,dpi=200):
+                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None):
 
         ## arg variables
         self.homeDir = homeDir
@@ -38,12 +38,22 @@ class SaveSubplots():
         self.fontSize = fontSize
         self.markerSize = markerSize
         self.forceScale = forceScale
+        self.inputLabels = None
 
         ## error check
         run = True
         if os.path.isdir(homeDir) == False:
-            print "ERROR: homedir does not exist -- bad project name", projectID, homeDir
+            print "ERROR: SaveSubplots.py -- homedir does not exist -- bad project name", projectID, homeDir
             run = False
+
+        if inputLabels != None and len(inputLabels) != numSubplots:
+            print "ERROR: SaveSubplots.py -- problem with input labels"
+            run = False
+
+        if inputLabels != None and len(inputLabels) == numSubplots:
+            self.inputLabels = []
+            for labelList in inputLabels:
+                self.inputLabels.append(np.array([i for i in labelList]))
 
         ## initialize a logger and a model to get specified files and channels
         if run == True:
@@ -111,6 +121,8 @@ class SaveSubplots():
         if self.figMode == 'qa':
             subsample = self.log.log['subsample_qa'] 
             labels = None
+        else:
+            subsample = self.log.log['subsample_analysis']
 
         ## fetch plot variables
         fileChannels = self.log.log['alternate_channel_labels']
@@ -124,12 +136,14 @@ class SaveSubplots():
             subplotRun = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
            
-            if self.figMode != 'qa':
+            if self.figMode != 'qa' and self.inputLabels != None:
+                labels = self.inputLabels[subplotIndex]
+            elif self.figMode != 'qa':
                 statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRun,modelType=self.resultsMode)
                 labels = statModelClasses
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
-
+                
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
             index1,index2 = subplotChannels
 

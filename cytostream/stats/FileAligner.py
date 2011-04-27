@@ -168,7 +168,7 @@ class FileAligner():
         if self.verbose == True and os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
 
-        dirs = ['results','figures']
+        dirs = ['results','alignfigs']
         for diry in dirs:
             if os.path.isdir(os.path.join(self.baseDir,diry)) == False:
                 os.mkdir(os.path.join(self.baseDir,diry))
@@ -195,22 +195,13 @@ class FileAligner():
             if os.path.isfile(os.path.join(self.baseDir,"results","alignments.log")) == True:
                 os.remove(os.path.join(self.baseDir,"results","alignments.log"))
 
-        ## ensure directories are present                                                                                                                                                                        
-
+        ## ensure directories are present
+        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results"))            
         if os.path.isdir(os.path.join(self.baseDir,"results","alignments")) == False:
             os.mkdir(os.path.join(self.baseDir,"results","alignments"))
-        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
-            os.mkdir(os.path.join(self.baseDir,"results"))
-            
         if os.path.isdir(os.path.join(self.baseDir,"alignfigs")) == False:
             os.mkdir(os.path.join(self.baseDir,"alignfigs"))
-        for phi in self.phiRange:
-            if os.path.isdir(os.path.join(self.baseDir,"alignfigs",str(phi))) == False:
-                os.mkdir(os.path.join(self.baseDir,"alignfigs",str(phi)))
-        if os.path.isdir(os.path.join(self.baseDir,"alignfigs",'unaligned')) == False:
-            os.mkdir(os.path.join(self.baseDir,"alignfigs",'unaligned'))
-        if os.path.isdir(os.path.join(self.baseDir,"alignfigs",'pies')) == False:
-            os.mkdir(os.path.join(self.baseDir,"alignfigs",'pies'))
 
     def create_log_file(self):
         ''' 

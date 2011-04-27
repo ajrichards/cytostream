@@ -77,6 +77,9 @@ class NoGuiAnalysis():
         self.controller.load_files_handler(self.filePathList,inputChannels=self.inputChannels)
         self.controller.handle_subsampling(self.controller.log.log['subsample_qa'])
         self.controller.handle_subsampling(self.controller.log.log['subsample_analysis'])
+        self.controller.handle_subsampling(self.controller.log.log['setting_max_scatter_display'])
+        fileChannels = self.controller.model.get_master_channel_list()
+        self.set('alternate_channel_labels',fileChannels)
 
     def get_file_names(self):
         """
