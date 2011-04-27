@@ -22,7 +22,7 @@ class GaussianDistn:
             mu = np.array(mu)
         if type(sigma) == type([]):
             sigma = np.array(sigma)
-        self._input_error_check(mu,sigma)
+        #self._input_error_check(mu,sigma)
 
         if type(mu) == type(0):
             mu = float(mu)
@@ -41,12 +41,11 @@ class GaussianDistn:
             if re.search("a-z|A-Z",str(sigma)):
                 raise TypeError, "In GaussianDist arg 'sigma' must be numeric"
         else:
-
-            if len(mu) == 2: 
+            if len(sigma.shape) == 1:
                 n = sigma.shape[0]
-                if len(mu) != n:
-                    raise TypeError, "In GaussianDist arg dim mismatch\n\tmu:%s\n\tn:%s"%(len(mu),n)
-            else:
+                d = 1
+            elif len(sigma.shape) == 2:
                 n,d = sigma.shape
-                if len(mu) != n or len(mu) != d:
-                    raise TypeError, "In GaussianDist arg dim mismatch\n\tmu:%s\n\tn:%s\n\td:%s"%(len(mu),n,d)
+
+            if len(mu) != n or len(mu) != d:
+                raise TypeError, "In GaussianDist arg dim mismatch\n\tmu:%s\n\tn:%s\n\td:%s"%(len(mu),n,d)
