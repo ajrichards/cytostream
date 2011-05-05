@@ -28,16 +28,8 @@ from matplotlib.lines import Line2D
 import numpy as np
 
 
-class Datum:
-    colorin = colorConverter.to_rgba('red')
-    colorout = colorConverter.to_rgba('green')
-    def __init__(self, x, y, include=False):
-        self.x = x
-        self.y = y
-        if include: self.color = self.colorin
-        else: self.color = self.colorout
 
-class PolygonInteractor:
+class PolyGateInteractor:
     """
 
     An polygon editor.
@@ -55,7 +47,7 @@ class PolygonInteractor:
         if poly.figure is None:
             raise RuntimeError('You must first add the polygon to a figure or canvas before defining the interactor')
         self.ax = ax
-        #canvas = poly.figure.canvas
+        #self.canvas = poly.figure.canvas
         self.poly = poly
         self.canvas = canvas
 
@@ -100,6 +92,7 @@ class PolygonInteractor:
         if d[ind]>=self.epsilon:
             ind = None
 
+        print ind
         return ind
 
     def button_press_callback(self, event):
@@ -160,67 +153,7 @@ class PolygonInteractor:
         self.ax.draw_artist(self.line)
         self.canvas.blit(self.ax.bbox)
 
-class LassoManager:
-    def __init__(self, ax, canvas, origData):
-        
-        self.origData = origData
-        self.data = [Datum(*xy) for xy in origData]
-        self.axes = ax
-        self.canvas = canvas
-
-        self.Nxy = len(data)
-
-        facecolors = [d.color for d in self.data]
-        self.xys = [(d.x, d.y) for d in self.data]
-        fig = ax.figure
-
-        self.collection = RegularPolyCollection(
-            fig.dpi, 6, sizes=(5,),
-            facecolors=facecolors,
-            offsets = self.xys,
-            transOffset = ax.transData)
-       
-        ax.add_collection(self.collection)
-
-    def activate(self):
-        self.cid = self.canvas.mpl_connect('button_press_event', self.onpress)
-        self.ind = None
-
-    def callback(self, verts):
-        facecolors = self.collection.get_facecolors()
-        ind = np.nonzero(points_inside_poly(self.xys, verts))[0]
-        for i in range(self.Nxy):
-            if i in ind:
-                facecolors[i] = Datum.colorin
-            else:
-                facecolors[i] = Datum.colorout
-
-        self.canvas.draw_idle()
-        self.canvas.widgetlock.release(self.lasso)
-        self.gate = verts
-
-        del self.lasso
-        self.ind = ind
-    
-        ## draw the gate
-        self.axes.plot([pt[0] for pt in self.gate],[pt[1] for pt in self.gate],linewidth=4.0)
-
-        ## handle axes
-        buff = 0.02
-        bufferX = buff * (self.origData[:,0].max() - self.origData[:,0].min())
-        bufferY = buff * (self.origData[:,1].max() - self.origData[:,1].min())
-        self.axes.set_xlim([self.origData[:,0].min()-bufferX,self.origData[:,0].max()+bufferX])
-        self.axes.set_ylim([self.origData[:,1].min()-bufferY,self.origData[:,1].max()+bufferY])
-
-    def onpress(self, event):
-        if self.canvas.widgetlock.locked(): return
-        if event.inaxes is None: return
-        self.lasso = Lasso(event.inaxes, (event.xdata, event.ydata), self.callback)
-        
-        # acquire a lock on the widget drawing
-        self.canvas.widgetlock(self.lasso)
-    
-class GateDraw(FigureCanvas):
+class GateDrawer(FigureCanvas):
 
     def __init__(self, origData,  parent=None):
         
@@ -233,7 +166,9 @@ class GateDraw(FigureCanvas):
 
         ## prepare plot environment
         self.fig = Figure()
-        self.reset_axes()
+        self.ax = self.fig.add_subplot(111)
+        self.fig.set_frameon(self.background)
+        
 
         ## initialization of the canvas
         FigureCanvas.__init__(self, self.fig)
@@ -246,15 +181,10 @@ class GateDraw(FigureCanvas):
         ## notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
-    def reset_axes(self):
-        self.fig.clf()
-        self.ax = self.fig.add_subplot(111)
-        self.fig.set_frameon(self.background)
-
     def draw_events(self,gateType):
 
         ## reset
-        self.reset_axes()
+        #self.reset_axes()
         
         if self.lman != None:
             del self.lman
@@ -266,9 +196,6 @@ class GateDraw(FigureCanvas):
             #del self.poly
             #del self.polyInt
             #self.poly, self.polyInt = None, None
-
-        print dir(self.ax)
-
 
         ## prepare some ref points for polys
         mid1 = 0.5 * self.origData[0].max()
@@ -287,19 +214,19 @@ class GateDraw(FigureCanvas):
             #self.poly = Polygon(([a,c],[b,c],[b,d]), animated=True,alpha=0.2)
             self.poly = Polygon(([b,c],[b,d]), animated=True,alpha=0.2)
             self.ax.add_patch(self.poly)
-            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+            self.polyIn = PolyGateInteractor(self.ax, self.poly, self.canvas)
         elif gateType == 'Poly4':
             self.poly = Polygon(([a,c],[b,c],[b,d],[a,d]), animated=True,alpha=0.2)
             self.ax.add_patch(self.poly)
-            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+            self.polyIn = PolyGateInteractor(self.ax, self.poly, self.canvas)
         elif gateType == 'Poly5':
             self.poly = Polygon(([a,c],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
             self.ax.add_patch(self.poly)
-            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+            self.polyIn = PolyGateInteractor(self.ax, self.poly, self.canvas)
         elif gateType == 'Poly6':
             poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
             self.ax.add_patch(self.poly)
-            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+            self.polyIn = PolyGateInteractor(self.ax, self.poly, self.canvas)
 
         ## handle axes
         buff = 0.02
@@ -315,7 +242,7 @@ class Gater(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
         
         self.mainWindow = mainWindow
-        self.gateType = 'Free'
+        self.gateType = 'Poly3'
 
         ## setup layouts
         hl = QtGui.QHBoxLayout()
@@ -363,14 +290,15 @@ class Gater(QtGui.QWidget):
         hbox2.addWidget(self.removeBtn)
 
         ## add gatedraw widget
-        self.gateDraw = GateDraw(data)
+        self.gateDraw = GateDrawer(data)
         self.gateDraw.draw_events(self.gateType)
 
-        hbox3.addWidget(self.gateDraw.canvas)
+        #hbox3.addWidget(self.gateDraw.canvas)
+        hbox3.addWidget(self.gateDraw)
         
         ## add a mpl navigation toolbar
-        ntb = NavigationToolbar(self.gateDraw.canvas,self)
-        hbox4.addWidget(ntb)
+        #ntb = NavigationToolbar(self.gateDraw.canvas,self)
+        #hbox4.addWidget(ntb)
 
         ## finalize layout   
         vbox2.addLayout(hbox2)
