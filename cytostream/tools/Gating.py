@@ -62,9 +62,6 @@ class PolygonInteractor:
         x, y = zip(*self.poly.xy)
         self.line = Line2D(x,y,marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
-        
-        #self.ax.plot(x,y,marker='o',markerfacecolor='r',animated=True)
-        #self._update_line(poly)
 
         cid = self.poly.add_callback(self.poly_changed)
         self._ind = None # the active vert  
@@ -104,7 +101,6 @@ class PolygonInteractor:
             ind = None
 
         return ind
-
 
     def button_press_callback(self, event):
         'whenever a mouse button is pressed'
@@ -148,7 +144,6 @@ class PolygonInteractor:
 
         self.canvas.draw()
 
-
     def motion_notify_callback(self, event):
         'on mouse movement'
         if not self.showverts: return
@@ -187,6 +182,7 @@ class LassoManager:
        
         ax.add_collection(self.collection)
 
+    def activate(self):
         self.cid = self.canvas.mpl_connect('button_press_event', self.onpress)
         self.ind = None
 
@@ -228,14 +224,16 @@ class GateDraw(FigureCanvas):
 
     def __init__(self, origData,  parent=None):
         
-        background = True
+        self.background = True
         self.parent = parent
         self.origData = origData
+        self.lman = None
+        self.poly = None
+        self.ployInt = None
 
         ## prepare plot environment
         self.fig = Figure()
-        self.ax = self.fig.add_subplot(111)
-        self.fig.set_frameon(background)
+        self.reset_axes()
 
         ## initialization of the canvas
         FigureCanvas.__init__(self, self.fig)
@@ -248,26 +246,60 @@ class GateDraw(FigureCanvas):
         ## notify the system of updated policy
         FigureCanvas.updateGeometry(self)
 
+    def reset_axes(self):
+        self.fig.clf()
+        self.ax = self.fig.add_subplot(111)
+        self.fig.set_frameon(self.background)
+
     def draw_events(self,gateType):
-        self.ax.clear()
-        self.lman = None
+
+        ## reset
+        self.reset_axes()
+        
+        if self.lman != None:
+            del self.lman
+            self.lman = None
+
+        if self.poly in self.ax.patches:
+            self.ax.patches.remove(self.poly)
+            self.canvas.draw()
+            #del self.poly
+            #del self.polyInt
+            #self.poly, self.polyInt = None, None
+
+        print dir(self.ax)
+
+
+        ## prepare some ref points for polys
+        mid1 = 0.5 * self.origData[0].max()
+        mid2 = 0.5 * self.origData[1].max()
+        a = mid1 - (mid1 * 0.5)
+        b = mid1 + (mid1 * 0.5)
+        c = mid2 - (mid2 * 0.5)
+        d = mid2 + (mid2 * 0.5)
+        e = mid2 + (mid2 * 0.6)
+        f = mid2 - (mid2 * 0.6)
 
         if gateType == 'Free':
             self.lman = LassoManager(self.ax, self.canvas, self.origData)
-        elif gateType == 'Poly':
-            theta = np.arange(0, 2*np.pi, 0.1)
-            r = 0.5    
-            xs = r*np.cos(theta)
-            ys = r*np.sin(theta)
-            #poly = Polygon(zip(xs, ys,), animated=True)
-            a = self.origData[0].min() / 2.0
-            b = self.origData[0].max() / 2.0
-            c = self.origData[1].min() / 2.0
-            d = self.origData[1].max() / 2.0
-            poly = Polygon(([a,c],[a,d],[b,d],[a,b]), animated=True)
-            #ax = subplot(111)
-            self.ax.add_patch(poly)
-            p = PolygonInteractor(self.ax, poly, self.canvas)
+            self.lman.activate()
+        elif gateType == 'Poly3':
+            #self.poly = Polygon(([a,c],[b,c],[b,d]), animated=True,alpha=0.2)
+            self.poly = Polygon(([b,c],[b,d]), animated=True,alpha=0.2)
+            self.ax.add_patch(self.poly)
+            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+        elif gateType == 'Poly4':
+            self.poly = Polygon(([a,c],[b,c],[b,d],[a,d]), animated=True,alpha=0.2)
+            self.ax.add_patch(self.poly)
+            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+        elif gateType == 'Poly5':
+            self.poly = Polygon(([a,c],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
+            self.ax.add_patch(self.poly)
+            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
+        elif gateType == 'Poly6':
+            poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
+            self.ax.add_patch(self.poly)
+            self.polyIn = PolygonInteractor(self.ax, self.poly, self.canvas)
 
         ## handle axes
         buff = 0.02
@@ -302,13 +334,18 @@ class Gater(QtGui.QWidget):
         hbox4.setAlignment(QtCore.Qt.AlignCenter)
 
         ## gate selector
-        gateTypes = ['Free','Poly']
+        gateTypes = ['Free','Poly3','Poly4','Poly5','Poly6']
         self.gateTypeSelector = QtGui.QComboBox(self)
         self.gateTypeSelector.setMaximumWidth(180)
         self.gateTypeSelector.setMinimumWidth(180)
 
         for gt in gateTypes:
             self.gateTypeSelector.addItem(gt)
+
+        if gateTypes.__contains__(self.gateType):
+            self.gateTypeSelector.setCurrentIndex(gateTypes.index(self.gateType))
+        else:
+            print "ERROR: gate type selector - bad specified default", self.gateType
 
         self.connect(self.gateTypeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.set_gate_type)
 
@@ -331,7 +368,7 @@ class Gater(QtGui.QWidget):
 
         hbox3.addWidget(self.gateDraw.canvas)
         
-        ## add a mpl navigation toolbar   
+        ## add a mpl navigation toolbar
         ntb = NavigationToolbar(self.gateDraw.canvas,self)
         hbox4.addWidget(ntb)
 
@@ -369,7 +406,7 @@ class Gater(QtGui.QWidget):
         gtInd = self.gateTypeSelector.currentIndex()
         gt = str(self.gateTypeSelector.currentText())
         self.gateType = gt
-        print self.gateDraw.draw_events(self.gateType)
+        self.gateDraw.draw_events(self.gateType)
 
         if self.mainWindow == None:
             print "changed gate type to", self.gateType
