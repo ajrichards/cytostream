@@ -23,8 +23,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## initialize
         QtGui.QWidget.__init__(self,parent)
-        self.create_figure_widget()
-
+        
         ## error checking
         if os.path.isdir(homeDir) == False:
             print "ERROR: specified homedir is not a directory:", homeDir
@@ -35,13 +34,12 @@ class CytostreamPlotter(QtGui.QWidget):
         #self.ax = self.fig.add_subplot(111)
         #self.fig.set_frameon(background)
         #self.modelType = modelType
-        #self.colors = get_all_colors()
         #self.fileChannels = fileChannels
 
         ## plotting variables
-        self.events = events
-        self.labels = labels
+        self.fileChannels = fileChannels
         self.pdo = PlotDataOrganizer()
+        self.colors = get_all_colors()
 
         ## create figure widget
         self.create_figure_widget()
@@ -62,7 +60,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self.figureWidget)
         self.ax = self.fig.add_subplot(111)
-        self.canvas.mpl_connect('pick_event', self.on_pick)
+        #self.canvas.mpl_connect('pick_event', self.on_pick)
         self.mpl_toolbar = NavigationToolbar(self.canvas, self.figureWidget)
 
         # Other GUI controls                                                                                 
@@ -81,13 +79,13 @@ class CytostreamPlotter(QtGui.QWidget):
         self.slider.setTickPosition(QtGui.QSlider.TicksBothSides)
         #self.connect(self.slider, QtCore.SIGNAL('valueChanged(int)'), self.on_draw)
 
-        # finalize layout                               
+        # finalize layout
         hbox = QtGui.QHBoxLayout()
 
-        for w in [self.textbox, self.draw_button, self.grid_cb,
-                  slider_label, self.slider]:
-            hbox.addWidget(w)
-            hbox.setAlignment(w, QtCore.Qt.AlignVCenter)
+        #for w in [self.textbox, self.draw_button, self.grid_cb,
+        #          slider_label, self.slider]:
+        #    hbox.addWidget(w)
+        #    hbox.setAlignment(w, QtCore.Qt.AlignVCenter)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.canvas)
@@ -96,9 +94,10 @@ class CytostreamPlotter(QtGui.QWidget):
 
         self.setLayout(vbox)
 
-    def draw_scatter_plot(self,events,dataSetName,channel1Ind,channel2Ind,subsample,labels=None, highlight=None):
+    def draw_scatter_plot(self,events,dataSetName,channel1Ind,channel2Ind,subsample,labels=None, highlight=None,log=None):
 
         buff = 0.02
+        centroids = None
 
         if highlight == "None":
             highlight = None
@@ -107,18 +106,18 @@ class CytostreamPlotter(QtGui.QWidget):
         self.ax.clear()
 
         ## declare variables
-        if self.log == None:
+        if log == None:
             fontName = 'Arial'
             markerSize = 1
             fontSize = 10
             plotType = 'png'
             filterInFocus = None
         else:
-            fontName = self.log.log['font_name']
-            markerSize = int(self.log.log['scatter_marker_size'])
-            fontSize = int(self.log.log['font_size'])
-            plotType = self.log.log['plot_type']
-            filterInFocus = self.log.log['filter_in_focus']
+            fontName = log.log['font_name']
+            markerSize = int(log.log['scatter_marker_size'])
+            fontSize = int(log.log['font_size'])
+            plotType = log.log['plot_type']
+            filterInFocus = log.log['filter_in_focus']
 
         ## specify channels
         index1 = int(channel1Ind)
@@ -128,8 +127,8 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## get centroids
         if labels != None:
-            plotID, channelsID = self.pdo.get_ids(self.dataSetName,self.subsample,self.modelName,index1,index2)
-            self.pdo.get_centroids(events,labels,plotID,ChannelsID)
+            plotID, channelsID = self.pdo.get_ids(dataSetName,subsample,modelName,index1,index2)
+            centroids = self.pdo.get_centroids(events,labels,plotID,channelsID)
 
         ## error check
         if labels != None:
@@ -215,6 +214,10 @@ class CytostreamPlotter(QtGui.QWidget):
         self.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
         self.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
+    def generic_callback(self):
+        print 'this is a generic callback'
+
+
 if __name__ == '__main__':
 
     ## check that unittests were run and necessary data is present
@@ -256,10 +259,11 @@ if __name__ == '__main__':
     fileChannels = log.log['alternate_channel_labels'] 
 
     ## create plot
+    app = QtGui.QApplication(sys.argv)
     sp = CytostreamPlotter(fileChannels,background=True,modelType=modelType)
-    sp.draw_scatter_plot(self,events,dataSetName,channel1Ind,channel2Ind,subsample,labels=labels, highlight=None)
+
+    sp.draw_scatter_plot(events,selectedFile,channel1,channel2,subsample,labels=labels, highlight=None)
 
     ## show it
-    app = QtGui.QApplication(sys.argv)
     sp.show()
     sys.exit(app.exec_())
