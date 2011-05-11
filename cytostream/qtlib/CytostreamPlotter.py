@@ -11,7 +11,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from cytostream import Model, Logger 
-from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer
+from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer, PolyGateInteractor
+from matplotlib.patches import Polygon, CirclePolygon
 
 
 class CytostreamPlotter(QtGui.QWidget):
@@ -72,10 +73,43 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## prepare layout
         hbox1 = QtGui.QHBoxLayout()
+        hbox1.setAlignment(QtCore.Qt.AlignCenter)
         hbox2 = QtGui.QHBoxLayout()
-        vbox = QtGui.QVBoxLayout()
+        hbox2.setAlignment(QtCore.Qt.AlignCenter)
+        hbox3_1 = QtGui.QHBoxLayout()
+        hbox3_1.setAlignment(QtCore.Qt.AlignCenter)
+        hbox3_2 = QtGui.QHBoxLayout()
+        hbox3_2.setAlignment(QtCore.Qt.AlignCenter)
+        hbox4 = QtGui.QHBoxLayout()
+        hbox4.setAlignment(QtCore.Qt.AlignCenter)
+        hbox1a = QtGui.QHBoxLayout()
+        hbox1a.setAlignment(QtCore.Qt.AlignLeft)
+        hbox2a = QtGui.QHBoxLayout()
+        hbox2a.setAlignment(QtCore.Qt.AlignLeft)
+        hbox3a = QtGui.QHBoxLayout()
+        hbox3a.setAlignment(QtCore.Qt.AlignLeft)
+        hbox4a = QtGui.QHBoxLayout()
+        hbox4a.setAlignment(QtCore.Qt.AlignLeft)
+        hbox5 = QtGui.QHBoxLayout()
+        hbox5.setAlignment(QtCore.Qt.AlignCenter)
+        vbox1 = QtGui.QVBoxLayout()
+        vbox1.setAlignment(QtCore.Qt.AlignTop)
+        vbox2 = QtGui.QVBoxLayout()
+        vbox2.setAlignment(QtCore.Qt.AlignTop)
+        vbox3 = QtGui.QVBoxLayout()
+        vbox3.setAlignment(QtCore.Qt.AlignTop)
+        vbox4 = QtGui.QVBoxLayout()
+        vbox4.setAlignment(QtCore.Qt.AlignTop)
+        vbox5 = QtGui.QVBoxLayout()
+        vbox5.setAlignment(QtCore.Qt.AlignBottom)
 
-        ## upper controls                                                                                                                                      
+        vboxLeft = QtGui.QVBoxLayout()
+        vboxRight = QtGui.QVBoxLayout()
+        masterBox = QtGui.QHBoxLayout()
+
+        ## upper controls
+        channelsLabel = QtGui.QLabel('Channels')
+        hbox1a.addWidget(channelsLabel)                                                                                                               
         self.channel1Selector = QtGui.QComboBox(self)
         for channel in self.fileChannels:
             self.channel1Selector.addItem(channel)
@@ -92,14 +126,18 @@ class CytostreamPlotter(QtGui.QWidget):
         self.connect(self.channel2Selector, QtCore.SIGNAL('activated(int)'),self.channel2_selector_callback)        
         hbox1.addWidget(self.channel2Selector)
 
-        if self.fileList != None:                                                                                                         
+        if self.fileList != None or self.uniqueLabels != None:
+            additionalSelectorLabel = QtGui.QLabel('Additional Selectors')
+            hbox2a.addWidget(additionalSelectorLabel)
+
+        if self.fileList != None:                                  
             self.fileSelector = QtGui.QComboBox(self)
             for f in self.fileList:
                 self.fileSelector.addItem(f)
                 
             self.fileSelector.setCurrentIndex(self.fileList.index(self.dataSetName))
             self.connect(self.fileSelector, QtCore.SIGNAL('activated(int)'),self.file_selector_callback)
-            hbox1.addWidget(self.fileSelector)
+            hbox2.addWidget(self.fileSelector)
 
         if self.uniqueLabels != None:                                                                         
             self.highlightSelector = QtGui.QComboBox(self)
@@ -108,35 +146,63 @@ class CytostreamPlotter(QtGui.QWidget):
 
             self.highlightSelector.setCurrentIndex(0)
             self.connect(self.highlightSelector, QtCore.SIGNAL('activated(int)'),self.highlight_selector_callback)
-            hbox1.addWidget(self.highlightSelector)
-
+            hbox2.addWidget(self.highlightSelector)
 
         ## lower controls 
-        hbox2.addWidget(self.mpl_toolbar)
+        #hbox2.addWidget(self.mpl_toolbar)
 
         if self.enableGating == True:
-            self.gate_save = QtGui.QPushButton("Save Gate")
-            self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.generic_callback)
-            self.gate_clear = QtGui.QPushButton("Clear Gate")
-            self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.generic_callback)
-            hbox2.addWidget(self.gate_clear)
-            hbox2.addWidget(self.gate_save)
+            gatingLabel = QtGui.QLabel('Gate Controls')
+            hbox3a.addWidget(gatingLabel)
+            self.gateSelector = QtGui.QComboBox(self)
+            for gt in ["None","Polygon", "Rectangle", "Square"]:
+                self.gateSelector.addItem(gt)
 
-        self.grid_cb = QtGui.QCheckBox("Show Grid")
+            self.gateSelector.setCurrentIndex(0)
+            self.connect(self.gateSelector, QtCore.SIGNAL('activated(int)'),self.gate_select_callback)
+            self.gate_save = QtGui.QPushButton("Save As")
+            self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.generic_callback)
+            self.gate_clear = QtGui.QPushButton("Clear")
+            self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.gate_clear_callback)
+            hbox3_1.addWidget(self.gateSelector)
+            hbox3_2.addWidget(self.gate_clear)
+            hbox3_2.addWidget(self.gate_save)
+
+        figControlsLabel = QtGui.QLabel('Figure Controls')
+        hbox4a.addWidget(figControlsLabel)
+        self.grid_cb = QtGui.QCheckBox("Grid")
         self.grid_cb.setChecked(False)
         self.connect(self.grid_cb,QtCore.SIGNAL('stateChanged(int)'), self._draw)
-        hbox2.addWidget(self.grid_cb)
+        hbox4.addWidget(self.grid_cb)
 
-        self.force_cb = QtGui.QCheckBox("Force Scale")
+        self.force_cb = QtGui.QCheckBox("Scale")
         self.force_cb.setChecked(self.forceScale)
         self.connect(self.force_cb,QtCore.SIGNAL('stateChanged(int)'), self.force_scale_callback)
-        hbox2.addWidget(self.force_cb)
+        hbox4.addWidget(self.force_cb)
 
+        self.fig_save = QtGui.QPushButton("Save Figure")
+        hbox5.addWidget(self.fig_save)
+        
         # finalize layout
-        vbox.addLayout(hbox1)
-        vbox.addWidget(self.canvas)
-        vbox.addLayout(hbox2)
-        self.setLayout(vbox)
+        vbox1.addLayout(hbox1a)
+        vbox1.addLayout(hbox1)
+        vbox2.addLayout(hbox2a)
+        vbox2.addLayout(hbox2)
+        vbox3.addLayout(hbox3a)
+        vbox3.addLayout(hbox3_1)
+        vbox3.addLayout(hbox3_2)
+        vbox4.addLayout(hbox4a)
+        vbox4.addLayout(hbox4)
+        vbox5.addLayout(hbox5)
+        vboxLeft.addLayout(vbox1)
+        vboxLeft.addLayout(vbox2)
+        vboxLeft.addLayout(vbox3)
+        vboxLeft.addLayout(vbox4)
+        vboxLeft.addLayout(vbox5)
+        vboxRight.addWidget(self.canvas)
+        masterBox.addLayout(vboxLeft)
+        masterBox.addLayout(vboxRight)
+        self.setLayout(masterBox)
 
     def draw_scatter(self,events=None,dataSetName=None,channel1Ind=None,
                      channel2Ind=None,subsample=None,labels=None, modelName='run1',highlight=None,log=None):
@@ -337,6 +403,49 @@ class CytostreamPlotter(QtGui.QWidget):
             else:
                 self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
             self.mainWindow.controller.save()
+
+    def gate_select_callback(self):
+        print 'gate select callback'
+
+        mid1 = 0.5 * self.events[self.selectedChannel1].max()
+        mid2 = 0.5 * self.events[self.selectedChannel2].max()
+        a = mid1 - (mid1 * 0.5)
+        b = mid1 + (mid1 * 0.5)
+        c = mid2 - (mid2 * 0.5)
+        d = mid2 + (mid2 * 0.5)
+        e = mid2 + (mid2 * 0.6)
+        f = mid2 - (mid2 * 0.6)
+
+        self.poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
+        self.ax.add_patch(self.poly)
+        self.polyIn = PolyGateInteractor(self.ax,self.poly,self.canvas)
+        self.canvas.draw()
+        #print dir(self.ax)
+
+
+    def gate_clear_callback(self):
+        print 'gate clear callback'
+        self.ax.patches.remove(self.poly)
+        self.canvas.draw()
+        #self.ax.clear()
+        #self._draw()
+
+        #self.gateDraw.draw_events(self.gateType)
+        #self.gateDraw.lman.ind = None
+        #elf.gateDraw.lman.gate = None
+
+    def gate_save_callback(self):
+        if self.get_indices() == None:
+            msg = "No gate has been drawn"
+            reply = QtGui.QMessageBox.information(self,'Information',msg)
+        elif self.mainWindow == None:
+            print 'there are %s indices selected'%(len(self.get_indices()))
+            print 'the gate has %s points in the gate'%(len(self.get_gate()))
+        else:
+            print "need to handle save callback"
+
+
+
 
     def generic_callback(self):
         print 'this is a generic callback'
