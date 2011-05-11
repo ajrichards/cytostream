@@ -26,8 +26,8 @@ from StateTransitions import move_to_model, move_to_one_dim_viewer, move_to_resu
 from StateTransitions import move_to_file_aligner
 from StateTransitions import move_to_preferences
 from MenuFunctions import create_menubar_toolbar, create_action, add_actions, restore_docks
-from CytostreamPlotter import CytostramPlotter
-from MultiplePlotter import MultiplePlotter
+from CytostreamPlotter import CytostreamPlotter
+#from MultiplePlotter import MultiplePlotter
 from NWayViewer import NWayViewer
 
 from ThumbnailViewer import ThumbnailViewer

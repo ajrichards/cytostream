@@ -67,34 +67,38 @@ class PlotDataOrganizer:
 
         self.plotDict = {}
 
-    def __check_summary_stats__(self,events,labels,plotID,ChannelsID):
+    def __check_summary_stats__(self,events,labels,plotID,channelsID):
         if self.plotDict[plotID][channelsID].has_key('centroids') == False:
             centroids,variances,sizes = get_file_sample_stats(events,labels)
             self.plotDict[plotID][channelsID]['centroids'] = centroids
             self.plotDict[plotID][channelsID]['variances'] = variances
             self.plotDict[plotID][channelsID]['sizes'] = sizes
 
-    def get_centroids(self,events,labels,plotID,ChannelsID):
-        self.__check_summary_stats__(self,events,labels,plotID,ChannelsID)
+    def get_centroids(self,events,labels,plotID,channelsID):
+        self.__check_summary_stats__(events,labels,plotID,channelsID)
    
         if self.plotDict[plotID][channelsID].has_key('centroids') == True:
             centroids = self.plotDict[plotID][channelsID]['centroids']
 
         return centroids
 
-    def get_variences(self,events,labels,plotID,ChannelsID):
+    def get_variences(self,events,labels,plotID,channelsID):
+        self.__check_summary_stats__(events,labels,plotID,channelsID)
+
         if  self.plotDict[plotID][channelsID].has_key('variences') == True:
             variences = self.plotDict[plotID][channelsID]['variences']
 
         return variences
 
-    def get_sizes(self,events,labels,plotID,ChannelsID):
+    def get_sizes(self,events,labels,plotID,channelsID):
+        self.__check_summary_stats__(events,labels,plotID,channelsID)
+
         if self.plotDict[plotID][channelsID].has_key('sizes') == True:
             sizes = self.plotDict[plotID][channelsID]['sizes']
 
         return sizes
 
-    def get_ids(self,selectedFile,subsample,modelName,index1,index2,plotDict):
+    def get_ids(self,selectedFile,subsample,modelName,index1,index2):
         if modelName == None:
             plotID = "%s_%s"%(selectedFile,subsample)
         else:
