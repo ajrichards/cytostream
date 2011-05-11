@@ -5,9 +5,7 @@ import sys,os,unittest,time,re
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
-    print '...........', mpl.get_backend()
     mpl.use('agg')
-    print '...........'
 
 from cytostream import Controller
 
