@@ -9,7 +9,6 @@ if mpl.get_backend() != 'agg':
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from cytostream.qtlib import ScatterPlotter
 from cytostream import Model, Logger, get_fcs_file_names
-from cytostream.tools import GateDrawer
 
 class MultiplePlotter(QtGui.QWidget):
     def __init__(self,homeDir,selectedFile,channel1,channel2,subsample,modelName=None,parent=None,
