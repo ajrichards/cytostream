@@ -46,6 +46,10 @@ class CytostreamPlotter(QtGui.QWidget):
         self.uniqueLabels = uniqueLabels
         self.enableGating = enableGating
 
+        ## gates
+        self.pgi = None
+
+
         ## variables to be used when class is called for drawing
         self.events=None
         self.dataSetName=None
@@ -164,7 +168,20 @@ class CytostreamPlotter(QtGui.QWidget):
             self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.generic_callback)
             self.gate_clear = QtGui.QPushButton("Clear")
             self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.gate_clear_callback)
+            
+            defaultVert = 6
+            self.vertSliderLabel = QtGui.QLabel(str(defaultVert))
+            self.vertSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
+            self.vertSlider.setRange(3,8)
+            self.vertSlider.setValue(defaultVert)
+            self.vertSlider.setTracking(True)
+            self.vertSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
+            self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.gate_vert_selector_callback)
+            self.vertSlider.setEnabled(False)
+
             hbox3_1.addWidget(self.gateSelector)
+            hbox3_1.addWidget(self.vertSlider)
+            hbox3_1.addWidget(self.vertSliderLabel)
             hbox3_2.addWidget(self.gate_clear)
             hbox3_2.addWidget(self.gate_save)
 
@@ -360,6 +377,9 @@ class CytostreamPlotter(QtGui.QWidget):
             self.force_cb.setChecked(False)
 
     def channel1_selector_callback(self,selectedInd):
+        if self.enableGating == True:
+            self.gate_clear_callback()
+
         selectedTxt = str(self.channel1Selector.currentText())
         self.selectedChannel1 = selectedInd
         self._draw()
@@ -371,6 +391,9 @@ class CytostreamPlotter(QtGui.QWidget):
             self.mainWindow.controller.save()
 
     def channel2_selector_callback(self,selectedInd):
+        if self.enableGating == True:
+            self.gate_clear_callback()
+
         selectedTxt = str(self.channel2Selector.currentText())
         self.selectedChannel2 = selectedInd
         self._draw()
@@ -404,8 +427,12 @@ class CytostreamPlotter(QtGui.QWidget):
                 self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
             self.mainWindow.controller.save()
 
-    def gate_select_callback(self):
-        print 'gate select callback'
+    def gate_select_callback(self,ind):
+
+        currentGateInd = int(self.gateSelector.currentIndex())
+        currentGate= str(self.gateSelector.currentText())
+        self.gate_clear_callback()
+        self.vertSlider.setEnabled(False)
 
         mid1 = 0.5 * self.events[self.selectedChannel1].max()
         mid2 = 0.5 * self.events[self.selectedChannel2].max()
@@ -416,24 +443,42 @@ class CytostreamPlotter(QtGui.QWidget):
         e = mid2 + (mid2 * 0.6)
         f = mid2 - (mid2 * 0.6)
 
-        self.poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
-        self.ax.add_patch(self.poly)
-        self.polyIn = PolyGateInteractor(self.ax,self.poly,self.canvas)
-        self.canvas.draw()
-        #print dir(self.ax)
+        if currentGate == 'None':
+            return
+        elif currentGate == 'Polygon':
+            self.vertSlider.setEnabled(True)
+            self.currentPolyVerts = 6
+            self.poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
+            self.ax.add_patch(self.poly)
+            self.pgi = PolyGateInteractor(self.ax,self.poly,self.canvas)
+            self.vertSlider.setValue(6)
+            self.vertSliderLabel.setText(str(6))
+            self.canvas.draw()
+        else:
+            msg = "This gate tool is not yet available"
+            reply = QtGui.QMessageBox.information(self,'Information',msg)
+            self.gateSelector.setCurrentIndex(0)
 
+    def gate_vert_selector_callback(self, value):
+        self.vertSliderLabel.setText(str(value))
+        print 'value', value, self.currentPolyVerts
+        
+        if int(value) < self.currentPolyVerts:
+            self.pgi.remove_vert()
+        if int(value) > self.currentPolyVerts:
+            self.pgi.add_vert()
+        
+        self.currentPolyVerts = int(value)
+        self.canvas.draw()
 
     def gate_clear_callback(self):
         print 'gate clear callback'
-        self.ax.patches.remove(self.poly)
+        if self.pgi != None:
+            self.pgi.set_visible(False)
+
+        self.gateSelector.setCurrentIndex(0)
         self.canvas.draw()
-        #self.ax.clear()
-        #self._draw()
-
-        #self.gateDraw.draw_events(self.gateType)
-        #self.gateDraw.lman.ind = None
-        #elf.gateDraw.lman.gate = None
-
+        
     def gate_save_callback(self):
         if self.get_indices() == None:
             msg = "No gate has been drawn"
@@ -443,9 +488,6 @@ class CytostreamPlotter(QtGui.QWidget):
             print 'the gate has %s points in the gate'%(len(self.get_gate()))
         else:
             print "need to handle save callback"
-
-
-
 
     def generic_callback(self):
         print 'this is a generic callback'
