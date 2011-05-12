@@ -47,11 +47,16 @@ class PolyGateInteractor:
         if poly.figure is None:
             raise RuntimeError('You must first add the polygon to a figure or canvas before defining the interactor')
         self.ax = ax
-        #self.canvas = poly.figure.canvas
         self.poly = poly
         self.canvas = canvas
 
+        ## fixes error of extra point 
+        self.poly.xy = self.poly.xy[:-1]
+
+        ## plots the lines
         x, y = zip(*self.poly.xy)
+        x = [i for i in x] + [x[0]]
+        y = [i for i in y] + [y[0]]
         self.line = Line2D(x,y,marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
 
@@ -60,7 +65,6 @@ class PolyGateInteractor:
 
         canvas.mpl_connect('draw_event', self.draw_callback)
         canvas.mpl_connect('button_press_event', self.button_press_callback)
-        canvas.mpl_connect('key_press_event', self.key_press_callback)
         canvas.mpl_connect('button_release_event', self.button_release_callback)
         canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
        
@@ -108,34 +112,31 @@ class PolyGateInteractor:
         if event.button != 1: return
         self._ind = None
 
-    def key_press_callback(self, event):
-        'whenever a key is pressed'
-        if not event.inaxes: return
-        if event.key=='t':
-            self.showverts = not self.showverts
-            self.line.set_visible(self.showverts)
-            if not self.showverts: self._ind = None
-        elif event.key=='d':
-            ind = self.get_ind_under_point(event)
-            if ind is not None:
-                self.poly.xy = [tup for i,tup in enumerate(self.poly.xy) if i!=ind]
-                self.line.set_data(zip(*self.poly.xy))
-        elif event.key=='i':
-            xys = self.poly.get_transform().transform(self.poly.xy)
-            p = event.x, event.y # display coords                                                                                                                                                                                            
-            for i in range(len(xys)-1):
-                s0 = xys[i]
-                s1 = xys[i+1]
-                d = dist_point_to_segment(p, s0, s1)
-                if d<=self.epsilon:
-                    self.poly.xy = np.array(
-                        list(self.poly.xy[:i]) +
-                        [(event.xdata, event.ydata)] +
-                        list(self.poly.xy[i:]))
-                    self.line.set_data(zip(*self.poly.xy))
-                    break
 
-        self.canvas.draw()
+    def remove_vert(self):
+        self.poly.xy = self.poly.xy[:-1]
+        x, y = zip(*self.poly.xy)                                                                                                  
+        x = [i for i in x] + [x[0]]  
+        y = [i for i in y] + [y[0]] 
+        self.line.set_data((x,y))
+
+    def add_vert(self):
+        x, y = zip(*self.poly.xy)
+        newX = np.random.uniform(min(x), max(x))
+        newY = np.random.uniform(min(y), max(y))
+        self.poly.xy = np.vstack([self.poly.xy, [newX,newY]])
+        x, y = zip(*self.poly.xy)                                                                                                  
+        x = [i for i in x] + [x[0]]  
+        y = [i for i in y] + [y[0]] 
+        self.line.set_data((x,y))
+
+    def set_visible(self,flag):
+        if flag not in [True, False]:
+            print "ERROR Gating PolygonGateInteractor.set_visible -- bad input flag"
+            return
+
+        self.line.set_visible(flag)
+        self.poly.set_visible(flag)
 
     def motion_notify_callback(self, event):
         'on mouse movement'
@@ -146,7 +147,10 @@ class PolyGateInteractor:
         x,y = event.xdata, event.ydata
 
         self.poly.xy[self._ind] = x,y
-        self.line.set_data(zip(*self.poly.xy))
+        x, y = zip(*self.poly.xy)
+        x = [i for i in x] + [x[0]]
+        y = [i for i in y] + [y[0]]
+        self.line.set_data((x,y))
 
         self.canvas.restore_region(self.background)
         self.ax.draw_artist(self.poly)
