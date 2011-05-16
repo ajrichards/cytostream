@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
-                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None):
+                 forceScale=False,fontSize=8,markerSize=1,dpi=100,inputLabels=None):
 
         ## arg variables
         self.homeDir = homeDir

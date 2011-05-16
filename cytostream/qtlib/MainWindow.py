@@ -509,8 +509,6 @@ class MainWindow(QtGui.QMainWindow):
             extension = str(extension)[1:]
             figName = re.sub(extension,"",imgFileName) + extension    
             numSubplots = int(re.sub('plot-','',currentPlotView))
-            #figMode = 'qa'
-            #figName = os.path.join(self.baseDir,'unittests','subplots_test_qa.png')
             figTitle = None
             ss = SaveSubplots(self.controller.homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
             print 'plot saved as ', figName
