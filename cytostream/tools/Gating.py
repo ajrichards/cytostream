@@ -18,27 +18,18 @@ from matplotlib.colors import colorConverter
 from matplotlib.collections import RegularPolyCollection, PolyCollection
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-
 from matplotlib.artist import Artist
 from matplotlib.patches import Polygon, CirclePolygon
 from matplotlib.mlab import dist_point_to_segment
 from matplotlib.lines import Line2D
-
-
 import numpy as np
 
 
 
 class PolyGateInteractor:
     """
+    gate interaction with a polygon
 
-    An polygon editor.
-    Key-bindings
-      't' toggle vertex markers on and off.  When vertex markers are on,
-          you can move them, delete them
-      'd' delete the vertex under point
-      'i' insert a vertex at point.  You must be within epsilon of the
-     line connecting two existing vertices
     """
 
     showverts = True
@@ -63,10 +54,13 @@ class PolyGateInteractor:
         cid = self.poly.add_callback(self.poly_changed)
         self._ind = None # the active vert  
 
-        canvas.mpl_connect('draw_event', self.draw_callback)
-        canvas.mpl_connect('button_press_event', self.button_press_callback)
-        canvas.mpl_connect('button_release_event', self.button_release_callback)
-        canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
+        self.action1 = canvas.mpl_connect('draw_event', self.draw_callback)
+        self.action2 = canvas.mpl_connect('button_press_event', self.button_press_callback)
+        self.action3 = canvas.mpl_connect('button_release_event', self.button_release_callback)
+        self.action4 = canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
+
+        ## set original gate
+        self.gate = [(x[i],y[i]) for i in range(len(x))]
        
     def draw_callback(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
@@ -82,6 +76,7 @@ class PolyGateInteractor:
         Artist.update_from(self.line, poly)
         self.line.set_visible(vis)  # don't use the poly visibility state 
 
+
     def get_ind_under_point(self, event):
         'get the index of the vertex under point if within epsilon tolerance'
 
@@ -96,7 +91,6 @@ class PolyGateInteractor:
         if d[ind]>=self.epsilon:
             ind = None
 
-        print ind
         return ind
 
     def button_press_callback(self, event):
@@ -111,7 +105,6 @@ class PolyGateInteractor:
         if not self.showverts: return
         if event.button != 1: return
         self._ind = None
-
 
     def remove_vert(self):
         self.poly.xy = self.poly.xy[:-1]
@@ -129,15 +122,7 @@ class PolyGateInteractor:
         x = [i for i in x] + [x[0]]  
         y = [i for i in y] + [y[0]] 
         self.line.set_data((x,y))
-
-    def set_visible(self,flag):
-        if flag not in [True, False]:
-            print "ERROR Gating PolygonGateInteractor.set_visible -- bad input flag"
-            return
-
-        self.line.set_visible(flag)
-        self.poly.set_visible(flag)
-
+        
     def motion_notify_callback(self, event):
         'on mouse movement'
         if not self.showverts: return
@@ -156,138 +141,71 @@ class PolyGateInteractor:
         self.ax.draw_artist(self.poly)
         self.ax.draw_artist(self.line)
         self.canvas.blit(self.ax.bbox)
-
-class Gater(QtGui.QWidget):
-
-    def __init__(self, data,  parent=None, mainWindow=None):
-        QtGui.QWidget.__init__(self,parent)
         
-        self.mainWindow = mainWindow
-        self.gateType = 'Poly3'
+        ## save the gate
+        self.gate = [(x[i],y[i]) for i in range(len(x))]
 
-        ## setup layouts
-        hl = QtGui.QHBoxLayout()
-        hl.setAlignment(QtCore.Qt.AlignCenter)
-        vbox1 = QtGui.QVBoxLayout()
-        vbox1.setAlignment(QtCore.Qt.AlignCenter)
-        vbox2 = QtGui.QVBoxLayout()
-        vbox2.setAlignment(QtCore.Qt.AlignCenter)
-        hbox1 = QtGui.QHBoxLayout()
-        hbox1.setAlignment(QtCore.Qt.AlignCenter)
-        hbox2 = QtGui.QHBoxLayout()
-        hbox2.setAlignment(QtCore.Qt.AlignCenter)
-        hbox3 = QtGui.QHBoxLayout()
-        hbox3.setAlignment(QtCore.Qt.AlignCenter)
-        hbox4 = QtGui.QHBoxLayout()
-        hbox4.setAlignment(QtCore.Qt.AlignCenter)
+    def clean(self):
+        self.line.set_visible(False)
+        self.poly.set_visible(False)
+        self.canvas.mpl_disconnect(self.action1)
+        self.canvas.mpl_disconnect(self.action2)
+        self.canvas.mpl_disconnect(self.action3)
+        self.canvas.mpl_disconnect(self.action4)
 
-        ## gate selector
-        gateTypes = ['Free','Poly3','Poly4','Poly5','Poly6']
-        self.gateTypeSelector = QtGui.QComboBox(self)
-        self.gateTypeSelector.setMaximumWidth(180)
-        self.gateTypeSelector.setMinimumWidth(180)
+class DrawGateInteractor:
+    def __init__(self, ax, canvas,events,chan1,chan2):
+        self.ax = ax
+        self.canvas = canvas
+        self.data = [(e[chan1],e[chan2]) for e in events]
+        self.gate = None
+        self.action1 = self.canvas.mpl_connect('button_press_event', self.press_callback)
+        self.ind = None
 
-        for gt in gateTypes:
-            self.gateTypeSelector.addItem(gt)
+    def callback(self, verts):
+        self.gate = [v for v in verts]
+        self.canvas.draw_idle()
+        self.canvas.widgetlock.release(self.lasso)
+        del self.lasso
 
-        if gateTypes.__contains__(self.gateType):
-            self.gateTypeSelector.setCurrentIndex(gateTypes.index(self.gateType))
-        else:
-            print "ERROR: gate type selector - bad specified default", self.gateType
+        ## plot the gate
+        gx = np.array([g[0] for g in self.gate])
+        gy = np.array([g[1] for g in self.gate])
+        self.line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
+        self.ax.add_line(self.line)
 
-        self.connect(self.gateTypeSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.set_gate_type)
+        ## adjust axes
+        x = np.array([d[0] for d in self.data])
+        y = np.array([d[1] for d in self.data])
+        buff = 0.02
+        bufferX = buff * (x.max() - x.min())
+        bufferY = buff * (y.max() - y.min())
+        self.ax.set_xlim([x.min()-bufferX,x.max()+bufferX])
+        self.ax.set_ylim([y.min()-bufferY,y.max()+bufferY])
 
-        hbox2.addWidget(self.gateTypeSelector)
-        hbox2.setAlignment(QtCore.Qt.AlignCenter)
+        ## force square axes 
+        self.ax.set_aspect(1./self.ax.get_data_ratio())
+        self.canvas.draw()
 
-        self.saveBtn = QtGui.QPushButton("Save Gate")
-        self.saveBtn.setMaximumWidth(100)
-        self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.save_callback)
-        hbox2.addWidget(self.saveBtn)
+    def press_callback(self, event):
+        if self.canvas.widgetlock.locked(): return
+        if event.inaxes is None: return
+        self.lasso = Lasso(event.inaxes, (event.xdata, event.ydata), self.callback)
+        # acquire a lock on the widget drawing  
+        self.canvas.widgetlock(self.lasso)
 
-        self.removeBtn = QtGui.QPushButton("Remove Gate")
-        self.removeBtn.setMaximumWidth(100)
-        self.connect(self.removeBtn, QtCore.SIGNAL('clicked()'),self.remove_callback)
-        hbox2.addWidget(self.removeBtn)
+    def clean(self):
+        self.line.set_visible(False)
+        self.canvas.mpl_disconnect(self.action1)
 
-        ## add gatedraw widget
-        self.gateDraw = GateDrawer(data)
-        self.gateDraw.draw_events(self.gateType)
 
-        #hbox3.addWidget(self.gateDraw.canvas)
-        hbox3.addWidget(self.gateDraw)
-        
-        ## add a mpl navigation toolbar
-        #ntb = NavigationToolbar(self.gateDraw.canvas,self)
-        #hbox4.addWidget(ntb)
-
-        ## finalize layout   
-        vbox2.addLayout(hbox2)
-        vbox2.addLayout(hbox3)
-        vbox2.addLayout(hbox4)
-        hl.addLayout(vbox1)
-        hl.addLayout(vbox2)
-        self.setLayout(hl)
-
-    def save_callback(self):
-        if self.get_indices() == None:
-            msg = "No gate has been drawn"
-            reply = QtGui.QMessageBox.information(self,'Information',msg)
-        elif self.mainWindow == None:
-            print 'there are %s indices selected'%(len(self.get_indices()))
-            print 'the gate has %s points in the gate'%(len(self.get_gate()))
-        else:
-            print "need to handle save callback"
-
-    def remove_callback(self):
-        print 'removing events'
-        self.gateDraw.draw_events(self.gateType)
-        self.gateDraw.lman.ind = None
-        self.gateDraw.lman.gate = None
-
-    def get_indices(self):
-        return self.gateDraw.lman.ind
-
-    def get_gate(self):
-        return self.gateDraw.lman.gate
-
-    def set_gate_type(self):
-        gtInd = self.gateTypeSelector.currentIndex()
-        gt = str(self.gateTypeSelector.currentText())
-        self.gateType = gt
-        self.gateDraw.draw_events(self.gateType)
-
-        if self.mainWindow == None:
-            print "changed gate type to", self.gateType
-            
 def get_indices_from_gate(data,gate):
-    
+    '''
+    returns indices from a gate
+    '''
+
+
     allData = [(d[0], d[1]) for d in data]
     ind = np.nonzero(points_inside_poly(allData, gate))[0]
 
     return ind
-
-
-if __name__ == '__main__':
-
-    app = QtGui.QApplication(sys.argv)
-    data = np.random.rand(10000, 2)
-    gtr = Gater(data)
-
-    gtr.show()
-
-
-    ## how to get indices or gate
-    #inds = gtr.get_indices()
-    #gate = gtr.get_gate()
-
-    ## get indices from a new file with same gate
-    #newData = np.random.rand(1000,2)
-    #indFromGate = get_indices_from_gate(newData,gate)
-    
-    #print 'orig inds', inds
-    #print 'new ind  ', indFromGate
-
-
-    sys.exit(app.exec_())
-

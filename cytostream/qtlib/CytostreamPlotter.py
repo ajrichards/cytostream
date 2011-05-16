@@ -1,4 +1,4 @@
-import sys,os,re
+import sys,os,re,cPickle
 from PyQt4 import QtCore, QtGui
 
 import numpy as np
@@ -10,9 +10,15 @@ if mpl.get_backend() != 'agg':
 from matplotlib.figure import Figure  
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
-from cytostream import Model, Logger 
-from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer, PolyGateInteractor
 from matplotlib.patches import Polygon, CirclePolygon
+import matplotlib.cm as cm
+from matplotlib.mlab import griddata
+
+from matplotlib.lines import Line2D
+from cytostream import Model, Logger 
+from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer, draw_scatter
+from cytostream.tools import DrawGateInteractor, PolyGateInteractor
+from cytostream.qtlib import RadioBtnWidget
 
 
 class CytostreamPlotter(QtGui.QWidget):
@@ -21,16 +27,11 @@ class CytostreamPlotter(QtGui.QWidget):
     '''
 
     def __init__(self,fileChannels,drawState='scatter',parent=None,background=False,modelType='components',xAxLimit=None,yAxLimit=None,
-                 fileList=None, selectedChannel1=0,selectedChannel2=1,mainWindow=None,uniqueLabels=None,enableGating=False):
+                 fileList=None, selectedChannel1=0,selectedChannel2=1,mainWindow=None,uniqueLabels=None,enableGating=False,homeDir=None):
 
         ## initialize
         QtGui.QWidget.__init__(self,parent)
         
-        ## error checking
-        if os.path.isdir(homeDir) == False:
-            print "ERROR: specified homedir is not a directory:", homeDir
-            return False
-
         ## plotting variables
         self.fileChannels = fileChannels
         self.pdo = PlotDataOrganizer()
@@ -45,35 +46,101 @@ class CytostreamPlotter(QtGui.QWidget):
         self.mainWindow = mainWindow
         self.uniqueLabels = uniqueLabels
         self.enableGating = enableGating
+        self.homeDir = homeDir
 
         ## gates
-        self.pgi = None
-
+        self.gateInteractor = None
+        self.currentGate = 'None'
 
         ## variables to be used when class is called for drawing
         self.events=None
         self.dataSetName=None
         self.subsample=None
+        self.line=None
+        self.vizList = ['scatter','contour','scatter heatmap']
 
         ## create figure widget
         self.create_figure_widget()
 
     def _draw(self):
+        self.ax.clear()
+        self.gate_clear_callback()
         if self.drawState == 'scatter':
-            self.draw_scatter()
+            draw_scatter(self)
+        elif self.drawState == 'contour':
+            ##mat = self.events[:,[self.selectedChannel1,self.selectedChannel2]]
+            msg = 'Function still under development'
+            QtGui.QMessageBox.information(self, "Info", msg)
+            self.drawState = 'scatter'
+            self._draw()
+            self.vizSelector.btns[self.drawState].setChecked(True)
+            self.vizSelector.selectedItem = self.drawState
+
+            #x = self.events[:,self.selectedChannel1]
+            #y = self.events[:,self.selectedChannel2]
+            #z = x*np.exp(-x**2-y**2)
+            #buff = 0.02
+            #bufferX = buff * (x.max() - x.min())
+            #bufferY = buff * (y.max() - y.min())
+            #
+            ### define the grid
+            #xMin, xMax = x.min()-bufferX,x.max()+bufferX
+            #yMin, yMax = y.min()-bufferY,y.max()+bufferY
+            #xi = np.linspace(xMin,xMax,100)
+            #yi = np.linspace(yMin,yMax,100)
+
+            ### grid the data
+            #zi = griddata(x,y,z,xi,yi,interp='nn')
+            #mat = self.events[:,[self.selectedChannel1,self.selectedChannel2]]
+            #CS = self.ax.contour(xi,yi,zi)
+            #CS = self.ax.contour(xi,yi,zilinewidths=0.5,colors='k')
+            #CS = self.ax.contourf(xi,yi,zi)#cmap=self.fig.cm.jet)
+
+            ### adjust axes 
+            #self.ax.set_xlim([xMin,xMax])
+            #self.ax.set_ylim([yMin,yMax])
+            #
+            #self.canvas.draw()
+            #npts = 200
+            #x = uniform(-2,2,npts)
+            #y = uniform(-2,2,npts)
+            #z = x*np.exp(-x**2-y**2)
+            # define grid.
+            #xi = np.linspace(-2.1,2.1,100)
+            #yi = np.linspace(-2.1,2.1,200)
+            # grid the data.
+            #zi = griddata(x,y,z,xi,yi,interp='linear')
+            # contour the gridded data, plotting dots at the nonuniform data points.
+            #CS = plt.contour(xi,yi,zi,15,linewidths=0.5,colors='k')
+            #CS = plt.contourf(xi,yi,zi,15,cmap=plt.cm.jet)
+            #plt.colorbar() # draw colorbar
+            # plot data points.
+            #plt.scatter(x,y,marker='o',c='b',s=5,zorder=10)
+            #plt.xlim(-2,2)
+            #plt.ylim(-2,2)
+            #plt.title('griddata test (%d points)' % npts)
+            #plt.show()
+            #im = self.ax.imshow(mat, interpolation='bilinear', cmap=cm.gray)
+                                #origin='lower', extent=[-3,3,-3,3])
+       
+        elif self.drawState == 'scatter heatmap':
+            msg = 'Function still under development'
+            QtGui.QMessageBox.information(self, "Info", msg)
+            self.drawState = 'scatter'
+            self._draw()
+            self.vizSelector.btns[self.drawState].setChecked(True)
+            self.vizSelector.selectedItem = self.drawState
         else:
             print "ERROR: only scatter is implemented"
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()
 
-        self.dpi = 100
+        self.dpi = 110
         self.fig = Figure(dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self.figureWidget)
         self.ax = self.fig.add_subplot(111)
-        #self.canvas.mpl_connect('pick_event', self.generic_callback)
-        self.mpl_toolbar = NavigationToolbar(self.canvas, self.figureWidget)
 
         ## prepare layout
         hbox1 = QtGui.QHBoxLayout()
@@ -84,6 +151,8 @@ class CytostreamPlotter(QtGui.QWidget):
         hbox3_1.setAlignment(QtCore.Qt.AlignCenter)
         hbox3_2 = QtGui.QHBoxLayout()
         hbox3_2.setAlignment(QtCore.Qt.AlignCenter)
+        hbox3_3 = QtGui.QHBoxLayout()
+        hbox3_3.setAlignment(QtCore.Qt.AlignCenter)
         hbox4 = QtGui.QHBoxLayout()
         hbox4.setAlignment(QtCore.Qt.AlignCenter)
         hbox1a = QtGui.QHBoxLayout()
@@ -96,6 +165,8 @@ class CytostreamPlotter(QtGui.QWidget):
         hbox4a.setAlignment(QtCore.Qt.AlignLeft)
         hbox5 = QtGui.QHBoxLayout()
         hbox5.setAlignment(QtCore.Qt.AlignCenter)
+        hbox6 = QtGui.QHBoxLayout()
+        hbox6.setAlignment(QtCore.Qt.AlignCenter)
         vbox1 = QtGui.QVBoxLayout()
         vbox1.setAlignment(QtCore.Qt.AlignTop)
         vbox2 = QtGui.QVBoxLayout()
@@ -105,7 +176,9 @@ class CytostreamPlotter(QtGui.QWidget):
         vbox4 = QtGui.QVBoxLayout()
         vbox4.setAlignment(QtCore.Qt.AlignTop)
         vbox5 = QtGui.QVBoxLayout()
-        vbox5.setAlignment(QtCore.Qt.AlignBottom)
+        vbox5.setAlignment(QtCore.Qt.AlignTop)
+        vbox6 = QtGui.QVBoxLayout()
+        vbox6.setAlignment(QtCore.Qt.AlignBottom)
 
         vboxLeft = QtGui.QVBoxLayout()
         vboxRight = QtGui.QVBoxLayout()
@@ -153,22 +226,28 @@ class CytostreamPlotter(QtGui.QWidget):
             hbox2.addWidget(self.highlightSelector)
 
         ## lower controls 
-        #hbox2.addWidget(self.mpl_toolbar)
-
         if self.enableGating == True:
             gatingLabel = QtGui.QLabel('Gate Controls')
             hbox3a.addWidget(gatingLabel)
             self.gateSelector = QtGui.QComboBox(self)
-            for gt in ["None","Polygon", "Rectangle", "Square"]:
+            for gt in ["None","Draw","Polygon", "Rectangle", "Square"]:
                 self.gateSelector.addItem(gt)
 
             self.gateSelector.setCurrentIndex(0)
             self.connect(self.gateSelector, QtCore.SIGNAL('activated(int)'),self.gate_select_callback)
-            self.gate_save = QtGui.QPushButton("Save As")
-            self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.generic_callback)
+
+            self.gate_set = QtGui.QPushButton("Set")
+            self.connect(self.gate_set, QtCore.SIGNAL('clicked()'), self.gate_set_callback)
+            self.gate_set.setEnabled(False)
+
             self.gate_clear = QtGui.QPushButton("Clear")
             self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.gate_clear_callback)
-            
+            self.gate_clear.setEnabled(False)
+
+            self.gate_save = QtGui.QPushButton("Save Gate")
+            self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.gate_save_callback)
+            self.gate_save.setEnabled(False)
+
             defaultVert = 6
             self.vertSliderLabel = QtGui.QLabel(str(defaultVert))
             self.vertSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
@@ -182,8 +261,9 @@ class CytostreamPlotter(QtGui.QWidget):
             hbox3_1.addWidget(self.gateSelector)
             hbox3_1.addWidget(self.vertSlider)
             hbox3_1.addWidget(self.vertSliderLabel)
+            hbox3_2.addWidget(self.gate_set)
             hbox3_2.addWidget(self.gate_clear)
-            hbox3_2.addWidget(self.gate_save)
+            hbox3_3.addWidget(self.gate_save)
 
         figControlsLabel = QtGui.QLabel('Figure Controls')
         hbox4a.addWidget(figControlsLabel)
@@ -197,9 +277,16 @@ class CytostreamPlotter(QtGui.QWidget):
         self.connect(self.force_cb,QtCore.SIGNAL('stateChanged(int)'), self.force_scale_callback)
         hbox4.addWidget(self.force_cb)
 
+        self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback)
+        hbox5.addWidget(self.vizSelector)
+        defaultViz = 'scatter'
+        self.vizSelector.btns[defaultViz].setChecked(True)
+        self.vizSelector.selectedItem = defaultViz
+
         self.fig_save = QtGui.QPushButton("Save Figure")
-        hbox5.addWidget(self.fig_save)
-        
+        self.connect(self.fig_save, QtCore.SIGNAL('clicked()'), self.figure_save)
+        hbox6.addWidget(self.fig_save)
+
         # finalize layout
         vbox1.addLayout(hbox1a)
         vbox1.addLayout(hbox1)
@@ -208,166 +295,21 @@ class CytostreamPlotter(QtGui.QWidget):
         vbox3.addLayout(hbox3a)
         vbox3.addLayout(hbox3_1)
         vbox3.addLayout(hbox3_2)
+        vbox3.addLayout(hbox3_3)
         vbox4.addLayout(hbox4a)
         vbox4.addLayout(hbox4)
         vbox5.addLayout(hbox5)
+        vbox6.addLayout(hbox6)
         vboxLeft.addLayout(vbox1)
         vboxLeft.addLayout(vbox2)
         vboxLeft.addLayout(vbox3)
         vboxLeft.addLayout(vbox4)
         vboxLeft.addLayout(vbox5)
+        vboxLeft.addLayout(vbox6)
         vboxRight.addWidget(self.canvas)
         masterBox.addLayout(vboxLeft)
         masterBox.addLayout(vboxRight)
         self.setLayout(masterBox)
-
-    def draw_scatter(self,events=None,dataSetName=None,channel1Ind=None,
-                     channel2Ind=None,subsample=None,labels=None, modelName='run1',highlight=None,log=None):
-
-        buff = 0.02
-        centroids = None
-        if channel1Ind != None:
-            self.selectedChannel1=channel1Ind
-            self.channel1Selector.setCurrentIndex(self.selectedChannel1)
-        if channel2Ind != None:
-            self.selectedChannel2=channel2Ind
-            self.channel2Selector.setCurrentIndex(self.selectedChannel2)
-
-        if events != None:
-            self.events=events
-            self.dataSetName=dataSetName
-            self.subsample=subsample
-            self.labels=labels
-            self.modelName = modelName
-            self.highlight=highlight
-            self.log=log
-
-        if self.highlight == "None":
-            self.highlight = None
-
-        ## clear axis
-        self.ax.clear()
-        self.ax.grid(self.grid_cb.isChecked())
-
-        ## declare variables
-        if self.log == None:
-            fontName = 'Arial'
-            markerSize = 1
-            fontSize = 10
-            plotType = 'png'
-            filterInFocus = None
-        else:
-            fontName = self.log.log['font_name']
-            markerSize = int(self.log.log['scatter_marker_size'])
-            fontSize = int(self.log.log['font_size'])
-            plotType = self.log.log['plot_type']
-            filterInFocus = self.log.log['filter_in_focus']
-
-        ## specify channels
-        index1 = int(self.selectedChannel1)
-        index2 = int(self.selectedChannel2)
-        channel1 = self.fileChannels[index1]
-        channel2 = self.fileChannels[index2]
-
-        ## get centroids
-        if self.labels != None:
-            plotID, channelsID = self.pdo.get_ids(self.dataSetName,self.subsample,self.modelName,index1,index2)
-            centroids = self.pdo.get_centroids(self.events,self.labels,plotID,channelsID)
-
-        ## error check
-        if self.labels != None:
-            n,d = self.events.shape
-            if n != self.labels.size:
-                print "ERROR: ScatterPlotter.py -- labels and events do not match",n,labels.size
-                return None
-
-        ## make plot
-        totalPoints = 0
-        if self.labels == None:
-            dataX,dataY = (self.events[:,index1],self.events[:,index2])
-            self.ax.scatter([dataX],[dataY],color='blue',s=markerSize)
-        else:
-            if type(np.array([])) != type(self.labels):
-                self.labels = np.array(self.labels)
-
-            numLabels = np.unique(self.labels).size
-            maxLabel = np.max(self.labels)
-
-            for l in np.sort(np.unique(self.labels)):
-                clusterColor = self.colors[l]
-                markerSize = int(markerSize)
-
-                ## handle highlighted clusters      
-                if self.highlight != None and str(int(self.highlight)) == str(int(l)):
-                    alphaVal = 0.8
-                    markerSize =  markerSize+4
-                elif self.highlight !=None and str(int(self.highlight)) != str(int(l)):
-                    alphaVal = 0.5
-                    clusterColor = "#CCCCCC"
-                else:
-                    alphaVal=0.8
-
-                ## check to see if centorids are already available
-                dataX = self.events[:,index1][np.where(self.labels==l)[0]]
-                dataY = self.events[:,index2][np.where(self.labels==l)[0]]
-            
-                totalPoints+=dataX.size
-
-                if dataX.size == 0:
-                    continue
-                self.ax.scatter(dataX,dataY,color=clusterColor,s=markerSize)
-
-                ## handle centroids if present     
-                prefix = ''
-
-                if centroids != None:
-                    if centroids[str(int(l))].size != self.events.shape[1]:
-                        print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
-                    
-                    xPos = centroids[str(int(l))][index1]
-                    yPos = centroids[str(int(l))][index2]
-
-                    if xPos < 0 or yPos <0:
-                        continue
-
-                    if clusterColor in ['#FFFFAA','y','#33FF77','#CCFFAA']:
-                        self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=fontSize,
-                                ha="center", va="center",
-                                bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
-                                     )
-                    else:
-                        self.ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=fontSize,
-                                ha="center", va="center",
-                                bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
-                                     )
-
-        ## handle data edge buffers
-        bufferX = buff * (self.events[:,index1].max() - self.events[:,index1].min())
-        bufferY = buff * (self.events[:,index2].max() - self.events[:,index2].min())
-        self.ax.set_xlim([self.events[:,index1].min()-bufferX,self.events[:,index1].max()+bufferX])
-        self.ax.set_ylim([self.events[:,index2].min()-bufferY,self.events[:,index2].max()+bufferY])
-       
-        ## force square axes
-        self.ax.set_aspect(1./self.ax.get_data_ratio())
-
-        ## save file
-        self.ax.set_title("%s_%s_%s"%(channel1,channel2,self.dataSetName),fontname=fontName,fontsize=fontSize)
-        self.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-        self.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
-    
-        for t in self.ax.get_xticklabels():
-            t.set_fontsize(fontSize)
-            t.set_fontname(fontName)
-    
-        for t in self.ax.get_yticklabels():
-            t.set_fontsize(fontSize)
-            t.set_fontname(fontName)
-    
-        if self.forceScale == True:
-            ax.set_xlim(self.xAxLimit)
-            ax.set_ylim(self.yAxLimit)
-
-        self.canvas.draw()
 
     def force_scale_callback(self,index=None):
         if self.forceScale == False and self.xAxLimit == None:
@@ -430,9 +372,8 @@ class CytostreamPlotter(QtGui.QWidget):
     def gate_select_callback(self,ind):
 
         currentGateInd = int(self.gateSelector.currentIndex())
-        currentGate= str(self.gateSelector.currentText())
+        self.currentGate= str(self.gateSelector.currentText())
         self.gate_clear_callback()
-        self.vertSlider.setEnabled(False)
 
         mid1 = 0.5 * self.events[self.selectedChannel1].max()
         mid2 = 0.5 * self.events[self.selectedChannel2].max()
@@ -443,51 +384,116 @@ class CytostreamPlotter(QtGui.QWidget):
         e = mid2 + (mid2 * 0.6)
         f = mid2 - (mid2 * 0.6)
 
-        if currentGate == 'None':
+        self.gateSelector.setCurrentIndex(0)
+        self.vertSlider.setEnabled(False)
+        self.gate_save.setEnabled(False)
+        self.gate_clear.setEnabled(False)
+        self.gate_set.setEnabled(False)
+            
+        if self.currentGate == 'None':
             return
-        elif currentGate == 'Polygon':
+        else:
+            self.gate_save.setEnabled(True)
+            self.gate_clear.setEnabled(True)
+
+        if self.currentGate == 'Draw':
+            self.gateInteractor = DrawGateInteractor(self.ax, self.canvas, self.events, self.selectedChannel1, self.selectedChannel2)
+        elif self.currentGate == 'Polygon':
             self.vertSlider.setEnabled(True)
+            self.gate_save.setEnabled(True)
+            self.gate_clear.setEnabled(True)
+            self.gate_set.setEnabled(True)
             self.currentPolyVerts = 6
             self.poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.2)
             self.ax.add_patch(self.poly)
-            self.pgi = PolyGateInteractor(self.ax,self.poly,self.canvas)
+            self.gateInteractor = PolyGateInteractor(self.ax,self.poly,self.canvas)
             self.vertSlider.setValue(6)
             self.vertSliderLabel.setText(str(6))
-            self.canvas.draw()
+            self.canvas.draw()            
         else:
             msg = "This gate tool is not yet available"
             reply = QtGui.QMessageBox.information(self,'Information',msg)
-            self.gateSelector.setCurrentIndex(0)
+
+        self.gateSelector.setCurrentIndex(currentGateInd)
 
     def gate_vert_selector_callback(self, value):
         self.vertSliderLabel.setText(str(value))
-        print 'value', value, self.currentPolyVerts
         
         if int(value) < self.currentPolyVerts:
-            self.pgi.remove_vert()
+            self.gateInteractor.remove_vert()
         if int(value) > self.currentPolyVerts:
-            self.pgi.add_vert()
+            self.gateInteractor.add_vert()
         
         self.currentPolyVerts = int(value)
         self.canvas.draw()
 
+    def gate_set_callback(self):
+
+        self.gate_clear_callback()
+        gate =  self.gateInteractor.gate
+
+        gx = np.array([g[0] for g in gate])
+        gy = np.array([g[1] for g in gate])
+        self.line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
+        self.ax.add_line(self.line)
+        self.canvas.draw()
+
     def gate_clear_callback(self):
-        print 'gate clear callback'
-        if self.pgi != None:
-            self.pgi.set_visible(False)
+        if self.gateInteractor != None:
+            self.gateInteractor.clean()
+
+        if self.line != None:
+            self.line.set_visible(False)
 
         self.gateSelector.setCurrentIndex(0)
         self.canvas.draw()
         
     def gate_save_callback(self):
-        if self.get_indices() == None:
-            msg = "No gate has been drawn"
-            reply = QtGui.QMessageBox.information(self,'Information',msg)
-        elif self.mainWindow == None:
-            print 'there are %s indices selected'%(len(self.get_indices()))
-            print 'the gate has %s points in the gate'%(len(self.get_gate()))
+        currentGateInd = int(self.gateSelector.currentIndex())
+        currentGate= str(self.gateSelector.currentText())
+        print currentGate, self.currentGate
+        print self.gateInteractor.gate
+
+        if self.homeDir == None:
+            defaultDir = os.getcwd()#os.getenv("HOME")
         else:
-            print "need to handle save callback"
+            defaultDir = os.path.join(self.homeDir,'data')
+
+        fileFilter = "*.gate"
+        gateFileName, extension = QtGui.QFileDialog.getSaveFileNameAndFilter(self, 'Save As', directory=defaultDir,filter=fileFilter)
+        gateFileName = str(gateFileName)
+        extension = str(extension)[1:]
+        gateFilePath = re.sub(extension,"",gateFileName) + extension
+
+        gateToSave = {'verts':self.gateInteractor.gate,
+                      'channel1':self.selectedChannel1,
+                      'channel2':self.selectedChannel2,
+                      'fileName':self.dataSetName}
+        
+        print 'saving', gateToSave.keys()
+
+        if gateFilePath == None or gateFilePath == '':
+            return 
+        tmp1 = open(gateFilePath,'w')
+        cPickle.dump(gateToSave,tmp1)
+
+    def figure_save(self,figName=None):
+        if figName == None:
+            defaultDir = os.getenv("HOME")
+            fileFilter = "*.png;;*.jpg;;*.pdf"
+            imgFileName, extension = QtGui.QFileDialog.getSaveFileNameAndFilter(self, 'Save As', directory=defaultDir,filter=fileFilter)
+            imgFileName = str(imgFileName)
+            extension = str(extension)[1:]
+            figName = re.sub(extension,"",imgFileName) + extension
+            
+        if figName != '' and figName != None:
+            self.fig.savefig(figName,transparent=False,dpi=self.dpi)
+    
+    def plot_viz_callback(self,item=None):
+        print 'plot viz callback', item
+        if item in self.vizList:
+            self.drawState = item
+            self._draw()
 
     def generic_callback(self):
         print 'this is a generic callback'
@@ -536,8 +542,8 @@ if __name__ == '__main__':
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
-    sp = CytostreamPlotter(fileChannels,background=True,modelType=modelType,enableGating=True,uniqueLabels=uniqueLabels)
-    sp.draw_scatter(events,selectedFile,channel1,channel2,subsample,labels=labels,highlight=None,modelName=modelName)
+    sp = CytostreamPlotter(fileChannels,background=True,modelType=modelType,enableGating=True,uniqueLabels=uniqueLabels,homeDir=homeDir)
+    draw_scatter(sp,events,selectedFile,channel1,channel2,subsample,labels=labels,highlight=None,modelName=modelName)
 
     ## show it
     sp.show()
