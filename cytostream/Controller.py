@@ -245,12 +245,16 @@ class Controller:
                 events = self.model.get_events(fileName,subsample='original')
                 data = events[self.subsampleIndices,:]
                 newDataFileName = fileName + "_data_%s.pickle"%subsample
-                tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-                cPickle.dump(data,tmp)
-                tmp.close()
 
-                if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-                    print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+                if os.path.exists(os.path.join(newDataFileName)) == True:
+                    return True
+                else:
+                    tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
+                    cPickle.dump(data,tmp)
+                    tmp.close()
+
+                    if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                        print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
 
             return True
         else:

@@ -116,6 +116,8 @@ class NoGuiAnalysis():
         self.controller.log.log[key] = value
         self.update()
         
+        if key == 'subsample_qa' or key == 'subsample_analysis':
+            self.controller.handle_subsampling(value)
 
     def update(self):
         """

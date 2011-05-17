@@ -39,7 +39,7 @@ from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_da
 from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
 from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
-from cytostream.qtlib import ThumbnailViewer, MultiplePlotter, NWayViewer
+from cytostream.qtlib import ThumbnailViewer, NWayViewer, CytostreamPlotter
 
 __version__ = "0.2"
 
@@ -792,20 +792,26 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             subsample=self.log.log['subsample_qa']
             modelType,modelName=None,None
-            modelMode='qa'
+            runID = None
         elif mode == "Results Navigation":     
             subsample=self.log.log['subsample_analysis']
             modelType=self.log.log['results_mode']
-            modelName=self.log.log['selected_model']
-            modelMode='results'
-
+            modelRunID=self.log.log['selected_model']
+            #runID = self.log.log['plots_to_view_runs'][0]
+            
         self.mainWidget = QtGui.QWidget(self)
         fileChannels = self.log.log['alternate_channel_labels']
         channelI = fileChannels.index(self.lastChanI)
         channelJ = fileChannels.index(self.lastChanJ)
-        mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
-                             modelType=modelType,mode=modelMode,modelName=modelName)
-        hbl.addWidget(mp)
+        #mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
+        #                     modelType=modelType,mode=modelMode,modelName=modelName)
+        
+
+        cp = CytostreamPlotter(selectedChannel1=channelI,selectedChannel2=channelJ,enableGating=False,
+                               homeDir=self.controller.homeDir,isProject=True,compactMode=False)
+        cp.init_labels_events(self.log.log['selected_file'],modelRunID,modelType=modelType)
+        cp.draw()
+        hbl.addWidget(cp)
 
         ## enable/disable
         self.plots_enable_disable(mode='plot-1')

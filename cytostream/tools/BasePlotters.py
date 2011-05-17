@@ -169,9 +169,11 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
 
     ## save file
     parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
-    parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-    parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
     
+    if parent.showAxLabels == True:
+        parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+        parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+
     for t in parent.ax.get_xticklabels():
         t.set_fontsize(fontSize)
         t.set_fontname(fontName)

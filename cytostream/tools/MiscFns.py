@@ -173,50 +173,6 @@ def read_txt_into_array(filePath,header=False,delim='\t'):
 
     return results
 
-
-def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
-    
-    ## declare variables
-    fontName = log.log['font_name']
-    markerSize = int(log.log['scatter_marker_size'])
-    fontSize = log.log['font_size']
-    plotType = log.log['plot_type']
-    filterInFocus = log.log['filter_in_focus']
-
-    ## get events                                                                                                                       
-    if re.search('filter',str(subsample)):
-        pass
-    elif subsample != 'original':
-        subsample = str(int(float(subsample)))
-
-    ## ensure the proper events are being loaded 
-    if re.search('original',str(subsample)) and re.search('filter',str(subsample)):
-        if log == None:
-            subsample = 2e04
-        else:
-            subsample = log.log['setting_max_scatter_display']
-
-        events = model.get_events(selectedFile,subsample='original')
-        subsampleIndices = model.get_subsample_indices(subsample)
-        events = events[subsampleIndices,:]
-    elif filterInFocus != None and filterInFocus != 'None' and re.search('filter',filterInFocus):
-        events = model.get_events(selectedFile,subsample=filterInFocus)
-    elif re.search('original',str(subsample)):
-        if log == None:
-            subsample = 2e04
-        else:
-            subsample = log.log['setting_max_scatter_display']
-
-        subsampleIndices = model.get_subsample_indices(subsample)
-        if labels != None:
-            labels = labels[subsampleIndices]
-
-        events = model.get_events(selectedFile,subsample=subsample)
-    else:
-        events = model.get_events(selectedFile,subsample=subsample)
-
-    return events,labels
-
 def get_file_sample_stats(events,labels):
 
     if type(labels) != type(np.array([])):
