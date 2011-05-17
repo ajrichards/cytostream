@@ -48,7 +48,7 @@ class PolyGateInteractor:
         x, y = zip(*self.poly.xy)
         x = [i for i in x] + [x[0]]
         y = [i for i in y] + [y[0]]
-        self.line = Line2D(x,y,marker='o', markerfacecolor='r', animated=True)
+        self.line = Line2D(x,y,marker='o', markerfacecolor='r', linewidth=3.0, animated=True)
         self.ax.add_line(self.line)
 
         cid = self.poly.add_callback(self.poly_changed)
@@ -171,7 +171,7 @@ class DrawGateInteractor:
         ## plot the gate
         gx = np.array([g[0] for g in self.gate])
         gy = np.array([g[1] for g in self.gate])
-        self.line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
+        self.line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
         self.ax.add_line(self.line)
 
         ## adjust axes
