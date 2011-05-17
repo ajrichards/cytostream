@@ -3,7 +3,7 @@ from PyQt4 import QtGui, QtCore
 from random import randint
 
 from cytostream import get_fcs_file_names
-from cytostream.qtlib import MultiplePlotter
+from cytostream.qtlib import CytostremPlotter
 
 class NWayViewer(QtGui.QWidget):
 
