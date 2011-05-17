@@ -43,6 +43,19 @@ def get_file_channel_list(filePath):
     channels = [re.sub("\s","-",c) for c in channels]
     return channels
 
+def get_cmap_blues():
+
+    cdict = {'red': ((0.0, 0.0, 0.0),
+                     (1.0, 1.0, 0.0)),
+             'green': ((0.0, 0.0, 0.0),
+                       (1.0, 1.0, 0.0)),
+             'blue': ((0.0, 0.0, 0.5),
+                      (1.0, 1.0, 1.0))}
+    my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap',cdict,256)
+
+    return my_cmap
+
+
 def get_all_colors():
     colors =  ['b','#CC6600','g','r','c','m',"#002200",'y','k','orange',"#CC55FF","#990033",'#FF6600',"#CCCCCC","#660033",
                '#FFCC00','#FFFFAA','#6622AA','#33FF77','#998800','#0000FF',"#995599","#00AA00","#777777","#FF0033",'#990066',

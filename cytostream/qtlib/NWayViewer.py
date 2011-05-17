@@ -46,10 +46,12 @@ class NWayViewer(QtGui.QWidget):
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
 
         for i in range(numSubplots):
-            mp = MultiplePlotter(self.homeDir,self.files[i],self.channels[i][0],self.channels[i][1],self.subsample,background=self.background,
-                                 modelName=self.runs[i],modelType=self.modelType,mode=self.figMode,parent=self,
-                                 showNavBar=False,mainWindow=self.mainWindow,subplotIndex=i)
-            
+        #    mp = MultiplePlotter(self.homeDir,self.files[i],self.channels[i][0],self.channels[i][1],self.subsample,background=self.background,
+        #                         modelName=self.runs[i],modelType=self.modelType,mode=self.figMode,parent=self,
+        #                         showNavBar=False,mainWindow=self.mainWindow,subplotIndex=i)
+        
+
+    
             if self.numSubplots in [2]:
                 self.hbl1.addWidget(mp)
             elif self.numSubplots in [3]:
