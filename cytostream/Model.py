@@ -219,6 +219,7 @@ class Model:
         if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
             print "INPUT ERROR: bad file name specified in model.get_events"
             print "\t", os.path.join(self.homeDir,'data',fileName)
+            
             return None
         
         tmp = open(os.path.join(self.homeDir,'data',fileName),'r')

@@ -3,7 +3,7 @@ from PyQt4 import QtGui, QtCore
 from random import randint
 
 from cytostream import get_fcs_file_names
-from cytostream.qtlib import CytostremPlotter
+from cytostream.qtlib import CytostreamPlotter
 
 class NWayViewer(QtGui.QWidget):
 
@@ -46,40 +46,39 @@ class NWayViewer(QtGui.QWidget):
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
 
         for i in range(numSubplots):
-        #    mp = MultiplePlotter(self.homeDir,self.files[i],self.channels[i][0],self.channels[i][1],self.subsample,background=self.background,
-        #                         modelName=self.runs[i],modelType=self.modelType,mode=self.figMode,parent=self,
-        #                         showNavBar=False,mainWindow=self.mainWindow,subplotIndex=i)
-        
-
+            cp = CytostreamPlotter(selectedChannel1=self.channels[i][0],selectedChannel2=self.channels[i][1],enableGating=False,
+                                   homeDir=self.homeDir,isProject=True,compactMode=True)
+            cp.init_labels_events(self.files[i],self.runs[i],modelType=self.modelType)
+            cp.draw()
     
             if self.numSubplots in [2]:
-                self.hbl1.addWidget(mp)
+                self.hbl1.addWidget(cp)
             elif self.numSubplots in [3]:
-                self.hbl1.addWidget(mp)
+                self.hbl1.addWidget(cp)
             elif self.numSubplots in [4]:
                 if i in [0,1]:
-                    self.hbl1.addWidget(mp)
+                    self.hbl1.addWidget(cp)
                 else:
-                    self.hbl2.addWidget(mp)
+                    self.hbl2.addWidget(cp)
             elif self.numSubplots in [5,6]:
                 if i in [0,1,2]:
-                    self.hbl1.addWidget(mp)
+                    self.hbl1.addWidget(cp)
                 else:
-                    self.hbl2.addWidget(mp)
+                    self.hbl2.addWidget(cp)
             elif self.numSubplots in [7,8,9]:
                 if i in [0,1,2]:
-                    self.hbl1.addWidget(mp)
+                    self.hbl1.addWidget(cp)
                 elif i in [3,4,5]:
-                    self.hbl2.addWidget(mp)
+                    self.hbl2.addWidget(cp)
                 else:
-                    self.hbl3.addWidget(mp)
+                    self.hbl3.addWidget(cp)
             elif self.numSubplots in [10,11,12]:
                 if i in [0,1,2,3]:
-                    self.hbl1.addWidget(mp)
+                    self.hbl1.addWidget(cp)
                 elif i in [4,5,6,7]:
-                    self.hbl2.addWidget(mp)
+                    self.hbl2.addWidget(cp)
                 else:
-                    self.hbl3.addWidget(mp)
+                    self.hbl3.addWidget(cp)
 
         ## finalize layout
         self.vbl.addLayout(self.hbl1)

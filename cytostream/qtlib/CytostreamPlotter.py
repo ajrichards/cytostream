@@ -70,8 +70,14 @@ class CytostreamPlotter(QtGui.QWidget):
         self.line=None
         self.labels = None
         self.highlight = None
-        self.vizList = ['Scatter','Heat Scatter','Contour']
+        self.vizList = ['Scatter','Heat','Contour']
 
+        ## handle whether we show axes labels
+        if self.compactMode == True:
+            self.showAxLabels = False
+        else:
+            self.showAxLabels = True
+        
         ## create figure widget
         self.create_figure_widget()
         
@@ -100,17 +106,25 @@ class CytostreamPlotter(QtGui.QWidget):
             statModel,statModelClasses = None, None
             centroids,labels = None,None
 
-        modelLog = self.model.load_model_results_log(selectedFile,self.modelRunID)
-        subsample = int(float(modelLog['subsample']))
+        if self.modelRunID != None:
+            modelLog = self.model.load_model_results_log(selectedFile,self.modelRunID)
+            subsample = int(float(modelLog['subsample']))
+        else:
+            subsample = self.log.log['subsample_qa']
+
         self.events,self.labels = fetch_plotting_events(selectedFile,self.model,self.log,subsample,labels=labels)
-        self.uniqueLabels = np.sort(np.unique(labels)).tolist()
+        
+        if self.modelRunID != None:
+            self.uniqueLabels = np.sort(np.unique(labels)).tolist()
+        else:
+            self.uniqueLabels = None
 
     def draw(self):
         self.ax.clear()
         self.gate_clear_callback()
         if self.drawState == 'Scatter':
             draw_scatter(self)
-        elif self.drawState == 'Heat Scatter':
+        elif self.drawState == 'Heat':
             draw_heat_scatter(self)
         elif self.drawState == 'Contour':
             msg = 'Function still under development'
@@ -177,18 +191,22 @@ class CytostreamPlotter(QtGui.QWidget):
         masterBox = QtGui.QHBoxLayout()
 
         ## upper controls
+        maxWidth = 100
         channelsLabel = QtGui.QLabel('Channels')
         self.channel1Selector = QtGui.QComboBox(self)
         for channel in self.fileChannels:
             self.channel1Selector.addItem(channel)
-
+        self.channel1Selector.setMaximumWidth(maxWidth)
+        self.channel1Selector.setMinimumWidth(maxWidth)
         self.channel1Selector.setCurrentIndex(self.selectedChannel1)
         self.connect(self.channel1Selector, QtCore.SIGNAL('activated(int)'),self.channel1_selector_callback)
 
         self.channel2Selector = QtGui.QComboBox(self)
         for channel in self.fileChannels:
             self.channel2Selector.addItem(channel)
-
+            
+        self.channel2Selector.setMaximumWidth(maxWidth)
+        self.channel2Selector.setMinimumWidth(maxWidth)
         self.channel2Selector.setCurrentIndex(self.selectedChannel2)
         self.connect(self.channel2Selector, QtCore.SIGNAL('activated(int)'),self.channel2_selector_callback)
 
@@ -200,6 +218,8 @@ class CytostreamPlotter(QtGui.QWidget):
             for f in self.fileList:
                 self.fileSelector.addItem(f)
                 
+            self.fileSelector.setMaximumWidth(maxWidth)
+            self.fileSelector.setMinimumWidth(maxWidth)
             if self.selectedFileName == None:
                 self.selectedFileName = self.fileList[0]
 
@@ -258,6 +278,9 @@ class CytostreamPlotter(QtGui.QWidget):
         self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback)
         self.vizSelector.btns[self.drawState].setChecked(True)
         self.vizSelector.selectedItem = self.drawState
+
+        self.vizSelector.setMaximumWidth(maxWidth)
+        self.vizSelector.setMinimumWidth(maxWidth)
 
         self.fig_save = QtGui.QPushButton("Save Figure")
         self.connect(self.fig_save, QtCore.SIGNAL('clicked()'), self.figure_save)
@@ -321,9 +344,9 @@ class CytostreamPlotter(QtGui.QWidget):
                 hbox4.addWidget(self.fileSelector)
 
             hbox5.addWidget(self.grid_cb)
-            hbox5.addWidget(self.force_cb)
+            #hbox5.addWidget(self.force_cb)
             hbox6.addWidget(self.vizSelector)
-            hbox7.addWidget(self.fig_save)
+            #hbox7.addWidget(self.fig_save)
            
             ## finalize layout
             vbox1.addLayout(hbox1)
@@ -335,7 +358,7 @@ class CytostreamPlotter(QtGui.QWidget):
             vbox2.addLayout(hbox7)
             vbox2.setAlignment(QtCore.Qt.AlignBottom)
             vboxLeft.addLayout(vbox1)
-            vboxLeft.addLayout(vbox2)
+            #vboxLeft.addLayout(vbox2)
             
         ## set layout
         vboxRight.addWidget(self.canvas)
