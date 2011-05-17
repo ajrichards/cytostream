@@ -124,6 +124,4 @@ class PlotDataOrganizer:
         if self.plotDict[plotID].has_key(channelsID) == False:
             self.plotDict[plotID][channelsID] = {}
 
-        return plotID, channelsID 
-
-
+        return plotID, channelsID
