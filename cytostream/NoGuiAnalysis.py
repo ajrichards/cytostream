@@ -14,7 +14,8 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,filePathList,useSubsample=True,makeQaFigs=True,configDict=None,record=True,verbose=False,dType='fcs',inputChannels=None):
+    def __init__(self,homeDir,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
+                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False):
         """
           class constructor 
 
@@ -40,25 +41,31 @@ class NoGuiAnalysis():
         self.inputChannels = inputChannels
 
         ## initialize
-        self.initialize()
+        if loadExisting == False:
+            self.initialize()
+        else:
+            self.initialize_existing()
 
         ## set the data type
-        print 'NoGuiAnalysis: Initializing %s files of data type %s'%(len(filePathList),dType)
-        if dType not in ['fcs','comma','tab','array']:
-            print "ERROR in NoGuiAnalysis -- bad input data type", 
-            return None
-        else:
-            self.set('input_data_type',dType)
+        if loadExisting == False:
+            print 'NoGuiAnalysis: Initializing %s files of data type %s'%(len(filePathList),dType)
+            if dType not in ['fcs','comma','tab','array']:
+                print "ERROR in NoGuiAnalysis -- bad input data type", 
+                return None
+            else:
+                self.set('input_data_type',dType)
 
-        ## load files
-        self.load_files()
+            ## load files
+            self.load_files()
+            self.set('current_state', 'Model')
+            self.set('highest_state', '3')
+        else:
+            print 'loading existing project'
+        
 
         ## quality assurance figures
         if self.makeQaFigs == True:
             self.make_qa_figures()
-
-        self.set('current_state', 'Model')
-        self.set('highest_state', '3')
 
     def initialize(self):
         """
@@ -67,7 +74,14 @@ class NoGuiAnalysis():
 
         self.controller = Controller(configDict=self.configDict,debug=self.verbose)
         self.controller.create_new_project(self.homeDir,record=self.record)
-        
+    def initialize_existing(self):
+        '''
+        initialize existing project
+        '''
+        print 'initializing existing'
+        self.controller = Controller(debug=self.verbose)
+        self.controller.initialize_project(self.homeDir,loadExisting=True)
+  
     def load_files(self):
         """
         loads the list of files supplied as input into the project
@@ -80,6 +94,13 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling(self.controller.log.log['setting_max_scatter_display'])
         fileChannels = self.controller.model.get_master_channel_list()
         self.set('alternate_channel_labels',fileChannels)
+
+    def get_file_channels(self):
+        """
+        returns file channels
+        """
+
+        return self.controller.log.log['alternate_file_channels']
 
     def get_file_names(self):
         """
@@ -142,7 +163,7 @@ class NoGuiAnalysis():
         events = self.controller.model.get_events(fileName,subsample=subsample)
 
         return events
-    
+
     def make_qa_figures(self):
         """
         makes the figures for quality assurance

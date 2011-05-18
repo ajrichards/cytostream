@@ -78,7 +78,6 @@ class CytostreamPlotter(QtGui.QWidget):
         ## create figure widget
         self.create_figure_widget()
 
-        
     def _init_project(self):
         ## model, logger
         self.log = Logger()
@@ -106,7 +105,8 @@ class CytostreamPlotter(QtGui.QWidget):
 
         if self.modelRunID != None:
             modelLog = self.model.load_model_results_log(selectedFile,self.modelRunID)
-            subsample = int(float(modelLog['subsample']))
+            subsample = modelLog['subsample']
+            if subsample != 'original': subsample = int(float(subsample))
         else:
             subsample = self.log.log['subsample_qa']
 

@@ -31,14 +31,13 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames,expListData,expListLabels,modelName,phiRange=[0.4],minSilValue=0.3,covariateID=None,
+    def __init__(self,expListNames,expListData,expListLabels,phiRange=[0.4],minSilValue=0.3,covariateID=None,
                  mkPlots=True,refFile=None,verbose=False,excludedChannels=[],baseDir=".",distanceMetric='mahalanobis'):
         self.expListNames = [expName for expName in expListNames]
         self.expListData = [expData[:,:].copy() for expData in expListData]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
         self.phiRange = phiRange
         self.matchResults = None
-        self.modelName = modelName
         self.mkPlots = mkPlots
         self.minMergeSilValue = minSilValue
         self.baseDir = baseDir

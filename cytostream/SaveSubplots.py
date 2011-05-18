@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
-                 forceScale=False,fontSize=8,markerSize=1,dpi=100,inputLabels=None):
+                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None):
 
         ## arg variables
         self.homeDir = homeDir
@@ -61,10 +61,7 @@ class SaveSubplots():
             self.log.initialize(self.homeDir,load=True)
             self.model = Model()
             self.model.initialize(self.homeDir)
-
-            #self.markerSize = int(self.log.log['scatter_marker_size'])
             self.fontName = self.log.log['font_name']
-            #self.fontSize = int(self.log.log['font_size'])
             self.filterInFocus = self.log.log['filter_in_focus']
             self.resultsMode = self.log.log['results_mode']
 
@@ -135,7 +132,7 @@ class SaveSubplots():
             subplotChannels = plotsToViewChannels[int(subplotIndex)]
             subplotRun = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
-           
+
             if self.figMode != 'qa' and self.inputLabels != None:
                 labels = self.inputLabels[subplotIndex]
             elif self.figMode != 'qa':
@@ -178,7 +175,7 @@ class SaveSubplots():
         totalPoints = 0
 
         if labels == None:
-            ax.scatter([events[:,index1]],[events[:,index2]],color='blue',s=self.markerSize)
+            ax.scatter([events[:,index1]],[events[:,index2]],color='blue',s=self.markerSize,edgecolor='none')
         else:
             if type(np.array([])) != type(labels):
                 labels = np.array(labels)
@@ -207,7 +204,7 @@ class SaveSubplots():
 
                 if x.size == 0:
                     continue
-                ax.scatter(x,y,color=clusterColor,s=ms)
+                ax.scatter(x,y,color=clusterColor,s=ms,edgecolor='none')
                 
                 ## handle centroids if present
                 prefix = ''
@@ -221,14 +218,17 @@ class SaveSubplots():
 
                     if xPos < 0 or yPos <0:
                         continue
-
+                    labelSize = self.fontSize
+                    if self.numSubplots == 12:
+                        labelSize = 4
+                        
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=self.fontSize-1,
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )
                     else:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=self.fontSize-1,
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )
@@ -274,11 +274,13 @@ class SaveSubplots():
             subplotRun = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
         
-            if self.figMode != 'qa':
+            if self.figMode != 'qa' and self.inputLabels == None:
                 statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRun,modelType=self.resultsMode)
                 labels = statModelClasses
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
+            elif self.inputLabels != None:
+                subsample = self.log.log['subsample_analysis']
 
             ## determine min and max numbers
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
