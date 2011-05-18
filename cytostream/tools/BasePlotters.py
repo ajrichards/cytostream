@@ -8,7 +8,7 @@ if mpl.get_backend() != 'agg':
 
 from matplotlib.nxutils import points_inside_poly
 from cytostream.tools import rgb_to_hex, get_cmap_blues
-
+from fcm.graphics import bilinear_interpolate
 '''
 the functions here use CytostreamPlotter.py as a parent
 
@@ -75,7 +75,6 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             return None
 
     ## make plot
-    totalPoints = 0
     if str(parent.labels) == "None":
         dataX,dataY = (parent.events[:,index1],parent.events[:,index2])
         parent.ax.scatter([dataX],[dataY],color='blue',s=markerSize)
@@ -111,7 +110,6 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             ## check to see if centorids are already available
             dataX = parent.events[:,index1][clusterInds]
             dataY = parent.events[:,index2][clusterInds]
-            totalPoints+=dataX.size
 
             if dataX.size == 0:
                 continue
@@ -120,7 +118,7 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             ## handle centroids if present     
             prefix = ''
 
-            if centroids != None:
+            if centroids != None and parent.labels_cb.isChecked():
                 if centroids[str(int(l))].size != parent.events.shape[1]:
                     print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
                     
@@ -147,16 +145,17 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             xPos = centroids[str(int(highlightSaved['num']))][index1]
             yPos = centroids[str(int(highlightSaved['num']))][index2]
             
-            if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
-                parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
-                               ha="center", va="center",
-                               bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
-                               )
-            else:
-                parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='white', fontsize=fontSize-1,
-                               ha="center", va="center",
-                               bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
-                               )
+            if parent.labels_cb.isChecked():
+                if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
+                    parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
+                                   ha="center", va="center",
+                                   bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
+                                   )
+                else:
+                    parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='white', fontsize=fontSize-1,
+                                   ha="center", va="center",
+                                   bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
+                                   )
 
     ## handle data edge buffers
     bufferX = buff * (parent.events[:,index1].max() - parent.events[:,index1].min())
@@ -168,11 +167,15 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     parent.ax.set_aspect(1./parent.ax.get_data_ratio())
 
     ## save file
-    parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
+    if parent.title_cb.isChecked() == True:
+        parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
     
-    if parent.showAxLabels == True:
+    if parent.axLab_cb.isChecked() == True:
         parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
         parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+    #else:
+    #    parent.ax.set_xlabel()
+    #    parent.ax.set_ylabel()
 
     for t in parent.ax.get_xticklabels():
         t.set_fontsize(fontSize)
@@ -250,7 +253,6 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             return None
 
     ## make plot
-    totalPoints = 0
     
     if type(np.array([])) != type(parent.labels):
         parent.labels = np.array(parent.labels)
@@ -266,34 +268,19 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     xMin, xMax = x.min()-bufferX,x.max()+bufferX
     yMin, yMax = y.min()-bufferY,y.max()+bufferY
 
-    ## create a grid
-    bins = 150
-    xi = np.linspace(xMin,xMax,bins)
-    yi = np.linspace(yMin,yMax,bins)
-
-    binNum = 0
-    allData = np.vstack((x,y)).T
-    totalPts = allData.size
-    intensityVals = np.zeros((totalPts),)
-
-    for i in range(bins-1):
-        limsX = (xi[i], xi[i+1])
-        for j in range(bins-1):
-            limsY = (yi[j],yi[j+1])
-            binLims = [(limsX[0],limsY[0]),(limsX[1],limsY[0]),(limsX[1],limsY[1]),(limsX[0],limsY[1])]
-            binNum+=1
-            points = np.nonzero(points_inside_poly(allData, binLims))[0]
-            for p in points:
-                intensityVals[p] = len(points)
-
-    intensityVals = intensityVals / totalPts * 580.0
-    print max(intensityVals), min(intensityVals)
-
-    my_cmap = mpl.cm.gist_heat # spectral hot, gist_heat jet
-    colorList = [rgb_to_hex(tuple([j * 255.0 for j in my_cmap(i)])) for i in intensityVals]
+    myCmap = mpl.cm.gist_heat # spectral hot, gist_heat jet
+    totalPts = len(x)
+    if totalPts >= 9e04:
+        bins = 120.0
+    elif totalPts >= 5e04:
+        bins = 50.0
+    else:
+        bins = 40.0
+    
+    colorList = bilinear_interpolate(x,y,bins=bins)
 
     if str(parent.labels) == "None":
-        parent.ax.scatter(x,y,color=colorList,s=1)
+        parent.ax.scatter(x,y,c=colorList,s=1,edgecolors='none',cmap=myCmap)
     else:
         highlightSaved = None
         for l in np.sort(np.unique(parent.labels)):
@@ -322,24 +309,21 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             else:
                 alphaVal=0.8
 
-            ## check to see if centorids are already available            
-            totalPoints+=dataX.size
-
+            ## check to see if centorids are already available 
             if dataX.size == 0:
                 continue
 
-            clrs = np.array(colorList)[:][clusterInds]
-            clrs = clrs.tolist()
+            clrs = colorList[clusterInds]
 
             if isBackground == False:
-                parent.ax.scatter(dataX,dataY,color=clrs,s=markerSize)
+                parent.ax.scatter(dataX,dataY,c=clrs,s=markerSize,edgecolor='none',cmap=myCmap)
             else:
-                parent.ax.scatter(dataX,dataY,color=clusterColor,s=markerSize)
+                parent.ax.scatter(dataX,dataY,color=clusterColor,s=markerSize,edgecolor='none',cmap=myCmap)
 
             ## handle centroids if present
             prefix = ''
 
-            if centroids != None:
+            if centroids != None and parent.labels_cb.isChecked():
                 if centroids[str(int(l))].size != parent.events.shape[1]:
                     print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
                     
@@ -361,20 +345,21 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
                                    )
 
         if highlightSaved != None:
-            parent.ax.scatter(highlightSaved['x'],highlightSaved['y'],color=colorSubset,s=highlightSaved['ms'])
+            parent.ax.scatter(highlightSaved['x'],highlightSaved['y'],c=colorSubset,s=highlightSaved['ms'],edgecolor='none',cmap=myCmap)
             xPos = centroids[str(int(highlightSaved['num']))][index1]
             yPos = centroids[str(int(highlightSaved['num']))][index2]
             
-            if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
-                parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
-                               ha="center", va="center",
-                               bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
-                               )
-            else:
-                parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='white', fontsize=fontSize-1,
-                               ha="center", va="center",
-                               bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
-                               )
+            if parent.labels_cb.isChecked():
+                if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
+                    parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
+                                   ha="center", va="center",
+                                   bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
+                                   )
+                else:
+                    parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='white', fontsize=fontSize-1,
+                                   ha="center", va="center",
+                                   bbox = dict(boxstyle="round",facecolor=highlightSaved['color'],alpha=highlightSaved['alpha'])
+                                   )
             
     ## handle data edge buffers
     parent.ax.set_xlim(xMin,xMax)
@@ -384,9 +369,11 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     parent.ax.set_aspect(1./parent.ax.get_data_ratio())
 
     ## save file
-    parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
-    parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-    parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+    if parent.title_cb.isChecked():
+        parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
+    if parent.axLab_cb.isChecked():
+        parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+        parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
     
     for t in parent.ax.get_xticklabels():
         t.set_fontsize(fontSize)
