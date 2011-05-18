@@ -45,16 +45,16 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     ## declare variables
     if parent.log == None:
         fontName = 'Arial'
-        markerSize = 1
         fontSize = 10
         plotType = 'png'
         filterInFocus = None
     else:
         fontName = parent.log.log['font_name']
-        markerSize = int(parent.log.log['scatter_marker_size'])
         fontSize = int(parent.log.log['font_size'])
         plotType = parent.log.log['plot_type']
         filterInFocus = parent.log.log['filter_in_focus']
+
+    markerSize = parent.markerSize
 
     ## specify channels
     index1 = int(parent.selectedChannel1)
@@ -87,7 +87,7 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
         highlightSaved = None
         for l in np.sort(np.unique(parent.labels)):
             clusterColor = parent.colors[l]
-            markerSize = 1
+            markerSize = parent.markerSize
             clusterInds = np.where(parent.labels==l)[0]
 
             ## handle highlighted clusters      
@@ -173,9 +173,6 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     if parent.axLab_cb.isChecked() == True:
         parent.ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
         parent.ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
-    #else:
-    #    parent.ax.set_xlabel()
-    #    parent.ax.set_ylabel()
 
     for t in parent.ax.get_xticklabels():
         t.set_fontsize(fontSize)
@@ -223,16 +220,16 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
     ## declare variables
     if parent.log == None:
         fontName = 'Arial'
-        markerSize = 1
         fontSize = 10
         plotType = 'png'
         filterInFocus = None
     else:
         fontName = parent.log.log['font_name']
-        markerSize = int(parent.log.log['scatter_marker_size'])
         fontSize = int(parent.log.log['font_size'])
         plotType = parent.log.log['plot_type']
         filterInFocus = parent.log.log['filter_in_focus']
+
+    markerSize = parent.markerSize
 
     ## specify channels
     index1 = int(parent.selectedChannel1)
@@ -285,7 +282,7 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
         highlightSaved = None
         for l in np.sort(np.unique(parent.labels)):
             clusterColor = '#FFFFAA'
-            markerSize = 1
+            markerSize = parent.markerSize
             isBackground = False
             clusterInds = np.where(parent.labels==l)[0]
             dataX = parent.events[:,index1][clusterInds]
