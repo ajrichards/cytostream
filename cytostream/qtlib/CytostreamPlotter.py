@@ -25,7 +25,7 @@ class CytostreamPlotter(QtGui.QWidget):
     
     '''
 
-    def __init__(self,fileChannels=None,drawState='Scatter',parent=None,background=True,xAxLimit=None,yAxLimit=None,
+    def __init__(self,fileChannels=None,drawState='Heat',parent=None,background=True,xAxLimit=None,yAxLimit=None,
                  selectedChannel1=0,selectedChannel2=1,mainWindow=None,uniqueLabels=None,enableGating=False,homeDir=None,
                  compactMode=False,isProject=False):
 
@@ -49,11 +49,13 @@ class CytostreamPlotter(QtGui.QWidget):
         self.compactMode = compactMode
         self.isProject = isProject
 
-        ## gates
+        ## addition variables
         self.gateInteractor = None
         self.currentGate = 'None'
         self.gateSelector = None
         self.fileList = None
+        self.log = None
+        self.model = None
 
         if self.isProject == True:
             self._init_project()
@@ -70,16 +72,11 @@ class CytostreamPlotter(QtGui.QWidget):
         self.line=None
         self.labels = None
         self.highlight = None
-        self.vizList = ['Scatter','Heat','Contour']
+        self.vizList = ['Heat','Scatter','Contour']
 
-        ## handle whether we show axes labels
-        if self.compactMode == True:
-            self.showAxLabels = False
-        else:
-            self.showAxLabels = True
-        
         ## create figure widget
         self.create_figure_widget()
+
         
     def _init_project(self):
         ## model, logger
@@ -129,16 +126,15 @@ class CytostreamPlotter(QtGui.QWidget):
         elif self.drawState == 'Contour':
             msg = 'Function still under development'
             QtGui.QMessageBox.information(self, "Info", msg)
-            self.drawState = 'Scatter'
-            self.draw()
-            self.vizSelector.btns[self.drawState].setChecked(True)
+            self.vizSelector.btns['Heat'].setChecked(True)
+            #self.draw()
             self.vizSelector.selectedItem = self.drawState
         else:
             print "ERROR: only scatter is implemented"
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()
-        self.dpi = 80
+        self.dpi = 100
         self.fig = Figure(dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self.figureWidget)
@@ -166,11 +162,11 @@ class CytostreamPlotter(QtGui.QWidget):
         hbox4a = QtGui.QHBoxLayout()
         hbox4a.setAlignment(QtCore.Qt.AlignLeft)
         hbox5 = QtGui.QHBoxLayout()
-        hbox5.setAlignment(QtCore.Qt.AlignCenter)
+        hbox5.setAlignment(QtCore.Qt.AlignLeft)
         hbox6 = QtGui.QHBoxLayout()
         hbox6.setAlignment(QtCore.Qt.AlignCenter)
         hbox7 = QtGui.QHBoxLayout()
-        hbox7.setAlignment(QtCore.Qt.AlignCenter)
+        hbox7.setAlignment(QtCore.Qt.AlignLeft)
         hbox8 = QtGui.QHBoxLayout()
         hbox8.setAlignment(QtCore.Qt.AlignCenter)
         vbox1 = QtGui.QVBoxLayout()
@@ -178,13 +174,13 @@ class CytostreamPlotter(QtGui.QWidget):
         vbox2 = QtGui.QVBoxLayout()
         vbox2.setAlignment(QtCore.Qt.AlignTop)
         vbox3 = QtGui.QVBoxLayout()
-        vbox3.setAlignment(QtCore.Qt.AlignTop)
-        vbox4 = QtGui.QVBoxLayout()
-        vbox4.setAlignment(QtCore.Qt.AlignTop)
-        vbox5 = QtGui.QVBoxLayout()
-        vbox5.setAlignment(QtCore.Qt.AlignTop)
-        vbox6 = QtGui.QVBoxLayout()
-        vbox6.setAlignment(QtCore.Qt.AlignBottom)
+        vbox3.setAlignment(QtCore.Qt.AlignBottom)
+        #vbox4 = QtGui.QVBoxLayout()
+        #vbox4.setAlignment(QtCore.Qt.AlignTop)
+        #vbox5 = QtGui.QVBoxLayout()
+        #vbox5.setAlignment(QtCore.Qt.AlignTop)
+        #vbox6 = QtGui.QVBoxLayout()
+        #vbox6.setAlignment(QtCore.Qt.AlignBottom)
 
         vboxLeft = QtGui.QVBoxLayout()
         vboxRight = QtGui.QVBoxLayout()
@@ -233,6 +229,9 @@ class CytostreamPlotter(QtGui.QWidget):
         
             self.highlightSelector.setCurrentIndex(0)
             self.connect(self.highlightSelector, QtCore.SIGNAL('activated(int)'),self.highlight_selector_callback)
+            
+            self.highlightSelector.setMaximumWidth(maxWidth)
+            self.highlightSelector.setMinimumWidth(maxWidth)
 
         ## lower controls 
         if self.enableGating == True and self.compactMode == False:
@@ -271,11 +270,28 @@ class CytostreamPlotter(QtGui.QWidget):
         self.grid_cb.setChecked(False)
         self.connect(self.grid_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
 
-        self.force_cb = QtGui.QCheckBox("Scale")
-        self.force_cb.setChecked(self.forceScale)
-        self.connect(self.force_cb,QtCore.SIGNAL('stateChanged(int)'), self.force_scale_callback)
+        self.labels_cb = QtGui.QCheckBox("Label")
+        self.labels_cb.setChecked(True)
+        self.connect(self.labels_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
+        
+        self.axLab_cb = QtGui.QCheckBox("Axes")
+        self.axLab_cb.setChecked(True)
+        self.connect(self.axLab_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
 
-        self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback)
+        self.title_cb = QtGui.QCheckBox("Title")
+        self.title_cb.setChecked(True)
+        self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
+
+        #self.markerSliderLabel = QtGui.QLabel(str(defaultVert))
+        #self.markerSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        #self.markerSlider.setRange(1,8)
+        #self.markerSlider.setValue(defaultVert)
+        #self.vertSlider.setTracking(True)
+        #self.vertSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        #self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.gate_vert_selector_callback)
+        #self.vertSlider.setEnabled(False)
+    
+        self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback,vertical=True)
         self.vizSelector.btns[self.drawState].setChecked(True)
         self.vizSelector.selectedItem = self.drawState
 
@@ -284,88 +300,114 @@ class CytostreamPlotter(QtGui.QWidget):
 
         self.fig_save = QtGui.QPushButton("Save Figure")
         self.connect(self.fig_save, QtCore.SIGNAL('clicked()'), self.figure_save)
-
-        if self.compactMode == False:
-            ## add widgets
-            hbox1a.addWidget(channelsLabel)
-            hbox1.addWidget(self.channel1Selector)
-            hbox1.addWidget(self.channel2Selector)
-            if self.fileList != None or self.uniqueLabels != None:
-                hbox2a.addWidget(additionalSelectorLabel)
-            if self.fileList != None:
-                hbox2.addWidget(self.fileSelector)
-            if self.uniqueLabels != None:
-                hbox2.addWidget(self.highlightSelector)
-            if self.enableGating == True:
-                hbox3a.addWidget(gatingLabel)
-                hbox3_1.addWidget(self.gateSelector)
-                hbox3_1.addWidget(self.vertSlider)
-                hbox3_1.addWidget(self.vertSliderLabel)
-                hbox3_2.addWidget(self.gate_set)
-                hbox3_2.addWidget(self.gate_clear)
-                hbox3_3.addWidget(self.gate_save)
-                hbox4a.addWidget(figControlsLabel)
         
-            hbox4.addWidget(self.grid_cb)
-            hbox4.addWidget(self.force_cb)
-            hbox5.addWidget(self.vizSelector)
-            hbox6.addWidget(self.fig_save)
+        #if self.compactMode == False:
+            ## add widgets
+        #hbox1a.addWidget(channelsLabel)
+        #hbox1.addWidget(self.channel1Selector)
+        #    hbox1.addWidget(self.channel2Selector)
+        #    if self.fileList != None or self.uniqueLabels != None:
+        #        hbox2a.addWidget(additionalSelectorLabel)
+        #    if self.fileList != None:
+        #        hbox2.addWidget(self.fileSelector)
+        #    if self.uniqueLabels != None:
+        #        hbox2.addWidget(self.highlightSelector)
+        #    if self.enableGating == True:
+        #        hbox3a.addWidget(gatingLabel)
+        #        hbox3_1.addWidget(self.gateSelector)
+        #        hbox3_1.addWidget(self.vertSlider)
+        #        hbox3_1.addWidget(self.vertSliderLabel)
+        #        hbox3_2.addWidget(self.gate_set)
+        #        hbox3_2.addWidget(self.gate_clear)
+        #        hbox3_3.addWidget(self.gate_save)
+        #        hbox4a.addWidget(figControlsLabel)
+        # 
+        #hbox4.addWidget(self.grid_cb)
+        #hbox4.addWidget(self.labels_cb)
+        #hbox5.addWidget(self.vizSelector)
+        #hbox6.addWidget(self.fig_save)
+        #
+        #    ## finalize layout
+        #    vbox1.addLayout(hbox1a)
+        #    vbox1.addLayout(hbox1)
+        #    vbox2.addLayout(hbox2a)
+        #    vbox2.addLayout(hbox2)
+        #    vbox3.addLayout(hbox3a)
+        #    vbox3.addLayout(hbox3_1)
+        #    vbox3.addLayout(hbox3_2)
+        #    vbox3.addLayout(hbox3_3)
+        #    vbox4.addLayout(hbox4a)
+        #    vbox4.addLayout(hbox4)
+        #    vbox5.addLayout(hbox5)
+        #    vbox6.addLayout(hbox6)
+        #    vboxLeft.addLayout(vbox1)
+        #    vboxLeft.addLayout(vbox2)
+        #    vboxLeft.addLayout(vbox3)
+        #    vboxLeft.addLayout(vbox4)
+        #    vboxLeft.addLayout(vbox5)
+        #    vboxLeft.addLayout(vbox6)
+        #else:
+        ## add widgets
+        hbox1a.addWidget(QtGui.QLabel('Data Controls')) 
+        hbox1.addWidget(QtGui.QLabel("x-ax"))
+        hbox1.addWidget(self.channel1Selector)
+        hbox2.addWidget(QtGui.QLabel("y-ax"))
+        hbox2.addWidget(self.channel2Selector)
+        if self.uniqueLabels != None:
+            hbox3_1.addWidget(QtGui.QLabel("clst"))
+            hbox3_1.addWidget(self.highlightSelector)
+        if self.fileList != None:
+            hbox4.addWidget(QtGui.QLabel("file"))
+            hbox4.addWidget(self.fileSelector)
 
-            ## finalize layout
-            vbox1.addLayout(hbox1a)
-            vbox1.addLayout(hbox1)
-            vbox2.addLayout(hbox2a)
-            vbox2.addLayout(hbox2)
-            vbox3.addLayout(hbox3a)
-            vbox3.addLayout(hbox3_1)
-            vbox3.addLayout(hbox3_2)
-            vbox3.addLayout(hbox3_3)
-            vbox4.addLayout(hbox4a)
-            vbox4.addLayout(hbox4)
-            vbox5.addLayout(hbox5)
-            vbox6.addLayout(hbox6)
-            vboxLeft.addLayout(vbox1)
-            vboxLeft.addLayout(vbox2)
-            vboxLeft.addLayout(vbox3)
-            vboxLeft.addLayout(vbox4)
-            vboxLeft.addLayout(vbox5)
-            vboxLeft.addLayout(vbox6)
+        hbox5.addWidget(QtGui.QLabel('Plot Controls'))
+        
+        plotOptionBox1 = QtGui.QVBoxLayout()
+        plotOptionBox1.setAlignment(QtCore.Qt.AlignLeft)
+        plotOptionBox2 = QtGui.QVBoxLayout()
+        plotOptionBox2.setAlignment(QtCore.Qt.AlignLeft)
+        plotOptionBox1.addWidget(self.grid_cb)
+        plotOptionBox1.addWidget(self.labels_cb)
+        plotOptionBox2.addWidget(self.axLab_cb)
+        plotOptionBox2.addWidget(self.title_cb)
+
+        hbox6.addLayout(plotOptionBox1)
+        hbox6.addLayout(plotOptionBox2)
+        hbox7.addWidget(QtGui.QLabel('Plot Draw'))
+        hbox8.addWidget(self.vizSelector)
+
+        ## finalize layout
+        vbox1.addLayout(hbox1a)
+        vbox1.addLayout(hbox1)
+        vbox1.addLayout(hbox2)
+        vbox1.addLayout(hbox3_1)
+        vbox1.addLayout(hbox4)
+        vbox2.addLayout(hbox5)
+        vbox2.addLayout(hbox6) 
+        vbox3.addLayout(hbox7)
+        vbox3.addLayout(hbox8)
+        vboxLeft.addLayout(vbox1)
+        vboxLeft.addLayout(vbox2)
+        vboxLeft.addLayout(vbox3)
+
+        ## set color
+        if self.log != None:
+            appColor = self.log.log['app_color']
         else:
-            ## add widgets 
-            hbox1.addWidget(QtGui.QLabel("x"))
-            hbox1.addWidget(self.channel1Selector)
-            hbox2.addWidget(QtGui.QLabel("y"))
-            hbox2.addWidget(self.channel2Selector)
-            if self.uniqueLabels != None:
-                hbox3_1.addWidget(QtGui.QLabel("hl"))
-                hbox3_1.addWidget(self.highlightSelector)
-            if self.fileList != None:
-                hbox4.addWidget(QtGui.QLabel("f"))
-                hbox4.addWidget(self.fileSelector)
+            appColor = '#999999'
 
-            hbox5.addWidget(self.grid_cb)
-            #hbox5.addWidget(self.force_cb)
-            hbox6.addWidget(self.vizSelector)
-            #hbox7.addWidget(self.fig_save)
-           
-            ## finalize layout
-            vbox1.addLayout(hbox1)
-            vbox1.addLayout(hbox2)
-            vbox1.addLayout(hbox3_1)
-            vbox1.addLayout(hbox4)
-            vbox1.addLayout(hbox5)
-            vbox1.addLayout(hbox6)
-            vbox2.addLayout(hbox7)
-            vbox2.setAlignment(QtCore.Qt.AlignBottom)
-            vboxLeft.addLayout(vbox1)
-            #vboxLeft.addLayout(vbox2)
-            
+        palette = self.palette()
+        role = self.backgroundRole()
+        palette.setColor(role, QtGui.QColor(appColor))
+        self.setPalette(palette)
+        self.setAutoFillBackground(True)
+    
         ## set layout
         vboxRight.addWidget(self.canvas)
         masterBox.addLayout(vboxLeft)
         masterBox.addLayout(vboxRight)
         self.setLayout(masterBox)
-      
+
     def force_scale_callback(self,index=None):
         if self.forceScale == False and self.xAxLimit == None:
             msg = 'Function not available for single plots'
@@ -601,7 +643,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     sp = CytostreamPlotter(fileChannels=fileChannels,enableGating=True,uniqueLabels=uniqueLabels,homeDir=homeDir,
                            compactMode=True)
-    draw_scatter(sp,events,selectedFile,channel1,channel2,subsample,labels=labels,highlight=None,modelRunID=modelRunID)
+    draw_heat_scatter(sp,events,selectedFile,channel1,channel2,subsample,labels=labels,highlight=None,modelRunID=modelRunID)
 
     ## show it
     sp.show()

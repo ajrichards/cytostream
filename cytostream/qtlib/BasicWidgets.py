@@ -5,14 +5,17 @@ from PyQt4 import QtCore
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white',widgetLabel=None):
+    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white',widgetLabel=None,vertical=False):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
             print "ERROR: RadioBtnWidget - bad default specified",default 
             return None
 
-        btnBox = QtGui.QVBoxLayout()
+        if vertical == False:
+            btnBox = QtGui.QVBoxLayout()
+        else:
+            btnBox = QtGui.QHBoxLayout()
         vbox = QtGui.QVBoxLayout()
         hbox1 = QtGui.QHBoxLayout()
         hbox2 = QtGui.QHBoxLayout()
