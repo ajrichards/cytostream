@@ -63,6 +63,7 @@ class FileAlignerTest1(unittest.TestCase):
         self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange)
         #self.fa = FileAligner(expListNames,expListData,expListLabels,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,
         #                      distanceMetric='mahalanobis',baseDir=homeDir)
+        
         timeEnd = time.time()
         print "time taken for alignment: ", timeEnd - timeBegin
         

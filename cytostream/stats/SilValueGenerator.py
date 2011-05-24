@@ -25,13 +25,15 @@ class SilValueGenerator():
 
         euclideanWithin = {}
         euclideanBetween = {}
+        
         for lab in  np.sort(np.unique(self.labels)):
-            indices = np.where(self.labels==lab)[0]
-            elements = self.mat[indices,:]
-            euclidDistWithin = (elements - elements.mean(axis=0))**2.0
+            indicesK = np.where(self.labels==lab)[0]
+            elementsK = self.mat[indicesK,:]
+            euclidDistWithin = (elementsK - elementsK.mean(axis=0))**2.0
             euclidDistWithin = np.sqrt(euclidDistWithin.sum(axis=1))
 
-            minEuclidDistBetween = 1e08
+            maxEuclidDistBetween = 0.0
+            euclidDistBetween = elementsK
             for nLab in np.sort(np.unique(self.labels)):
                 if nLab == lab:
                     continue
@@ -41,12 +43,12 @@ class SilValueGenerator():
                 euclidDistBetween = (elements - nElements.mean(axis=0))**2.0
                 euclidDistBetween = np.sqrt(euclidDistBetween.sum(axis=1))
 
-                if euclidDistBetween.mean() < minEuclidDistBetween:
-                    minEuclidDistBetween = euclidDistBetween.mean()
+                if euclidDistBetween.mean() > maxEuclidDistBetween:
+                    maxEuclidDistBetween = euclidDistBetween.mean()
 
             ## add to hash tables
             euclideanWithin[str(lab)] = euclidDistWithin
-            euclideanBetween[str(lab)] = minEuclidDistBetween
+            euclideanBetween[str(lab)] = maxEuclidDistBetween
 
         silVals = np.zeros((self.labels.size),)
         for lab in np.sort(np.unique(self.labels)):
