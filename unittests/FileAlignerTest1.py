@@ -60,7 +60,9 @@ class FileAlignerTest1(unittest.TestCase):
         ## run file alignment
         print "Running file alignment.........."
         timeBegin = time.time()
-        self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange)
+        self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange,verbose=VERBOSE)
+        self.fa.run()
+
         #self.fa = FileAligner(expListNames,expListData,expListLabels,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,
         #                      distanceMetric='mahalanobis',baseDir=homeDir)
         
@@ -100,8 +102,15 @@ class FileAlignerTest1(unittest.TestCase):
         ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=bestLabels)
         '''
 
+
     def test_model_run(self):
-        pass
+
+        ## test that we picked up the noise cluster
+        self.failIf(len(self.fa.noiseClusters['case6']) != 1) 
+        
+
+
+
         ### tests 
         #self.failIf(self.fa.globalScoreDict['0.2'] < 85000.0)
         #bestPhi, bestScore = self.fa.get_best_match()

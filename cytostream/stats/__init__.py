@@ -2,5 +2,6 @@ from Distributions import GaussianDistn
 from MiscFns import kullback_leibler
 from DistanceCalculator import DistanceCalculator
 from SilValueGenerator import SilValueGenerator
+from Bootstrapper import Bootstrapper
 from FileAligner import FileAligner
 from FileAlignerLib import FileAlignerII

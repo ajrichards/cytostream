@@ -6,10 +6,11 @@ library for file aligner related functions
 
 '''
 
-import sys,os
+import sys,os,re
 import numpy as np
 from cytostream import NoGuiAnalysis
 from cytostream.stats import SilValueGenerator
+from cytostream.stats import Bootstrapper
 
 class FileAlignerII():
 
@@ -17,7 +18,7 @@ class FileAlignerII():
     (1) calculate and save sample statistics
     (2) calculate and save silhouette values
     (3) determine noise
-    (4) recalculate silhouette values
+    (4) self alignment
     (5) create a template file
     (6) scan all files with template file
 
@@ -49,6 +50,13 @@ class FileAlignerII():
         
         if self.verbose == True:
             print "Initializing file aligner"
+
+        ## making dir tree
+        if os.path.isdir(self.baseDir) == False:
+            print "INPUT ERROR: FileAligner.py -- baseDir does not exist"
+            return None
+
+        self.make_dir_tree()
 
         ## handle exp data
         if type(expListData) != type([]):
@@ -83,6 +91,7 @@ class FileAlignerII():
             print "INPUT ERROR: phi range is not a list or np.array", type(self.phiRange)
             return None
 
+    def run(self):
         ## median transform data
         print "DEBUG -- need to do median transform"
 
@@ -90,26 +99,94 @@ class FileAlignerII():
         if self.verbose == True:
             print "...getting sample statistics"
         self.sampleStats = self.get_sample_statistics(self.expListLabels)
-        
+
+        ## get sil values
         if self.verbose == True:
             print "...getting silhouette values"
         self.silValues = self.get_silhouette_values(self.expListLabels)
 
-        expName =  self.expListNames[5]
-        print expName
-        print len(self.expListData[5])
-        print 'sil values', self.silValues[expName].shape
-        print max(self.silValues[expName]), min(self.silValues[expName])
-        #print self.expListData[expName].shape
-        #print self.silValues[expName].shape
-        #for key in self.silValues[expName].keys():
-        #    print 'key',self.silValues[expName][key]
+        ## use bootstrap to determine noise clusters
+        if self.verbose == True:
+            print "...bootstrapping to find noise clusters"
+
+        clustersList = []
+        clustersIDList = []
+        for key, item in self.silValues.iteritems():
+            for cluster, value in item.iteritems():
+                clustersList.append(float(value))
+                clustersIDList.append(key+"#"+cluster)
+
+        clustersList = np.array(clustersList)
+        boots = Bootstrapper(clustersList)
+        bootResults = boots.get_results()
+        
+        ## collect noise clusters
+        self.noiseClusters = {}
+        lowerLimit = bootResults['meanCI'][0]
+        for c in range(len(clustersList)):
+            if lowerLimit > clustersList[c]:
+                fname,cname = re.split("#",clustersIDList[c])
+                if self.noiseClusters.has_key(fname) == True:
+                    self.noiseClusters[fname].append(cname)
+                else:
+                    self.noiseClusters[fname] = [cname]
+        if self.verbose == True:
+            print "...Noise Clusters:"
+            for key,item in self.noiseClusters.iteritems():
+                print "\t", key, item
+
+        ## self alignment
+        print 'suppose do do self alignment'
+
+        ## create a template file
+        
 
     def _init_project(self):
         self.nga = NoGuiAnalysis(homeDir,loadExisting=True)
         self.nga.set("results_mode",self.modelType)
         self.expListNames = self.nga.get_file_names()
         self.fileChannels = self.nga.get_file_channels()
+
+
+    def make_dir_tree(self):
+        if self.verbose == True and os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+            print "INFO: deleting old files for file aligner"
+
+        dirs = ['results','alignfigs']
+        for diry in dirs:
+            if os.path.isdir(os.path.join(self.baseDir,diry)) == False:
+                os.mkdir(os.path.join(self.baseDir,diry))
+            
+        if os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+            ## clean out figures dir
+            for item1 in os.listdir(os.path.join(self.baseDir,'alignfigs')):
+                if os.path.isdir(os.path.join(self.baseDir,'alignfigs',item1)) == True:
+                    for item2 in os.listdir(os.path.join(self.baseDir,'alignfigs',item1)):
+                        os.remove(os.path.join(self.baseDir,'alignfigs',item1,item2))
+                else:
+                    os.remove(os.path.join(self.baseDir,'alignfigs',item1))
+            
+            ## clean out relevant results
+            if os.path.isdir(os.path.join(self.baseDir,'results','alignments')) == True:
+                for item1 in os.listdir(os.path.join(self.baseDir,'results','alignments')):
+                    os.remove(os.path.join(self.baseDir,'results','alignments',item1))
+                
+            ## remove old log files 
+            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.baseDir,"results","alignments.log")) == True:
+                os.remove(os.path.join(self.baseDir,"results","alignments.log"))
+
+        ## ensure directories are present
+        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results"))            
+        if os.path.isdir(os.path.join(self.baseDir,"results","alignments")) == False:
+            os.mkdir(os.path.join(self.baseDir,"results","alignments"))
+        if os.path.isdir(os.path.join(self.baseDir,"alignfigs")) == False:
+            os.mkdir(os.path.join(self.baseDir,"alignfigs"))
+
 
     def get_labels(self,selectedFile):
 
@@ -211,14 +288,14 @@ class FileAlignerII():
             fileClusters = np.sort(np.unique(expLabels))
 
             ## save only sil values for each cluster
-            #for clusterID in fileClusters:
-            #    clusterElementInds = np.where(expLabels == clusterID)[0]
-            #    clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
-            #    silValues[expName][str(clusterID)] = clusterSilValue
-            #    del clusterElementInds
+            for clusterID in fileClusters:
+                clusterElementInds = np.where(expLabels == clusterID)[0]
+                clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
+                silValues[expName][str(clusterID)] = clusterSilValue
+                del clusterElementInds
            
-        return silValuesElements
-        #return silValues
+        #return silValuesElements
+        return silValues
 
     def _get_silhouette_values(self,mat,labels):        
         svg = SilValueGenerator(mat,labels)
@@ -226,3 +303,9 @@ class FileAlignerII():
 
 
     
+    def create_template_file(self):
+        print 'creating template file'
+        ## find file with fewest clusters
+        
+
+        ## scan all non-noise clusters 
