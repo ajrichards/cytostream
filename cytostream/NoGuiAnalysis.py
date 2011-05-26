@@ -46,6 +46,10 @@ class NoGuiAnalysis():
         else:
             self.initialize_existing()
 
+        ## file channels
+        if self.inputChannels != None:
+            self.set('alternate_channel_labels',self.inputChannels)
+
         ## set the data type
         if loadExisting == False:
             print 'NoGuiAnalysis: Initializing %s files of data type %s'%(len(filePathList),dType)

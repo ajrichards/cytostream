@@ -25,16 +25,16 @@ class FileAlignerII():
     '''
 
 
-    def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir=None,
-                 refFile=None,verbose=False,excludedChannels=[],baseDir=".",
+    def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',
+                 refFile=None,verbose=False,excludedChannels=[],
                  modelRunID=None,distanceMetric='mahalanobis',medianTransform=True):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
         self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
+        self.expListData = expListData
         self.phiRange = phiRange
         self.matchResults = None
-        self.baseDir = baseDir
         self.homeDir = homeDir
         self.verbose = verbose
         self.isProject = False
@@ -52,7 +52,7 @@ class FileAlignerII():
             print "Initializing file aligner"
 
         ## making dir tree
-        if os.path.isdir(self.baseDir) == False:
+        if os.path.isdir(self.homeDir) == False:
             print "INPUT ERROR: FileAligner.py -- baseDir does not exist"
             return None
 
@@ -142,50 +142,49 @@ class FileAlignerII():
         
 
     def _init_project(self):
-        self.nga = NoGuiAnalysis(homeDir,loadExisting=True)
+        self.nga = NoGuiAnalysis(self.homeDir,loadExisting=True)
         self.nga.set("results_mode",self.modelType)
         self.expListNames = self.nga.get_file_names()
-        self.fileChannels = self.nga.get_file_channels()
-
+        self.fileChannels = self.nga.get('alternate_channel_labels')
 
     def make_dir_tree(self):
-        if self.verbose == True and os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+        if self.verbose == True and os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
 
         dirs = ['results','alignfigs']
         for diry in dirs:
-            if os.path.isdir(os.path.join(self.baseDir,diry)) == False:
-                os.mkdir(os.path.join(self.baseDir,diry))
+            if os.path.isdir(os.path.join(self.homeDir,diry)) == False:
+                os.mkdir(os.path.join(self.homeDir,diry))
             
-        if os.path.isdir(os.path.join(self.baseDir,'alignfigs')) == True:
+        if os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             ## clean out figures dir
-            for item1 in os.listdir(os.path.join(self.baseDir,'alignfigs')):
-                if os.path.isdir(os.path.join(self.baseDir,'alignfigs',item1)) == True:
-                    for item2 in os.listdir(os.path.join(self.baseDir,'alignfigs',item1)):
-                        os.remove(os.path.join(self.baseDir,'alignfigs',item1,item2))
+            for item1 in os.listdir(os.path.join(self.homeDir,'alignfigs')):
+                if os.path.isdir(os.path.join(self.homeDir,'alignfigs',item1)) == True:
+                    for item2 in os.listdir(os.path.join(self.homeDir,'alignfigs',item1)):
+                        os.remove(os.path.join(self.homeDir,'alignfigs',item1,item2))
                 else:
-                    os.remove(os.path.join(self.baseDir,'alignfigs',item1))
+                    os.remove(os.path.join(self.homeDir,'alignfigs',item1))
             
             ## clean out relevant results
-            if os.path.isdir(os.path.join(self.baseDir,'results','alignments')) == True:
-                for item1 in os.listdir(os.path.join(self.baseDir,'results','alignments')):
-                    os.remove(os.path.join(self.baseDir,'results','alignments',item1))
+            if os.path.isdir(os.path.join(self.homeDir,'results','alignments')) == True:
+                for item1 in os.listdir(os.path.join(self.homeDir,'results','alignments')):
+                    os.remove(os.path.join(self.homeDir,'results','alignments',item1))
                 
             ## remove old log files 
-            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
-                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
-            if os.path.isfile(os.path.join(self.baseDir,"results","_FileMerge.log")) == True:
-                os.remove(os.path.join(self.baseDir,"results","_FileMerge.log"))
-            if os.path.isfile(os.path.join(self.baseDir,"results","alignments.log")) == True:
-                os.remove(os.path.join(self.baseDir,"results","alignments.log"))
+            if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
+                os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
+            if os.path.isfile(os.path.join(self.homeDir,"results","alignments.log")) == True:
+                os.remove(os.path.join(self.homeDir,"results","alignments.log"))
 
         ## ensure directories are present
-        if os.path.isdir(os.path.join(self.baseDir,"results")) == False:
-            os.mkdir(os.path.join(self.baseDir,"results"))            
-        if os.path.isdir(os.path.join(self.baseDir,"results","alignments")) == False:
-            os.mkdir(os.path.join(self.baseDir,"results","alignments"))
-        if os.path.isdir(os.path.join(self.baseDir,"alignfigs")) == False:
-            os.mkdir(os.path.join(self.baseDir,"alignfigs"))
+        if os.path.isdir(os.path.join(self.homeDir,"results")) == False:
+            os.mkdir(os.path.join(self.homeDir,"results"))            
+        if os.path.isdir(os.path.join(self.homeDir,"results","alignments")) == False:
+            os.mkdir(os.path.join(self.homeDir,"results","alignments"))
+        if os.path.isdir(os.path.join(self.homeDir,"alignfigs")) == False:
+            os.mkdir(os.path.join(self.homeDir,"alignfigs"))
 
 
     def get_labels(self,selectedFile):
@@ -207,8 +206,9 @@ class FileAlignerII():
             print "ERROR FileAligner _init_labels_events -- bad fileList"
             return
 
-        if self.isProject == True:
-            modelLog = self.nga.get_model_results_log(selectedFile,self.modelRunID)
+        modelLog = self.nga.get_model_log(selectedFile,self.modelRunID)
+
+        if modelLog != None:
             subsample = modelLog['subsample']
             events = nga.get_events(selectedFile,subsample)
             return events
