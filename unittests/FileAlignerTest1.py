@@ -47,7 +47,10 @@ class FileAlignerTest1(unittest.TestCase):
         ## setup class to run model        
         self.nga = NoGuiAnalysis(homeDir,expListData,useSubsample=True,makeQaFigs=False,record=False,dType='array',inputChannels=channelList)
         self.nga.set("subsample_analysis", "original")
-        self.nga.set("thumbnail_results_default","components")        
+        self.nga.set("thumbnail_results_default","components")
+
+        print "#@", self.nga.get('alternate_channel_labels')
+
         if useDPMM == True:    
             self.nga.run_model()
             
@@ -60,7 +63,7 @@ class FileAlignerTest1(unittest.TestCase):
         ## run file alignment
         print "Running file alignment.........."
         timeBegin = time.time()
-        self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange,verbose=VERBOSE)
+        self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange,verbose=VERBOSE,homeDir=homeDir)
         self.fa.run()
 
         #self.fa = FileAligner(expListNames,expListData,expListLabels,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,
@@ -106,7 +109,7 @@ class FileAlignerTest1(unittest.TestCase):
     def test_model_run(self):
 
         ## test that we picked up the noise cluster
-        self.failIf(len(self.fa.noiseClusters['case6']) != 1) 
+        self.failIf(len(self.fa.noiseClusters['array6']) != 1) 
         
 
 

@@ -426,7 +426,6 @@ class Model:
         
         tmpFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+".log")
         if os.path.isfile(tmpFile) == False:
-            print "ERROR: model.load_model_results_log - bad log file path specified"
             return None
 
         logFileDict = {}
