@@ -169,7 +169,7 @@ class SaveSubplots():
         if labels != None and  np.unique(labels).size > len(self.colors):
             print "WARNING: lots of labels adding more colors"
             self.colors = self.colors*6
-            print "DEBUG: ", np.unique(labels).size, len(self.colors)
+            print "DEBUG SaveSubPlots: ", np.unique(labels).size, len(self.colors)
 
         ## make plot        
         totalPoints = 0

@@ -8,9 +8,12 @@ library for file aligner related functions
 
 import sys,os,re
 import numpy as np
+import scipy.stats as stats
+from scipy.cluster.vq import whiten
+
 from cytostream import NoGuiAnalysis
-from cytostream.stats import SilValueGenerator
-from cytostream.stats import Bootstrapper
+from cytostream.stats import SilValueGenerator, DistanceCalculator
+from cytostream.stats import Bootstrapper, EmpiricalCDF
 
 class FileAlignerII():
 
@@ -26,19 +29,19 @@ class FileAlignerII():
 
 
     def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',
-                 refFile=None,verbose=False,excludedChannels=[],
+                 refFile=None,verbose=False,excludedChannels=[],isProject=False,
                  modelRunID=None,distanceMetric='mahalanobis',medianTransform=True):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
-        self.expListLabels = [[label for label in labelList] for labelList in expListLabels]
+        self.expListLabels = [np.array([int(label) for label in labelList]) for labelList in expListLabels]
         self.expListData = expListData
         self.phiRange = phiRange
         self.matchResults = None
         self.homeDir = homeDir
         self.verbose = verbose
-        self.isProject = False
         self.modelRunID = modelRunID
+        self.isProject = isProject
 
         ## control variables 
         self.medianTransform = medianTransform
@@ -50,6 +53,12 @@ class FileAlignerII():
         
         if self.verbose == True:
             print "Initializing file aligner"
+
+        ## error check
+        if self.expListLabels == None and modelRunID == None:
+            print "ERROR: if expListLabels are not specified then modelRunID must be specified"
+            return None
+
 
         ## making dir tree
         if os.path.isdir(self.homeDir) == False:
@@ -70,7 +79,6 @@ class FileAlignerII():
             return None
         elif self.homeDir != None:
             self._init_project()
-            self.isProject = True
         else:
             self.expListData = [expData[:,:].copy() for expData in expListData]
 
@@ -135,12 +143,16 @@ class FileAlignerII():
             for key,item in self.noiseClusters.iteritems():
                 print "\t", key, item
 
+        ## calculate all within distances
+        self._calculate_all_within_thresholds()
+        print self.withinThresholds
+
         ## self alignment
-        print 'suppose do do self alignment'
+        self.selfAlignment = self._self_alignment()
+        print self.selfAlignment
 
         ## create a template file
         
-
     def _init_project(self):
         self.nga = NoGuiAnalysis(self.homeDir,loadExisting=True)
         self.nga.set("results_mode",self.modelType)
@@ -189,11 +201,11 @@ class FileAlignerII():
 
     def get_labels(self,selectedFile):
 
-        if selectedFile not in self.fileList:
+        if selectedFile not in self.expListNames:
             print "ERROR FileAligner _init_labels_events -- bad fileList"
             return
     
-        if self.isProject == True:
+        if self.expListLabels == None:
             statModel, labels = self.nga.get_model_results(selectedFile,self.modelRunID,self.modelType)
             return labels
         else:
@@ -273,13 +285,9 @@ class FileAlignerII():
             #subsetExpLabels.append(np.array(expLabels)[newIndices])
 
         for c in range(len(self.expListNames)):
-            #expName = self.expListNames[c]
-            #expData = subsetExpData[c]
-            #expLabels = subsetExpLabels[c]
-
             expName = self.expListNames[c]
-            expData = self.expListData[c]
-            expLabels = expListLabels[c]
+            expData = self.get_events(expName)
+            expLabels = self.get_labels(expName)
             fileClusters = np.sort(np.unique(expLabels))
 
             if self.verbose == True:
@@ -301,8 +309,149 @@ class FileAlignerII():
         svg = SilValueGenerator(mat,labels)
         return svg.silValues
 
+    def create_log_file(self):
+        ''' 
+        create a log file to document cluster changes
+        each log is specific to a give phi
+        '''
 
-    
+        if self.covariateID == None:
+            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge.log"),'wa'))
+        else:
+            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
+        self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
+        self.logFile.writerow(["refFile",self.refFile])
+        self.logFile.writerow(["silThresh",self.minMergeSilValue])
+        self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
+
+
+    def _calculate_all_within_thresholds(self):
+
+        self.withinThresholds = {}
+
+        for fileName in self.expListNames:
+            fileLabels = self.get_labels(fileName)
+            fileData = self.get_events(fileName)
+            fileClusters = np.sort(np.unique(fileLabels))
+            
+            if self.withinThresholds.has_key(fileName) == False:
+                self.withinThresholds[fileName] = {}
+            
+            print 'fileName', fileClusters
+            for clusterID in fileClusters:
+
+                ## check for noise label
+                if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterID)):
+                    print 'skipping in calculate_all_within_thresholds', fileName, clusterID
+                    continue
+
+                ## determine distances
+                clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
+                clusterMean = clusterEvents.mean(axis=0)
+                dc = DistanceCalculator(distType=self.distanceMetric)
+                if self.distanceMetric == 'mahalanobis':
+                    inverseCov = dc.get_inverse_covariance(clusterEvents)
+                    if inverseCov != None:
+                        dc.calculate(clusterEvents,matrixMeans=clusterMean,inverseCov=inverseCov)
+                        distances = dc.get_distances()
+                    else:
+                        dc.calculate(clusterEvents,matrixMeans=clusterMean)
+                        distances = dc.get_distances()
+                        distances = whiten(btnDistances)
+                else:
+                    dc.calculate(clusterEvents,matrixMeans=clusterMean)
+                    distances = dc.get_distances()
+
+                ## use the inverse normal to get a one-sided critical value
+                #threshold = stats.norm.ppf(0.975,loc=withinDistancesJ.mean(),scale=withinDistancesJ.std())
+                #print withinDistancesJ.mean(),withinDistancesJ.std(),threshold
+
+                ## use the eCDF to find a threshold
+                eCDF = EmpiricalCDF(distances)
+                threshold = eCDF.get_value(0.975)
+                self.withinThresholds[fileName][str(int(clusterID))] = threshold
+
+    def _self_alignment(self):
+        totalClusters = np.array([(float(n)*(float(n)-1.0)) / 2.0 for n in self.sampleStats['k'].itervalues()]).sum()
+        overlapList = np.zeros((totalClusters),) -1
+        overlapListFiles = np.zeros((totalClusters),) -1
+        overlapListClusters = np.array(['None'],dtype='|S7').repeat(totalClusters)
+
+        clustCount = -1
+        for fileName in self.expListNames:
+            fileLabels = self.get_labels(fileName)
+            fileClusters = np.sort(np.unique(fileLabels))
+            
+            for clusterI in fileClusters:
+                for clusterJ in fileClusters:
+                    
+                    ## do not compare cluster to itself
+                    if clusterI <= clusterJ:
+                        continue
+
+                    clustCount+=1
+                    
+                    ## check for noise label
+                    if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterI)):
+                        print 'skipping in _self_alignment', fileName, clusterI
+                        continue
+
+                    if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterJ)):
+                        print 'skipping in _self_alignment', fileName, clusterJ
+                        continue
+
+                    ## get and store overlap
+                    overlap1 = self._compare_source_sink(fileName,fileName,clusterI, clusterJ)
+                    overlap2 = self._compare_source_sink(fileName,fileName,clusterJ, clusterI)
+                    overlap = np.max([overlap1,overlap2])
+
+                    overlapList[clustCount] = overlap
+                    overlapListFiles[clustCount] = self.expListNames.index(fileName)
+                    y,z = np.sort([int(clusterI),int(clusterJ)]) 
+                    overlapListClusters[clustCount] = str(y)+"-"+str(z)
+
+        ## integrity check
+        if int(totalClusters) != int(clustCount + 1):
+            print "ERROR: FileAlingerLib failed integrity check clustCount",totalClusters, clustCount
+
+        return {'overlap':overlapList,'file_names':overlapListFiles,'cluster_ids':overlapListClusters}
+
+
+    def _compare_source_sink(self,fileI, fileJ, clusterI, clusterJ):
+        '''
+        model the sink (j) then determine number of events in source (i) that overlap
+        '''
+
+        ## get distances of cluster i's events to cluster j's centroid
+        clusterI, clusterJ =  int(clusterI), int(clusterJ)
+        labelsI = self.get_labels(fileI)
+        dataI = self.get_events(fileI)
+        clusterEventsI = dataI[np.where(labelsI==clusterI)[0],:]
+          
+        clusterMeanJ = self.sampleStats['mus'][fileJ][str(clusterJ)]
+        dc = DistanceCalculator(distType=self.distanceMetric)
+        if self.distanceMetric == 'mahalanobis':
+            inverseCov = dc.get_inverse_covariance(clusterEventsI)
+            if inverseCov != None:
+                dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ,inverseCov=inverseCov)
+                distances = dc.get_distances()
+            else:
+                dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ)
+                distances = dc.get_distances()
+                distances = whiten(btnDistances)
+        else:
+            dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ)
+            distances = dc.get_distances()
+
+        ## calculate % overlap
+        threshold = self.withinThresholds[fileJ][str(clusterJ)]
+        overlappedInds = np.where(distances < threshold)[0]
+
+        if len(overlappedInds) == 0:
+            return 0
+ 
+        return float(len(overlappedInds)) / float(len(distances))
+
     def create_template_file(self):
         print 'creating template file'
         ## find file with fewest clusters
