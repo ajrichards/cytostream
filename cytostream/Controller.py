@@ -243,7 +243,13 @@ class Controller:
             fileList = get_fcs_file_names(self.homeDir)
             for fileName in fileList:
                 events = self.model.get_events(fileName,subsample='original')
-                data = events[self.subsampleIndices,:]
+                n,d = events.shape
+
+                if len(self.subsampleIndices) >= n:
+                    data = events
+                else:
+                    data = events[self.subsampleIndices,:]
+
                 newDataFileName = fileName + "_data_%s.pickle"%subsample
 
                 if os.path.exists(os.path.join(newDataFileName)) == True:

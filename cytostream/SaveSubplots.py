@@ -128,6 +128,7 @@ class SaveSubplots():
         ## loop through all subplots
         for subplotIndex in range(self.numSubplots):
 
+            print "....plotting", fileList[int(plotsToViewFiles[int(subplotIndex)])]
             subplotFile = fileList[int(plotsToViewFiles[int(subplotIndex)])]
             subplotChannels = plotsToViewChannels[int(subplotIndex)]
             subplotRun = plotsToViewRuns[int(subplotIndex)]
@@ -140,9 +141,15 @@ class SaveSubplots():
                 labels = statModelClasses
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
-                
+
+            if labels != None:
+                print "before ....\t", len(np.unique(labels)), labels.shape
+
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
             index1,index2 = subplotChannels
+
+            if labels != None:
+                print "after ....\t", len(np.unique(labels)),labels.shape, events.shape
 
             self._make_scatter_plots(events,labels,fileChannels,index1,index2,subplotIndex,highlight=subplotHighlight)
 
@@ -161,7 +168,7 @@ class SaveSubplots():
         ## figure variables
         ax = self.get_axes(subplotIndex)
 
-        ## handle centroids      
+        ## handle centroids
         if labels != None:
             centroids,variances,sizes = get_file_sample_stats(events,labels)
 
@@ -171,7 +178,7 @@ class SaveSubplots():
             self.colors = self.colors*6
             print "DEBUG SaveSubPlots: ", np.unique(labels).size, len(self.colors)
 
-        ## make plot        
+        ## make plot
         totalPoints = 0
 
         if labels == None:
@@ -184,7 +191,12 @@ class SaveSubplots():
             maxLabel = np.max(labels)
             
             for l in np.sort(np.unique(labels)):
-                clusterColor = self.colors[l]
+                if l == -1:
+                    clusterColor = "#C0C0C0"
+                    marker = '+'
+                else:
+                    clusterColor = self.colors[l]
+                    marker = "o"
                 ms = self.markerSize
 
                 ## handle highlighted clusters
@@ -204,7 +216,7 @@ class SaveSubplots():
 
                 if x.size == 0:
                     continue
-                ax.scatter(x,y,color=clusterColor,s=ms,edgecolor='none')
+                ax.scatter(x,y,color=clusterColor,s=ms,edgecolor='none',marker='o')
                 
                 ## handle centroids if present
                 prefix = ''
@@ -224,6 +236,11 @@ class SaveSubplots():
                         
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
                         ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
+                                ha="center", va="center",
+                                bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
+                                )
+                    elif clusterColor == "#C0C0C0":
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='blue',fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )

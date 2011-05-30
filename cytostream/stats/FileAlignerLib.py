@@ -6,7 +6,7 @@ library for file aligner related functions
 
 '''
 
-import sys,os,re
+import sys,os,re,cPickle
 import numpy as np
 import scipy.stats as stats
 from scipy.cluster.vq import whiten
@@ -14,6 +14,10 @@ from scipy.cluster.vq import whiten
 from cytostream import NoGuiAnalysis
 from cytostream.stats import SilValueGenerator, DistanceCalculator
 from cytostream.stats import Bootstrapper, EmpiricalCDF
+
+
+## DEBUG
+import matplotlib.pyplot as plt
 
 class FileAlignerII():
 
@@ -29,12 +33,11 @@ class FileAlignerII():
 
 
     def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',
-                 refFile=None,verbose=False,excludedChannels=[],isProject=False,
+                 refFile=None,verbose=False,excludedChannels=[],isProject=False,noiseSubset=600,
                  modelRunID=None,distanceMetric='mahalanobis',medianTransform=True):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
-        self.expListLabels = [np.array([int(label) for label in labelList]) for labelList in expListLabels]
         self.expListData = expListData
         self.phiRange = phiRange
         self.matchResults = None
@@ -42,6 +45,7 @@ class FileAlignerII():
         self.verbose = verbose
         self.modelRunID = modelRunID
         self.isProject = isProject
+        self.noiseSubset = noiseSubset
 
         ## control variables 
         self.medianTransform = medianTransform
@@ -50,15 +54,21 @@ class FileAlignerII():
         self.globalScoreDict = {}
         self.newLabelsAll = {}
         self.modelType = 'components'
+        self.noiseClusters = {}
         
         if self.verbose == True:
             print "Initializing file aligner"
+
+        ## handle labels
+        if expListLabels != None:
+            self.expListLabels = [np.array([int(label) for label in labelList]) for labelList in expListLabels]
+        else:
+            self.expListLabels = None
 
         ## error check
         if self.expListLabels == None and modelRunID == None:
             print "ERROR: if expListLabels are not specified then modelRunID must be specified"
             return None
-
 
         ## making dir tree
         if os.path.isdir(self.homeDir) == False:
@@ -99,64 +109,79 @@ class FileAlignerII():
             print "INPUT ERROR: phi range is not a list or np.array", type(self.phiRange)
             return None
 
-    def run(self):
+    def run(self,filterNoise=True):
         ## median transform data
         print "DEBUG -- need to do median transform"
 
         ## get sample statistics
         if self.verbose == True:
             print "...getting sample statistics"
-        self.sampleStats = self.get_sample_statistics(self.expListLabels)
+        self.sampleStats = self.get_sample_statistics()
 
         ## get sil values
         if self.verbose == True:
             print "...getting silhouette values"
-        self.silValues = self.get_silhouette_values(self.expListLabels)
+        self.silValues = self.get_silhouette_values(subsample=self.noiseSubset)
 
-        ## use bootstrap to determine noise clusters
-        if self.verbose == True:
-            print "...bootstrapping to find noise clusters"
+        if filterNoise == True:
+            ## use bootstrap to determine noise clusters
+            if self.verbose == True:
+                print "...bootstrapping to find noise clusters\n"
 
-        clustersList = []
-        clustersIDList = []
-        for key, item in self.silValues.iteritems():
-            for cluster, value in item.iteritems():
-                clustersList.append(float(value))
-                clustersIDList.append(key+"#"+cluster)
+            clustersList = []
+            clustersIDList = []
+            for key, item in self.silValues.iteritems():
+                for cluster, value in item.iteritems():
+                    clustersList.append(float(value))
+                    clustersIDList.append(key+"#"+cluster)
 
-        clustersList = np.array(clustersList)
-        boots = Bootstrapper(clustersList)
-        bootResults = boots.get_results()
+            clustersList = np.array(clustersList)
+            boots = Bootstrapper(clustersList)
+            bootResults = boots.get_results()
         
-        ## collect noise clusters
-        self.noiseClusters = {}
-        lowerLimit = bootResults['meanCI'][0]
-        for c in range(len(clustersList)):
-            if lowerLimit > clustersList[c]:
-                fname,cname = re.split("#",clustersIDList[c])
-                if self.noiseClusters.has_key(fname) == True:
-                    self.noiseClusters[fname].append(cname)
-                else:
-                    self.noiseClusters[fname] = [cname]
-        if self.verbose == True:
-            print "...Noise Clusters:"
-            for key,item in self.noiseClusters.iteritems():
-                print "\t", key, item
+            ## collect noise clusters
+            self.noiseClusters = {}
+            lowerLimit = bootResults['meanCI'][0]
+            for c in range(len(clustersList)):
+                if lowerLimit > clustersList[c]:
+                    fname,cname = re.split("#",clustersIDList[c])
+                    if self.noiseClusters.has_key(fname) == True:
+                        self.noiseClusters[fname].append(cname)
+                    else:
+                        self.noiseClusters[fname] = [cname]
+
+        #if self.verbose == True:
+        print "...Noise Clusters:"
+        for key,item in self.noiseClusters.iteritems():
+            print "\t", key, len(item), "/", self.sampleStats['k'][key] 
 
         ## calculate all within distances
-        self._calculate_all_within_thresholds()
-        print self.withinThresholds
+        #if self.verbose == True:
+        #    "...getting the within thresholds"
+        #
+        #self._calculate_all_within_thresholds()
+        #print self.withinThresholds
+
+        ## getting template file
+        if self.verbose == True:
+            print "...creating template file"
+        self.create_template_file()
+
+        return None
 
         ## self alignment
-        self.selfAlignment = self._self_alignment()
-        print self.selfAlignment
+        #self.selfAlignment = self._self_alignment()
+        #print self.selfAlignment
 
         ## create a template file
         
+
+
     def _init_project(self):
         self.nga = NoGuiAnalysis(self.homeDir,loadExisting=True)
         self.nga.set("results_mode",self.modelType)
-        self.expListNames = self.nga.get_file_names()
+        if self.expListNames == None:
+            self.expListNames = self.nga.get_file_names()
         self.fileChannels = self.nga.get('alternate_channel_labels')
 
     def make_dir_tree(self):
@@ -198,13 +223,12 @@ class FileAlignerII():
         if os.path.isdir(os.path.join(self.homeDir,"alignfigs")) == False:
             os.mkdir(os.path.join(self.homeDir,"alignfigs"))
 
-
     def get_labels(self,selectedFile):
 
         if selectedFile not in self.expListNames:
             print "ERROR FileAligner _init_labels_events -- bad fileList"
             return
-    
+
         if self.expListLabels == None:
             statModel, labels = self.nga.get_model_results(selectedFile,self.modelRunID,self.modelType)
             return labels
@@ -222,90 +246,110 @@ class FileAlignerII():
 
         if modelLog != None:
             subsample = modelLog['subsample']
-            events = nga.get_events(selectedFile,subsample)
+            events = self.nga.get_events(selectedFile,subsample)
             return events
         else:
             fileInd = self.expListNames.index(selectedFile)
             return self.expListData[fileInd]
 
-    def get_sample_statistics(self,expListLabels):
+    def get_sample_statistics(self):
         centroids, variances, numClusts, numDataPoints = {},{},{},{}
-        for expInd in range(len(expListLabels)):
+        for expInd in range(len(self.expListNames)):
             expName = self.expListNames[expInd]
             centroids[expName] = {}
             variances[expName] = {}
             numClusts[expName] = None
             numDataPoints[expName] = {}
 
-        for expInd in range(len(expListLabels)):
+        for expInd in range(len(self.expListNames)):
             expName = self.expListNames[expInd]
-            expData = self.expListData[expInd]
-            expLabels = expListLabels[expInd]
+            expData = self.get_events(expName)
+            expLabels = self.get_labels(expName)
+
+            if self.verbose == True:
+                print "\r\t%s/%s files"%(expInd+1, len(self.expListNames)),
 
             for cluster in np.sort(np.unique(expLabels)):
-                centroids[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].mean(axis=0)
-                variances[expName][str(cluster)] = expData[np.where(expLabels==cluster)[0],:].var(axis=0)
-                numDataPoints[expName][str(cluster)] = len(np.where(expLabels==cluster)[0])
+                clusterInds =np.where(expLabels==cluster)[0]
+                centroids[expName][str(cluster)] = expData[clusterInds,:].mean(axis=0)
+                variances[expName][str(cluster)] = expData[clusterInds,:].var(axis=0)
+                numDataPoints[expName][str(cluster)] = len(clusterInds)
 
             numClusts[expName] = len(np.unique(expLabels))
 
+        if self.verbose == True:
+            print "\n"
+
         return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints}
 
-    def get_silhouette_values(self,expListLabels):
+    def get_silhouette_values(self,subsample=None):
         silValues = {}
         silValuesElements = {}
         for expName in self.expListNames:
             silValues[expName] = {}
 
         ## create subset if data for large data sets 
-        #subsetExpData = []
-        #subsetExpLabels = []
+        subsetExpData = []
+        subsetExpLabels = []
 
-        #for c in range(len(self.expListNames)):
-        #    expName = self.expListNames[c]
-        #    expData = self.expListData[c]
-        #    expLabels = expListLabels[c]
-        #    fileClusters = np.sort(np.unique(expLabels))
+        if self.verbose == True:
+            print "\t getting subsamples"
 
-            #newIndices = []
-            #for clusterInd in fileClusters:
-            #    clusterElementInds = np.where(expLabels == clusterInd)[0]
-            #    if clusterElementInds.size > self.silValueEstimateSample:
-            #        randSelectedInds = clusterElementInds[np.random.randint(0,clusterElementInds.size ,self.silValueEstimateSample)]
-            #        #print len(expLabels),clusterElementInds.size, clusterElementInds.shape, clusterElements
-            #        newIndices = newIndices + randSelectedInds.tolist()
-            #    else:
-            #        newIndices = newIndices + clusterElementInds.tolist() 
-            #
-            #if len(expLabels) == 0:
-            #    print "ERROR there is a problem with the labels for %s "%expName
-            #    sys.exit()
 
-            #subsetExpData.append(expData[newIndices,:])
-            #subsetExpLabels.append(np.array(expLabels)[newIndices])
+        if subsample != None:
+            for expInd in range(len(self.expListNames)):
+                expName = self.expListNames[expInd]
+                expData = self.get_events(expName)
+                expLabels = self.get_labels(expName)
+                newIndices = []
 
+                totalInds = 0
+                for cluster in np.sort(np.unique(expLabels)):
+                    clusterInds = np.where(expLabels==cluster)[0]
+                    totalInds += len(clusterInds)
+
+                    if len(clusterInds) > subsample:
+                        percentTotal = float(len(clusterInds)) / float(len(expLabels)) 
+                        randSelected = clusterInds[np.random.randint(0,len(clusterInds),subsample)]
+                        newIndices += randSelected.tolist()
+                    else:
+                        newIndices += clusterInds.tolist()
+
+                ## save indices and data
+                subsetExpData.append(expData[newIndices,:])
+                subsetExpLabels.append(expLabels[newIndices])
+
+        ## calculate the silvalues for each file and the subsampled clusters
         for c in range(len(self.expListNames)):
             expName = self.expListNames[c]
-            expData = self.get_events(expName)
-            expLabels = self.get_labels(expName)
-            fileClusters = np.sort(np.unique(expLabels))
+            
+            if subsample != None:
+                fileData = subsetExpData[c]
+                fileLabels = subsetExpLabels[c]
+            else:
+                fileData = self.get_events(expName)
+                fileLabels = self.get_labels(expName)
 
+            fileClusters = np.sort(np.unique(fileLabels))    
+    
             if self.verbose == True:
-                print '\tgetting silhouette values %s/%s'%(c+1,len(self.expListNames))
-            silValuesElements[expName] = self._get_silhouette_values(expData,expLabels)
-            fileClusters = np.sort(np.unique(expLabels))
-
+                print "\r\t%s/%s files"%(c+1, len(self.expListNames)),
+            silValuesElements[expName] = self._get_silhouette_values(fileData,fileLabels)
+        
             ## save only sil values for each cluster
             for clusterID in fileClusters:
-                clusterElementInds = np.where(expLabels == clusterID)[0]
+                clusterElementInds = np.where(fileLabels == clusterID)[0]
                 clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
                 silValues[expName][str(clusterID)] = clusterSilValue
                 del clusterElementInds
-           
+
+        if self.verbose == True:
+            print "\n"
+
         #return silValuesElements
         return silValues
 
-    def _get_silhouette_values(self,mat,labels):        
+    def _get_silhouette_values(self,mat,labels):
         svg = SilValueGenerator(mat,labels)
         return svg.silValues
 
@@ -324,11 +368,28 @@ class FileAlignerII():
         self.logFile.writerow(["silThresh",self.minMergeSilValue])
         self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
 
-
     def _calculate_all_within_thresholds(self):
 
         self.withinThresholds = {}
-
+         
+        #for fileName in self.expListNames:
+        #    fileLabels = self.get_labels(fileName)
+        #    fileData = self.get_events(fileName)
+        #    fileClusters = np.sort(np.unique(fileLabels))
+        #    
+        #    if self.withinThresholds.has_key(fileName) == False:
+        #        self.withinThresholds[fileName] = {}
+        #        
+        #    for clusterID in fileClusters:
+        #        clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
+        #        n,d = clusterEvents.shape
+        #
+        #        self.withinThresholds[fileName][str(clusterID)] = []
+        #        for dim in range(d):
+        #            bstrap = Bootstrapper(clusterEvents[:,dim])
+        #            bstrapResults = bstrap.get_results()
+        #            self.withinThresholds[fileName][str(clusterID)].append(bstrapResults['medianCI'])
+        
         for fileName in self.expListNames:
             fileLabels = self.get_labels(fileName)
             fileData = self.get_events(fileName)
@@ -336,15 +397,15 @@ class FileAlignerII():
             
             if self.withinThresholds.has_key(fileName) == False:
                 self.withinThresholds[fileName] = {}
-            
-            print 'fileName', fileClusters
+
             for clusterID in fileClusters:
 
+                
                 ## check for noise label
                 if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterID)):
-                    print 'skipping in calculate_all_within_thresholds', fileName, clusterID
                     continue
 
+                
                 ## determine distances
                 clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
                 clusterMean = clusterEvents.mean(axis=0)
@@ -367,9 +428,11 @@ class FileAlignerII():
                 #print withinDistancesJ.mean(),withinDistancesJ.std(),threshold
 
                 ## use the eCDF to find a threshold
-                eCDF = EmpiricalCDF(distances)
-                threshold = eCDF.get_value(0.975)
-                self.withinThresholds[fileName][str(int(clusterID))] = threshold
+                eCDF = EmpiricalCDF(distances)        
+                thresholdLow = eCDF.get_value(0.025)
+                thresholdHigh = eCDF.get_value(0.975)
+                self.withinThresholds[fileName][str(int(clusterID))] = (thresholdLow, thresholdHigh)
+
 
     def _self_alignment(self):
         totalClusters = np.array([(float(n)*(float(n)-1.0)) / 2.0 for n in self.sampleStats['k'].itervalues()]).sum()
@@ -393,11 +456,9 @@ class FileAlignerII():
                     
                     ## check for noise label
                     if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterI)):
-                        print 'skipping in _self_alignment', fileName, clusterI
                         continue
 
                     if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterJ)):
-                        print 'skipping in _self_alignment', fileName, clusterJ
                         continue
 
                     ## get and store overlap
@@ -454,7 +515,45 @@ class FileAlignerII():
 
     def create_template_file(self):
         print 'creating template file'
-        ## find file with fewest clusters
-        
+
+        ## find file with fewest non-noise clusters
+        fileWithMinNumClusters = None
+        minClusts = np.inf
+        for fileName in self.expListNames:
+
+            noiseClusters = 0
+
+            ## check for the number of noise clusters
+            if self.noiseClusters.has_key(fileName):
+                noiseClusters = len(self.noiseClusters[fileName])
+
+            fileClusterNumber = self.sampleStats['k'][fileName] - noiseClusters
+
+            if fileClusterNumber < minClusts:
+                print '---- setting new min clusts', minClusts, fileClusterNumber, fileName
+                minClusts = fileClusterNumber
+                fileWithMinNumClusters = fileName
+
+        ## if 
+
+
+        ## make bootstrap comparisons 
+        for fileName in self.expListNames:
+            fileLabels = self.get_labels(fileName)
+            fileData = self.get_events(fileName)
+            fileClusters = np.sort(np.unique(fileLabels))
+            
+            for clusterID in fileClusters:                
+                
+                ## check for noise label
+                if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterID)):
+                    continue
+                
+                ## determine distances
+                clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
+
+        print 'template', fileWithMinNumClusters
 
         ## scan all non-noise clusters 
+
+
