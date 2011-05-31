@@ -18,8 +18,6 @@ import scipy.stats as stats
 
 class Bootstrapper():
     
-
-
     def __init__(self,data, nrep=4000, confidenceLevel=0.05):
         nrep             = nrep                       # this is B
         n                = len(data)

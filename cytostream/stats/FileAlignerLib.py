@@ -13,7 +13,7 @@ from scipy.cluster.vq import whiten
 
 from cytostream import NoGuiAnalysis
 from cytostream.stats import SilValueGenerator, DistanceCalculator
-from cytostream.stats import Bootstrapper, EmpiricalCDF
+from cytostream.stats import Bootstrapper, EmpiricalCDF,BootstrapHypoTest
 
 
 ## DEBUG
@@ -93,7 +93,14 @@ class FileAlignerII():
             self.expListData = [expData[:,:].copy() for expData in expListData]
 
         ## handle exluded channels
-        events = self.get_events(self.expListNames[0])
+        modelLog = self.nga.get_model_log(self.expListNames[0],self.modelRunID)
+
+        if modelLog != None:
+            subsample = modelLog['subsample']
+            events = self.nga.get_events(self.expListNames[0],subsample)
+        else:
+            events = self.expListData[0]
+
         self.numChannels = np.shape(events)[1]
         if excludedChannels != None:
             self.includedChannels = list(set(range(self.numChannels)).difference(set(excludedChannels)))
@@ -247,10 +254,10 @@ class FileAlignerII():
         if modelLog != None:
             subsample = modelLog['subsample']
             events = self.nga.get_events(selectedFile,subsample)
-            return events
+            return events[:,self.includedChannels]
         else:
             fileInd = self.expListNames.index(selectedFile)
-            return self.expListData[fileInd]
+            return self.expListData[fileInd][:,self.includedChannels]
 
     def get_sample_statistics(self):
         centroids, variances, numClusts, numDataPoints = {},{},{},{}
@@ -520,7 +527,6 @@ class FileAlignerII():
         fileWithMinNumClusters = None
         minClusts = np.inf
         for fileName in self.expListNames:
-
             noiseClusters = 0
 
             ## check for the number of noise clusters
@@ -530,14 +536,60 @@ class FileAlignerII():
             fileClusterNumber = self.sampleStats['k'][fileName] - noiseClusters
 
             if fileClusterNumber < minClusts:
-                print '---- setting new min clusts', minClusts, fileClusterNumber, fileName
                 minClusts = fileClusterNumber
                 fileWithMinNumClusters = fileName
 
-        ## if 
+        ## create a copy of file to start template
+        templateData = self.get_events(fileWithMinNumClusters)
+        templateLabels = self.get_labels(fileWithMinNumClusters)
 
+        ## remove noise clusters from file
+        #print 'Template before 1', len(np.unique(templateLabels)), templateData.shape
+
+        if self.noiseClusters.has_key(fileName):
+            noiseInds = np.array([])
+            for cid in self.noiseClusters[fileName]:
+                noiseInds = np.hstack([noiseInds, np.where(templateLabels==int(cid))[0]])
+            nonNoiseInds = list(set(range(len(templateLabels))).difference(set(noiseInds)))
+            templateData = templateData[nonNoiseInds,:]
+            templateLabels = templateLabels[nonNoiseInds,:]
+
+
+        ## self align
+        ## make bootstrap comparisons
+
+        templateClusters = np.sort(np.unique(templateLabels))
+        comparisons = []
+        totalComparisons = (float(len(templateClusters)) * (float(len(templateClusters)) - 1.0)) / 2.0
+        print 'bootstrapping hypo test'
+        compareCount = 0
+        for ci in range(len(templateClusters)):
+            clusterI = templateClusters[ci]
+            eventsI = templateData[np.where(templateLabels==int(clusterI))[0],:]
+            for cj in range(len(templateClusters)):
+
+                if ci >= cj:
+                    continue
+                compareCount += 1
+                clusterJ = templateClusters[cj]
+                eventsJ = templateData[np.where(templateLabels==int(clusterJ))[0],:]
+                n,m = len(eventsI),len(eventsJ)
+                bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
+                #print 'labels size', bootstrapDataLabels.shape
+                #print eventsI.shape, eventsJ.shape
+                bootstrapData = np.vstack([eventsI,eventsJ])
+                #print bootstrapData.shape
+                bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=500)
+                bresults = bstpr.get_results()
+                
+                if bresults['delta1'] < 0.1:
+                    comparisons.append([clusterI,clusterJ,bresults['delta1']])
+                print clusterI, clusterJ, bresults['delta1'],"%s/%s"%(compareCount,totalComparisons)  
+
+        #print 'Template after', len(np.unique(templateLabels)), templateData.shape
 
         ## make bootstrap comparisons 
+        '''
         for fileName in self.expListNames:
             fileLabels = self.get_labels(fileName)
             fileData = self.get_events(fileName)
@@ -551,7 +603,8 @@ class FileAlignerII():
                 
                 ## determine distances
                 clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
-
+                
+        '''
         print 'template', fileWithMinNumClusters
 
         ## scan all non-noise clusters 
