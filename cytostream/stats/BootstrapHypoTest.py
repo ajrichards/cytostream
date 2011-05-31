@@ -29,6 +29,7 @@ class BootstrapHypoTest():
     '''
 
     def __init__(self,data, dataLabels, nrep=4000, confidenceLevel=0.05):
+        
         '''
         data are a mixture of z and y
         data labels specify z (0) and y (1)
@@ -42,14 +43,15 @@ class BootstrapHypoTest():
 
         ## variables
         numObs, numDims  = data.shape
-        nrep             = nrep # this is B
+        self.nrep        = nrep # this is B
         dataZ            = data[np.where(dataLabels == 1)[0],:]
         dataY            = data[np.where(dataLabels == 0)[0],:]
         n                = len(dataZ)
         m                = len(dataY)
-        zstarMean        = zeros((nrep,numDims),'float') 
-        ystarMean        = zeros((nrep,numDims),'float')
-        tx               = zeros((nrep,numDims),'float')
+        bootstrapMeans   = zeros((self.nrep,numDims),'float')
+        zstarMean        = zeros((self.nrep,numDims),'float') 
+        ystarMean        = zeros((self.nrep,numDims),'float')
+        tx               = zeros((self.nrep,numDims),'float')
         confidenceLevel  = 0.05
 
         ## error check
@@ -57,7 +59,7 @@ class BootstrapHypoTest():
             print "ERROR failed intgrity chk -- BootstrapHypotest" 
 
         ## sample data with replacement
-        for b in range(0,nrep):
+        for b in range(0,self.nrep):
             randIndices = np.random.randint(0,m+n,m+n)
             bootstrapSample = data[randIndices,:]
             bootstrapLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
@@ -67,17 +69,30 @@ class BootstrapHypoTest():
             # evaluate t(x) on each sample
             tx[b] = self.get_studentized_test_stat(bootstrapSample,bootstrapLabels)
            
+
+        ##### delta 1 #####
         ## if using simple diff
         #delta1Obs = dataZ.mean(axis=0) - dataY.mean(axis=0)
         #asl = float(len(np.where(zstarMean - ystarMean > delta1Obs)[0])) / float(nrep)
         
         ## if using studentized test statistic
         delta1Obs = self.get_studentized_test_stat(data,dataLabels)
-        asl = float(len(np.where(tx > delta1Obs)[0])) / float(nrep)
-
-        self.results ={'delta1': asl}
-        #print self.results
+        asl1 = float(len(np.where(tx > delta1Obs)[0])) / float(self.nrep)
         
+        ##### delta 2 #####
+        #zstarSE = self.get_standard_error_estimate(zstarMean)
+        #ystarSE = self.get_standard_error_estimate(ystarMean)
+        #delta2Obs = dataZ.std() - dataY.std()
+        #print zstarSE, ystarSE, delta2Obs
+
+        ## save results
+        self.results ={'delta1': asl1}
+
+
+    def get_standard_error_estimate(self,bootstrapMeans):
+        xBar       = bootstrapMeans.mean()
+        varHatMean  = (1.0 / (self.nrep - 1.0)) * (np.power((bootstrapMeans - xBar),2).sum())
+        return varHatMean
 
         '''
         ### calculate bootstrap estimates of variance
