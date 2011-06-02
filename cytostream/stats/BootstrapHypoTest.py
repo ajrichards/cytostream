@@ -113,12 +113,9 @@ class BootstrapHypoTest():
         
         '''
 
-    def get_studentized_test_stat(self, data,dataLabels):
+    def get_studentized_test_stat(self,data,dataLabels):
         dataZ = data[np.where(dataLabels == 1)[0],:]
         dataY = data[np.where(dataLabels == 0)[0],:]
-        #if self.dims == 1:
-        #    n,m = float(len(dataZ)),float(len(dataY))
-        #else:  
         n,m = dataZ.shape[0],dataY.shape[0]
  
         ssDiff = np.power(dataZ - dataZ.mean(axis=0),2).sum() + np.power(dataY - dataY.mean(axis=0),2).sum() 
@@ -131,11 +128,12 @@ class BootstrapHypoTest():
 ### Run the tests 
 if __name__ == '__main__':
 
-    #data = array([274, 28.5, 1.7, 20.8, 871, 363, 1311, 1661, 236, 828,
-     #             458, 290, 54.9, 175, 1787, 970, 0.75, 1278, 776, 126],'float')
-
-    data = np.array([10,16,23,27,31,38,40,46,50,52,94,99,104,141,146,197])
-    dataLabels = np.array([0,1,1,0,0,1,0,0,0,0,1,1,0,1,0,1])
+    
+    #data = np.array([10,16,23,27,31,38,40,46,50,52,94,99,104,141,146,197])
+    #dataLabels = np.array([0,1,1,0,0,1,0,0,0,0,1,1,0,1,0,1])
+    
+    data = np.hstack([np.random.normal(0,6,50), np.random.normal(1,1,50)])
+    dataLabels = np.hstack([np.array([0]).repeat(50),np.array([1]).repeat(50)])
 
     boots = BootstrapHypoTest(data,dataLabels,nrep=1000)
     print "bootstrap result  ", boots.results['delta1']
