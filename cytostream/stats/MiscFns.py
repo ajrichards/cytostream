@@ -1,5 +1,5 @@
+from __future__ import division
 import numpy as np
-
 
 
 def kullback_leibler(d1,d2):

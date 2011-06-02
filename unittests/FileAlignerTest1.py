@@ -41,7 +41,7 @@ class FileAlignerTest1(unittest.TestCase):
         expListNames = ['case1','case2','case3','case4','case5','case6']
         expListLabels = []
         modelName = 'dpmm'
-        phiRange = [0.2,0.8]
+        phiRange = [0.1]
         useDPMM = False
         
         ## setup class to run model        

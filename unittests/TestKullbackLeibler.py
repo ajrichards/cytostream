@@ -19,14 +19,16 @@ class KullbackLeiblerTest(unittest.TestCase):
         gd1 = GaussianDistn([5,2],np.array([2.0,1.0]))
         gd2 = GaussianDistn([5,2],np.array([2.0,1.0]))
         klDist = kullback_leibler(gd1,gd2)
+        print klDist
         self.assertEqual(int(klDist.sum()),0)
-        
+       
     def testMultivariateCase(self):
-        #cov = np.array([[1,2,3],[2,1,2],[3,2,1]])
-        cov = np.array([[1,0,0],[0,1,0],[0,0,1]])
-        gd1 = GaussianDistn([5,2,3],cov)
-        gd2 = GaussianDistn([5,2,3],cov)
+        x = np.array([[1,2,3],[2,1,2],[3,2,1],[4,5,6]])
+        cov = np.cov(x.T)
+        gd1 = GaussianDistn(x.mean(axis=0),cov)
+        gd2 = GaussianDistn(x.mean(axis=0),cov)
         klDist = kullback_leibler(gd1,gd2)
+        print klDist
         self.assertEqual(int(klDist.sum()),0)
     
 

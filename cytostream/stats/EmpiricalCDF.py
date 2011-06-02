@@ -103,11 +103,13 @@ class EmpiricalCDF:
         minX = self.dRange.min()
         maxX = self.dRange.max()
 
-        if x <= 0.0:
+        if x <= 0:
             return 0.0
+        elif x < minX:
+            indX = 0
+
         if x >= 1.0:
             return maxX
-
 
         for i in range(len(self.percentiles)):
             if x >= self.percentiles[i]:

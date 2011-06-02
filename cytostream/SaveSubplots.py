@@ -127,8 +127,6 @@ class SaveSubplots():
 
         ## loop through all subplots
         for subplotIndex in range(self.numSubplots):
-
-            print "....plotting", fileList[int(plotsToViewFiles[int(subplotIndex)])]
             subplotFile = fileList[int(plotsToViewFiles[int(subplotIndex)])]
             subplotChannels = plotsToViewChannels[int(subplotIndex)]
             subplotRun = plotsToViewRuns[int(subplotIndex)]
@@ -142,14 +140,8 @@ class SaveSubplots():
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
 
-            if labels != None:
-                print "before ....\t", len(np.unique(labels)), labels.shape
-
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
             index1,index2 = subplotChannels
-
-            if labels != None:
-                print "after ....\t", len(np.unique(labels)),labels.shape, events.shape
 
             self._make_scatter_plots(events,labels,fileChannels,index1,index2,subplotIndex,highlight=subplotHighlight)
 
