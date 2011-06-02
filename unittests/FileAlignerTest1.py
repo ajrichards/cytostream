@@ -102,6 +102,19 @@ class FileAlignerTest1(unittest.TestCase):
         else:
             ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
 
+        ## saves a plot of the modes
+        lowestPhi = phiRange[0]
+        modeLabels = self.fa.modeLabels[str(lowestPhi)]
+        figName = os.path.join(alignDir,'modes_%s.png'%lowestPhi)
+        figTitle = "Unaligned Modes %s"%lowestPhi
+        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
+
+        ## saves a plot of the template file
+        figName = os.path.join(alignDir,'template_figure_%s.png'%lowestPhi)
+        self.fa.save_template_figure(0,1,figName,figTitle="template_%s"%lowestPhi)
+        
+
+
         '''
         bestPhi, bestScore = self.fa.get_best_match()
         bestLabels = self.fa.newLabelsAll[str(bestPhi)]

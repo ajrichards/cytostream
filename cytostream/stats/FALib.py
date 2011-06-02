@@ -124,72 +124,6 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
     return newLabels
 
 
-def relabel_template(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
-        
-    fileSpecificresults = nonNoiseResults[phiIndices]
-    fileSpecificFiles = nonNoiseFiles[phiIndices]
-    fileSpecificClusters = nonNoiseClusters[phiIndices]
-    newLabels = [-1 * int(label) for label in fa.templateLabels]
-
-    #for fileName in fa.expListNames:
-    #    fileIndex = fa.expListNames.index(fileName)
-    #    fileLabels = fa.get_labels(fileName)
-    #    fileClusters = np.sort(np.unique(fileLabels))
-    #    fileInds = np.where(resultsFiles == fileIndex)[0]
-    #    fileSpecificResults = results[fileInds]
-    #    fileSpecificClusters = resultsClusters[fileInds]
-    #    fileSpecificClusters1 = np.zeros(len(fileSpecificClusters),dtype=int)
-    #    fileSpecificClusters2 = np.zeros(len(fileSpecificClusters),dtype=int)
-
-    for fsc in range(len(fileSpecificClusters)):
-        c1,c2 = re.split("#", fileSpecificClusters[fsc])
-        fileSpecificClusters1[fsc] = int(c1)
-        fileSpecificClusters2[fsc] = int(c2)
-        print c1,c2
-
-    sys.exit()
-    ## determine the matches that have multiple matches 
-    bestMatchesCluster = []
-    bestMatches = []
-    bestMatchSig = []
-       
-    for clusterID in fileClusters:
-        matches1Inds = np.where(fileSpecificClusters1 == clusterID)[0]
-        matches2Inds = np.where(fileSpecificClusters2 == clusterID)[0]
-        matches1 = fileSpecificClusters2[matches1Inds]
-        matches2 = fileSpecificClusters1[matches2Inds]
-        allMatchInds = np.hstack([matches1Inds,matches2Inds])
-        allMatches = np.hstack([matches1,matches2])
-        allMatchResults = fileSpecificResults[allMatchInds]
-
-        ## ignore all single matches
-        if len(allMatches) <= 1:
-            continue
-
-        ## at this point another type of significance may be used
-        bestMatches.append(allMatches.tolist() + [clusterID])
-        bestMatchSig.append(allMatchResults.mean())
-        
-    ## order from least significant to most
-    clusterCount = 0
-    clustersLeft = [int(cl) for cl in fileClusters] 
-    orderedInds = np.argsort(bestMatchSig)        
-    for oi in orderedInds:
-        clustersToChange = bestMatches[oi]
-        clusterCount += 1
-        for c in clustersToChange:
-            newLabels[np.where(newLabels == -1 * c)[0]] = clusterCount
-            
-            if clustersLeft.__contains__(c):
-                clustersLeft.remove(int(c))
-
-    ## change the labels of unmatched clusters
-    for c in clustersLeft:
-        clusterCount += 1
-        newLabels[np.where(newLabels == -1 * c)[0]] = clusterCount
-
-    return newLabels
-
 
     '''
     bootMatches = []
@@ -231,7 +165,7 @@ def relabel_template(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseCluster
     bootMatchesLabels = np.array(bootMatchesLabels)[sortedInds]
     '''
     
-def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds=None):
+def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds=None,inputThreshold=None):
     '''
     model the sink (j) then determine number of events in source (i) that overlap
     '''
@@ -256,7 +190,11 @@ def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,threshol
         distances = dc.get_distances()
 
     ## calculate % overlap
-    threshold = thresholds[fileJ][str(clusterJ)]['ci']
+    if inputThreshold != None:
+        threshold = inputThreshold
+    else:
+        threshold = thresholds[fileJ][str(clusterJ)]['ci']
+
     #print distances.shape, distances.mean(), threshold
     overlappedInds1 = np.where(distances > threshold[0])[0] #threshold[0]
     overlappedInds2 = np.where(distances < threshold[1])[0]
