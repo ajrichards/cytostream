@@ -21,7 +21,7 @@ from fcm.statistics.distributions import mvnormpdf
 
 import matplotlib.pyplot as plt
 
-from FALib import _calculate_within_thresholds, event_count_compare, get_modes
+from FALib import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 
 class FileAlignerII():
 
@@ -60,6 +60,7 @@ class FileAlignerII():
         self.noiseClusters = {}
         self.referenceOverlap = 1e7
         self.modeLabels = {}
+        self.alignLabels = {}
 
         self.overlapMetric = 'eventcount'
         if self.overlapMetric not in ['kldivergence','eventcount']:
@@ -206,8 +207,9 @@ class FileAlignerII():
         print "template file has %s clusters"%len(np.unique(self.templateLabels))
 
         ## scan files with template
-        self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
-
+        alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
+        aLabels = get_alignment_labels(self,alignment,phi)
+        self.alignLabels[str(phi)] = aLabels
 
     def save_template_figure(self,chan1,chan2,figName,figTitle=None):
         ## save the template file
@@ -700,11 +702,9 @@ class FileAlignerII():
 
         ## setup save variables
         templateClusters = np.sort(np.unique(self.templateLabels))
-        totalClusters = np.array([(float(n)*(float(n)-1.0)) / 2.0 for n in sampleStats['k'].itervalues()]).sum()
-        totalClusters = totalClusters + (len(templateClusters)*(len(templateClusters) - 1.0)) / 2.0 
-        alignResults = np.zeros((totalClusters),) -1
-        alignResultsFiles = np.zeros((totalClusters),) -1
-        alignResultsClusters = np.array(['None'],dtype='|S7').repeat(totalClusters)
+        alignResults = []
+        alignResultsFiles = []
+        alignResultsClusters =[]
 
         ## more variables
         fileCount = 0
@@ -742,9 +742,10 @@ class FileAlignerII():
             templateThresholds[str(int(clusterID))] = {'ci':(thresholdLow, thresholdHigh)}
 
         ## scan through the files
-        for fileName in self.expListNames:
+        for fileIndex in range(len(self.expListNames)):
+            fileName = self.expListNames[fileIndex]
             fileCount += 1
-            fileLabels = self.get_labels(fileName)
+            fileLabels = self.modeLabels[str(phi)][fileIndex]
             fileClusters = np.sort(np.unique(fileLabels))
             fileData = self.get_events(fileName)
             
@@ -762,33 +763,28 @@ class FileAlignerII():
                     clustCount+=1
 
                     ## check that the centroids are at least a reasonable distance apart                    
-                    clusterMuJ = self.sampleStats['mus'][fileName][str(clusterJ)] 
+                    clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)]
                     eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
-                    threshold = self.sampleStats['dists'][fileName][str(clusterJ)]
+                    threshold = sampleStats['dists'][fileName][str(clusterJ)]
 
-                    #print fileName, clusterI, clusterJ, eDist, threshold1, threshold2
                     if eDist > threshold:
                         continue
 
-                    clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]                    
+                    clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
                     overlap1 = event_count_compare(self,templateEvents,clusterEventsJ,fileName,clusterJ,thresholds=thresholds)
                     overlap2 = event_count_compare(self,clusterEventsJ,templateEvents,fileName,clusterI,
                                                    inputThreshold=templateThresholds[str(clusterI)]['ci'])
                     overlap = np.max([overlap1, overlap2])
-                    alignResults[clustCount] = overlap
-
-                    #if overlap > 0:
-                    #    print fileName, clusterI, clusterJ, klDist.sum(),overlap
-
+                    
+                    if overlap < phi:
+                        continue
+                    
                     ## save results
-                    alignResultsFiles[clustCount] = self.expListNames.index(fileName)
-                    alignResultsClusters[clustCount] = "%s#%s"%(clusterI,clusterJ)
+                    alignResults.append(overlap)
+                    alignResultsFiles.append(fileIndex)
+                    alignResultsClusters.append("%s#%s"%(clusterI,clusterJ))
             
         if self.verbose == True:
             print "\n"
 
-        ## integrity check
-        if int(totalClusters) != int(clustCount + 1):
-            print "ERROR: FileAlingerLib failed integrity check clustCount",totalClusters, clustCount
-
-        return {'results':alignResults,'files':alignResultsFiles,'clusters':alignResultsClusters}
+        return {'results':np.array(alignResults),'files':np.array(alignResultsFiles),'clusters':np.array(alignResultsClusters)}
