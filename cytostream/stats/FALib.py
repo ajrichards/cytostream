@@ -4,7 +4,7 @@ functions that are used to align files
 
 import sys,re
 import numpy as np
-from cytostream.stats import DistanceCalculator, EmpiricalCDF
+from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest
 
 def _calculate_within_thresholds(fa,allLabels=None):
 
@@ -115,7 +115,6 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
 
         #print fileName, clustersLeft, np.unique(newLabels[fileIndex])
 
-
         ## change the labels of unmatched clusters
         for c in clustersLeft:
             clusterCount += 1
@@ -123,6 +122,77 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
 
     return newLabels
 
+
+def bootstrap_compare(eventsI,eventsJ):
+    n,m = len(eventsI),len(eventsJ)                                                                                                                  
+    bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])                                                               
+    bootstrapData = np.vstack([eventsI,eventsJ])                                                                                                     
+    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=1000)
+    bresults = bstpr.get_results()  
+
+    return bresults
+
+
+def get_alignment_labels(fa,alignment,phi,useBootstrap=False):
+        
+    results = alignment['results']
+    resultsFiles = alignment['files']
+    resultsClusters = alignment['clusters']
+    newLabels = [np.array([-1 * int(label) for label in fa.modeLabels[str(phi)][fn]]) for fn in range(len(fa.expListNames))]
+
+    for fileName in fa.expListNames:
+        fileIndex = fa.expListNames.index(fileName)
+        fileLabels = fa.modeLabels[str(phi)][fileIndex]
+        fileData = fa.get_events(fileName)
+        fileClusters = np.sort(np.unique(fileLabels))
+        fileInds = np.where(resultsFiles == fileIndex)[0]
+        fileSpecificResults = results[fileInds]
+        fileSpecificClustersAll = resultsClusters[fileInds]
+        templateSpecificClusters = np.zeros(len(fileSpecificClustersAll),dtype=int)
+        fileSpecificClusters = np.zeros(len(fileSpecificClustersAll),dtype=int)
+
+        ## prepare the labels
+        for fsc in range(len(fileSpecificClustersAll)):
+            c1,c2 = re.split("#", fileSpecificClustersAll[fsc])
+            templateSpecificClusters[fsc] = int(c1)
+            fileSpecificClusters[fsc] = int(c2)
+
+        ## determine if there are multiple matches, handle it, then assign labels
+        for clusterID in fileClusters:
+            matchInds = np.where(fileSpecificClusters == clusterID)[0]
+            templateMatches = templateSpecificClusters[matchInds]
+            matchSignif = fileSpecificResults[matchInds]
+
+            print 'In file %s cluster %s will be changed to %s due to a overlap of %s'%(fileName,clusterID,templateMatches,matchSignif)
+
+            if useBootstrap == False or len(matchSignif) == 1:
+                rankedInds = np.argsort(matchSignif)
+                print "\t...using rank"
+            else:
+                bootstrapResults = []
+                print "\t...bootstrapping for ", fileName, clusterID
+                eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
+                for tm in templateMatches:
+                    eventsI = fa.templateData[np.where(fileLabels==tm)[0],:]
+                    bsResults = bootstrap_compare(eventsI, eventsJ)
+                    bootstrapResults.append(bsResults['delta1'])
+                rankedInds = np.argsort(matchSignif)
+                rankedInds = rankedInds[::-1]
+
+            ## if multiple matches handle
+            newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * clusterID)[0]] = templateMatches[rankedInds[-1]]
+
+        ## change the labels of unmatched clusters
+        clustersLeft = np.unique(newLabels[fileIndex][np.where(newLabels[fileIndex] < 0)])
+        clusterCount = np.max(newLabels[fileIndex])
+        for c in clustersLeft:
+            clusterCount += 1
+            newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
+
+        ## handle special labeling of noise clusters
+        ## TODO
+
+    return newLabels
 
 
     '''
