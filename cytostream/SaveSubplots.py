@@ -39,6 +39,7 @@ class SaveSubplots():
         self.markerSize = markerSize
         self.forceScale = forceScale
         self.inputLabels = None
+        self.fontName = 'ariel'
 
         ## error check
         run = True
@@ -64,7 +65,7 @@ class SaveSubplots():
             self.fontName = self.log.log['font_name']
             self.filterInFocus = self.log.log['filter_in_focus']
             self.resultsMode = self.log.log['results_mode']
-
+        
             ## prepare figure
             self.fig = plt.figure()
             self.colors = get_all_colors()
@@ -81,7 +82,7 @@ class SaveSubplots():
         ## save file
         if self.figTitle != None:
             plt.suptitle(self.figTitle,fontsize=self.fontSize+2, fontname=self.fontName)
-        
+            
         if self.numSubplots in [2]:
             self.fig.subplots_adjust(wspace=0.2)
         elif self.numSubplots in [3]:

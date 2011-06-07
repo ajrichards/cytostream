@@ -5,7 +5,7 @@ import matplotlib
 import numpy as np
 if matplotlib.get_backend() != 'Agg':
     matplotlib.use('Agg')
-from cytostream.tools import calculate_intercluster_score,PieChartCreator,DotPlotCreator
+from cytostream.tools import PieChartCreator,DotPlotCreator
 from cytostream.stats import FileAlignerII
 from cytostream import NoGuiAnalysis,SaveSubplots
 from SimulatedData1 import case1, case2, case3, case4, case5, case6
@@ -41,7 +41,7 @@ class FileAlignerTest1(unittest.TestCase):
         expListNames = ['case1','case2','case3','case4','case5','case6']
         expListLabels = []
         modelName = 'dpmm'
-        phiRange = [0.1]
+        phiRange = [0.1,0.6]
         useDPMM = False
         
         ## setup class to run model        
@@ -63,11 +63,7 @@ class FileAlignerTest1(unittest.TestCase):
         print "Running file alignment.........."
         timeBegin = time.time()
         self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange,verbose=VERBOSE,homeDir=homeDir)
-        self.fa.run()
-
-        #self.fa = FileAligner(expListNames,expListData,expListLabels,phiRange=phiRange,refFile=None,excludedChannels=[],verbose=VERBOSE,
-        #                      distanceMetric='mahalanobis',baseDir=homeDir)
-        
+        self.fa.run(evaluator='rank',filterNoise=True)
         timeEnd = time.time()
         print "time taken for alignment: ", timeEnd - timeBegin
         
@@ -80,22 +76,21 @@ class FileAlignerTest1(unittest.TestCase):
         plotsToViewFiles = [0,1,2,3,4,5,0,0,0,0,0,0]
         self.nga.set("plots_to_view_files",plotsToViewFiles)
         #plotsToViewRuns = ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
-        #
         #self.nga.set('plots_to_view_files',plotsToViewFiles)
         
-        alignDir = os.path.join(homeDir,'alignfigs')
+        figsDir = os.path.join(homeDir,'figs')
         numSubplots = 6
         figMode = 'qa'
-        figName = os.path.join(alignDir,'subplots_orig_qa.png')
+        figName = os.path.join(figsDir,'subplots_orig_qa.png')
         figTitle = "unittest fa1 - unaligned qa"
         ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
 
         figMode = 'analysis'
-        figName = os.path.join(alignDir,'subplots_orig_dpmm.png')
+        figName = os.path.join(figsDir,'subplots_orig_dpmm.png')
         if useDPMM == True:
             figTitle = "unittest fa1 - unaligned dpmm"
         else:
-            figTitle = "unittest fa1 - true labels"
+            figTitle = "Clustered labels"
         plotsToViewRuns = self.nga.controller.log.log['plots_to_view_runs']
         if useDPMM == False:
             ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=expListLabels)
@@ -103,21 +98,21 @@ class FileAlignerTest1(unittest.TestCase):
             ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
 
         ## saves a plot of the modes
-        lowestPhi = phiRange[0]
-        modeLabels = self.fa.modeLabels[str(lowestPhi)]
-        figName = os.path.join(alignDir,'modes_%s.png'%lowestPhi)
-        figTitle = "Unaligned Modes %s"%lowestPhi
-        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
+        for phi in phiRange:
+            modeLabels = self.fa.modeLabels[str(phi)]
+            figName = os.path.join(figsDir,'modes_%s.png'%phi)
+            figTitle = "Unaligned Modes %s"%phi
+            ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
 
-        ## saves a plot of the modes
-        alignLabels = self.fa.alignLabels[str(lowestPhi)]
-        figName = os.path.join(alignDir,'aligned_%s.png'%lowestPhi)
-        figTitle = "Aligned Modes %s"%lowestPhi
-        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=alignLabels)
+            ## saves a plot of the aligned modes
+            alignLabels = self.fa.alignLabels[str(phi)]
+            figName = os.path.join(figsDir,'aligned_%s.png'%phi)
+            figTitle = "Aligned Modes %s"%phi
+            ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=alignLabels)
 
         ## saves a plot of the template file
-        figName = os.path.join(alignDir,'template_figure_%s.png'%lowestPhi)
-        self.fa.save_template_figure(0,1,figName,figTitle="template_%s"%lowestPhi)
+        figName = os.path.join(figsDir,'template_figure_%s.png'%phiRange[-1])
+        self.fa.save_template_figure(0,1,figName,figTitle="template_%s"%phiRange[-1])
 
         '''
         bestPhi, bestScore = self.fa.get_best_match()
