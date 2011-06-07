@@ -4,7 +4,7 @@ functions that are used to align files
 
 import sys,re
 import numpy as np
-from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest
+from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler
 
 def _calculate_within_thresholds(fa,allLabels=None):
 
@@ -24,8 +24,8 @@ def _calculate_within_thresholds(fa,allLabels=None):
 
         for clusterID in fileClusters:
             ## check for noise label
-            if fa.noiseClusters.has_key(fileName) and fa.noiseClusters[fileName].__contains__(str(clusterID)):
-                continue
+            #if fa.noiseClusters.has_key(fileName) and fa.noiseClusters[fileName].__contains__(str(clusterID)):
+            #    continue
 
             ## determine distances
             clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
@@ -56,7 +56,7 @@ def _calculate_within_thresholds(fa,allLabels=None):
 
     return withinThresholds
 
-def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
+def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi):
         
     results = nonNoiseResults[phiIndices]
     resultsFiles = nonNoiseFiles[phiIndices]
@@ -109,32 +109,49 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters):
             clusterCount += 1
             for c in clustersToChange:
                 newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
-            
+                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                    if fa.modeNoiseClusters[str(phi)].has_key(fileName):
+                        fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                    else:
+                        fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+
                 if clustersLeft.__contains__(c):
                     clustersLeft.remove(int(c))
 
         #print fileName, clustersLeft, np.unique(newLabels[fileIndex])
-
         ## change the labels of unmatched clusters
         for c in clustersLeft:
             clusterCount += 1
             newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
+            if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                if fa.modeNoiseClusters[str(phi)].has_key(fileName):
+                    fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                else:
+                    fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
 
     return newLabels
 
-
 def bootstrap_compare(eventsI,eventsJ):
-    n,m = len(eventsI),len(eventsJ)                                                                                                                  
+    n,m = len(eventsI),len(eventsJ)
+
+    if n == 0 or m == 0:
+        print "ERROR in bootstrap_compare -- cluster had 0 elements"
+        return None
+                                                                             
     bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])                                                               
     bootstrapData = np.vstack([eventsI,eventsJ])                                                                                                     
-    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=1000)
+    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=500)
     bresults = bstpr.get_results()  
 
     return bresults
 
 
-def get_alignment_labels(fa,alignment,phi,useBootstrap=False):
+def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
         
+    if evaluator not in ['rank','bootstrap','kldivergence']:
+        print "ERROR: in get_alignment_labels evaluator not valid"
+
+
     results = alignment['results']
     resultsFiles = alignment['files']
     resultsClusters = alignment['clusters']
@@ -163,77 +180,62 @@ def get_alignment_labels(fa,alignment,phi,useBootstrap=False):
             templateMatches = templateSpecificClusters[matchInds]
             matchSignif = fileSpecificResults[matchInds]
 
-            print 'In file %s cluster %s will be changed to %s due to a overlap of %s'%(fileName,clusterID,templateMatches,matchSignif)
+            ## skip noise 
+            if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(clusterID) in fa.modeNoiseClusters[str(phi)][fileName]:
+                continue
 
-            if useBootstrap == False or len(matchSignif) == 1:
-                rankedInds = np.argsort(matchSignif)
-                print "\t...using rank"
-            else:
+            #print 'In file %s cluster %s will be changed to %s due to a overlap of %s'%(fileName,clusterID,templateMatches,matchSignif)
+
+            if evaluator == 'rank' or len(matchSignif) == 1:
+                rankedInds = np.argsort(matchSignif)[::-1]
+                #print "\t...using rank"
+            elif evaluator == 'bootstrap':
                 bootstrapResults = []
                 print "\t...bootstrapping for ", fileName, clusterID
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 for tm in templateMatches:
-                    eventsI = fa.templateData[np.where(fileLabels==tm)[0],:]
+                    eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
                     bsResults = bootstrap_compare(eventsI, eventsJ)
                     bootstrapResults.append(bsResults['delta1'])
-                rankedInds = np.argsort(matchSignif)
-                rankedInds = rankedInds[::-1]
+                rankedInds = np.argsort(bootstrapResults)
+            elif evaluator == 'kldivergence':
+                klResults = []
+                eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
+                gd1 = GaussianDistn(eventsJ.mean(axis=0), np.cov(eventsJ.T))
+                print "\t...using kl for ", fileName, clusterID
 
+                ## things to try use max of both kldists 
+                for tm in templateMatches:
+                    eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                    gd2 = GaussianDistn(eventsI.mean(axis=0), np.cov(eventsI.T))
+                    klDist1 = kullback_leibler(gd1,gd2)
+                    klDist2 = kullback_leibler(gd2,gd1)
+                    klList = [klDist1,klDist2]
+                    klDist = klList[np.argmin([klDist1.sum(),klDist2.sum()])] 
+                    klResults.append(klDist)
+                rankedInds = np.argsort(klResults)
+
+            if len(templateMatches) < 1:
+                continue
+                
             ## if multiple matches handle
-            newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * clusterID)[0]] = templateMatches[rankedInds[-1]]
+            newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * clusterID)[0]] = templateMatches[rankedInds[0]]
 
         ## change the labels of unmatched clusters
         clustersLeft = np.unique(newLabels[fileIndex][np.where(newLabels[fileIndex] < 0)])
-        clusterCount = np.max(newLabels[fileIndex])
+        clusterCount = np.max(fa.templateLabels)
+
         for c in clustersLeft:
-            clusterCount += 1
-            newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
+            if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(int(-1.0*c)) in fa.modeNoiseClusters[str(phi)][fileName]:
+                newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = -1
+            else:
+                clusterCount += 1
+                newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = clusterCount
 
         ## handle special labeling of noise clusters
         ## TODO
 
     return newLabels
-
-
-    '''
-    bootMatches = []
-    bootMatchesLabels = []
-    fileCount = 0
-    for fileName in fa.expListNames:
-        fileCount += 1
-        fileLabels = fa.get_labels(fileName)
-        fileClusters = np.sort(np.unique(fileLabels))
-        fileData = fa.get_events(fileName)
-
-        for m in range(len(results)):
-            fname = fa.expListNames[int(resultsFiles[m])]
-            if fileName != fname:
-                continue
-            clusterI, clusterJ = [int(ci) for ci in re.split("#", resultsClusters[m])]
-            eventsI = fileData[np.where(fileLabels==int(clusterI))[0],:]
-            eventsJ = fileData[np.where(fileLabels==int(clusterJ))[0],:]
-            n,m = len(eventsI),len(eventsJ)
-            bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
-            bootstrapData = np.vstack([eventsI,eventsJ])
-            bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=1000)
-            bresults = bstpr.get_results()
-                
-            #print "matching", fname, clusterI, clusterJ, bresults
-            
-            if bresults['delta1'] > 3.0:
-                continue
-                
-            bootMatches.append(bresults['delta1'])
-            bootMatchsLabels.append("%s#%s#%s"%(fname,clusterI,clusterJ))
-
-        if len(bootMatches) == 0:
-            return
-
-    ## relabel
-    sortedInds = np.argsort(bootMatches)
-    bootMatches = np.array(bootMatches)[sortedInds]
-    bootMatchesLabels = np.array(bootMatchesLabels)[sortedInds]
-    '''
     
 def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds=None,inputThreshold=None):
     '''
@@ -311,6 +313,54 @@ def make_bootstrap_comparision(fa):
             print clusterI, clusterJ, bresults['delta1'],"%s/%s"%(compareCount,totalComparisons)  
          
     print 'template', fileWithMinNumClusters
+
+def get_master_label_list(expListLabels):
+    labelMasterList = set([])
+    for labelList in expListLabels:
+        fileLabels = np.sort(np.unique(labelList))
+        labelMasterList.update(fileLabels)
+
+    masterLabelList = np.sort(np.unique(labelMasterList))
+
+    return masterLabelList
+
+def calculate_intercluster_score(fa,expListNames,expListLabels):
+    '''
+    calculate a global file alignment score
+    '''
+
+    masterLabelList = get_master_label_list(expListLabels)
+
+    ## get a dict of magnitudes
+    magnitudeDict = {}
+    for cluster in masterLabelList:
+        magnitude = -1
+        for fileInd in range(len(expListNames)):
+            fileName = expListNames[fileInd]
+            fileLabels = expListLabels[fileInd]
+            uniqueLabels = np.sort(np.unique(fileLabels)).tolist()
+            if uniqueLabels.__contains__(cluster):
+                magnitude+=1
+
+        magnitudeDict[cluster] = magnitude
+
+    ## calculate a score 
+    goodnessScore = 0
+    for cluster in masterLabelList:
+        totalEventsAcrossFiles = 0
+        for fileInd in range(len(expListNames)):
+            fileName = expListNames[fileInd]
+            fileLabels = expListLabels[fileInd]
+            fileData = fa.get_events(fileName)
+            clusterEvents = fileData[np.where(fileLabels==cluster)[0],:]
+            n,k = np.shape(clusterEvents)
+            totalEventsAcrossFiles+=n
+
+        goodnessScore += (magnitudeDict[cluster] * float(totalEventsAcrossFiles))
+
+    return goodnessScore
+
+
 
 
 #if self.overlapMetric == 'kldivergence':

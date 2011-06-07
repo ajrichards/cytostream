@@ -6,7 +6,7 @@ library for file aligner related functions
 
 '''
 from __future__ import division
-import sys,os,re,cPickle,time
+import sys,os,re,cPickle,time,csv
 import numpy as np
 import scipy.stats as stats
 from scipy.cluster.vq import whiten
@@ -21,7 +21,7 @@ from fcm.statistics.distributions import mvnormpdf
 
 import matplotlib.pyplot as plt
 
-from FALib import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
+from FALib import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels, calculate_intercluster_score
 
 class FileAlignerII():
 
@@ -58,6 +58,7 @@ class FileAlignerII():
         self.newLabelsAll = {}
         self.modelType = 'components'
         self.noiseClusters = {}
+        self.modeNoiseClusters = {}
         self.referenceOverlap = 1e7
         self.modeLabels = {}
         self.alignLabels = {}
@@ -85,7 +86,9 @@ class FileAlignerII():
             print "INPUT ERROR: FileAligner.py -- baseDir does not exist"
             return None
 
+        ## prepare for logging and results storage
         self.make_dir_tree()
+        self.create_log_files()
 
         ## handle exp data
         if type(expListData) != type([]):
@@ -126,7 +129,7 @@ class FileAlignerII():
             print "INPUT ERROR: phi range is not a list or np.array", type(self.phiRange)
             return None
 
-    def run(self,filterNoise=True):
+    def run(self,filterNoise=True,evaluator='rank'):
         ## get sample statistics
         if self.verbose == True:
             print "...getting sample statistics"
@@ -177,39 +180,57 @@ class FileAlignerII():
         ## finish template file according to phi
         #print self.noiseClusters
         ### loop through each phi ###
-        phi = self.phiRange[0]
-        if self.verbose == True:
-            print "...getting modes %s phi"%(phi)
+        for phi in self.phiRange:
+            if self.verbose == True:
+                print "...getting modes %s phi"%(phi)
        
-        nonNoiseIndices = np.where(self.selfAlignment['results'] > 0)[0]
-        nonNoiseResults = self.selfAlignment['results'][nonNoiseIndices]
-        nonNoiseFiles = self.selfAlignment['files'][nonNoiseIndices]
-        nonNoiseClusters = self.selfAlignment['clusters'][nonNoiseIndices]
-        phiIndices = np.where(nonNoiseResults >= phi)[0]
-        newLabels = get_modes(self,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters)
-        self.modeLabels[str(phi)] = newLabels
-
-        if self.verbose == True:
-            print "...getting sample statistics again"
-
-        sampleStatsPhi = self.get_sample_statistics(allLabels=self.modeLabels[str(phi)])
-
-        ## get overlap thresholds
-        if self.verbose == True:
-            print "\n...calculating within thresholds"
-        withinThresholdsPhi = _calculate_within_thresholds(self,allLabels=self.modeLabels[str(phi)])
-        
-        ## getting template file
-        if self.verbose == True:
-            print "...creating template file"
+            #nonNoiseIndices = np.where(self.selfAlignment['results'] > 0)[0]
+            #nonNoiseResults = self.selfAlignment['results'][nonNoiseIndices]
+            #nonNoiseFiles = self.selfAlignment['files'][nonNoiseIndices]
+            #nonNoiseClusters = self.selfAlignment['clusters'][nonNoiseIndices]
+            #phiIndices = np.where(nonNoiseResults >= phi)[0]
             
-        self.create_template_file(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
-        print "template file has %s clusters"%len(np.unique(self.templateLabels))
+            alignResults = self.selfAlignment['results']
+            alignFiles = self.selfAlignment['files']
+            alignClusters = self.selfAlignment['clusters']
+            phiIndices = np.where(alignResults >= phi)[0]
+            self.modeNoiseClusters[str(phi)] = {}            
+            newLabels = get_modes(self,phiIndices,alignResults,alignFiles,alignClusters,phi)
+            self.modeLabels[str(phi)] = newLabels
 
-        ## scan files with template
-        alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
-        aLabels = get_alignment_labels(self,alignment,phi)
-        self.alignLabels[str(phi)] = aLabels
+            
+            if self.verbose == True:
+                print "...getting sample statistics again"
+
+            sampleStatsPhi = self.get_sample_statistics(allLabels=self.modeLabels[str(phi)])
+
+            ## get overlap thresholds
+            if self.verbose == True:
+                print "\n...calculating within thresholds"
+            withinThresholdsPhi = _calculate_within_thresholds(self,allLabels=self.modeLabels[str(phi)])
+        
+            ## getting template file
+            if self.verbose == True:
+                print "...creating template file"
+            
+            self.create_template_file(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
+            print "template file has %s clusters"%len(np.unique(self.templateLabels))
+
+            ## scan files with template
+            alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
+            aLabels = get_alignment_labels(self,alignment,phi, evaluator=evaluator)
+            self.alignLabels[str(phi)] = aLabels
+    
+            ## save labels
+            tmp =  open(os.path.join(self.homeDir,'alignment',"alignLabels_%s.pickle"%(phi)),'w')
+            cPickle.dump(aLabels,tmp)
+            tmp.close()
+
+            ## calculate and save global alignment score
+            interClusterDistance = calculate_intercluster_score(self,self.expListNames,aLabels)
+            self.globalScoreDict[str(phi)] = interClusterDistance
+            numTemplateClusters = len(np.unique(self.templateLabels))
+            self.alignmentFile.writerow([phi,interClusterDistance,numTemplateClusters])
 
     def save_template_figure(self,chan1,chan2,figName,figTitle=None):
         ## save the template file
@@ -235,40 +256,40 @@ class FileAlignerII():
         if self.verbose == True and os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
 
-        dirs = ['results','alignfigs']
+        dirs = ['results','alignment']
         for diry in dirs:
             if os.path.isdir(os.path.join(self.homeDir,diry)) == False:
                 os.mkdir(os.path.join(self.homeDir,diry))
             
-        if os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
+        if os.path.isdir(os.path.join(self.homeDir,'alignment')) == True:
             ## clean out figures dir
-            for item1 in os.listdir(os.path.join(self.homeDir,'alignfigs')):
-                if os.path.isdir(os.path.join(self.homeDir,'alignfigs',item1)) == True:
-                    for item2 in os.listdir(os.path.join(self.homeDir,'alignfigs',item1)):
-                        os.remove(os.path.join(self.homeDir,'alignfigs',item1,item2))
+            for item1 in os.listdir(os.path.join(self.homeDir,'alignment')):
+                if os.path.isdir(os.path.join(self.homeDir,'alignment',item1)) == True:
+                    for item2 in os.listdir(os.path.join(self.homeDir,'alignment',item1)):
+                        os.remove(os.path.join(self.homeDir,'alignment',item1,item2))
                 else:
-                    os.remove(os.path.join(self.homeDir,'alignfigs',item1))
+                    os.remove(os.path.join(self.homeDir,'alignment',item1))
             
             ## clean out relevant results
-            if os.path.isdir(os.path.join(self.homeDir,'results','alignments')) == True:
-                for item1 in os.listdir(os.path.join(self.homeDir,'results','alignments')):
-                    os.remove(os.path.join(self.homeDir,'results','alignments',item1))
+            #if os.path.isdir(os.path.join(self.homeDir,'results','alignments')) == True:
+            #    for item1 in os.listdir(os.path.join(self.homeDir,'results','alignments')):
+            #        os.remove(os.path.join(self.homeDir,'results','alignments',item1))
                 
             ## remove old log files 
-            if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
-                os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
-            if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
-                os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
-            if os.path.isfile(os.path.join(self.homeDir,"results","alignments.log")) == True:
-                os.remove(os.path.join(self.homeDir,"results","alignments.log"))
+            #if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
+            #    os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
+            #if os.path.isfile(os.path.join(self.homeDir,"results","_FileMerge.log")) == True:
+            #    os.remove(os.path.join(self.homeDir,"results","_FileMerge.log"))
+            #if os.path.isfile(os.path.join(self.homeDir,"results","alignments.log")) == True:
+            #    os.remove(os.path.join(self.homeDir,"results","alignments.log"))
 
         ## ensure directories are present
-        if os.path.isdir(os.path.join(self.homeDir,"results")) == False:
-            os.mkdir(os.path.join(self.homeDir,"results"))            
-        if os.path.isdir(os.path.join(self.homeDir,"results","alignments")) == False:
-            os.mkdir(os.path.join(self.homeDir,"results","alignments"))
-        if os.path.isdir(os.path.join(self.homeDir,"alignfigs")) == False:
-            os.mkdir(os.path.join(self.homeDir,"alignfigs"))
+        #if os.path.isdir(os.path.join(self.homeDir,"results")) == False:
+        #    os.mkdir(os.path.join(self.homeDir,"results"))            
+        #if os.path.isdir(os.path.join(self.homeDir,"results","alignments")) == False:
+        #    os.mkdir(os.path.join(self.homeDir,"results","alignments"))
+        if os.path.isdir(os.path.join(self.homeDir,"alignment")) == False:
+            os.mkdir(os.path.join(self.homeDir,"alignment"))
 
     def get_labels(self,selectedFile):
 
@@ -330,7 +351,6 @@ class FileAlignerII():
                 clusterInds =np.where(expLabels==cluster)[0]
                 centroid = expData[clusterInds,:].mean(axis=0)
                 centroids[expName][str(cluster)] = centroid
-                #print 'debug', np.shape(expData[clusterInds,:]), np.cov(expData[clusterInds,:].T).shape, expData[clusterInds,:].var(axis=0).shape
                 variances[expName][str(cluster)] = np.cov(expData[clusterInds,:].T)
                 numDataPoints[expName][str(cluster)] = len(clusterInds)
                 if centroidList[expName] == None:
@@ -352,7 +372,6 @@ class FileAlignerII():
                 cID = centroidListIDs[expName][cid]
                 threshold = stats.norm.ppf(0.6,loc=means[cid],scale=stds[cid])
                 clusterDists[expName][str(cID)] = threshold
-                #print expName, cID, means[cid], stds[cid], threshold
 
         if self.verbose == True:
             print "\n"
@@ -425,20 +444,23 @@ class FileAlignerII():
         svg = SilValueGenerator(mat,labels)
         return svg.silValues
 
-    def create_log_file(self):
+    def create_log_files(self):
         ''' 
         create a log file to document cluster changes
         each log is specific to a give phi
         '''
 
-        if self.covariateID == None:
-            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge.log"),'wa'))
-        else:
-            self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
-        self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
-        self.logFile.writerow(["refFile",self.refFile])
-        self.logFile.writerow(["silThresh",self.minMergeSilValue])
-        self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
+        self.alignmentFile = csv.writer(open(os.path.join(self.homeDir,"alignment","alignments.log"),'w'))
+        self.alignmentFile.writerow(["phi","alignment_score","num_template_clusters"])
+
+        #if self.covariateID == None:
+        #    self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge.log"),'wa'))
+        #else:
+        #    self.logFile = csv.writer(open(os.path.join(self.baseDir,"results","_FileMerge_%s.log"%(self.covariateID)),'wa'))
+        #self.logFile.writerow(["expListNames",re.sub(",",";",re.sub("\[|\]|'","",str(self.expListNames)))])
+        #self.logFile.writerow(["refFile",self.refFile])
+        #self.logFile.writerow(["silThresh",self.minMergeSilValue])
+        #self.logFile.writerow(['phi','algorithmStep','fileSource','OldLabel','fileTarget','newLabel','numEventsChanged','percentoverlap','silValue']) 
 
     def run_self_alignment(self):
         totalClusters = np.array([(float(n)*(float(n)-1.0)) / 2.0 for n in self.sampleStats['k'].itervalues()]).sum()
@@ -492,9 +514,6 @@ class FileAlignerII():
                     overlap = np.max([overlap1, overlap2])
                     alignResults[clustCount] = overlap
 
-                    #if overlap > 0:
-                    #    print fileName, clusterI, clusterJ, klDist.sum(),overlap
-
                     ## save results
                     alignResultsFiles[clustCount] = self.expListNames.index(fileName)
                     alignResultsClusters[clustCount] = "%s#%s"%(clusterI,clusterJ)
@@ -525,8 +544,8 @@ class FileAlignerII():
             noiseClusters = 0
         
             ## check for the number of noise clusters
-            if self.noiseClusters.has_key(fileName):
-                noiseClusters = len(self.noiseClusters[fileName])
+            if self.modeNoiseClusters[str(phi)].has_key(fileName):
+                noiseClusters = len(self.modeNoiseClusters[str(phi)][fileName])
 
             fileLabels = self.modeLabels[str(phi)][fileIndex]
             fileClusters = np.sort(np.unique(fileLabels))
@@ -542,9 +561,9 @@ class FileAlignerII():
         templateLabels = self.modeLabels[str(phi)][fileWithMinNumClustersInd]
 
         ## remove noise clusters from file
-        if self.noiseClusters.has_key(fileWithMinNumClusters):
+        if self.modeNoiseClusters[str(phi)].has_key(fileWithMinNumClusters):
             noiseInds = np.array([])
-            for cid in self.noiseClusters[fileWithMinNumClusters]:
+            for cid in self.modeNoiseClusters[str(phi)][fileWithMinNumClusters]:
                 noiseInds = np.hstack([noiseInds, np.where(templateLabels==int(cid))[0]])
             nonNoiseInds = list(set(range(len(templateLabels))).difference(set(noiseInds)))
             templateData = templateData[nonNoiseInds,:]
@@ -566,7 +585,7 @@ class FileAlignerII():
         for clusterID in templateClusters:
 
             ## check for noise label
-            if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterID)):
+            if self.modeNoiseClusters[str(phi)].has_key(fileName) and self.modeNoiseClusters[str(phi)][fileName].__contains__(str(clusterID)):
                 continue
 
             ## determine distances
@@ -626,7 +645,7 @@ class FileAlignerII():
                         continue
 
                     ## check for noise label
-                    if self.noiseClusters.has_key(fileName) and self.noiseClusters[fileName].__contains__(str(clusterJ)):
+                    if self.modeNoiseClusters[str(phi)].has_key(fileName) and self.modeNoiseClusters[str(phi)][fileName].__contains__(str(clusterJ)):
                         continue
                     
                     clustCount += 1

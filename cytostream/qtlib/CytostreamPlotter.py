@@ -27,7 +27,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
     def __init__(self,fileChannels=None,drawState='Heat',parent=None,background=True,xAxLimit=None,yAxLimit=None,
                  selectedChannel1=0,selectedChannel2=1,mainWindow=None,uniqueLabels=None,enableGating=False,homeDir=None,
-                 compactMode=False,isProject=False):
+                 compactMode=False,isProject=False,inputLabels=None):
 
         ## initialize
         QtGui.QWidget.__init__(self,parent)
@@ -48,6 +48,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.homeDir = homeDir
         self.compactMode = compactMode
         self.isProject = isProject
+        self.inputLabels = inputLabels
 
         ## addition variables
         self.gateInteractor = None
@@ -96,7 +97,10 @@ class CytostreamPlotter(QtGui.QWidget):
         self.modelRunID = modelRunID
 
         ## handle analysis mode variables
-        if self.modelRunID != None:
+        if self.inputLabels != None:
+            fileIndex = self.fileList.index(selectedFile)
+            labels = self.inputLabels[fileIndex]
+        elif self.modelRunID != None:
             statModel,statModelClasses = self.model.load_model_results_pickle(selectedFile,self.modelRunID,modelType=modelType)
             labels = statModelClasses
         else:
@@ -112,8 +116,10 @@ class CytostreamPlotter(QtGui.QWidget):
 
         self.events,self.labels = fetch_plotting_events(selectedFile,self.model,self.log,subsample,labels=labels)
         
-        if self.modelRunID != None:
-            self.uniqueLabels = np.sort(np.unique(labels)).tolist()
+        print "CytostreamPlotter debug", self.labels
+
+        if self.labels != None:
+            self.uniqueLabels = np.sort(np.unique(self.labels)).tolist()
         else:
             self.uniqueLabels = None
 

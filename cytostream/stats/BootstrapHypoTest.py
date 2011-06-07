@@ -13,6 +13,7 @@ A. Richards
 '''
 
 ### make imports
+from __future__ import division
 import numpy as np 
 from numpy import array,zeros,random,median,power,var,sqrt
 import scipy.stats as stats

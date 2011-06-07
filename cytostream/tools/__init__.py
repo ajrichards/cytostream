@@ -1,4 +1,4 @@
-from MiscFns import calculate_intercluster_score,get_file_data,read_txt_to_file_channels,read_txt_into_array
+from MiscFns import get_file_data,read_txt_to_file_channels,read_txt_into_array
 from MiscFns import get_sample_statistics, get_file_sample_stats
 from PlottingFns import get_all_colors, PlotDataOrganizer, rgb_to_hex, get_cmap_blues, fetch_plotting_events
 from Gating import DrawGateInteractor, PolyGateInteractor

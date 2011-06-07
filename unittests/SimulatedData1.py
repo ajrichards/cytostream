@@ -113,8 +113,8 @@ case5Labels = np.hstack((case5Labels,np.array([np.random.randint(4,7)]).repeat(n
 ## case 6
 
 ## noise cluster
-case6c1f1 = np.random.normal(3,5.0,smallN)
-case6c1f2 = np.random.normal(3,5.0,smallN)
+case6c1f1 = np.random.normal(6,4.0,smallN)
+case6c1f2 = np.random.normal(6,4.0,smallN)
 case6c1 = np.vstack((case6c1f1,case6c1f2)).T
 
 ## remove negative numbers from noise
