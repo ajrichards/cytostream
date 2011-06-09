@@ -105,11 +105,13 @@ class LatexReportCreator():
         colHeader - are the header elements for the columns
         '''
         
+        print 'table has', len(rowDict)
+
         ## error checking
         if type(rowDict) != type({}):
             print "ERROR: rowDict for include_table must be of type dict"
-        if type(rowDict[rowDict.keys()[0]]) != type([]):
-            print "ERROR: the values in rowDict for included_table must be of type list"
+        #if type(rowDict[rowDict.keys()[0]]) != type([]):
+        #    print "ERROR: the values in rowDict for included_table must be of type list"
 
         numCols = len(rowDict[rowDict.keys()[0]])
         if justifications == None:
@@ -124,6 +126,19 @@ class LatexReportCreator():
         self.fid.write(header)
         self.fid.write("\\hline\n")
 
+
+        #if type(rowDict[rowDict.keys()[0]]) == type({}):
+        #    for key in iter(sorted(rowDict.keys())):
+        #        #for rowHead, row in rowDict[key].iteritems():
+        #        rowKey = rowDict[key].keys()[0] 
+        #        row = rowKey + "&" + "".join([i + "&" for i in rowDict[key][rowKey]])+"\\\ \n"
+        #        self.fid.write(row)
+        #        
+        #        #for rowHead, row in rowDict.iteritems():
+        #        #rowHead = rowDict[key].keys()[0] 
+        #        #print 'debug', rowHead
+        #        #row = rowHead + "&" + "".join([i + "&" for i in rowDict[key][rowHead]])[:-1]+"\\\ \n"
+        #        self.fid.write(row)
         if ordered == True:
             it = iter(sorted(rowDict.iteritems()))
             for rowHead, row in it:

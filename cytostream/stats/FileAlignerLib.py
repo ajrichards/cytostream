@@ -184,21 +184,14 @@ class FileAlignerII():
             if self.verbose == True:
                 print "...getting modes %s phi"%(phi)
        
-            #nonNoiseIndices = np.where(self.selfAlignment['results'] > 0)[0]
-            #nonNoiseResults = self.selfAlignment['results'][nonNoiseIndices]
-            #nonNoiseFiles = self.selfAlignment['files'][nonNoiseIndices]
-            #nonNoiseClusters = self.selfAlignment['clusters'][nonNoiseIndices]
-            #phiIndices = np.where(nonNoiseResults >= phi)[0]
-            
             alignResults = self.selfAlignment['results']
             alignFiles = self.selfAlignment['files']
             alignClusters = self.selfAlignment['clusters']
             phiIndices = np.where(alignResults >= phi)[0]
-            self.modeNoiseClusters[str(phi)] = {}            
+            self.modeNoiseClusters[str(phi)] = {}   
             newLabels = get_modes(self,phiIndices,alignResults,alignFiles,alignClusters,phi)
             self.modeLabels[str(phi)] = newLabels
 
-            
             if self.verbose == True:
                 print "...getting sample statistics again"
 
@@ -217,6 +210,9 @@ class FileAlignerII():
             print "template file has %s clusters"%len(np.unique(self.templateLabels))
 
             ## scan files with template
+            if self.verbose == True:
+                print "...scanning files with template"
+
             alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
             aLabels = get_alignment_labels(self,alignment,phi, evaluator=evaluator)
             self.alignLabels[str(phi)] = aLabels
@@ -227,6 +223,9 @@ class FileAlignerII():
             tmp.close()
 
             ## calculate and save global alignment score
+            if self.verbose == True:
+                print "...calculating intercluster distance"
+
             interClusterDistance = calculate_intercluster_score(self,self.expListNames,aLabels)
             self.globalScoreDict[str(phi)] = interClusterDistance
             numTemplateClusters = len(np.unique(self.templateLabels))
@@ -625,7 +624,6 @@ class FileAlignerII():
 
             ## skip the file used to make the template
             if fileName == fileWithMinNumClusters:
-                print "skipping ", fileWithMinNumClusters
                 continue
 
             if self.verbose == True:
@@ -675,7 +673,6 @@ class FileAlignerII():
                         overlap = event_count_compare(self,savedEvents,clusterEventsJ,fileName,clusterJ,thresholds=thresholds)
 
                         if overlap >= phi:
-                            print "\t sig overlap", overlap
                             appearedTwice.update([nid])
                             isNew = False
                              

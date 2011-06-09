@@ -250,7 +250,6 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             return None
 
     ## make plot
-    
     if type(np.array([])) != type(parent.labels):
         parent.labels = np.array(parent.labels)
         
