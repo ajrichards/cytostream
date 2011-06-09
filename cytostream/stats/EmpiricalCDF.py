@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import division
 import re
 import numpy as np
 
@@ -111,6 +111,7 @@ class EmpiricalCDF:
         if x >= 1.0:
             return maxX
 
+        indX = 0
         for i in range(len(self.percentiles)):
             if x >= self.percentiles[i]:
                 indX = i
@@ -119,8 +120,6 @@ class EmpiricalCDF:
 
         return self.data[indX]
 
-
-        
 ### run the test 
 if __name__ == '__main__':
     '''

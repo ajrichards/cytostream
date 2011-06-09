@@ -65,7 +65,8 @@ def get_all_colors():
                "#003333","#66CCFF","#CCFFFF","#AA11BB","#000011","#FFCCFF","#00EE33","#337722","#CCBBFF","#FF3300",
                "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB","#00EE88","#66AA22","#99FFEE","#660022",
                "#FFFF33","#00CCFF","#990066","#006600","#00CCFF",'#AAAAAA',"#33FF00","#0066FF","#FF9900","#FFCC00"]
-    return colors
+
+    return colors * 3
 
 
 def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
