@@ -87,7 +87,7 @@ class SaveSubplots():
         elif self.numSubplots in [3]:
             self.fig.subplots_adjust(wspace=0.3)
         elif self.numSubplots in [4]:
-            self.fig.subplots_adjust(hspace=0.3,wspace=0.1)
+            self.fig.subplots_adjust(hspace=0.2,wspace=0.05)
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
         elif self.numSubplots in [7,8,9]:
@@ -396,7 +396,6 @@ class SaveSubplots():
         bufferY = self.buff * (events[:,index2].max() - events[:,index2].min())
         ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
         ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
-        print "setting limites", x.min(), x.max(),index1, index2,[events[:,index1].min()-bufferX,events[:,index1].max()+bufferX,x.mean()]
 
         ## handle labels and title
         channel1 = fileChannels[index1]

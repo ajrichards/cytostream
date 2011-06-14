@@ -4,6 +4,7 @@ functions that are used to align files
 
 import sys,re
 import numpy as np
+from scipy.cluster.vq import whiten
 from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler
 
 def _calculate_within_thresholds(fa,allLabels=None):
@@ -39,7 +40,7 @@ def _calculate_within_thresholds(fa,allLabels=None):
                 else:
                     dc.calculate(clusterEvents,matrixMeans=clusterMean)
                     distances = dc.get_distances()
-                    distances = whiten(btnDistances)
+                    distances = whiten(distances)
             else:
                 dc.calculate(clusterEvents,matrixMeans=clusterMean)
                 distances = dc.get_distances()
@@ -256,7 +257,7 @@ def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,threshol
         else:
             dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ)
             distances = dc.get_distances()
-            distances = whiten(btnDistances)
+            distances = whiten(distances)
     else:
         dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ)
         distances = dc.get_distances()
