@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os,sys,time
+import os,sys,time,re
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
@@ -27,7 +27,7 @@ class LatexReportCreator():
 
     def write_beginning(self,title,author,shortTitle='report',shortAuthor='',toc=False):
         self.fid.write("\documentclass[letterpaper,10pt]{%s}\n"%self.docType)
-        self.fid.write("\usepackage{pgf,graphics,color,hyperref,fullpage,natbib,algorithm,algorithmic,amsmath,ulem,bm}\n")
+        self.fid.write("\usepackage{pgf,graphics,color,hyperref,fullpage,natbib,algorithm,algorithmic,amsmath,ulem,bm,morefloats}\n")
         for package in self.extraPackages:
             self.fid.write("\usepackage{%s}\n"%package)
         self.fid.write("\definecolor{darkblue}{rgb}{0.0,0.0,0.50}\n")
@@ -89,7 +89,7 @@ class LatexReportCreator():
         if os.path.isfile(figPath) == False:
             print "ERROR: could not include figure does not exist", figPath
 
-        self.fid.write("\\begin{figure}[!h]\n")
+        self.fid.write("\\begin{figure}[!ht]\n")
         self.begin("center")
         self.fid.write("\includegraphics[scale = %s]{%s}\n"%(scale,figPath))
         if caption != None:
@@ -105,17 +105,25 @@ class LatexReportCreator():
         colHeader - are the header elements for the columns
         '''
         
-        print 'table has', len(rowDict)
+        ## if keys are only numeric
+        numericKeys = False
+        if not re.search('\D',str(rowDict.keys()[0])): 
+            numericKeys = True
+
+        #print 'table has', len(rowDict)
 
         ## error checking
         if type(rowDict) != type({}):
             print "ERROR: rowDict for include_table must be of type dict"
-        #if type(rowDict[rowDict.keys()[0]]) != type([]):
-        #    print "ERROR: the values in rowDict for included_table must be of type list"
+        if type(rowDict[rowDict.keys()[0]]) != type([]):
+            print "ERROR: the values in rowDict for included_table must be of type list"
 
         numCols = len(rowDict[rowDict.keys()[0]])
-        if justifications == None:
+        if justifications == None and numericKeys == False:
             justifications = '|l|'+'c'*numCols+"|"
+        elif justifications == None and numericKeys == True:
+            justifications = '|l|'+'c'*(numCols-1)+"|"
+            
 
         self.fid.write('\\begin{table}[!h]\n')
         self.begin('center')
@@ -126,28 +134,31 @@ class LatexReportCreator():
         self.fid.write(header)
         self.fid.write("\\hline\n")
 
-
-        #if type(rowDict[rowDict.keys()[0]]) == type({}):
-        #    for key in iter(sorted(rowDict.keys())):
-        #        #for rowHead, row in rowDict[key].iteritems():
-        #        rowKey = rowDict[key].keys()[0] 
-        #        row = rowKey + "&" + "".join([i + "&" for i in rowDict[key][rowKey]])+"\\\ \n"
-        #        self.fid.write(row)
-        #        
-        #        #for rowHead, row in rowDict.iteritems():
-        #        #rowHead = rowDict[key].keys()[0] 
-        #        #print 'debug', rowHead
-        #        #row = rowHead + "&" + "".join([i + "&" for i in rowDict[key][rowHead]])[:-1]+"\\\ \n"
-        #        self.fid.write(row)
-        if ordered == True:
+        if numericKeys == True:      
+            sk = [int(k) for k in rowDict.keys()]
+            sk.sort()
+            for key in sk:
+                row = rowDict[str(key)]
+                if row[0] == "hline":
+                    self.fid.write("\\hline\n")
+                else:
+                    row = "".join([i + "&" for i in row])[:-1]+"\\\ \n"
+                    self.fid.write(row)
+        elif ordered == True:
             it = iter(sorted(rowDict.iteritems()))
             for rowHead, row in it:
-                row = rowHead + "&" + "".join([i + "&" for i in row])[:-1]+"\\\ \n"
-                self.fid.write(row)
+                if row[0] == 'hline':
+                    self.fid.write("\\hline\n")
+                else:
+                    row = rowHead + "&" + "".join([i + "&" for i in row])[:-1]+"\\\ \n"
+                    self.fid.write(row)
         else:
             for rowHead, row in rowDict.iteritems():
-                row = rowHead + "&" + "".join([i + "&" for i in row])[:-1]+"\\\ \n"
-                self.fid.write(row)
+                if row[0] == 'hline':
+                    self.fid.write("\\hline\n")
+                else:
+                    row = rowHead + "&" + "".join([i + "&" for i in row])[:-1]+"\\\ \n"
+                    self.fid.write(row)
 
         self.fid.write("\\hline\n")
         self.end('tabular')
