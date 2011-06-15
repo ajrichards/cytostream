@@ -5,6 +5,7 @@ functions that are used to align files
 import sys,re
 import numpy as np
 from scipy.cluster.vq import whiten
+from scipy.spatial.distance import pdist
 from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler
 
 def _calculate_within_thresholds(fa,allLabels=None):
@@ -238,18 +239,16 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
     return newLabels
     
-def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds=None,inputThreshold=None):
+def event_count_compare(clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds,inputThreshold=None):
     '''
     model the sink (j) then determine number of events in source (i) that overlap
     '''
-          
-    if thresholds == None:
-        thresholds = fa.withinThresholds
-
+    
+    distanceMetric = 'mahalanobis'
     clusterMeanJ = clusterEventsJ.mean(axis=0)
 
-    dc = DistanceCalculator(distType=fa.distanceMetric)
-    if fa.distanceMetric == 'mahalanobis':
+    dc = DistanceCalculator(distType=distanceMetric)
+    if distanceMetric == 'mahalanobis':
         inverseCov = dc.get_inverse_covariance(clusterEventsJ)
         if inverseCov != None:
             dc.calculate(clusterEventsI,matrixMeans=clusterMeanJ,inverseCov=inverseCov)
@@ -268,11 +267,9 @@ def event_count_compare(fa,clusterEventsI,clusterEventsJ,fileJ,clusterJ,threshol
     else:
         threshold = thresholds[fileJ][str(clusterJ)]['ci']
 
-    #print distances.shape, distances.mean(), threshold
-    overlappedInds1 = np.where(distances > threshold[0])[0] #threshold[0]
+    overlappedInds1 = np.where(distances > threshold[0])[0]
     overlappedInds2 = np.where(distances < threshold[1])[0]
     overlappedInds = list(set(overlappedInds1).intersection(set(overlappedInds2)))
-    #print overlappedInds1.shape,overlappedInds2.shape,overlappedInds.shape
     
     if len(overlappedInds) == 0:
         return 0
@@ -361,7 +358,202 @@ def calculate_intercluster_score(fa,expListNames,expListLabels):
 
     return goodnessScore
 
+def pool_compare_self(args):
 
+    ## input variables
+    fileName = args[0]
+    fileData = args[1]
+    fileLabels = args[2]
+    fileClusters = args[3]
+    sampleStats = args[4]
+    noiseClusters = args[5]
+    thresholds = args[6]
+
+    ## additional variables
+    alignResults = []
+    alignResultsFiles = []
+    alignResultsClusters = []
+
+    for ci in range(len(fileClusters)):
+        clusterI = fileClusters[ci]
+        clusterEventsI = fileData[np.where(fileLabels==clusterI)[0],:]
+        clusterMuI = sampleStats['mus'][fileName][str(clusterI)]
+        clustersToCompare = []
+        clusterCtList = []
+
+        for cj in range(len(fileClusters)):
+            clusterJ = fileClusters[cj]
+            
+            ## do not compare cluster to itself
+            if ci <= cj:
+                continue
+
+            ## check for noise label
+            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(str(clusterI)):
+                continue
+            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(str(clusterJ)):
+                continue
+
+            ## check that the centroids are at least a reasonable distance apart                    
+            clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)] 
+            eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
+            threshold1 = sampleStats['dists'][fileName][str(clusterI)]
+            threshold2 = sampleStats['dists'][fileName][str(clusterJ)]
+            
+            #print fileName, clusterI, clusterJ, eDist, threshold1, threshold2
+            if eDist > threshold1 or eDist > threshold2:
+                continue
+                    
+            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+            overlap1 = event_count_compare(clusterEventsI,clusterEventsJ,fileName,clusterJ,thresholds)
+            overlap2 = event_count_compare(clusterEventsJ,clusterEventsI,fileName,clusterI,thresholds)
+            overlap = np.max([overlap1, overlap2])
+
+            ## save results
+            alignResults.append(overlap)
+            alignResultsFiles.append(fileName)
+            alignResultsClusters.append("%s#%s"%(clusterI,clusterJ))
+            
+    return [alignResults,alignResultsFiles,alignResultsClusters]
+
+
+def pool_compare_template(args):
+
+    ## input variables
+    fileName = args[0]
+    fileData = args[1]
+    fileLabels = args[2]
+    fileClusters = args[3]
+    templateData = args[4]
+    templateLabels = args[5]
+    templateClusters = args[6]
+    modeNoiseClusters = args[7]
+    thresholds = args[8]
+    templateThresholds = args[9]
+    phi = args[10]
+
+    ## additional variables
+    clustersMatched = []
+    newClusterData = None
+    newClusterLabels = None
+    newClusterCount = 0
+    appearedTwice = set([])
+
+    for ci in range(len(templateClusters)):
+        clusterI = templateClusters[ci]
+        templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
+        clusterMuI = templateEvents.mean(axis=0)
+
+        for cj in range(len(fileClusters)):
+            clusterJ = fileClusters[cj]
+
+            ## check to see if matched
+            if clusterJ in clustersMatched:
+                continue
+
+            ## check for noise label
+            if modeNoiseClusters.has_key(fileName) and modeNoiseClusters[fileName].__contains__(str(clusterJ)):
+                continue
+                    
+            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
+            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
+                                           inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            overlap = np.max([overlap1, overlap2])
+                           
+            if overlap >= phi:
+                clustersMatched.append(clusterJ)
+                continue
+
+    nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
+    return nonMatches
+
+    '''
+    ## go through the unmatched clusters
+    for clusterJ in list(set(fileClusters).difference(set(clustersMatched))):
+        clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+            
+        ## scan against the other soon to be new clusters
+        isNew = True
+        if newClusterLabels != None:
+            newIDs = np.sort(np.unique(newClusterLabels))
+            for nid in newIDs:
+                if isNew == False:
+                    continue
+
+                savedEvents = newClusterData[np.where(newClusterLabels==nid)[0],:]
+                overlap = event_count_compare(savedEvents,clusterEventsJ,fileName,clusterJ,thresholds)
+                
+                if overlap >= phi:
+                    appearedTwice.update([nid])
+                    isNew = False
+                             
+        if isNew == False:
+            continue
+
+        ## add to newClusters
+        newClusterCount += 1
+        if newClusterData == None:
+            newClusterData = clusterEventsJ
+            newClusterLabels = np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])
+        else:
+            newClusterData = np.vstack([newClusterData,clusterEventsJ])
+            newClusterLabels = np.hstack([newClusterLabels, np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])])
+        
+    return [newClusterData,newClusterLabels]
+    '''
+
+def pool_compare_scan(args):
+
+    ## input variables
+    fileName = args[0]
+    fileData = args[1]
+    fileLabels = args[2]
+    fileClusters = args[3]
+    sampleStats = args[4]
+    thresholds = args[5]
+    templateData= args[6]
+    templateLabels = args[7]
+    templateClusters = args[8]
+    templateThresholds = args[9]
+    phi = args[10]
+
+    ## additional variables
+    alignResults = []
+    alignResultsFiles = []
+    alignResultsClusters = []
+
+    for ci in range(len(templateClusters)):
+        clusterI = templateClusters[ci]
+        templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
+        clusterMuI = templateEvents.mean(axis=0)
+
+        for cj in range(len(fileClusters)):         
+            clusterJ = fileClusters[cj]
+
+            ## check that the centroids are at least a reasonable distance apart                    
+            clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)]
+            eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
+            threshold = sampleStats['dists'][fileName][str(clusterJ)]
+                    
+            if eDist > threshold:
+                continue
+                    
+            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
+            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
+                                           inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            overlap = np.max([overlap1, overlap2])
+   
+            if overlap < phi:
+                continue
+                    
+            ## save results
+            alignResults.append(overlap)
+            alignResultsFiles.append(fileName)
+            alignResultsClusters.append("%s#%s"%(clusterI,clusterJ))
+     
+    return [alignResults,alignResultsFiles,alignResultsClusters]
 
 
 #if self.overlapMetric == 'kldivergence':

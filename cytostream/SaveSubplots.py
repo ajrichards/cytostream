@@ -317,7 +317,7 @@ class SaveSubplots():
         ## make plot
         totalPoints = 0
         
-        if str(labels) == None:
+        if str(labels) == 'None':
             ax.scatter(x,y,c=colorList,s=1,edgecolors='none',cmap=myCmap)
         else:
             if type(np.array([])) != type(labels):
