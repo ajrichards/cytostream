@@ -322,16 +322,101 @@ def get_master_label_list(expListLabels):
 
     return masterLabelList
 
-def calculate_intercluster_score(fa,expListNames,expListLabels):
+def pool_ics1(args):
+    '''
+    function used to calculate the intercluster score
+    '''
+    
+    
+    magnitudeDict = {}
+    templateClusters = {}
+    fileName = args[0]
+    fileLabels = args[1]
+
+    matches = []
+    #for fileInd in range(len(expListNames)):
+    #fileName = expListNames[fileInd]
+    #fileLabels = expListLabels[fileInd]
+    if type(fileLabels) == type([]):
+        fileLabels = np.array(fileLabels)
+
+    for cluster in templateClusters:
+        if len(np.where(fileLabels==cluster)) > 0:
+            matches.append(cluster)
+
+    if uniqueLabels.__contains__(cluster):
+        magnitude+=1
+
+    
+
+
+def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
     '''
     calculate a global file alignment score
     '''
 
-    masterLabelList = get_master_label_list(expListLabels)
+    ## get unique labels for each file
+    uniqueList = []
+    maxLength = 0
+    for fileInd in range(len(expListNames)):
+        fileName = expListNames[fileInd]
+        fileLabels = expListLabels[fileInd]
+        uniqueLabels = np.unique(fileLabels)
+        if uniqueLabels.size > maxLength:
+            maxLength = uniqueLabels.size
+        uniqueList.append(uniqueLabels)
+        
+    ## buffer each list with 0 and create a matrix
+    mat = np.zeros((maxLength,len(expListNames)),)
+    for i in range(len(uniqueList)):
+        uls = uniqueList[i]
+        mat[:len(uls),i] = np.array(uls)
+        
+    ## get magnitudes for each cluster
+    uniqueTemplateLabs = np.unique(templateLabels)
+    magnitudeDict = {}
+    for cluster in uniqueTemplateLabs:
+        magnitudeDict[str(cluster)] = np.where(mat==cluster)[0].size - 1
 
+    ## calculate a score
+    goodnessScore = 0
+    
+    ## get number of data points in each cluster
+    numEvents = {}
+    for fileInd in range(len(expListLabels)):
+        fileName = expListNames[fileInd]
+        numEvents[fileName] = {}
+        fileData = fa.get_events(fileName)
+        fileLabels = expListLabels[fileInd]
+
+        for cluster in np.unique(fileLabels):
+            clusterInds = np.where(fileLabels==cluster)[0]
+            numEvents[fileName][str(cluster)] = len(clusterInds)
+
+    for cluster in uniqueTemplateLabs:
+
+        ## skip noise
+        if cluster < 0:
+            continue
+
+        totalEventsAcrossFiles = 0
+        for fileInd in range(len(expListNames)):
+            fileName = expListNames[fileInd]
+            if numEvents[fileName].has_key(str(cluster)):
+                totalEventsAcrossFiles+=numEvents[fileName][str(cluster)]
+
+        if magnitudeDict[str(cluster)] <= 0:
+            continue
+
+        goodnessScore += (magnitudeDict[str(cluster)] * float(totalEventsAcrossFiles))
+    
+    #return goodnessScore
+
+    print 'goodness score 1', goodnessScore
+    
     ## get a dict of magnitudes
     magnitudeDict = {}
-    for cluster in masterLabelList:
+    for cluster in uniqueTemplateLabs:
         magnitude = -1
         for fileInd in range(len(expListNames)):
             fileName = expListNames[fileInd]
@@ -339,12 +424,12 @@ def calculate_intercluster_score(fa,expListNames,expListLabels):
             uniqueLabels = np.sort(np.unique(fileLabels)).tolist()
             if uniqueLabels.__contains__(cluster):
                 magnitude+=1
-
+     
         magnitudeDict[cluster] = magnitude
 
     ## calculate a score 
     goodnessScore = 0
-    for cluster in masterLabelList:
+    for cluster in uniqueTemplateLabs:
         totalEventsAcrossFiles = 0
         for fileInd in range(len(expListNames)):
             fileName = expListNames[fileInd]
@@ -353,9 +438,12 @@ def calculate_intercluster_score(fa,expListNames,expListLabels):
             clusterEvents = fileData[np.where(fileLabels==cluster)[0],:]
             n,k = np.shape(clusterEvents)
             totalEventsAcrossFiles+=n
-
+    
+        print cluster,magnitudeDict[cluster],totalEventsAcrossFiles
         goodnessScore += (magnitudeDict[cluster] * float(totalEventsAcrossFiles))
-
+    
+    print 'goodness score 2', goodnessScore
+    
     return goodnessScore
 
 def pool_compare_self(args):
@@ -467,41 +555,6 @@ def pool_compare_template(args):
 
     nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
     return nonMatches
-
-    '''
-    ## go through the unmatched clusters
-    for clusterJ in list(set(fileClusters).difference(set(clustersMatched))):
-        clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-            
-        ## scan against the other soon to be new clusters
-        isNew = True
-        if newClusterLabels != None:
-            newIDs = np.sort(np.unique(newClusterLabels))
-            for nid in newIDs:
-                if isNew == False:
-                    continue
-
-                savedEvents = newClusterData[np.where(newClusterLabels==nid)[0],:]
-                overlap = event_count_compare(savedEvents,clusterEventsJ,fileName,clusterJ,thresholds)
-                
-                if overlap >= phi:
-                    appearedTwice.update([nid])
-                    isNew = False
-                             
-        if isNew == False:
-            continue
-
-        ## add to newClusters
-        newClusterCount += 1
-        if newClusterData == None:
-            newClusterData = clusterEventsJ
-            newClusterLabels = np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])
-        else:
-            newClusterData = np.vstack([newClusterData,clusterEventsJ])
-            newClusterLabels = np.hstack([newClusterLabels, np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])])
-        
-    return [newClusterData,newClusterLabels]
-    '''
 
 def pool_compare_scan(args):
 

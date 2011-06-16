@@ -61,13 +61,9 @@ class FileAlignerTest1(unittest.TestCase):
         ## run file alignment
         expListNames = ['array1', 'array2', 'array3','array4','array5','array6']
         print "Running file alignment.........."
-        timeBegin = time.time()
         self.fa = FileAlignerII(expListNames,expListData,expListLabels,phiRange,verbose=VERBOSE,homeDir=homeDir)
         self.fa.run(evaluator='rank',filterNoise=True)
-        timeEnd = time.time()
-        print "time taken for alignment: ", timeEnd - timeBegin
-        
-        
+                
         ## save the plots 
         print 'making figures...'
         self.nga.set("subsample_analysis", "original")
@@ -114,13 +110,11 @@ class FileAlignerTest1(unittest.TestCase):
         figName = os.path.join(figsDir,'template_figure_%s.png'%phiRange[-1])
         self.fa.save_template_figure(0,1,figName,figTitle="template_%s"%phiRange[-1])
 
-        '''
-        bestPhi, bestScore = self.fa.get_best_match()
-        bestLabels = self.fa.newLabelsAll[str(bestPhi)]
-        figTitle = "unittest fa1 - aligned dpmm"
-        figName = os.path.join(alignDir,'subplots_aligned.png')
-        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=bestLabels)
-        '''
+        #bestLabels = self.fa.newLabelsAll[str(bestPhi)]
+        #figTitle = "unittest fa1 - aligned dpmm"
+        #figName = os.path.join(alignDir,'subplots_aligned.png')
+        #ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=bestLabels)
+    
 
 
     def test_model_run(self):
@@ -128,9 +122,10 @@ class FileAlignerTest1(unittest.TestCase):
         ## test that we picked up the noise cluster
         self.failIf(len(self.fa.noiseClusters['array6']) != 1) 
         ### tests 
-        #self.failIf(self.fa.globalScoreDict['0.2'] < 85000.0)
-        #bestPhi, bestScore = self.fa.get_best_match()
-        #self.assertEqual(bestPhi,str(0.2))
+        bestPhi, bestScore = self.fa.get_best_match()
+        print 'bestScore',bestScore,self.fa.globalScoreDict['0.1']
+        self.failIf(self.fa.globalScoreDict['0.1'] < 85000.0)
+        self.assertEqual(bestPhi,str(0.1))
         #print 'testing complete'
 
 ### Run the tests 

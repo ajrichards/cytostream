@@ -6,7 +6,7 @@ library for file aligner related functions
 
 '''
 from __future__ import division
-import sys,os,re,cPickle,time,csv
+import sys,os,re,cPickle,time,csv,datetime
 import numpy as np
 import scipy.stats as stats
 from scipy.cluster.vq import whiten
@@ -39,7 +39,7 @@ class FileAlignerII():
 
     def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',
                  refFile=None,verbose=False,excludedChannels=[],isProject=False,noiseSubset=600,
-                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=True):
+                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=False):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
@@ -71,6 +71,9 @@ class FileAlignerII():
 
         if self.verbose == True:
             print "Initializing file aligner"
+
+        ## begin time count                                                                                                                                                                       
+        self.timeBegin = time.time()
 
         ## handle labels
         if expListLabels != None:
@@ -218,7 +221,7 @@ class FileAlignerII():
                 print "...scanning files with template"
 
             alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
-            aLabels = get_alignment_labels(self,alignment,phi, evaluator=evaluator)
+            aLabels = get_alignment_labels(self,alignment,phi,evaluator=evaluator)
             self.alignLabels[str(phi)] = aLabels
     
             ## save labels
@@ -230,10 +233,15 @@ class FileAlignerII():
             if self.verbose == True:
                 print "...calculating intercluster distance"
 
-            interClusterDistance = calculate_intercluster_score(self,self.expListNames,aLabels)
+            interClusterDistance = calculate_intercluster_score(self,self.expListNames,aLabels,self.templateLabels)
             self.globalScoreDict[str(phi)] = interClusterDistance
             numTemplateClusters = len(np.unique(self.templateLabels))
             self.alignmentFile.writerow([phi,interClusterDistance,numTemplateClusters])
+            
+
+        self.timeEnd = time.time()
+        timeTaken = str(datetime.timedelta(seconds=round(self.timeEnd-self.timeBegin,6)))
+        print 'runTime (hh:mm:ss)',timeTaken
 
     def save_template_figure(self,chan1,chan2,figName,figTitle=None):
         ## save the template file
@@ -300,10 +308,14 @@ class FileAlignerII():
         if modelLog != None:
             subsample = modelLog['subsample']
             events = self.nga.get_events(selectedFile,subsample)
-            return events[:,self.includedChannels]
+            events = events[:,self.includedChannels]
         else:
             fileInd = self.expListNames.index(selectedFile)
-            return self.expListData[fileInd][:,self.includedChannels]
+            events = self.expListData[fileInd][:,self.includedChannels]
+
+        if self.medianTransform == True:
+            events = events / np.median(events,axis=0)
+        return events
 
     def get_sample_statistics(self,allLabels=None):
         centroids, variances, numClusts, numDataPoints = {},{},{},{}
@@ -560,7 +572,7 @@ class FileAlignerII():
                 else:
                     dc.calculate(templateEvents,matrixMeans=templateMean)
                     distances = dc.get_distances()
-                    distances = whiten(btnDistances)
+                    distances = whiten(distances)
             else:
                 dc.calculate(templateEvents,matrixMeans=templateMean)
                 distances = dc.get_distances()
@@ -622,7 +634,6 @@ class FileAlignerII():
             fileData = self.get_events(fileName)
             fileLabels = self.modeLabels[str(phi)][self.expListNames.index(fileName)]
             nonMatches = results[fileInd]
-            print 'nm', fileName, nonMatches
         
             for clusterJ in nonMatches:
                 clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
@@ -742,7 +753,7 @@ class FileAlignerII():
                 else:
                     dc.calculate(templateEvents,matrixMeans=templateMean)
                     distances = dc.get_distances()
-                    distances = whiten(btnDistances)
+                    distances = whiten(distances)
             else:
                 dc.calculate(templateEvents,matrixMeans=templateMean)
                 distances = dc.get_distances()
@@ -790,7 +801,6 @@ class FileAlignerII():
                         continue
                     
                     clustCount += 1
-                    print fileName,clusterJ,fileClusters
                     clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
                     overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
                     overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
@@ -1051,3 +1061,15 @@ class FileAlignerII():
             print "\n"
 
         return {'results':np.array(alignResults),'files':np.array(alignResultsFiles),'clusters':np.array(alignResultsClusters)}
+
+
+    def get_best_match(self):
+        result = (None, None)
+        maxScore = 0
+
+        for phi,score in self.globalScoreDict.iteritems():
+            if score > maxScore:
+                maxScore = score
+                result = (phi,score)
+
+        return result
