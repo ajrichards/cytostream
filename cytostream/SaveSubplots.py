@@ -408,7 +408,6 @@ class SaveSubplots():
         plt.setp(yticklabels, fontsize=self.fontSize-1, fontname = self.fontName)
         
         if self.forceScale == True:
-            print "DBG: SaveSubplots using forceScale"
             ax.set_xlim(self.xAxLimit)
             ax.set_ylim(self.yAxLimit)
         
