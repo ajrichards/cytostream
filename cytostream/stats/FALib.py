@@ -322,33 +322,6 @@ def get_master_label_list(expListLabels):
 
     return masterLabelList
 
-def pool_ics1(args):
-    '''
-    function used to calculate the intercluster score
-    '''
-    
-    
-    magnitudeDict = {}
-    templateClusters = {}
-    fileName = args[0]
-    fileLabels = args[1]
-
-    matches = []
-    #for fileInd in range(len(expListNames)):
-    #fileName = expListNames[fileInd]
-    #fileLabels = expListLabels[fileInd]
-    if type(fileLabels) == type([]):
-        fileLabels = np.array(fileLabels)
-
-    for cluster in templateClusters:
-        if len(np.where(fileLabels==cluster)) > 0:
-            matches.append(cluster)
-
-    if uniqueLabels.__contains__(cluster):
-        magnitude+=1
-
-    
-
 
 def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
     '''
@@ -409,40 +382,6 @@ def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
             continue
 
         goodnessScore += (magnitudeDict[str(cluster)] * float(totalEventsAcrossFiles))
-    
-    #return goodnessScore
-
-    print 'goodness score 1', goodnessScore
-    
-    ## get a dict of magnitudes
-    magnitudeDict = {}
-    for cluster in uniqueTemplateLabs:
-        magnitude = -1
-        for fileInd in range(len(expListNames)):
-            fileName = expListNames[fileInd]
-            fileLabels = expListLabels[fileInd]
-            uniqueLabels = np.sort(np.unique(fileLabels)).tolist()
-            if uniqueLabels.__contains__(cluster):
-                magnitude+=1
-     
-        magnitudeDict[cluster] = magnitude
-
-    ## calculate a score 
-    goodnessScore = 0
-    for cluster in uniqueTemplateLabs:
-        totalEventsAcrossFiles = 0
-        for fileInd in range(len(expListNames)):
-            fileName = expListNames[fileInd]
-            fileLabels = expListLabels[fileInd]
-            fileData = fa.get_events(fileName)
-            clusterEvents = fileData[np.where(fileLabels==cluster)[0],:]
-            n,k = np.shape(clusterEvents)
-            totalEventsAcrossFiles+=n
-    
-        print cluster,magnitudeDict[cluster],totalEventsAcrossFiles
-        goodnessScore += (magnitudeDict[cluster] * float(totalEventsAcrossFiles))
-    
-    print 'goodness score 2', goodnessScore
     
     return goodnessScore
 
