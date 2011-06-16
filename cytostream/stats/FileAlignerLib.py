@@ -45,6 +45,7 @@ class FileAlignerII():
         self.expListNames = [expName for expName in expListNames]
         self.expListData = expListData
         self.phiRange = phiRange
+        self.phi2 = 0.95
         self.matchResults = None
         self.homeDir = homeDir
         self.verbose = verbose
@@ -314,7 +315,8 @@ class FileAlignerII():
             events = self.expListData[fileInd][:,self.includedChannels]
 
         if self.medianTransform == True:
-            events = events / np.median(events,axis=0)
+            events = events - np.median(events,axis=0)
+
         return events
 
     def get_sample_statistics(self,allLabels=None):
@@ -322,7 +324,7 @@ class FileAlignerII():
         centroidList = {}
         centroidListIDs = {}
         clusterDists = {}
-        
+                    
         for expInd in range(len(self.expListNames)):
             expName = self.expListNames[expInd]
             centroids[expName] = {}
@@ -332,9 +334,6 @@ class FileAlignerII():
             centroidList[expName] = None
             centroidListIDs[expName] = []
             clusterDists[expName] = {}
-
-        for expInd in range(len(self.expListNames)):
-            expName = self.expListNames[expInd]
             expData = self.get_events(expName)
             if allLabels == None:
                 expLabels = self.get_labels(expName)
