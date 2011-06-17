@@ -376,17 +376,17 @@ class SaveSubplots():
                         labelSize = 4
                         
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize-2,
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )
                     elif clusterColor == "#C0C0C0":
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='blue',fontsize=labelSize-2,
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='blue',fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )
                     else:
-                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=labelSize-2,
+                        ax.text(xPos, yPos, '%s%s'%(prefix,l), color='white', fontsize=labelSize,
                                 ha="center", va="center",
                                 bbox = dict(boxstyle="round",facecolor=clusterColor,alpha=alphaVal)
                                 )

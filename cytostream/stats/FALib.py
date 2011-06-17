@@ -108,7 +108,6 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
             for c in clustersToChange:
                 newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
   
-                print "!!!!!!!!!!!!!!!11",isPhi2
                 if isPhi2 == False:
                     if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
                         if fa.modeNoiseClusters[str(phi)].has_key(fileName):

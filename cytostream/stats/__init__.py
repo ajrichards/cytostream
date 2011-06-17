@@ -1,6 +1,7 @@
 from Distributions import GaussianDistn
 from MiscFns import kullback_leibler
 from EmpiricalCDF import EmpiricalCDF
+from TwoComponentGaussEM import TwoComponentGaussEM
 from DistanceCalculator import DistanceCalculator
 from SilValueGenerator import SilValueGenerator
 from Bootstrapper import Bootstrapper
