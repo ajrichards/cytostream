@@ -25,10 +25,6 @@ def _calculate_within_thresholds(fa,allLabels=None):
             withinThresholds[fileName] = {}
 
         for clusterID in fileClusters:
-            ## check for noise label
-            #if fa.noiseClusters.has_key(fileName) and fa.noiseClusters[fileName].__contains__(str(clusterID)):
-            #    continue
-
             ## determine distances
             clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
             clusterMean = clusterEvents.mean(axis=0)
@@ -58,7 +54,7 @@ def _calculate_within_thresholds(fa,allLabels=None):
 
     return withinThresholds
 
-def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi):
+def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi, isPhi2=False):
         
     results = nonNoiseResults[phiIndices]
     resultsFiles = nonNoiseFiles[phiIndices]
@@ -111,11 +107,20 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi)
             clusterCount += 1
             for c in clustersToChange:
                 newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
-                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
-                    if fa.modeNoiseClusters[str(phi)].has_key(fileName):
-                        fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
-                    else:
-                        fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+  
+                print "!!!!!!!!!!!!!!!11",isPhi2
+                if isPhi2 == False:
+                    if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                        if fa.modeNoiseClusters[str(phi)].has_key(fileName):
+                            fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                        else:
+                            fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+                else:
+                    if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                        if fa.phi2NoiseClusters.has_key(fileName):
+                            fa.phi2NoiseClustes[fileName].append(str(clusterCount))
+                        else:
+                            fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
 
                 if clustersLeft.__contains__(c):
                     clustersLeft.remove(int(c))
@@ -125,11 +130,19 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi)
         for c in clustersLeft:
             clusterCount += 1
             newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
-            if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
-                if fa.modeNoiseClusters[str(phi)].has_key(fileName):
-                    fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
-                else:
-                    fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+            
+            if isPhi2 == False:
+                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                    if fa.modeNoiseClusters[str(phi)].has_key(fileName):
+                        fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                    else:
+                        fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+            else:
+                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                    if fa.phi2NoiseClusters.has_key(fileName):
+                        fa.phi2NoiseClusters[fileName].append(str(clusterCount))
+                    else:
+                        fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
 
     return newLabels
 

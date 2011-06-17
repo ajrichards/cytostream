@@ -71,8 +71,6 @@ class FileAlignerTest1(unittest.TestCase):
         self.nga.set("plots_to_view_channels",plotsToViewChannels)
         plotsToViewFiles = [0,1,2,3,4,5,0,0,0,0,0,0]
         self.nga.set("plots_to_view_files",plotsToViewFiles)
-        #plotsToViewRuns = ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
-        #self.nga.set('plots_to_view_files',plotsToViewFiles)
         
         figsDir = os.path.join(homeDir,'figs')
         numSubplots = 6
@@ -110,15 +108,7 @@ class FileAlignerTest1(unittest.TestCase):
         figName = os.path.join(figsDir,'template_figure_%s.png'%phiRange[-1])
         self.fa.save_template_figure(0,1,figName,figTitle="template_%s"%phiRange[-1])
 
-        #bestLabels = self.fa.newLabelsAll[str(bestPhi)]
-        #figTitle = "unittest fa1 - aligned dpmm"
-        #figName = os.path.join(alignDir,'subplots_aligned.png')
-        #ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,inputLabels=bestLabels)
-    
-
-
     def test_model_run(self):
-
         ## test that we picked up the noise cluster
         self.failIf(len(self.fa.noiseClusters['array6']) != 1) 
         ### tests 
@@ -126,15 +116,8 @@ class FileAlignerTest1(unittest.TestCase):
         print 'bestScore',bestScore,self.fa.globalScoreDict['0.1']
         self.failIf(self.fa.globalScoreDict['0.1'] < 85000.0)
         self.assertEqual(bestPhi,str(0.1))
-        #print 'testing complete'
+        self.assertEqual(bestScore,85600.0)
 
 ### Run the tests 
 if __name__ == '__main__':
-
-    
-    #print case1Labels, np.unique(case1Labels) #case2Labels, case3Labels, case4Labels, case5Labels, case6Labels
-    #for cid in np.unique(case1Labels):
-    #    print len(np.where(case1Labels == cid)[0])
-
-
     unittest.main()
