@@ -460,7 +460,7 @@ class FileAlignerII():
         each log is specific to a give phi
         '''
 
-        self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,"alignment","AlignmentAcores.log"),'w'))
+        self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,"alignment","AlignmentScores.log"),'w'))
         self.alignmentScores.writerow(["phi","alignment_score","num_template_clusters"])
         self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,"alignment","Alignment.log"),'w'))
 
@@ -737,7 +737,7 @@ class FileAlignerII():
                 else:
                     dc.calculate(templateEvents,matrixMeans=templateMean)
                     distances = dc.get_distances()
-                    distances = whiten(btnDistances)
+                    distances = whiten(distances)
             else:
                 dc.calculate(templateEvents,matrixMeans=templateMean)
                 distances = dc.get_distances()
