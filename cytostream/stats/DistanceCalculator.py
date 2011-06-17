@@ -97,7 +97,6 @@ class DistanceCalculator():
         try:
             invCov = np.linalg.inv(cov)
         except:
-            print "WARNING: inverse of covariance failed -- matrix is singlular"
             return None
 
         if invCov.shape[0] != d and invCov.shape[1] != d:
