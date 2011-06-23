@@ -14,9 +14,11 @@ class TwoComponentGaussEM():
     def __init__(self, y, numIters, numRuns,verbose=False,initialGuesses=None):
         
         ## variables
-        self.y = y
+        self.y = y.copy()
         self.verbose = verbose
         
+        print "\tdata", y.shape, y.mean(), np.median(y), y.var()
+
         ## error check
         self.initialGuesses = initialGuesses
         if self.initialGuesses != None and self.initialGuesses['n'] == None:
@@ -40,11 +42,12 @@ class TwoComponentGaussEM():
 
     def perform_expectation(self, y, parms):
         gammaHat = np.zeros((parms['n']),'float')
-    
         phiTheta1 = stats.norm.pdf(y,loc=parms['mu1'],scale=np.sqrt(parms['sig1']))
         phiTheta2 = stats.norm.pdf(y,loc=parms['mu2'],scale=np.sqrt(parms['sig2']))
         numer = parms['pi'] * phiTheta2
+        #numer = numer[np.where(np.isnan(numer)==False)]
         denom = ((1.0 - parms['pi']) * phiTheta1) + (parms['pi'] * phiTheta2)
+        #denom = denom[np.where(np.isnan(denom)==False)]
         gammaHat = numer / denom 
         
         return gammaHat
@@ -140,7 +143,6 @@ class TwoComponentGaussEM():
             if logLike > maxLike:
                 maxLike = logLike
                 bestEstimates = parms.copy()
-
 
             if self.verbose == True:
                 print 'runNum: ',j + 1,'mu1: ',round(parms['mu1'],2),'mu2: ',round(parms['mu2'],2),'sig1: ',round(parms['sig1'],2),

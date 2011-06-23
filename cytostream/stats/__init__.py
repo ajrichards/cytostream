@@ -1,10 +1,11 @@
 from Distributions import GaussianDistn
-from MiscFns import kullback_leibler
 from EmpiricalCDF import EmpiricalCDF
 from TwoComponentGaussEM import TwoComponentGaussEM
+from MiscFns import kullback_leibler, two_component_em
 from DistanceCalculator import DistanceCalculator
 from SilValueGenerator import SilValueGenerator
 from Bootstrapper import Bootstrapper
 from BootstrapHypoTest import BootstrapHypoTest
-#from FileAligner import FileAligner
-from FileAlignerLib import FileAlignerII
+from FALib import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
+from FALib import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
+from FileAlignerLib import FileAligner

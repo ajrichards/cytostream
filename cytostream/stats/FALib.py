@@ -395,7 +395,7 @@ def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
 
         goodnessScore += (magnitudeDict[str(cluster)] * float(totalEventsAcrossFiles))
     
-    return goodnessScore
+    return goodnessScore, magnitudeDict
 
 def pool_compare_self(args):
 
@@ -495,16 +495,16 @@ def pool_compare_template(args):
                 continue
                     
             clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
-            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
+            overlap = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
                                            inputThreshold=templateThresholds[str(clusterI)]['ci'])
-            overlap = np.max([overlap1, overlap2])
-                           
+            #print "...",fileName, clusterI, clusterJ, overlap,phi
+                   
             if overlap >= phi:
                 clustersMatched.append(clusterJ)
                 continue
 
-    nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
+        nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
+        #print fileName, 'clusters matched', clustersMatched, 'not matched', nonMatches
     return nonMatches
 
 def pool_compare_scan(args):
