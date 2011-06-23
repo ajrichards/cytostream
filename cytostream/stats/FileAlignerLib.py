@@ -247,9 +247,9 @@ class FileAligner():
             if self.verbose == True:
                 print "...calculating scores"
 
-            interClusterDistance,magnitudeDict = calculate_intercluster_score(self,self.expListNames,aLabels,self.templateLabels)
+            magnitudeDict = calculate_intercluster_score(self,self.expListNames,aLabels,self.templateLabels,returnMagDictOnly=True)
             silValuesPhi = self.get_silhouette_values(aLabels,subsample=self.noiseSubset)
-            self.globalScoreDict[str(phi)] = interClusterDistance
+            #self.globalScoreDict[str(phi)] = interClusterDistance
             numTemplateClusters = len(np.unique(self.templateLabels))
 
             ## calculate silhouette value
@@ -275,10 +275,10 @@ class FileAligner():
             totalMatches = np.array([float(mag) for mag in magnitudeDict.itervalues()]).sum()
 
             normalizedMatchScore = totalMatches / totalPossibleMatches
-            
-            print phi, normalizedMatchScore, np.array(fileMeans).mean(), normalizedMatchScore * np.array(fileMeans).mean()
+            productScore = normalizedMatchScore * np.array(fileMeans).mean()
+            print phi, normalizedMatchScore, np.array(fileMeans).mean(),productScore 
             ## writ to log
-            self.alignmentScores.writerow([phi,interClusterDistance,numTemplateClusters,np.array(fileMeans).mean()])
+            self.alignmentScores.writerow([phi,numTemplateClusters,np.array(fileMeans).mean(),normalizedMatchScore,productScore])
             
 
             ## save a copy of the template file
@@ -504,7 +504,7 @@ class FileAligner():
         '''
 
         self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,"alignment","AlignmentScores.log"),'w'))
-        self.alignmentScores.writerow(["phi","alignment_score","num_template_clusters","silhouette_val"])
+        self.alignmentScores.writerow(["phi","num_template_clusters","silhouette_val,normalized_matches,product_score"])
         self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,"alignment","Alignment.log"),'w'))
 
         #if self.covariateID == None:

@@ -335,7 +335,7 @@ def get_master_label_list(expListLabels):
     return masterLabelList
 
 
-def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
+def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels,returnMagDictOnly=False):
     '''
     calculate a global file alignment score
     '''
@@ -362,6 +362,9 @@ def calculate_intercluster_score(fa,expListNames,expListLabels,templateLabels):
     magnitudeDict = {}
     for cluster in uniqueTemplateLabs:
         magnitudeDict[str(cluster)] = np.where(mat==cluster)[0].size - 1
+
+    if returnMagDictOnly == True:
+        return magnitudeDict
 
     ## calculate a score
     goodnessScore = 0
