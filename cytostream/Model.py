@@ -343,9 +343,7 @@ class Model:
             #    subsample = minNumObs
            
         ## get the random ints and save as a pickle
-        print 'minNumObs', minNumObs,subsample
         randEvents = np.random.random_integers(0,minNumObs-1,subsample)
-        #randEvents = np.unique(randEvents)
         tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
         cPickle.dump(randEvents,tmp)
         tmp.close()
