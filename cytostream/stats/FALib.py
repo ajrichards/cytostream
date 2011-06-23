@@ -165,11 +165,11 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
     if evaluator not in ['rank','bootstrap','kldivergence']:
         print "ERROR: in get_alignment_labels evaluator not valid"
 
-
     results = alignment['results']
     resultsFiles = alignment['files']
     resultsClusters = alignment['clusters']
     newLabels = [np.array([-1 * int(label) for label in fa.modeLabels[str(phi)][fn]]) for fn in range(len(fa.expListNames))]
+    clusterCount = 10000
 
     for fileName in fa.expListNames:
         fileIndex = fa.expListNames.index(fileName)
@@ -237,7 +237,6 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
         ## change the labels of unmatched clusters
         clustersLeft = np.unique(newLabels[fileIndex][np.where(newLabels[fileIndex] < 0)])
-        clusterCount = np.max(fa.templateLabels)
 
         for c in clustersLeft:
             if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(int(-1.0*c)) in fa.modeNoiseClusters[str(phi)][fileName]:
@@ -248,6 +247,27 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
         ## handle special labeling of noise clusters
         ## TODO
+
+
+
+    ## renormalize the labels
+    allLabs = set([])
+    newLabelsCopy = [nl.copy() for nl in newLabels]
+    for fileInd in range(len(newLabels)):
+        fileLabels = newLabelsCopy[fileInd]
+        allLabs.update(np.sort(np.unique(fileLabels)).tolist())
+    allLabs = np.sort(list(allLabs))
+    nextLab = 0
+    for ulab in allLabs:
+        if ulab < 0:
+            continue
+        nextLab+=1
+        for fileInd in range(len(newLabels)):
+            labInds = np.where(newLabelsCopy[fileInd] == ulab)[0]
+            if len(labInds) == 0:
+                continue
+            
+            newLabels[fileInd][labInds] = nextLab
 
     return newLabels
     
@@ -498,8 +518,13 @@ def pool_compare_template(args):
                 continue
                     
             clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-            overlap = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
+            #overlap = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
+            #                               inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
+            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
                                            inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            overlap = np.max([overlap1, overlap2])
+
             #print "...",fileName, clusterI, clusterJ, overlap,phi
                    
             if overlap >= phi:

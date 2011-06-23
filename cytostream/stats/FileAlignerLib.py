@@ -835,6 +835,7 @@ class FileAligner():
         for fileInd in range(len(self.expListNames)):
             fileName = self.expListNames[fileInd]
             fileResults = results[fileInd]
+            
             if len(fileResults[0]) == 0:
                 continue
 

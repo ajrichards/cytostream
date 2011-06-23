@@ -184,13 +184,14 @@ class SaveSubplots():
 
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
-            
+            clustCount = -1
             for l in np.sort(np.unique(labels)):
-                if l == -1:
+                clustCount += 1
+                if l < 0:
                     clusterColor = "#C0C0C0"
                     marker = '+'
                 else:
-                    clusterColor = self.colors[l]
+                    clusterColor = self.colors[clustCount]
                     marker = "o"
                 ms = self.markerSize
 
@@ -326,13 +327,10 @@ class SaveSubplots():
             numLabels = np.unique(labels).size
             maxLabel = np.max(labels)
             
+            #clustCount = -1
             for l in np.sort(np.unique(labels)):
-                if l == -1:
-                    clusterColor = "#C0C0C0"
-                    marker = '+'
-                else:
-                    clusterColor = self.colors[l]
-                    marker = "o"
+                clusterColor = "#C0C0C0"
+                marker = 'o'
 
                 if self.showOnlyClusters != None and l not in self.showOnlyClusters:
                     continue
