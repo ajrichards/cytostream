@@ -21,6 +21,7 @@ from fcm.statistics.distributions import mvnormpdf
 import matplotlib.pyplot as plt
 from cytostream.stats import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
+from cytostream.stats import scale
 
 class FileAligner():
 
@@ -275,10 +276,11 @@ class FileAligner():
             totalMatches = np.array([float(mag) for mag in magnitudeDict.itervalues()]).sum()
 
             normalizedMatchScore = totalMatches / totalPossibleMatches
-            productScore = normalizedMatchScore * np.array(fileMeans).mean()
-            print phi, normalizedMatchScore, np.array(fileMeans).mean(),productScore 
+            silValue = scale(np.array(fileMeans).mean(),(-1,1),(0,1))
+            productScore = normalizedMatchScore * silValue
+            print phi, normalizedMatchScore, silValue, productScore 
             ## writ to log
-            self.alignmentScores.writerow([phi,numTemplateClusters,np.array(fileMeans).mean(),normalizedMatchScore,productScore])
+            self.alignmentScores.writerow([phi,numTemplateClusters,silValue,normalizedMatchScore,productScore])
             
 
             ## save a copy of the template file
