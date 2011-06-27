@@ -4,7 +4,10 @@ import fcm
 
 def get_file_data(dataPath,dataType='fcs',channelsOnly=False):
 
-    print 'data path', dataPath
+    '''
+    load file data
+
+    '''
 
     if dataType not in ['fcs','txt','pickle']:
         print "ERROR in tools.get_file_data -- bad data type ", dataType
@@ -36,6 +39,12 @@ def get_file_data(dataPath,dataType='fcs',channelsOnly=False):
 
 def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='fcs'):
  
+    '''
+    return a dict of sample statistics
+
+    '''
+
+
     if len(expListLabels) != len(expListNames) or len(expListLabels) != len(expListDataPaths):
         print "ERROR: bad input data in get_sample_statistics", len(expListLabels), len(expListNames), len(expListDataPaths)
         return None
@@ -64,18 +73,27 @@ def get_sample_statistics(expListLabels,expListNames,expListDataPaths,dataType='
     return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints}
 
 def get_master_label_list(expListLabels):
+    '''
+    for all files in a project return the unique label list
 
-    labelMasterList = set([])
+    '''
+
+    _masterLabelList = set([])
     for labelList in expListLabels:
         fileLabels = np.sort(np.unique(labelList))
-        labelMasterList.update(fileLabels)
+        _masterLabelList.update(fileLabels)
 
-    masterLabelList = np.sort(np.unique(labelMasterList))
+    masterLabelList = np.sort(np.unique(list(_masterLabelList)))
 
     return masterLabelList
 
 
 def read_txt_to_file_channels(filePath):
+    '''
+    read in a text files containing channel information
+
+    '''
+
     if os.path.isfile(filePath) == False:
         print "ERROR: bad file name in read_txt_into_array"
         return
@@ -94,6 +112,12 @@ def read_txt_to_file_channels(filePath):
 
 
 def read_txt_into_array(filePath,header=False,delim='\t'):
+    '''
+    read in a txt file of events into a np.array format
+
+    '''
+
+
     if os.path.isfile(filePath) == False:
         print "ERROR: bad file name in read_txt_into_array"
         return
