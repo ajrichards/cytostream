@@ -27,6 +27,10 @@ def _calculate_within_thresholds(fa,allLabels=None):
         for clusterID in fileClusters:
             ## determine distances
             clusterEvents = fileData[np.where(fileLabels==int(clusterID))[0],:]
+            if len(clusterEvents) < fa.minNumEvents:
+                withinThresholds[fileName][str(int(clusterID))] = None
+                continue
+
             clusterMean = clusterEvents.mean(axis=0)
             dc = DistanceCalculator(distType=fa.distanceMetric)
             if fa.distanceMetric == 'mahalanobis':
@@ -64,7 +68,6 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
     for fileName in fa.expListNames:
         fileIndex = fa.expListNames.index(fileName)
         fileLabels = fa.get_labels(fileName)
-        #fileLabels = newLabels[fileIndex]
         fileClusters = np.sort(np.unique(fileLabels))
         fileInds = np.where(resultsFiles == fileIndex)[0]
         fileSpecificResults = results[fileInds]
@@ -101,13 +104,14 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
         ## order from least significant to most
         clusterCount = 0
         clustersLeft = [int(cl) for cl in fileClusters] 
-        orderedInds = np.argsort(bestMatchSig)        
+        orderedInds = np.argsort(bestMatchSig)
         for oi in orderedInds:
             clustersToChange = bestMatches[oi]
             clusterCount += 1
             for c in clustersToChange:
                 newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
   
+                ## remember the noise clusters
                 if isPhi2 == False:
                     if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
                         if fa.modeNoiseClusters[str(phi)].has_key(fileName):
@@ -121,6 +125,20 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
                         else:
                             fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
 
+                ## call the clusters that have less than the min num required events as noise
+                if isPhi2 == False:
+                    if len(np.where(fileLabels == c)[0]) < fa.minNumEvents:
+                        if fa.modeNoiseClusters[str(phi)].has_key(fileName):
+                            fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                        else:
+                            fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+                else:
+                    if len(np.where(fileLabels == c)[0]) < fa.minNumEvents:
+                        if fa.phi2NoiseClusters.has_key(fileName):
+                            fa.phi2NoiseClustes[fileName].append(str(clusterCount))
+                        else:
+                            fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
+                
                 if clustersLeft.__contains__(c):
                     clustersLeft.remove(int(c))
 
@@ -430,6 +448,7 @@ def pool_compare_self(args):
     sampleStats = args[4]
     noiseClusters = args[5]
     thresholds = args[6]
+    minNumEvents = args[7]
 
     ## additional variables
     alignResults = []
@@ -456,6 +475,13 @@ def pool_compare_self(args):
             if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(str(clusterJ)):
                 continue
 
+            ## get events
+            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+
+            ## ensure cluster is at least of mininum size
+            if len(clusterEventsI) < minNumEvents or len(clusterEventsJ) < minNumEvents:
+                continue
+
             ## check that the centroids are at least a reasonable distance apart                    
             clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)] 
             eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
@@ -466,7 +492,6 @@ def pool_compare_self(args):
             if eDist > threshold1 or eDist > threshold2:
                 continue
                     
-            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
             overlap1 = event_count_compare(clusterEventsI,clusterEventsJ,fileName,clusterJ,thresholds)
             overlap2 = event_count_compare(clusterEventsJ,clusterEventsI,fileName,clusterI,thresholds)
             overlap = np.max([overlap1, overlap2])
@@ -493,6 +518,7 @@ def pool_compare_template(args):
     thresholds = args[8]
     templateThresholds = args[9]
     phi = args[10]
+    minNumEvents = args[11]
 
     ## additional variables
     clustersMatched = []
@@ -516,23 +542,23 @@ def pool_compare_template(args):
             ## check for noise label
             if modeNoiseClusters.has_key(fileName) and modeNoiseClusters[fileName].__contains__(str(clusterJ)):
                 continue
-                    
+
+            ## check to see if cluster has less than min num events        
             clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-            #overlap = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
-            #                               inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            if len(clusterEventsJ) < minNumEvents or len(templateEvents) < minNumEvents:
+                continue
+
             overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
             overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
                                            inputThreshold=templateThresholds[str(clusterI)]['ci'])
             overlap = np.max([overlap1, overlap2])
 
-            #print "...",fileName, clusterI, clusterJ, overlap,phi
-                   
             if overlap >= phi:
                 clustersMatched.append(clusterJ)
                 continue
 
         nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
-        #print fileName, 'clusters matched', clustersMatched, 'not matched', nonMatches
+
     return nonMatches
 
 def pool_compare_scan(args):
@@ -549,6 +575,7 @@ def pool_compare_scan(args):
     templateClusters = args[8]
     templateThresholds = args[9]
     phi = args[10]
+    minNumEvents = args[11]
 
     ## additional variables
     alignResults = []
@@ -562,7 +589,12 @@ def pool_compare_scan(args):
 
         for cj in range(len(fileClusters)):         
             clusterJ = fileClusters[cj]
+            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
 
+            if len(templateEvents) < minNumEvents or len(clusterEventsJ) < minNumEvents:
+                continue
+            
+            #print fileName, len(templateEvents), len(clusterEventsJ),sampleStats['mus'][fileName].has_key(clusterJ)
             ## check that the centroids are at least a reasonable distance apart                    
             clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)]
             eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
@@ -571,7 +603,6 @@ def pool_compare_scan(args):
             if eDist > threshold:
                 continue
                     
-            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
             overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
             overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
                                            inputThreshold=templateThresholds[str(clusterI)]['ci'])

@@ -16,8 +16,8 @@ class TwoComponentGaussEM():
         ## variables
         self.y = y.copy()
         self.verbose = verbose
-        
-        print "\tdata", y.shape, y.mean(), np.median(y), y.var()
+
+        #print "\tdata", y.shape, y.mean(), np.median(y), y.var()
 
         ## error check
         self.initialGuesses = initialGuesses
@@ -28,14 +28,19 @@ class TwoComponentGaussEM():
         self.maxLike, self.bestEst = self.run_em_algorithm(numIters, numRuns)
         
 
+    def get_results(self):
+        return self.maxLike, self.bestEst
+
     ### make definations for initial guessing, expectation, and maximization
     def get_init_guesses(self,y):
         ## make intial guesses for the parameters (mu1, sig1, mu2, sig2 and pi)
-        n    = len(self.y) 
-        mu1  = y[np.random.randint(0,n)]
-        mu2  = y[np.random.randint(0,n)]
-        sig1 = np.random.uniform(0.5,1.5) #y.var() or 0.5,3.0 
-        sig2 = np.random.uniform(0.5,1.5) #y.var() or 0.5,3.0
+        n    = len(self.y)
+        sortedVals = y.copy()
+        sortedVals.sort()
+        mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
+        mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
+        sig1 = np.random.uniform(y.min(),y.max()*0.5)
+        sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
         pi   = 0.5
     
         return {'n':n, 'mu1':mu1, 'mu2':mu2, 'sig1':sig1, 'sig2':sig2, 'pi':pi}
@@ -48,6 +53,8 @@ class TwoComponentGaussEM():
         #numer = numer[np.where(np.isnan(numer)==False)]
         denom = ((1.0 - parms['pi']) * phiTheta1) + (parms['pi'] * phiTheta2)
         #denom = denom[np.where(np.isnan(denom)==False)]
+
+        denom[np.where(denom == 0.0)[0]] = np.finfo(float).eps
         gammaHat = numer / denom 
         
         return gammaHat
@@ -79,6 +86,14 @@ class TwoComponentGaussEM():
         piHat = (gammaHat / parms['n'])
         piHat = piHat[np.where(np.isnan(piHat)==False)].sum()
     
+        ## ensure we are not dividing by 0
+        if denomHat1 == 0.0:
+            denomHat1 =  np.finfo(float).eps
+            print 'changing denomhat1', np.finfo(float).eps
+        if denomHat2 == 0.0:
+            denomHat2 =  np.finfo(float).eps
+            print 'changing denomhat2', np.finfo(float).eps
+
         ## calculate estimates
         muHat1 = numerMuHat1 / denomHat1
         sigHat1 = numerSigHat1 / denomHat1
@@ -90,6 +105,11 @@ class TwoComponentGaussEM():
     def get_likelihood(self,y,parms,gammaHat):
         phiTheta1 = stats.norm.pdf(y,loc=parms['mu1'],scale=np.sqrt(parms['sig1'])) 
         phiTheta2 = stats.norm.pdf(y,loc=parms['mu2'],scale=np.sqrt(parms['sig2']))
+       
+        
+        phiTheta1[np.where(phiTheta1 == 0.0)[0]] = np.finfo(float).eps
+        phiTheta2[np.where(phiTheta2 == 0.0)[0]] = np.finfo(float).eps
+        
         part1 = (1.0 - gammaHat) * np.log(phiTheta1) + gammaHat * np.log(phiTheta2)
         part2 = (1.0 - gammaHat) * np.log(parms['pi']) + gammaHat * np.log(1.0 - parms['pi'])
         
@@ -120,10 +140,9 @@ class TwoComponentGaussEM():
             while iterCount < numIters:
                 iterCount += 1
     
-                ## check to make sure the var estimates are > 0.5
-                if parms['sig1'] < 0.0 or parms['sig2'] < 0.0:
-                    #print "WARNING: negative variances starting with new intital guesses"
-                    iterCount = 1
+                ## check for valid variance estimates
+                if parms['sig1'] <= 0.0 or parms['sig2'] <= 0.0:
+                    iterCount += 1
                     if self.initialGuesses == None:
                         parms = self.get_init_guesses(self.y)
                     else:
@@ -132,7 +151,15 @@ class TwoComponentGaussEM():
                 ## E-step
                 gammaHat = self.perform_expectation(self.y,parms)
                 logLike = self.get_likelihood(self.y,parms,gammaHat)
-    
+
+                ## check again for valid variance estimates
+                if parms['sig1'] <= 0.0 or parms['sig2'] <= 0.0:
+                    iterCount += 1
+                    if self.initialGuesses == None:
+                        parms = self.get_init_guesses(self.y)
+                    else:
+                        parms = self.initialGuesses
+
                 #if self.verbose == True:
                 #    print 'iteration',iterCount,'mu1',round(parms['mu1'],2),'mu2',round(parms['mu2'],2),'sig1',round(parms['sig1'],2),
                 #    print 'sig2',round(parms['sig2'],2),'pi',round(parms['pi'],2),'obs.data likelihood', round(logLike,4)
