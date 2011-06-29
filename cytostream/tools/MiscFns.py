@@ -80,13 +80,17 @@ def get_master_label_list(expListLabels):
 
     _masterLabelList = set([])
     for labelList in expListLabels:
-        fileLabels = np.sort(np.unique(labelList))
+        fileLabels = np.sort(np.unique(labelList)).tolist()
+        #fileLabelsCopy = np.array([i for i in fileLabels])
+        #for fl in fileLabelsCopy:
+        #    if len(np.where(fileLabelsCopy==fl)[0]) < minNumEvents:
+        #        fileLabels.remove(fl)
+
         _masterLabelList.update(fileLabels)
 
     masterLabelList = np.sort(np.unique(list(_masterLabelList)))
 
     return masterLabelList
-
 
 def read_txt_to_file_channels(filePath):
     '''

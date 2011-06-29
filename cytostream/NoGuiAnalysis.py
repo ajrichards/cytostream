@@ -66,7 +66,6 @@ class NoGuiAnalysis():
         else:
             print 'loading existing project'
         
-
         ## quality assurance figures
         if self.makeQaFigs == True:
             self.make_qa_figures()
@@ -104,7 +103,7 @@ class NoGuiAnalysis():
         returns file channels
         """
 
-        return self.controller.log.log['alternate_file_channels']
+        return self.controller.log.log['alternate_channel_labels']
 
     def get_file_names(self):
         """

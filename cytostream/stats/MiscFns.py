@@ -27,10 +27,14 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None):
     '''
 
     ## declare variables
-    subsampleSize = 5000     # subsample size
-    numIters = 25            # num em iters
-    numRuns = 1              # within em runs
-    numReps = 2              # num times to draw sample
+    subsampleSize = 10000     # subsample size
+    numIters = 25             # num em iters
+    if emGuesses == None:
+        numRuns = 3
+    else:
+        numRuns = 1
+    numReps = 3               # num times to draw sample
+    eps = np.finfo(float).eps
 
     resultsDict = {'maxLike':-np.inf,'params':None}
 
@@ -39,23 +43,28 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None):
         #print 'getting subset for ', clustEvents.size
 
         for rep in range(numReps):
-            clustInds = np.arange(0,clustEvents.size,subsampleSize)
+            clustInds = np.arange(0,clustEvents.size)
             np.random.shuffle(clustInds)
-            events = clustEvents.copy()[clustInds]
+            events = clustEvents.copy()[clustInds[:subsampleSize]]
 
             ## run em
             tcg = TwoComponentGaussEM(events, numIters, numRuns,verbose=True,initialGuesses=emGuesses)
-            if tcg.maxLike > resultsDict['maxLike']:
-                resultsDict['maxLike'] = tcg.maxLike.copy() 
-                resultsDict['params'] = tcg.bestEst.copy()                
+            maxLike, bestEst = tcg.get_results()
+
+            if maxLike > resultsDict['maxLike'] :
+                resultsDict['maxLike'] = maxLike
+                resultsDict['params'] = bestEst.copy()
     else:
         ## run em
-        tcg = TwoComponentGaussEM(clustEvents, numIters, numRuns,verbose=True,initialGuesses=emGuesses)
+        tcg = TwoComponentGaussEM(clustEvents,numIters, numRuns,verbose=True,initialGuesses=emGuesses)
         resultsDict['maxLike'] = tcg.maxLike.copy() 
         resultsDict['params'] = tcg.bestEst.copy()
     
     ## get cut point
-    cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+    if resultsDict['params']['mu2'] > resultsDict['params']['mu1']:
+        cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+    else:
+        cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
 
     return resultsDict,cutpoint
 
