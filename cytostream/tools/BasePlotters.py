@@ -118,7 +118,7 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             ## handle centroids if present     
             prefix = ''
 
-            if centroids != None and parent.labels_cb.isChecked():
+            if centroids != None and parent.labels_cb.isChecked() and dataX.size >= parent.minNumEvents:
                 if centroids[str(int(l))].size != parent.events.shape[1]:
                     print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
                     
@@ -145,7 +145,7 @@ def draw_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             xPos = centroids[str(int(highlightSaved['num']))][index1]
             yPos = centroids[str(int(highlightSaved['num']))][index2]
             
-            if parent.labels_cb.isChecked():
+            if parent.labels_cb.isChecked() and dataX.size >= parent.minNumEvents:
                 if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
                     parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
                                    ha="center", va="center",
@@ -319,7 +319,7 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             ## handle centroids if present
             prefix = ''
 
-            if centroids != None and parent.labels_cb.isChecked():
+            if centroids != None and parent.labels_cb.isChecked() and dataX.size >= parent.minNumEvents:
                 if centroids[str(int(l))].size != parent.events.shape[1]:
                     print "ERROR: ScatterPlotter.py -- centroids not same shape as events" 
                     
@@ -345,7 +345,7 @@ def draw_heat_scatter(parent,events=None,selectedFileName=None,channel1Ind=None,
             xPos = centroids[str(int(highlightSaved['num']))][index1]
             yPos = centroids[str(int(highlightSaved['num']))][index2]
             
-            if parent.labels_cb.isChecked():
+            if parent.labels_cb.isChecked() and dataX.size >= parent.minNumEvents:
                 if highlightSaved['color'] in ['#FFFFAA','y','#33FF77','#CCFFAA',"#CCCCCC"]:
                     parent.ax.text(xPos, yPos, '%s%s'%(prefix,highlightSaved['num']), color='black',fontsize=fontSize-1,
                                    ha="center", va="center",

@@ -179,19 +179,28 @@ def bootstrap_compare(eventsI,eventsJ):
 
 
 def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
-        
+    '''
+    gets alignment labels
+    
+    to debug 
+      (1) comment out the 'normalize the labels' block
+      (2) uncommend the 'debug' print line 
+
+    '''
+
     if evaluator not in ['rank','bootstrap','kldivergence']:
         print "ERROR: in get_alignment_labels evaluator not valid"
 
     results = alignment['results']
     resultsFiles = alignment['files']
     resultsClusters = alignment['clusters']
-    newLabels = [np.array([-1 * int(label) for label in fa.modeLabels[str(phi)][fn]]) for fn in range(len(fa.expListNames))]
+    newLabels = [np.array([-1 * int(label) for label in fa.phi2Labels[fn]]) for fn in range(len(fa.expListNames))]
     clusterCount = 10000
+    noiseClustCount = 0
 
     for fileName in fa.expListNames:
         fileIndex = fa.expListNames.index(fileName)
-        fileLabels = fa.modeLabels[str(phi)][fileIndex]
+        fileLabels = fa.phi2Labels[fileIndex]
         fileData = fa.get_events(fileName)
         fileClusters = np.sort(np.unique(fileLabels))
         fileInds = np.where(resultsFiles == fileIndex)[0]
@@ -215,12 +224,25 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
             ## skip noise 
             if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(clusterID) in fa.modeNoiseClusters[str(phi)][fileName]:
                 continue
+            
+            if len(templateMatches) < 1:
+                continue
 
+            if len(np.where(fileLabels == clusterID)[0]) < fa.minNumEvents:
+                continue
+             
+            ## debug
             #print 'In file %s cluster %s will be changed to %s due to a overlap of %s'%(fileName,clusterID,templateMatches,matchSignif)
 
             if evaluator == 'rank' or len(matchSignif) == 1:
                 rankedInds = np.argsort(matchSignif)[::-1]
-                #print "\t...using rank"
+
+            #elif evaluator == 'variance':
+            #    varSums = []
+            #    for tm in templateMatches:
+            #       eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+            #       varSums.append(np.cov(eventsJ.T)
+                    
             elif evaluator == 'bootstrap':
                 bootstrapResults = []
                 print "\t...bootstrapping for ", fileName, clusterID
@@ -246,9 +268,6 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                     klDist = klList[np.argmin([klDist1.sum(),klDist2.sum()])] 
                     klResults.append(klDist)
                 rankedInds = np.argsort(klResults)
-
-            if len(templateMatches) < 1:
-                continue
                 
             ## if multiple matches handle
             newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * clusterID)[0]] = templateMatches[rankedInds[0]]
@@ -258,7 +277,8 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
         for c in clustersLeft:
             if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(int(-1.0*c)) in fa.modeNoiseClusters[str(phi)][fileName]:
-                newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = -1
+                noiseClustCount -= 1
+                newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = noiseClustCount
             else:
                 clusterCount += 1
                 newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = clusterCount
@@ -266,9 +286,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
         ## handle special labeling of noise clusters
         ## TODO
 
-
-
-    ## renormalize the labels
+    ## normalize the labels
     allLabs = set([])
     newLabelsCopy = [nl.copy() for nl in newLabels]
     for fileInd in range(len(newLabels)):
@@ -286,7 +304,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                 continue
             
             newLabels[fileInd][labInds] = nextLab
-
+    
     return newLabels
     
 def event_count_compare(clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds,inputThreshold=None):
@@ -344,8 +362,8 @@ def make_bootstrap_comparision(fa):
                 continue
 
             ## debug 
-            if compareCount > 10:
-                continue
+            #if compareCount > 10:
+            #    continue
 
             compareCount += 1
             clusterJ = templateClusters[cj]

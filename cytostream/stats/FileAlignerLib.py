@@ -215,9 +215,9 @@ class FileAligner():
         self.withinThresholdsPhi2 = _calculate_within_thresholds(self,allLabels=self.phi2Labels)
         
         ## finish template file according to phi
-        if self.verbose == True:
-            print "noise", self.noiseClusters
-            print "noise phi2", self.phi2NoiseClusters
+        #if self.verbose == True:
+        #    print "noise", self.noiseClusters
+        #    print "noise phi2", self.phi2NoiseClusters
 
         ### loop through each phi ###
         for phi in self.phiRange:
@@ -228,6 +228,8 @@ class FileAligner():
             self.modeNoiseClusters[str(phi)] = {}
             newLabels = get_modes(self,phiIndices,alignResults,alignFiles,alignClusters,phi)
             self.modeLabels[str(phi)] = newLabels
+            
+            #print self.modeNoiseClusters[str(phi)]
 
             if self.verbose == True:
                 print "...getting sample statistics again"
@@ -278,6 +280,9 @@ class FileAligner():
                 fileInd = self.expListNames.index(fileName)
                             
                 for cid in masterLabelList:
+                    if cid < 0:
+                        continue
+
                     if silValuesPhi[fileName].has_key(str(cid)) == False or alignedSampleStatsPhi['n'][fileName].has_key(str(cid)) == False:
                         continue
                     fileSilVals += [silValuesPhi[fileName][str(cid)]] * alignedSampleStatsPhi['n'][fileName][str(cid)]
@@ -748,8 +753,8 @@ class FileAligner():
                         overlap = event_count_compare(savedEvents,clusterEventsJ,fileName,clusterJ,thresholds)
                 
                         ## use a constant value for phi when creating the template file
-                        #if overlap >= 0.5:
-                        if overlap >= phi:
+                        #if overlap >= phi:
+                        if overlap >= 0.5:
                             appearedTwice.update([nid])
                             isNew = False
                              
