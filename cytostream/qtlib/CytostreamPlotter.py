@@ -27,7 +27,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
     def __init__(self,fileChannels=None,drawState='Heat',parent=None,background=True,xAxLimit=None,yAxLimit=None,
                  selectedChannel1=0,selectedChannel2=1,mainWindow=None,uniqueLabels=None,enableGating=False,homeDir=None,
-                 compactMode=False,isProject=False,inputLabels=None):
+                 compactMode=False,isProject=False,inputLabels=None,minNumEvents=3):
 
         ## initialize
         QtGui.QWidget.__init__(self,parent)
@@ -49,6 +49,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.compactMode = compactMode
         self.isProject = isProject
         self.inputLabels = inputLabels
+        self.minNumEvents = minNumEvents
 
         ## addition variables
         self.gateInteractor = None

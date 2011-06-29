@@ -24,7 +24,7 @@ from fcm.graphics import bilinear_interpolate
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
-                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None,drawState='Heat',showOnlyClusters=None):
+                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3):
 
         ## arg variables
         self.homeDir = homeDir
@@ -43,6 +43,7 @@ class SaveSubplots():
         self.fontName = 'ariel'
         self.drawState = drawState
         self.showOnlyClusters = showOnlyClusters
+        self.minNumEvents = minNumEvents
 
         ## error check
         run = True
@@ -220,7 +221,7 @@ class SaveSubplots():
                 ## handle centroids if present
                 prefix = ''
 
-                if centroids != None:
+                if centroids != None and x.size >= self.minNumEvents:
                     if centroids[str(int(l))].size != events.shape[1]:
                         print "ERROR: ScatterPlotter.py -- centroids not same shape as events"
 
@@ -233,6 +234,7 @@ class SaveSubplots():
                     if self.numSubplots == 12:
                         labelSize = 4
                         
+                    ## show only tags that have more than the min num clusters
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
                         ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
                                 ha="center", va="center",
@@ -360,7 +362,7 @@ class SaveSubplots():
                 ## handle centroids if present
                 prefix = ''
 
-                if centroids != None:
+                if centroids != None and dataX.size >= self.minNumEvents:
                     if centroids[str(int(l))].size != events.shape[1]:
                         print "ERROR: ScatterPlotter.py -- centroids not same shape as events"
 
