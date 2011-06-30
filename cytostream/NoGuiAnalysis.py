@@ -98,6 +98,10 @@ class NoGuiAnalysis():
         fileChannels = self.controller.model.get_master_channel_list()
         self.set('alternate_channel_labels',fileChannels)
 
+    def get_file_specific_channels(self,fileName):
+        fileChannels = self.controller.model.get_file_channel_list(fileName)
+        return fileChannels
+
     def get_file_channels(self):
         """
         returns file channels
