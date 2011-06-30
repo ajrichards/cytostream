@@ -7,6 +7,7 @@ import numpy as np
 from scipy.cluster.vq import whiten
 from scipy.spatial.distance import pdist
 from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler
+import matplotlib.pyplot as plt
 
 def _calculate_within_thresholds(fa,allLabels=None):
 
@@ -636,9 +637,9 @@ def pool_compare_scan(args):
      
     return [alignResults,alignResultsFiles,alignResultsClusters]
 
-def get_alignment_scores(homeDir):
+def get_alignment_scores(homeDir,alignmentDir='alignment',makeFig=True):
     alignScores = {'phi':[],'num_template_clusters':[],'sil_val':[],'normalized_matches':[],'product_score':[]}
-    alignScoreFilePath = os.path.join(homeDir,'alignment','AlignmentScores.log')
+    alignScoreFilePath = os.path.join(homeDir,alignmentDir,'AlignmentScores.log')
     
     if os.path.exists(alignScoreFilePath) == False:
         print "ERROR: get_alignment_scores -- alignment file does not exist"
@@ -653,6 +654,22 @@ def get_alignment_scores(homeDir):
         alignScores['sil_val'].append(float(linja[2]))
         alignScores['normalized_matches'].append(float(linja[3]))
         alignScores['product_score'].append(float(linja[4]))
+
+    if makeFig == True:
+        bestInd = np.argmax(alignScores['product_score'])
+        bestPhi = alignScores['phi'][bestInd]
+        projectID = os.path.split(homeDir)[-1]
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        p1 = ax.plot(alignScores['phi'], alignScores['sil_val'], color='b',linewidth=2.0)
+        p2 = ax.plot(alignScores['phi'], alignScores['normalized_matches'], color='orange',linewidth=2.0)
+        p3 = ax.plot(np.array(bestPhi).repeat(10),np.linspace(0,1,10),'k--',linewidth=2.0)
+        ax.set_xlim(0,1)
+        ax.set_ylim(0,1)
+        ax.legend((p1[0],p2[0],p3[0]),("sil val", "matches",r"best $\phi$"))
+        ax.set_title(projectID)
+        figName = os.path.join(homeDir,'figs',alignmentDir,'AlignScores.png')
+        plt.savefig(figName)
 
     return alignScores
 

@@ -21,6 +21,7 @@ from fcm.statistics.distributions import mvnormpdf
 import matplotlib.pyplot as plt
 from cytostream.stats import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
+from cytostream.stats import get_alignment_scores
 from cytostream.stats import scale
 
 class FileAligner():
@@ -35,7 +36,7 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',
+    def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',alignmentDir='alignment',
                  refFile=None,verbose=False,excludedChannels=[],isProject=False,noiseSubset=600,
                  modelRunID=None,distanceMetric='mahalanobis',medianTransform=False,templateSaveChans=(0,1)):
 
@@ -51,6 +52,7 @@ class FileAligner():
         self.isProject = isProject
         self.noiseSubset = noiseSubset
         self.templateSaveChans = templateSaveChans
+        self.alignmentDir = alignmentDir
 
         ## control variables 
         self.medianTransform = medianTransform
@@ -258,7 +260,7 @@ class FileAligner():
             self.alignLabels[str(phi)] = aLabels
     
             ## save labels
-            tmp =  open(os.path.join(self.homeDir,'alignment',"alignLabels_%s.pickle"%(phi)),'w')
+            tmp =  open(os.path.join(self.homeDir,self.alignmentDir,"alignLabels_%s.pickle"%(phi)),'w')
             cPickle.dump(aLabels,tmp)
             tmp.close()
 
@@ -316,7 +318,7 @@ class FileAligner():
             
             ## save a copy of the template file
             self.globalScoreDict[str(phi)] = productScore
-            figName = os.path.join(self.homeDir,'figs','alignment','template_figure_%s.png'%phi)
+            figName = os.path.join(self.homeDir,'figs',self.alignmentDir,'template_figure_%s.png'%phi)
             self.save_template_figure(self.templateSaveChans[0],self.templateSaveChans[1],figName,figTitle="template_%s"%phi)
 
         self.timeEnd = time.time()
@@ -358,26 +360,26 @@ class FileAligner():
         if self.verbose == True and os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
 
-        dirs = ['results','alignment',os.path.join('figs','alignment')]
+        dirs = ['results',self.alignmentDir,os.path.join('figs',self.alignmentDir)]
         for diry in dirs:
             if os.path.isdir(os.path.join(self.homeDir,diry)) == False:
                 os.mkdir(os.path.join(self.homeDir,diry))
             
-        if os.path.isdir(os.path.join(self.homeDir,'alignment')) == True:
+        if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir)) == True:
             ## clean out figures dir
-            for item1 in os.listdir(os.path.join(self.homeDir,'alignment')):
-                if os.path.isdir(os.path.join(self.homeDir,'alignment',item1)) == True:
-                    for item2 in os.listdir(os.path.join(self.homeDir,'alignment',item1)):
-                        os.remove(os.path.join(self.homeDir,'alignment',item1,item2))
+            for item1 in os.listdir(os.path.join(self.homeDir,self.alignmentDir)):
+                if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir,item1)) == True:
+                    for item2 in os.listdir(os.path.join(self.homeDir,self.alignmentDir,item1)):
+                        os.remove(os.path.join(self.homeDir,self.alignmentDir,item1,item2))
                 else:
-                    os.remove(os.path.join(self.homeDir,'alignment',item1))
+                    os.remove(os.path.join(self.homeDir,self.alignmentDir,item1))
             
         #if os.path.isdir(os.path.join(self.homeDir,"alignment")) == False:
         #    os.mkdir(os.path.join(self.homeDir,"alignment"))
 
         ## create the align fig dir
-        if os.path.join(self.homeDir,'figs','alignment') == False:
-            os.mkdir(os.path.join(self.homeDir,'figs','alignment'))
+        #if os.path.join(self.homeDir,'figs','alignment') == False:
+        #    os.mkdir(os.path.join(self.homeDir,'figs','alignment'))
 
 
     def get_labels(self,selectedFile):
@@ -546,9 +548,9 @@ class FileAligner():
         '''
 
         ## set up the log files
-        self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,"alignment","AlignmentScores.log"),'w'))
+        self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,self.alignmentDir,"AlignmentScores.log"),'w'))
         self.alignmentScores.writerow(["phi","num_template_clusters","silhouette_val,normalized_matches,product_score"])
-        self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,"alignment","Alignment.log"),'w'))
+        self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,self.alignmentDir,"Alignment.log"),'w'))
         
     def run_self_alignment(self):
         pool = Pool(processes=cpu_count())
