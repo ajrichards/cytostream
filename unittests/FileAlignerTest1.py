@@ -77,7 +77,7 @@ class FileAlignerTest1(unittest.TestCase):
         plotsToViewFiles = [0,1,2,3,4,5,0,0,0,0,0,0]
         self.nga.set("plots_to_view_files",plotsToViewFiles)
         
-        figsDir = os.path.join(homeDir,'figs')
+        figsDir = os.path.join(homeDir,'figs','alignment')
         numSubplots = 6
         figMode = 'qa'
         figName = os.path.join(figsDir,'subplots_orig_qa.png')

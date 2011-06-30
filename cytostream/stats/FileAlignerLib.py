@@ -316,7 +316,7 @@ class FileAligner():
             
             ## save a copy of the template file
             self.globalScoreDict[str(phi)] = productScore
-            figName = os.path.join(self.homeDir,'figs','template_figure_%s.png'%phi)
+            figName = os.path.join(self.homeDir,'figs','alignment','template_figure_%s.png'%phi)
             self.save_template_figure(self.templateSaveChans[0],self.templateSaveChans[1],figName,figTitle="template_%s"%phi)
 
         self.timeEnd = time.time()
@@ -342,7 +342,7 @@ class FileAligner():
                     )
 
 
-        ax.scatter(self.templateData[:,chan1],self.templateData[:,chan2],c=colorList,edgecolor='None')
+        ax.scatter(self.templateData[:,chan1],self.templateData[:,chan2],c=colorList,edgecolor='None',s=1)
         if figTitle != None:
             ax.set_title(figTitle)
         plt.savefig(figName)
@@ -358,7 +358,7 @@ class FileAligner():
         if self.verbose == True and os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
 
-        dirs = ['results','alignment']
+        dirs = ['results','alignment',os.path.join('figs','alignment')]
         for diry in dirs:
             if os.path.isdir(os.path.join(self.homeDir,diry)) == False:
                 os.mkdir(os.path.join(self.homeDir,diry))
@@ -372,8 +372,13 @@ class FileAligner():
                 else:
                     os.remove(os.path.join(self.homeDir,'alignment',item1))
             
-        if os.path.isdir(os.path.join(self.homeDir,"alignment")) == False:
-            os.mkdir(os.path.join(self.homeDir,"alignment"))
+        #if os.path.isdir(os.path.join(self.homeDir,"alignment")) == False:
+        #    os.mkdir(os.path.join(self.homeDir,"alignment"))
+
+        ## create the align fig dir
+        if os.path.join(self.homeDir,'figs','alignment') == False:
+            os.mkdir(os.path.join(self.homeDir,'figs','alignment'))
+
 
     def get_labels(self,selectedFile):
 
@@ -540,6 +545,7 @@ class FileAligner():
         each log is specific to a give phi
         '''
 
+        ## set up the log files
         self.alignmentScores = csv.writer(open(os.path.join(self.homeDir,"alignment","AlignmentScores.log"),'w'))
         self.alignmentScores.writerow(["phi","num_template_clusters","silhouette_val,normalized_matches,product_score"])
         self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,"alignment","Alignment.log"),'w'))

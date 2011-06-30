@@ -2,7 +2,7 @@
 functions that are used to align files
 '''
 
-import sys,re
+import sys,re,os,csv
 import numpy as np
 from scipy.cluster.vq import whiten
 from scipy.spatial.distance import pdist
@@ -636,6 +636,25 @@ def pool_compare_scan(args):
      
     return [alignResults,alignResultsFiles,alignResultsClusters]
 
+def get_alignment_scores(homeDir):
+    alignScores = {'phi':[],'num_template_clusters':[],'sil_val':[],'normalized_matches':[],'product_score':[]}
+    alignScoreFilePath = os.path.join(homeDir,'alignment','AlignmentScores.log')
+    
+    if os.path.exists(alignScoreFilePath) == False:
+        print "ERROR: get_alignment_scores -- alignment file does not exist"
+        return None
+
+    reader = csv.reader(open(alignScoreFilePath,'r'))
+    header = reader.next()
+    
+    for linja in reader:
+        alignScores['phi'].append(float(linja[0]))
+        alignScores['num_template_clusters'].append(float(linja[1])) 
+        alignScores['sil_val'].append(float(linja[2]))
+        alignScores['normalized_matches'].append(float(linja[3]))
+        alignScores['product_score'].append(float(linja[4]))
+
+    return alignScores
 
 #if self.overlapMetric == 'kldivergence':
 #    eCDF = EmpiricalCDF(nonNoiseResults)
