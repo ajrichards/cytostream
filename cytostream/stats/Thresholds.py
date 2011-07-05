@@ -75,7 +75,8 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,alignLabels,verbose=
         cd3Positive = []
 
         ## make initial guesses
-        initialGuesses = {'n':cd3Events.size, 'mu1':200, 'mu2':500, 'sig1':8000, 'sig2':1000, 'pi':0.3}
+        initialGuesses = {'n':cd3Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
+        initialGuesses = None
 
         ## get lower threshold of larger component 
         tcg,cutpoint = two_component_em(cd3Events,emGuesses=initialGuesses,verbose=verbose)
