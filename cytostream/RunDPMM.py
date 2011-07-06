@@ -148,6 +148,11 @@ else:
 ######################
 # handle model running
 ######################
+#m0 = fcm.statistics.DPMixtureModel(nclusts=nclusts, iter=niter, bunin=0, last=1)
+#m0.device = n % 4 + 1
+#r = m0.fit(y0)
+
+
 
 loadModel = False
 if modelMode == 'onefit' and modelReference == fileName:
@@ -158,12 +163,9 @@ elif modelMode == 'onefit':
 modelRunStart = time.time()
 ## run the model 
 if loadModel == False:
-    mod = fcm.statistics.DPMixtureModel(nonZeroEvents,k,numItersMCMC,last=1,burnin=0)
-    
-    ## handle multiple devices
-    #mod.cdp.setdevice(1)
-
-    mod.fit(verbose=True)
+    mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
+    #mod.device = ...
+    mod.fit(nonZeroEvents,verbose=True)
     full = mod.get_results()
 
 ## use a saved model
