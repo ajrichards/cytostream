@@ -233,7 +233,9 @@ class SaveSubplots():
                     labelSize = self.fontSize
                     if self.numSubplots == 12:
                         labelSize = 4
-                        
+                    if self.numSubplots == 6:
+                        labelSize = 5
+
                     ## show only tags that have more than the min num clusters
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
                         ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
@@ -308,8 +310,8 @@ class SaveSubplots():
 
         myCmap = mpl.cm.gist_heat
         totalPts = len(x)
-        if totalPts >= 9e04:
-            bins = 120.0
+        if totalPts >= 8e04:
+            bins = 80.0
         elif totalPts >= 5e04:
             bins = 50.0
         else:
@@ -374,7 +376,9 @@ class SaveSubplots():
                     labelSize = self.fontSize
                     if self.numSubplots == 12:
                         labelSize = 4
-                        
+                    if self.numSubplots == 6:
+                        labelSize = 5
+
                     if clusterColor in ['#FFFFAA','y','#33FF77']:
                         ax.text(xPos, yPos, '%s%s'%(prefix,l), color='black',fontsize=labelSize,
                                 ha="center", va="center",

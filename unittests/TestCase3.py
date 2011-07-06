@@ -35,6 +35,7 @@ class TestCase3(unittest.TestCase):
         self.nga.set('model_mode', 'onefit')
         self.nga.set('model_reference', "3FITC_4PE_004")
         self.nga.set('model_reference_run_id', 'run1')
+        self.nga.set('thumbnail_results_default','components')
         self.nga.run_model()
 
         ## create all pairwise figs for all files

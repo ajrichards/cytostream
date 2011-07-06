@@ -483,6 +483,8 @@ class Controller:
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
         numComponents = int(self.log.log['dpmm_k'])
+        modelMode = self.log.log['model_mode']
+        modelReference = self.log.log['model_reference']
         subsample = self.log.log['subsample_analysis']
         fileList = get_fcs_file_names(self.homeDir)
         percentDone = 0
@@ -494,13 +496,31 @@ class Controller:
         if useSubsample == False:
             subsample = 'original'
 
+        ## error check
+        if modelMode == 'onefit' and modelReference == None:
+            print "ERROR: Controller.run_selected_model - cannot use 'onefit' without specifing a model reference"
+            return
+
         ## set the data in focus
         if fileInFocus != 'all' and fileInFocus not in fileList:
             print "ERROR: Controller.run_selected_model -- fileInFocus cannot be found"
         elif fileInFocus != 'all' and fileInFocus in fileList:
             fileList = [fileInFocus]
             
+        ## if model mode is 'onefit' ensure the reference file comes first
+        if modelMode == 'onefit':
+            if fileList.__contains__(modelReference) == False:
+                print "ERROR: Controller.run_selected_model - bad model reference"
+                return
+            
+            refPosition = fileList.index(modelReference)
+            if refPosition != 0:
+                refFile = fileList.pop(refPosition)
+                fileList = [refFile] + fileList
+
+        fileCount = 0
         for fileName in fileList:
+            fileCount += 1
             if selectedModel == 'dpmm':
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
@@ -536,5 +556,18 @@ class Controller:
                                         print "\r",int(round(percentDone)),"percent complete"
                     except:
                         break
+            
             else:
                 print "ERROR: invalid selected model", selectedModel
+
+            ## output progress 
+            if modelMode == 'onefit':
+                percentDone = float(fileCount) / float(len(fileList)) * 100.0
+                
+                if progressBar != None:
+                    progressBar.move_bar(int(round(percentDone)))
+                else:
+                    if int(round(percentDone)) != 100: 
+                        print "\r",int(round(percentDone)),"percent complete",
+                    else:
+                        print "\r",int(round(percentDone)),"percent complete"
