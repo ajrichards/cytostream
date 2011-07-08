@@ -16,7 +16,7 @@ from matplotlib.mlab import griddata
 
 from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names 
-from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer, draw_scatter,draw_heat_scatter
+from cytostream.tools import fetch_plotting_events, get_all_colors, PlotDataOrganizer, draw_plot
 from cytostream.tools import DrawGateInteractor, PolyGateInteractor
 from cytostream.qtlib import RadioBtnWidget
 
