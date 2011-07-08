@@ -91,10 +91,11 @@ def get_models_run(homeDir, possibleModels):
         
     modelList = list(set(modelList))
 
+    print "WARNING: FileControls -- get_models_run deprec. use tools.get_model_run_list"
+
+
     #if re.search("\.pickle",fileName):
     #    modelList.append(fileName)
-
-    print "returning model list", modelList
 
     return modelList
 

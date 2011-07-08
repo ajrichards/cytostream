@@ -19,12 +19,12 @@ if mpl.get_backend() != 'agg':
 import matplotlib.pyplot as plt
 from cytostream import Logger, Model, get_fcs_file_names
 from cytostream import NoGuiAnalysis
-from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats, get_file_data
+from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats, get_file_data, draw_plot
 from fcm.graphics import bilinear_interpolate
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
-                 forceScale=False,fontSize=8,markerSize=1,dpi=200,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3):
+                 forceScale=False,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3,useSubplotTitles=True):
 
         ## arg variables
         self.homeDir = homeDir
@@ -35,15 +35,13 @@ class SaveSubplots():
         self.figName = figName
         self.plotType = plotType
         self.buff = 0.02
-        self.dpi = dpi
-        self.fontSize = fontSize
-        self.markerSize = markerSize
         self.forceScale = forceScale
         self.inputLabels = None
         self.fontName = 'ariel'
         self.drawState = drawState
         self.showOnlyClusters = showOnlyClusters
         self.minNumEvents = minNumEvents
+        self.useSubplotTitles = useSubplotTitles
 
         ## error check
         run = True
@@ -72,31 +70,43 @@ class SaveSubplots():
 
             if self.forceScale == True:
                 self.handle_axes_limits()
+                self.forceScale = (self.xAxLimit,self.yAxLimit)
+            else:
+                self.forceScale = False
 
             if self.plotType == 'scatter':
                 self.make_plots()
             else:
                 print 'ERROR: SaveSubplots.py: plotType not implemented', self.plotType
                 return None
-
+        
         ## save file
         if self.figTitle != None:
-            plt.suptitle(self.figTitle,fontsize=self.fontSize+2, fontname=self.fontName)
+            plt.suptitle(self.figTitle,fontsize=10, fontname=self.fontName)
             
         if self.numSubplots in [2]:
             self.fig.subplots_adjust(wspace=0.2)
+            dpi = 150
         elif self.numSubplots in [3]:
-            self.fig.subplots_adjust(wspace=0.3)
+            self.fig.subplots_adjust(wspace=0.32)
+            dpi = 200
         elif self.numSubplots in [4]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.05)
+            dpi = 250
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
+            dpi = 300
         elif self.numSubplots in [7,8,9]:
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
+            dpi = 350
         elif self.numSubplots in [10,11,12]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
-            
-        self.fig.savefig(self.figName,transparent=False,dpi=self.dpi)
+            dpi = 400
+        elif self.numSubplots in [13,14,15,16]:
+            self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
+            dpi = 450
+
+        self.fig.savefig(self.figName,transparent=False,dpi=dpi)
                              
     def generic_callback():
         print "generic callback"
@@ -141,13 +151,37 @@ class SaveSubplots():
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
 
+            #print 'before', events.shape
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
             index1,index2 = subplotChannels
 
-            if self.drawState.lower() == 'scatter':
-                self._make_scatter_scatter(events,labels,fileChannels,index1,index2,subplotIndex,highlight=subplotHighlight)
-            elif self.drawState.lower() == 'heat':
-                self._make_scatter_heat(events,labels,fileChannels,index1,index2,subplotIndex,highlight=subplotHighlight)
+            ## labels
+            if self.useSubplotTitles == True:
+                subplotTitle = subplotFile
+            else:
+                subplotTitle = None
+            
+            axesLabels = (None,None)
+
+            ## handle args
+            args = [None for i in range(15)]
+            args[0] = events
+            args[1] = subplotFile
+            args[2] = index1
+            args[3] = index2
+            args[4] = subsample
+            args[5] = labels
+            args[6] = subplotRun
+            args[7] = subplotHighlight
+            args[8] = self.log.log
+            args[9] = self.get_axes(subplotIndex)
+            args[10] = self.drawState.lower()
+            args[11] = self.numSubplots
+            args[12] = self.forceScale
+            args[13] = axesLabels
+            args[14] = subplotTitle
+
+            draw_plot(args)
 
     def _make_scatter_scatter(self,events,labels,fileChannels,index1,index2,subplotIndex,highlight=None):
         

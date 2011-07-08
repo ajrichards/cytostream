@@ -8,10 +8,10 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
-plotsToViewChannels =   [(0,1),(1,0),(0,0),(1,1),(0,0),(0,1),(1,0),(0,0),(1,1),(0,1),(1,0),(0,0)]
-plotsToViewFiles =      [0,0,0,0,0,0,0,0,0,0,0,0]
-plotsToViewRuns =       ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
-plotsToViewHighlights = [None,None,None,None,None,None,None,None,None,None,None,None]
+plotsToViewChannels =   [(0,1) for i in range(16)]
+plotsToViewFiles =      [0 for i in range(16)]
+plotsToViewRuns =       ['run1' for i in range(16)]
+plotsToViewHighlights = [None for i in range(16)]
 
 configDictDefault = {
     ########### state variables ##############################################################

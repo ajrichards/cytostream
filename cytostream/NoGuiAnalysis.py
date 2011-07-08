@@ -9,6 +9,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 from cytostream import Controller, get_fcs_file_names
+from cytostream.tools import get_models_run_list
 import numpy as np
 BASEDIR = os.path.dirname(__file__)
 
@@ -118,6 +119,17 @@ class NoGuiAnalysis():
         fileList = get_fcs_file_names(self.controller.homeDir)
         
         return fileList
+
+    def get_models_run(self):
+        """
+        returns a list of the models run
+        
+        """
+
+        modelsRun = get_models_run_list(self.controller.log.log)
+        
+        return modelsRun
+
 
     def get(self,key):
         """

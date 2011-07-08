@@ -66,7 +66,7 @@ def get_all_colors():
                "#009999","#110000","#AAAAFF","#990000","#880022","#BBBBBB","#00EE88","#66AA22","#99FFEE","#660022",
                "#FFFF33","#00CCFF","#990066","#006600","#00CCFF",'#AAAAAA',"#33FF00","#0066FF","#FF9900","#FFCC00"]
 
-    return colors * 3
+    return np.array(colors * 3)
 
 
 def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
@@ -90,21 +90,20 @@ def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
 
     ## ensure the proper events are being loaded 
     if re.search('original',str(subsample)):
+
         if log == None:
-            subsample = 9e04
+            subsample = 7e04
         else:
-            subsample = log.log['setting_max_scatter_display']
+            subsample = float(log.log['setting_max_scatter_display'])
 
         events = model.get_events(selectedFile,subsample='original')
 
-        n,d = events.shape
-
-        if n >= subsample:
+        if events.shape[0] > subsample:
             subsampleIndices = model.get_subsample_indices(subsample)
             events = events[subsampleIndices,:]
-            print '!!! subsample less than obs'
             if labels != None:
                 labels = labels[subsampleIndices,:]
+   
     else:
         events = model.get_events(selectedFile,subsample=subsample)
 
