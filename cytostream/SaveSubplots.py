@@ -119,11 +119,11 @@ class SaveSubplots():
         plotsToViewHighlights     = self.log.log['plots_to_view_highlights']
 
         if len(plotsToViewChannels) != len(plotsToViewFiles):
-            print "ERROR: SaveSubplotsCenter -- failed error check 1 make_scatter_plots",len(plotsToViewChannels),len(plotsToViewFiles)
+            print "ERROR: SaveSubplots -- failed error check 1 make_scatter_plots",len(plotsToViewChannels),len(plotsToViewFiles)
         if len(plotsToViewChannels) != len(plotsToViewRuns):
-            print "ERROR: SaveSubplotsCenter -- failed error check 2 make_scatter_plots",len(plotsToViewChannels),len(plotsToViewRuns)
+            print "ERROR: SaveSubplots -- failed error check 2 make_scatter_plots",len(plotsToViewChannels),len(plotsToViewRuns)
         if len(plotsToViewChannels) < self.numSubplots:
-            print "ERROR: SaveSubplotsCenter -- failed error check 3 make_scatter_plots"
+            print "ERROR: SaveSubplots -- failed error check 3 make_scatter_plots"
 
         ## get subsample
         if self.figMode == 'qa':

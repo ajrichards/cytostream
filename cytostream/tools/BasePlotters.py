@@ -51,7 +51,6 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
     if str(labels) == "None":
         return
 
-
     if centroids == None:
         print "WARNING: BasePlotters: cannot specify highlight without centroids"
         return
@@ -177,15 +176,6 @@ def draw_plot(args,parent=None):
         parent.selectedChannel2=channel2Ind
         parent.channel2Selector.setCurrentIndex(parent.selectedChannel2)
 
-    #if events != None:
-    #    parent.events=events
-    #    parent.selectedFileName=selectedFileName
-    #    parent.subsample=subsample
-    #    parent.labels=labels
-    #    parent.modelRunID = modelRunID
-    #    parent.highlight=highlight
-    #    parent.log=log
-
     if numSubplots == None:
         numSubplots = 1
 
@@ -263,7 +253,8 @@ def draw_plot(args,parent=None):
         fontSize = 4
 
     ## handle highlighting
-    totalPts = len(labels)
+    totalPts,totalDims = events.shape
+
     if highlight != None and str(labels) == "None":
         print "ERROR in BasePlotters highlight must have labels too"
 
@@ -332,10 +323,11 @@ def draw_plot(args,parent=None):
             ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
             ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
-        if axesLabels[0] != None:
-            ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-        if axesLabels[1] != None:
-            ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+        if axesLabels != None:
+            if axesLabels[0] != None:
+                ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+            if axesLabels[1] != None:
+                ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
         if subplotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
