@@ -127,18 +127,26 @@ class CytostreamPlotter(QtGui.QWidget):
     def draw(self):
         self.ax.clear()
         self.gate_clear_callback()
-        if self.drawState == 'Scatter':
-            draw_scatter(self)
-        elif self.drawState == 'Heat':
-            draw_heat_scatter(self)
-        elif self.drawState == 'Contour':
-            msg = 'Function still under development'
-            QtGui.QMessageBox.information(self, "Info", msg)
-            self.vizSelector.btns['Heat'].setChecked(True)
-            #self.draw()
-            self.vizSelector.selectedItem = self.drawState
-        else:
-            print "ERROR: only scatter is implemented"
+        
+        ## handle args                                                                                                                                                       
+        args = [None for i in range(15)]
+        #args[0] = events
+        #args[1] = subplotFile
+        #args[2] = index1
+        #args[3] = index2
+        #args[4] = subsample
+        #args[5] = labels
+        #args[6] = subplotRun
+        #args[7] = subplotHighlight
+        #args[8] = self.log.log
+        #args[9] = self.get_axes(subplotIndex)
+        args[10] = self.drawState.lower()
+        #args[11] = self.numSubplots
+        #args[12] = self.forceScale
+        #args[13] = axesLabels
+        #args[14] = subplotTitle
+        
+        draw_plot(args,parent=self)
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()

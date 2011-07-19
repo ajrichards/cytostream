@@ -187,7 +187,7 @@ class FileAligner():
                     self.noiseClusters[fname].append(cname)
                 else:
                     self.noiseClusters[fname] = [cname]
-          
+  
         ## get overlap thresholds
         if self.verbose == True:
             print "\n...calculating within thresholds"
@@ -217,9 +217,9 @@ class FileAligner():
         self.withinThresholdsPhi2 = _calculate_within_thresholds(self,allLabels=self.phi2Labels)
         
         ## finish template file according to phi
-        #if self.verbose == True:
-        #    print "noise", self.noiseClusters
-        #    print "noise phi2", self.phi2NoiseClusters
+        if self.verbose == True:
+            print "noise", self.noiseClusters
+            print "noise phi2", self.phi2NoiseClusters
 
         ### loop through each phi ###
         for phi in self.phiRange:
@@ -231,7 +231,8 @@ class FileAligner():
             newLabels = get_modes(self,phiIndices,alignResults,alignFiles,alignClusters,phi)
             self.modeLabels[str(phi)] = newLabels
             
-            #print self.modeNoiseClusters[str(phi)]
+            ## noise debug
+            print self.modeNoiseClusters[str(phi)]
 
             if self.verbose == True:
                 print "...getting sample statistics again"

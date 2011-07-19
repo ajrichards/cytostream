@@ -72,9 +72,9 @@ class FileAlignerTest1(unittest.TestCase):
         ## save the plots 
         print 'making figures...'
         self.nga.set("subsample_analysis", "original")
-        plotsToViewChannels = [(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1)]
+        plotsToViewChannels = [(0,1) for i in range(16)]
         self.nga.set("plots_to_view_channels",plotsToViewChannels)
-        plotsToViewFiles = [0,1,2,3,4,5,0,0,0,0,0,0]
+        plotsToViewFiles = range(16)
         self.nga.set("plots_to_view_files",plotsToViewFiles)
         
         figsDir = os.path.join(homeDir,'figs','alignment')
@@ -82,7 +82,7 @@ class FileAlignerTest1(unittest.TestCase):
         figMode = 'qa'
         figName = os.path.join(figsDir,'subplots_orig_qa.png')
         figTitle = "unittest fa1 - unaligned qa"
-        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True)
+        ss = SaveSubplots(homeDir,figName,numSubplots,figMode=figMode,figTitle=figTitle,forceScale=True,drawState='heat')
 
         figMode = 'analysis'
         figName = os.path.join(figsDir,'subplots_orig_dpmm.png')

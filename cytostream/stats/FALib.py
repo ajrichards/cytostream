@@ -548,11 +548,17 @@ def pool_compare_template(args):
 
     for ci in range(len(templateClusters)):
         clusterI = templateClusters[ci]
+        if templateThresholds.has_key(str(int(clusterI))) == False:
+            print 'in template skipping', fileName,clusterI
+            continue
+
         templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
         clusterMuI = templateEvents.mean(axis=0)
 
         for cj in range(len(fileClusters)):
             clusterJ = fileClusters[cj]
+
+            #print 'compare', fileName, clusterI, clusterJ
 
             ## check to see if matched
             if clusterJ in clustersMatched:
