@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,os,unittest,time,re
+import sys,os,unittest,time,re,cPickle
 from PyQt4 import QtGui, QtCore
 import subprocess
 import matplotlib as mpl
@@ -265,6 +265,20 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis.handle_filtering -- filteringDict must be of type dict"
     
         self.controller.handle_filtering(fileName,filteringDict)
+                                                                                                                                                        
+    def get_aligned_labels(self,phi,alignmentDir='alignment'):
+        fileName = os.path.join(self.controller.homeDir,alignmentDir,"alignLabels_%s.pickle"%(phi))
+
+        if os.path.exists(fileName) == False:
+            print "WARNING: attempted to get aligned labels that do not exist", tmp
+            return None
+
+        tmp =  open(fileName,'r')
+        alignedLabels = cPickle.load(tmp)
+        tmp.close()
+        return alignedLabels
+
+
 
 ### Run the tests 
 if __name__ == '__main__':
