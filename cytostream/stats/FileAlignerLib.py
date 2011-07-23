@@ -68,10 +68,6 @@ class FileAligner():
         self.alignLabels = {}
         self.minNumEvents = 3
 
-        self.overlapMetric = 'eventcount'
-        if self.overlapMetric not in ['kldivergence','eventcount']:
-            print "ERROR: bad overlapMetric in FileAligner"
-
         if self.verbose == True:
             print "Initializing file aligner"
 
@@ -152,8 +148,11 @@ class FileAligner():
         if filterNoise == True:
             ## use bootstrap to determine noise clusters
             if self.verbose == True:
-                print "...bootstrapping to find noise clusters\n"
+                print "...finding noise clusters\n"
 
+            #starting with the residuals (deviations) from the data's median, the MAD is the median of their absolute values.
+            
+            
             clustersList = []
             clustersIDList = []
             clustersTooSmall = []
@@ -164,21 +163,28 @@ class FileAligner():
                     else:
                         clustersList.append(float(value))
                         clustersIDList.append(key+"#"+cluster)
+             
+            #clusterValues = np.array(clustersList)
+            #dataMedian = np.median(clustersList)
+            
+            #dc = DistanceCalculator()
+            #dc.calculate(clusterValues,matrixMeans=dataMedian)
+            #distances = dc.get_distances()
+          
 
-            clustersList = np.array(clustersList)
-            boots = Bootstrapper(clustersList)
-            bootResults = boots.get_results()
+            #boots = Bootstrapper(clustersList)
+            #bootResults = boots.get_results()
         
             ## collect noise clusters
             self.noiseClusters = {}
-            lowerLimit = bootResults['meanCI'][0]
-            for c in range(len(clustersList)):
-                if lowerLimit > clustersList[c]:
-                    fname,cname = re.split("#",clustersIDList[c])
-                    if self.noiseClusters.has_key(fname) == True:
-                        self.noiseClusters[fname].append(cname)
-                    else:
-                        self.noiseClusters[fname] = [cname]
+            #lowerLimit = bootResults['meanCI'][0]
+            #for c in range(len(clustersList)):
+            #    if lowerLimit > clustersList[c]:
+            #        fname,cname = re.split("#",clustersIDList[c])
+            #        if self.noiseClusters.has_key(fname) == True:
+            #            self.noiseClusters[fname].append(cname)
+            #        else:
+            #            self.noiseClusters[fname] = [cname]
             
             ## add the clusters that are too small
             for cid in clustersTooSmall:
@@ -187,6 +193,42 @@ class FileAligner():
                     self.noiseClusters[fname].append(cname)
                 else:
                     self.noiseClusters[fname] = [cname]
+  
+
+
+            #clustersList = []
+            #clustersIDList = []
+            #clustersTooSmall = []
+            #for key, item in self.silValues.iteritems():
+            #    for cluster, value in item.iteritems():
+            #        if value == None:
+            #            clustersTooSmall.append(key+"#"+cluster)
+            #        else:
+            #            clustersList.append(float(value))
+            #            clustersIDList.append(key+"#"+cluster)
+
+            #clustersList = np.array(clustersList)
+            #boots = Bootstrapper(clustersList)
+            #bootResults = boots.get_results()
+        
+            ## collect noise clusters
+            #self.noiseClusters = {}
+            #lowerLimit = bootResults['meanCI'][0]
+            #for c in range(len(clustersList)):
+            #    if lowerLimit > clustersList[c]:
+            #        fname,cname = re.split("#",clustersIDList[c])
+            #        if self.noiseClusters.has_key(fname) == True:
+            #            self.noiseClusters[fname].append(cname)
+            #        else:
+            #            self.noiseClusters[fname] = [cname]
+            
+            ## add the clusters that are too small
+            #for cid in clustersTooSmall:
+            #    fname,cname = re.split("#",cid)
+            #    if self.noiseClusters.has_key(fname) == True:
+            #        self.noiseClusters[fname].append(cname)
+            #    else:
+            #        self.noiseClusters[fname] = [cname]
   
         ## get overlap thresholds
         if self.verbose == True:
@@ -232,7 +274,7 @@ class FileAligner():
             self.modeLabels[str(phi)] = newLabels
             
             ## noise debug
-            print self.modeNoiseClusters[str(phi)]
+            print 'noise',self.modeNoiseClusters[str(phi)]
 
             if self.verbose == True:
                 print "...getting sample statistics again"
@@ -335,15 +377,19 @@ class FileAligner():
         colors = get_all_colors()
         colorList = [colors[c] for c in self.templateLabels]
         uniqueTemplateLabels = np.unique(self.templateLabels)
+        ccount = -1
         for ulab in uniqueTemplateLabels:
+            ccount+=1
             clusterData = self.templateData[np.where(self.templateLabels == ulab)[0],:]
             xPos = clusterData[:,chan1].mean()
             yPos = clusterData[:,chan2].mean()
-            ax.text(xPos, yPos, ulab, color='white',fontsize=8,
-                    ha="center", va="center",
-                    bbox = dict(boxstyle="round",facecolor='black',alpha=0.6)
-                    )
+            if ccount > len(colors):
+                ccount = 0
 
+            ax.text(xPos, yPos, ulab, color='gray',fontsize=8,
+                    ha="center", va="center",
+                    bbox = dict(boxstyle="round",facecolor=colors[ccount],alpha=0.6)
+                    )
 
         ax.scatter(self.templateData[:,chan1],self.templateData[:,chan2],c=colorList,edgecolor='None',s=1)
         if figTitle != None:
@@ -763,7 +809,7 @@ class FileAligner():
                 
                         ## use a constant value for phi when creating the template file
                         #if overlap >= phi:
-                        if overlap >= 0.5:
+                        if overlap >= 0.6:
                             appearedTwice.update([nid])
                             isNew = False
                              
@@ -908,6 +954,6 @@ class FileAligner():
         for phi,score in self.globalScoreDict.iteritems():
             if score > maxScore:
                 maxScore = score
-                result = (phi,score)
+                result = (float(phi),float(score))
 
         return result

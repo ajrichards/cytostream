@@ -48,6 +48,8 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 
     """
 
+    colorList = get_all_colors()
+
     if str(labels) == "None":
         return
 
@@ -59,6 +61,10 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         
         labelColor = "#0000D0"#"#C0C0C0"
         alphaVal = 0.6
+
+        if centroids.has_key(str(int(l))) == False:
+            return
+
         xPos = centroids[str(int(l))][index1]
         yPos = centroids[str(int(l))][index2]
 
@@ -158,6 +164,7 @@ def draw_plot(args,parent=None):
     forceScale=args[12]
     axesLabels=args[13]
     subplotTitle=args[14]
+    showNoise=args[15]
 
     ## setup log
     if parent != None:
@@ -179,9 +186,11 @@ def draw_plot(args,parent=None):
     if numSubplots == None:
         numSubplots = 1
 
-
-    if parent != None and parent.highlight == "None":
+    ## highlight
+    if parent != None and str(parent.highlight) == "None":
         parent.highlight = None
+    elif parent != None and str(parent.highlight) != "None":
+        highlight = [parent.highlight]
 
     ## clear axis
     if parent != None:
@@ -207,7 +216,7 @@ def draw_plot(args,parent=None):
         events = parent.events
         labels = parent.labels
         ax = parent.ax
-        highlight = parent.highlight
+    
 
     if type(labels) == type([]):
         labels = np.array(labels)
@@ -255,24 +264,23 @@ def draw_plot(args,parent=None):
     ## handle highlighting
     totalPts,totalDims = events.shape
 
-    if highlight != None and str(labels) == "None":
+    if str(highlight) != "None" and str(labels) == "None":
         print "ERROR in BasePlotters highlight must have labels too"
 
-    if highlight != None and type(highlight) != type([]):
+    if str(highlight) != "None" and type(highlight) != type([]):
         print "ERROR: in BasePlotters highlight call must be of type list"
     
-    if highlight != None and type(highlight) == type([]) and str(labels) != "None":
-        indicesFG = np.array([])
+    if str(highlight) != "None" and type(highlight) == type([]) and str(labels) != "None":
         
+        indicesFG = np.array([])
         for clustID in highlight:
-            if clustID not in labels:
+            if int(clustID) not in labels:
                 continue
 
-            indicesFG = np.hstack([indicesFG, np.where(labels==clustID)[0]])
+            indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
 
         indicesFG = [int(i) for i in indicesFG]
         indicesBG = list(set(np.arange(totalPts)).difference(set(indicesFG)))
-
     else:
         indicesFG = np.arange(totalPts)
         indicesBG = []
@@ -286,9 +294,9 @@ def draw_plot(args,parent=None):
         if totalPts >= 9e04:
             bins = 80.0
         elif totalPts >= 8e04:
-            bins = 7.0
+            bins = 80.0
         elif totalPts >= 7e04:
-            bins = 60.0
+            bins = 80.0
         elif totalPts >= 6e04:
             bins = 50.0
         elif totalPts >= 5e04:
@@ -303,7 +311,7 @@ def draw_plot(args,parent=None):
             bins = 30.0
         else:
             bins = 30.0
-
+            
         colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind],bins=bins)
     else:
        colorList = None

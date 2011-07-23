@@ -4,10 +4,12 @@ functions that are used to align files
 
 import sys,re,os,csv
 import numpy as np
+from multiprocessing import Pool, cpu_count
 from scipy.cluster.vq import whiten
 from scipy.spatial.distance import pdist
-from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler
+from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler,  run_kmeans_with_sv
 import matplotlib.pyplot as plt
+from fcm.statistics import mixnormpdf
 
 def _calculate_within_thresholds(fa,allLabels=None):
 
@@ -171,9 +173,29 @@ def bootstrap_compare(eventsI,eventsJ):
         print "ERROR in bootstrap_compare -- cluster had 0 elements"
         return None
                                                                              
-    bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])                                                               
-    bootstrapData = np.vstack([eventsI,eventsJ])                                                                                                     
-    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=500)
+    bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
+    bootstrapData = np.vstack([eventsI,eventsJ])
+    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=50)
+    bresults = bstpr.get_results()  
+
+    return bresults
+
+def pool_compare_bootstrap(args):
+    eventsI = args[0]
+    eventsJ = args[1]
+    identifier = args[2]
+
+    print '...bootstrapping', identifier
+
+    n,m = len(eventsI),len(eventsJ)
+
+    if n == 0 or m == 0:
+        print "ERROR in bootstrap_compare -- cluster had 0 elements"
+        return None
+                                                                             
+    bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
+    bootstrapData = np.vstack([eventsI,eventsJ])
+    bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=50)
     bresults = bstpr.get_results()  
 
     return bresults
@@ -189,7 +211,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
     '''
 
-    if evaluator not in ['rank','bootstrap','kldivergence']:
+    if evaluator not in ['rank','bootstrap','kldivergence','variance','mixpdf']:
         print "ERROR: in get_alignment_labels evaluator not valid"
 
     results = alignment['results']
@@ -234,16 +256,40 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
              
             ## debug
             #print 'In file %s cluster %s will be changed to %s due to a overlap of %s'%(fileName,clusterID,templateMatches,matchSignif)
-
             if evaluator == 'rank' or len(matchSignif) == 1:
                 rankedInds = np.argsort(matchSignif)[::-1]
+            elif evaluator == 'variance':
+                varResults = []
+                eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
+                covarJ = np.cov(eventsJ.T)
+                for tm in templateMatches:
+                   eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                   covarI = np.cov(eventsJ.T)
+                   varResults.append(np.abs(covarI - covarJ).sum())
+                rankedInds = np.argsort(varResults)
+                
+            elif evaluator == 'mixpdf':
 
-            #elif evaluator == 'variance':
-            #    varSums = []
-            #    for tm in templateMatches:
-            #       eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
-            #       varSums.append(np.cov(eventsJ.T)
-                    
+                mixpdfResults = []
+
+                ## fit the template cluster
+                eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
+                kmeanResults = run_kmeans_with_sv(eventsJ)
+                kmeanLabels = kmeanResults['labels']
+                uniqueLabels = np.unique(kmeanLabels)
+                k = kmeanResults['k']
+
+                mu = np.array([eventsJ[np.where(kmeanLabels == i)[0],:].mean(axis=0) for i in uniqueLabels])
+                sigma = np.array([np.cov(eventsJ[np.where(kmeanLabels == i)[0],:].T) for i in uniqueLabels])
+                pi = np.array([float(len(np.where(kmeanLabels == i)[0])) / float(len(kmeanLabels)) for i in uniqueLabels])
+
+                for tm in templateMatches:
+                   eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                   mnpdf = mixnormpdf(eventsI,pi,mu,sigma)                                   
+                   mixpdfResults.append(mnpdf.mean())
+                   
+                rankedInds = np.argsort(mixpdfResults)
+
             elif evaluator == 'bootstrap':
                 bootstrapResults = []
                 print "\t...bootstrapping for ", fileName, clusterID
@@ -253,11 +299,29 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                     bsResults = bootstrap_compare(eventsI, eventsJ)
                     bootstrapResults.append(bsResults['delta1'])
                 rankedInds = np.argsort(bootstrapResults)
+            
+                print evaluator,bootstrapResults[rankedInds[0]],bootstrapResults[rankedInds[1]]
+    
+                #allEventsI = []
+                #for tm in templateMatches:
+                #    allEventsI.append(fa.templateData[np.where(fa.templateLabels==tm)[0],:])
+                #eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
+                #pool = Pool(processes=cpu_count()-1)
+                #args = zip(allEventsI,
+                #           [eventsJ]*len(templateMatches),
+                #           ["%s-%s"%(fileName,clusterID)]*len(templateMatches))
+                #_bootstrapResults = pool.map(pool_compare_bootstrap,args)
+                #bootstrapResults = []
+                #
+                #for tm in range(len(templateMatches)):
+                #    matchResults = _bootstrapResults[tm]
+                #    bootstrapResults+=matchResults
+                #rankedInds = np.argsort(bootstrapResults)
+
             elif evaluator == 'kldivergence':
                 klResults = []
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 gd1 = GaussianDistn(eventsJ.mean(axis=0), np.cov(eventsJ.T))
-                print "\t...using kl for ", fileName, clusterID
 
                 ## things to try use max of both kldists 
                 for tm in templateMatches:
@@ -265,11 +329,13 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                     gd2 = GaussianDistn(eventsI.mean(axis=0), np.cov(eventsI.T))
                     klDist1 = kullback_leibler(gd1,gd2)
                     klDist2 = kullback_leibler(gd2,gd1)
-                    klList = [klDist1,klDist2]
-                    klDist = klList[np.argmin([klDist1.sum(),klDist2.sum()])] 
+                    klList = [klDist1.sum(),klDist2.sum()]
+                    klDist = klList[np.argmax([klDist1.sum(),klDist2.sum()])] 
                     klResults.append(klDist)
+                    print "...",tm,klList
+                print klResults
                 rankedInds = np.argsort(klResults)
-                
+            
             ## if multiple matches handle
             newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * clusterID)[0]] = templateMatches[rankedInds[0]]
 

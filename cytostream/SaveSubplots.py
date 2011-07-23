@@ -91,7 +91,7 @@ class SaveSubplots():
             self.fig.subplots_adjust(wspace=0.32)
             dpi = 200
         elif self.numSubplots in [4]:
-            self.fig.subplots_adjust(hspace=0.2,wspace=0.05)
+            self.fig.subplots_adjust(hspace=0.25,wspace=0.005)
             dpi = 250
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
@@ -162,9 +162,10 @@ class SaveSubplots():
                 subplotTitle = None
             
             axesLabels = (None,None)
+            showNoise = False
 
             ## handle args
-            args = [None for i in range(15)]
+            args = [None for i in range(16)]
             args[0] = events
             args[1] = subplotFile
             args[2] = index1
@@ -180,6 +181,7 @@ class SaveSubplots():
             args[12] = self.forceScale
             args[13] = axesLabels
             args[14] = subplotTitle
+            args[15] = showNoise
 
             draw_plot(args)
 

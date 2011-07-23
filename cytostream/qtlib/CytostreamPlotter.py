@@ -127,9 +127,10 @@ class CytostreamPlotter(QtGui.QWidget):
     def draw(self):
         self.ax.clear()
         self.gate_clear_callback()
-        
+        showNoise = False
+
         ## handle args                                                                                                                                                       
-        args = [None for i in range(15)]
+        args = [None for i in range(16)]
         #args[0] = events
         #args[1] = subplotFile
         #args[2] = index1
@@ -145,7 +146,8 @@ class CytostreamPlotter(QtGui.QWidget):
         #args[12] = self.forceScale
         #args[13] = axesLabels
         #args[14] = subplotTitle
-        
+        args[15] = showNoise
+
         draw_plot(args,parent=self)
 
     def create_figure_widget(self):
