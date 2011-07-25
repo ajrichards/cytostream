@@ -14,14 +14,14 @@ from multiprocessing import Pool, cpu_count
 
 from cytostream import NoGuiAnalysis
 from scipy.spatial.distance import pdist, squareform
-from cytostream.stats import SilValueGenerator, DistanceCalculator
+from cytostream.stats import DistanceCalculator
 from cytostream.stats import Bootstrapper, EmpiricalCDF,BootstrapHypoTest,GaussianDistn, kullback_leibler
 from cytostream.tools import get_all_colors,get_master_label_list
 from fcm.statistics.distributions import mvnormpdf
 import matplotlib.pyplot as plt
 from cytostream.stats import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
-from cytostream.stats import get_alignment_scores
+from cytostream.stats import get_alignment_scores,get_silhouette_values
 from cytostream.stats import scale
 
 class FileAligner():
@@ -143,7 +143,8 @@ class FileAligner():
         if self.verbose == True:
             print "...getting silhouette values"
         allLabels = [self.get_labels(expName) for expName in self.expListNames]
-        self.silValues = self.get_silhouette_values(allLabels,subsample=self.noiseSubset)
+        self.silValues = get_silhouette_values(allLabels,self.expListNames,self.get_events,subsample=self.noiseSubset,
+                                               minNumEvents=self.minNumEvents)
 
         if filterNoise == True:
             ## use bootstrap to determine noise clusters
@@ -151,8 +152,6 @@ class FileAligner():
                 print "...finding noise clusters\n"
 
             #starting with the residuals (deviations) from the data's median, the MAD is the median of their absolute values.
-            
-            
             clustersList = []
             clustersIDList = []
             clustersTooSmall = []
@@ -193,8 +192,6 @@ class FileAligner():
                     self.noiseClusters[fname].append(cname)
                 else:
                     self.noiseClusters[fname] = [cname]
-  
-
 
             #clustersList = []
             #clustersIDList = []
@@ -311,7 +308,10 @@ class FileAligner():
             if self.verbose == True:
                 print "...calculating scores"
 
-            silValuesPhi = self.get_silhouette_values(aLabels,subsample=self.noiseSubset)
+            #silValuesPhi = self.get_silhouette_values(aLabels,subsample=self.noiseSubset)
+            silValuesPhi = get_silhouette_values(aLabels,self.expListNames,self.get_events,subsample=self.noiseSubset,
+                                  minNumEvents=self.minNumEvents)
+
             numTemplateClusters = len(np.unique(self.templateLabels))
 
             ## calculate silhouette value for product score
@@ -518,6 +518,7 @@ class FileAligner():
 
         return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints,'dists':clusterDists}
 
+    '''
     def get_silhouette_values(self,labels,subsample=None):
         silValues = {}
         silValuesElements = {}
@@ -584,9 +585,12 @@ class FileAligner():
 
         return silValues
 
+
     def _get_silhouette_values(self,mat,labels):
         svg = SilValueGenerator(mat,labels)
         return svg.silValues
+    '''
+
 
     def create_log_files(self):
         ''' 
@@ -600,7 +604,7 @@ class FileAligner():
         self.alignmentLog = csv.writer(open(os.path.join(self.homeDir,self.alignmentDir,"Alignment.log"),'w'))
         
     def run_self_alignment(self):
-        pool = Pool(processes=cpu_count())
+        pool = Pool(processes=cpu_count(),maxtasksperchild=1)
         fileDataList = []
         fileLabelsList = []
         fileClusterList = []
@@ -643,7 +647,7 @@ class FileAligner():
     def create_template_file(self,phi,thresholds=None,sampleStats=None):
 
         ## create a pool
-        pool = Pool(processes=cpu_count())
+        pool = Pool(processes=cpu_count(),maxtasksperchild=1)
    
         ## find file with fewest non-noise clusters
         fileWithMinNumClusters = None
@@ -841,7 +845,7 @@ class FileAligner():
 
     def scan_files_with_template(self,phi,thresholds=None,sampleStats=None):
 
-        pool = Pool(processes=cpu_count())
+        pool = Pool(processes=cpu_count(),maxtasksperchild=1)
    
         ## find file with fewest non-noise clusters
         fileWithMinNumClusters = None

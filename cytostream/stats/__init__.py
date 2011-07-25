@@ -7,7 +7,7 @@ from DistanceCalculator import DistanceCalculator
 from SilValueGenerator import SilValueGenerator
 from Bootstrapper import Bootstrapper
 from BootstrapHypoTest import BootstrapHypoTest
-from Kmeans import run_kmeans_with_sv
+from Kmeans import run_kmeans_with_sv, get_silhouette_values
 from FALib import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 from FALib import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
 from FALib import get_alignment_scores

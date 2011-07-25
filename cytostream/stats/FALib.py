@@ -274,7 +274,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
                 ## fit the template cluster
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
-                kmeanResults = run_kmeans_with_sv(eventsJ)
+                kmeanResults = run_kmeans_with_sv(eventsJ,subsample=1000)
                 kmeanLabels = kmeanResults['labels']
                 uniqueLabels = np.unique(kmeanLabels)
                 k = kmeanResults['k']
@@ -306,7 +306,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                 #for tm in templateMatches:
                 #    allEventsI.append(fa.templateData[np.where(fa.templateLabels==tm)[0],:])
                 #eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
-                #pool = Pool(processes=cpu_count()-1)
+                #pool = Pool(processes=cpu_count()-1,masktasksperchild=1)
                 #args = zip(allEventsI,
                 #           [eventsJ]*len(templateMatches),
                 #           ["%s-%s"%(fileName,clusterID)]*len(templateMatches))
