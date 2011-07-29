@@ -94,7 +94,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         labelSize = 5
     elif numSubplots in [10,11,12]:
         labelSize = 5
-    elif self.numSubplots in [13,14,15,16]:
+    elif numSubplots in [13,14,15,16]:
         labelSize = 5
 
     if len(uniqueLabels) > 50:
@@ -258,7 +258,7 @@ def draw_plot(args,parent=None):
         fontSize = 6
     elif numSubplots in [10,11,12]:
         fontSize = 5
-    elif self.numSubplots in [13,14,15,16]:
+    elif numSubplots in [13,14,15,16]:
         fontSize = 4
 
     ## handle highlighting

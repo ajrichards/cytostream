@@ -20,9 +20,9 @@ from cytostream.tools import get_all_colors,get_master_label_list
 from fcm.statistics.distributions import mvnormpdf
 import matplotlib.pyplot as plt
 from cytostream.stats import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
-from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_template, pool_compare_self
+from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_self
 from cytostream.stats import get_alignment_scores,get_silhouette_values
-from cytostream.stats import scale
+from cytostream.stats import scale, find_noise
 
 class FileAligner():
 
@@ -36,9 +36,9 @@ class FileAligner():
 
     '''
 
-    def __init__(self,expListNames=[],expListData=[],expListLabels=None,phiRange=None,homeDir='.',alignmentDir='alignment',
-                 refFile=None,verbose=False,excludedChannels=[],isProject=False,noiseSubset=600,
-                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=False,templateSaveChans=(0,1)):
+    def __init__(self,templateFile,expListNames,expListLabels=[],expListData=[],phiRange=[0.2,0.6],homeDir='.',alignmentDir='alignment',
+                 refFile=None,verbose=False,excludedChannels=[],isProject=False,dirClean=True,noiseSample=2000,
+                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=False):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
@@ -50,20 +50,19 @@ class FileAligner():
         self.verbose = verbose
         self.modelRunID = modelRunID
         self.isProject = isProject
-        self.noiseSubset = noiseSubset
-        self.templateSaveChans = templateSaveChans
+        self.noiseSample = noiseSample
         self.alignmentDir = alignmentDir
+        self.dirClean = dirClean
+        self.templateData,self.templateLabels = templateFile 
 
         ## control variables 
         self.medianTransform = medianTransform
-        self.silValueEstimateSample = 500
         self.distanceMetric = distanceMetric
         self.globalScoreDict = {}
         self.newLabelsAll = {}
         self.modelType = 'components'
         self.noiseClusters = {}
         self.modeNoiseClusters = {}
-        self.referenceOverlap = 1e7
         self.modeLabels = {}
         self.alignLabels = {}
         self.minNumEvents = 3
@@ -142,91 +141,20 @@ class FileAligner():
         ## get sil values
         if self.verbose == True:
             print "...getting silhouette values"
+        allEvents = [self.get_events(expName) for expName in self.expListNames]
         allLabels = [self.get_labels(expName) for expName in self.expListNames]
-        self.silValues = get_silhouette_values(allLabels,self.expListNames,self.get_events,subsample=self.noiseSubset,
+        self.silValues = get_silhouette_values(allEvents,allLabels,subsample=self.noiseSample,
                                                minNumEvents=self.minNumEvents)
-
-        if filterNoise == True:
-            ## use bootstrap to determine noise clusters
-            if self.verbose == True:
-                print "...finding noise clusters\n"
-
-            #starting with the residuals (deviations) from the data's median, the MAD is the median of their absolute values.
-            clustersList = []
-            clustersIDList = []
-            clustersTooSmall = []
-            for key, item in self.silValues.iteritems():
-                for cluster, value in item.iteritems():
-                    if value == None:
-                        clustersTooSmall.append(key+"#"+cluster)
-                    else:
-                        clustersList.append(float(value))
-                        clustersIDList.append(key+"#"+cluster)
-             
-            #clusterValues = np.array(clustersList)
-            #dataMedian = np.median(clustersList)
-            
-            #dc = DistanceCalculator()
-            #dc.calculate(clusterValues,matrixMeans=dataMedian)
-            #distances = dc.get_distances()
-          
-
-            #boots = Bootstrapper(clustersList)
-            #bootResults = boots.get_results()
+        ## filter the noise
+        self.noiseClusters = {}
         
-            ## collect noise clusters
-            self.noiseClusters = {}
-            #lowerLimit = bootResults['meanCI'][0]
-            #for c in range(len(clustersList)):
-            #    if lowerLimit > clustersList[c]:
-            #        fname,cname = re.split("#",clustersIDList[c])
-            #        if self.noiseClusters.has_key(fname) == True:
-            #            self.noiseClusters[fname].append(cname)
-            #        else:
-            #            self.noiseClusters[fname] = [cname]
-            
-            ## add the clusters that are too small
-            for cid in clustersTooSmall:
-                fname,cname = re.split("#",cid)
-                if self.noiseClusters.has_key(fname) == True:
-                    self.noiseClusters[fname].append(cname)
-                else:
-                    self.noiseClusters[fname] = [cname]
+        for fileInd in range(len(self.expListNames)):
+            expName = self.expListNames[fileInd]
+            mat = self.get_events(expName)
+            labels = self.get_labels(expName)
+            noiseClusters = find_noise(mat,labels,silValues=self.silValues[str(fileInd)],minNumEvents=self.minNumEvents)
+            self.noiseClusters[expName] = noiseClusters
 
-            #clustersList = []
-            #clustersIDList = []
-            #clustersTooSmall = []
-            #for key, item in self.silValues.iteritems():
-            #    for cluster, value in item.iteritems():
-            #        if value == None:
-            #            clustersTooSmall.append(key+"#"+cluster)
-            #        else:
-            #            clustersList.append(float(value))
-            #            clustersIDList.append(key+"#"+cluster)
-
-            #clustersList = np.array(clustersList)
-            #boots = Bootstrapper(clustersList)
-            #bootResults = boots.get_results()
-        
-            ## collect noise clusters
-            #self.noiseClusters = {}
-            #lowerLimit = bootResults['meanCI'][0]
-            #for c in range(len(clustersList)):
-            #    if lowerLimit > clustersList[c]:
-            #        fname,cname = re.split("#",clustersIDList[c])
-            #        if self.noiseClusters.has_key(fname) == True:
-            #            self.noiseClusters[fname].append(cname)
-            #        else:
-            #            self.noiseClusters[fname] = [cname]
-            
-            ## add the clusters that are too small
-            #for cid in clustersTooSmall:
-            #    fname,cname = re.split("#",cid)
-            #    if self.noiseClusters.has_key(fname) == True:
-            #        self.noiseClusters[fname].append(cname)
-            #    else:
-            #        self.noiseClusters[fname] = [cname]
-  
         ## get overlap thresholds
         if self.verbose == True:
             print "\n...calculating within thresholds"
@@ -256,9 +184,9 @@ class FileAligner():
         self.withinThresholdsPhi2 = _calculate_within_thresholds(self,allLabels=self.phi2Labels)
         
         ## finish template file according to phi
-        if self.verbose == True:
-            print "noise", self.noiseClusters
-            print "noise phi2", self.phi2NoiseClusters
+        #if self.verbose == True:
+        print "noise", self.noiseClusters
+        print "noise phi2", self.phi2NoiseClusters
 
         ### loop through each phi ###
         for phi in self.phiRange:
@@ -278,23 +206,19 @@ class FileAligner():
 
             sampleStatsPhi = self.get_sample_statistics(allLabels=self.modeLabels[str(phi)])
 
+
+
             ## get overlap thresholds
             if self.verbose == True:
                 print "\n...calculating within thresholds"
             withinThresholdsPhi = _calculate_within_thresholds(self,allLabels=self.modeLabels[str(phi)])
-        
-            ## getting template file
-            if self.verbose == True:
-                print "...creating template file"
-            
-            self.create_template_file(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
+                    
             self.alignmentLog.writerow(['template_clusters',"%s-%s"%(phi,len(np.unique(self.templateLabels)))])
 
             ## scan files with template
             if self.verbose == True:
                 print "...scanning files with template"
 
-            #print self.modeNoiseClusters[str(phi)]
             alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
             aLabels = get_alignment_labels(self,alignment,phi,evaluator=evaluator)
             self.alignLabels[str(phi)] = aLabels
@@ -309,8 +233,9 @@ class FileAligner():
                 print "...calculating scores"
 
             #silValuesPhi = self.get_silhouette_values(aLabels,subsample=self.noiseSubset)
-            silValuesPhi = get_silhouette_values(aLabels,self.expListNames,self.get_events,subsample=self.noiseSubset,
-                                  minNumEvents=self.minNumEvents)
+            allEvents = [self.get_events(expName) for expName in self.expListNames]
+            silValuesPhi = get_silhouette_values(allEvents,aLabels,subsample=self.noiseSample,
+                                                 minNumEvents=self.minNumEvents)
 
             numTemplateClusters = len(np.unique(self.templateLabels))
 
@@ -320,7 +245,8 @@ class FileAligner():
             productScore = 0
             masterLabelList = get_master_label_list(aLabels)
 
-            for fileName in self.expListNames:
+            for fileInd in range(len(self.expListNames)):
+                fileName = self.expListNames[fileInd]
                 fileSilVals = []
                 fileInd = self.expListNames.index(fileName)
                             
@@ -328,9 +254,9 @@ class FileAligner():
                     if cid < 0:
                         continue
 
-                    if silValuesPhi[fileName].has_key(str(cid)) == False or alignedSampleStatsPhi['n'][fileName].has_key(str(cid)) == False:
+                    if silValuesPhi[str(fileInd)].has_key(str(cid)) == False or alignedSampleStatsPhi['n'][fileName].has_key(str(cid)) == False:
                         continue
-                    fileSilVals += [silValuesPhi[fileName][str(cid)]] * alignedSampleStatsPhi['n'][fileName][str(cid)]
+                    fileSilVals += [silValuesPhi[str(fileInd)][str(cid)]] * alignedSampleStatsPhi['n'][fileName][str(cid)]
                     
                 _fileMean = np.array(fileSilVals).mean()
                 fileMeans.append(_fileMean)
@@ -356,46 +282,20 @@ class FileAligner():
             silValue = scale(np.array(fileMeans).mean(),(-1,1),(0,1))
             productScore = normalizedMatchScore * silValue
 
-            print phi, normalizedMatchScore, silValue, productScore
+            print evaluator, phi, normalizedMatchScore, silValue, productScore
             self.alignmentScores.writerow([phi,numTemplateClusters,silValue,normalizedMatchScore,productScore])
             
             ## save a copy of the template file
+            if os.path.isdir(os.path.join(self.homeDir,'figs','templates')) == False:
+                os.mkdir(os.path.join(self.homeDir,'figs','templates'))
             self.globalScoreDict[str(phi)] = productScore
-            figName = os.path.join(self.homeDir,'figs',self.alignmentDir,'template_figure_%s.png'%phi)
-            self.save_template_figure(self.templateSaveChans[0],self.templateSaveChans[1],figName,figTitle="template_%s"%phi)
+            figName = os.path.join(self.homeDir,'figs','templates','template_figure_%s_%s.png'%(evaluator,re.sub("\.","",str(phi))))
 
         self.timeEnd = time.time()
         timeTaken = str(datetime.timedelta(seconds=round(self.timeEnd-self.timeBegin,6)))
         self.alignmentLog.writerow(['time_taken',timeTaken])
         print 'runTime (hh:mm:ss)',timeTaken
 
-    def save_template_figure(self,chan1,chan2,figName,figTitle=None):
-        ## NOTE: this fn only has available the latest phi and the included channels 
-        templateClusters = np.unique(self.templateLabels)
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        colors = get_all_colors()
-        colorList = [colors[c] for c in self.templateLabels]
-        uniqueTemplateLabels = np.unique(self.templateLabels)
-        ccount = -1
-        for ulab in uniqueTemplateLabels:
-            ccount+=1
-            clusterData = self.templateData[np.where(self.templateLabels == ulab)[0],:]
-            xPos = clusterData[:,chan1].mean()
-            yPos = clusterData[:,chan2].mean()
-            if ccount > len(colors):
-                ccount = 0
-
-            ax.text(xPos, yPos, ulab, color='gray',fontsize=8,
-                    ha="center", va="center",
-                    bbox = dict(boxstyle="round",facecolor=colors[ccount],alpha=0.6)
-                    )
-
-        ax.scatter(self.templateData[:,chan1],self.templateData[:,chan2],c=colorList,edgecolor='None',s=1)
-        if figTitle != None:
-            ax.set_title(figTitle)
-        plt.savefig(figName)
-        
     def _init_project(self):
         self.nga = NoGuiAnalysis(self.homeDir,loadExisting=True)
         self.nga.set("results_mode",self.modelType)
@@ -412,8 +312,9 @@ class FileAligner():
             if os.path.isdir(os.path.join(self.homeDir,diry)) == False:
                 os.mkdir(os.path.join(self.homeDir,diry))
             
-        if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir)) == True:
+        if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir)) == True and self.dirClean == True:
             ## clean out figures dir
+            print 'CCCCCCCCCCCCCLLLLLLLLEEEEEEEEAAAAAAAAAAANNNNNNNNNIIIIIIIINNNNNNNNNGGGGGGg'
             for item1 in os.listdir(os.path.join(self.homeDir,self.alignmentDir)):
                 if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir,item1)) == True:
                     for item2 in os.listdir(os.path.join(self.homeDir,self.alignmentDir,item1)):
@@ -421,14 +322,6 @@ class FileAligner():
                 else:
                     os.remove(os.path.join(self.homeDir,self.alignmentDir,item1))
             
-        #if os.path.isdir(os.path.join(self.homeDir,"alignment")) == False:
-        #    os.mkdir(os.path.join(self.homeDir,"alignment"))
-
-        ## create the align fig dir
-        #if os.path.join(self.homeDir,'figs','alignment') == False:
-        #    os.mkdir(os.path.join(self.homeDir,'figs','alignment'))
-
-
     def get_labels(self,selectedFile):
 
         if selectedFile not in self.expListNames:
@@ -518,80 +411,6 @@ class FileAligner():
 
         return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints,'dists':clusterDists}
 
-    '''
-    def get_silhouette_values(self,labels,subsample=None):
-        silValues = {}
-        silValuesElements = {}
-        for expName in self.expListNames:
-            silValues[expName] = {}
-
-        ## create subset if data for large data sets 
-        subsetExpData = []
-        subsetExpLabels = []
-
-        if subsample != None:
-            for expInd in range(len(self.expListNames)):
-                expName = self.expListNames[expInd]
-                expData =  self.get_events(expName)
-                expLabels = labels[expInd]
-                newIndices = []
-
-                totalInds = 0
-                for cluster in np.sort(np.unique(expLabels)):
-                    clusterInds = np.where(expLabels==cluster)[0]
-                    totalInds += len(clusterInds)
-
-                    if len(clusterInds) > subsample:
-                        percentTotal = float(len(clusterInds)) / float(len(expLabels)) 
-                        randSelected = clusterInds[np.random.randint(0,len(clusterInds),subsample)]
-                        newIndices += randSelected.tolist()
-                    else:
-                        newIndices += clusterInds.tolist()
-
-                ## save indices and data
-                subsetExpData.append(expData[newIndices,:])
-                subsetExpLabels.append(expLabels[newIndices])
-
-        ## calculate the silvalues for each file and the subsampled clusters
-        for c in range(len(self.expListNames)):
-            expName = self.expListNames[c]
-            
-            if subsample != None:
-                fileData = subsetExpData[c]
-                fileLabels = subsetExpLabels[c]
-            else:
-                fileData = self.get_events(expName)
-                fileLabels = self.get_labels(expName)
-
-            fileClusters = np.sort(np.unique(fileLabels))    
-    
-            if self.verbose == True:
-                print "\r\t%s/%s files"%(c+1, len(self.expListNames))
-            silValuesElements[expName] = self._get_silhouette_values(fileData,fileLabels)
-        
-            ## save only sil values for each cluster
-            for clusterID in fileClusters:
-                clusterElementInds = np.where(fileLabels == clusterID)[0]
-                if len(clusterElementInds) < self.minNumEvents:
-                    silValues[expName][str(clusterID)] = None
-                else:
-                    clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
-                    silValues[expName][str(clusterID)] = clusterSilValue
-
-                del clusterElementInds
-
-        if self.verbose == True:
-            print "\n"
-
-        return silValues
-
-
-    def _get_silhouette_values(self,mat,labels):
-        svg = SilValueGenerator(mat,labels)
-        return svg.silValues
-    '''
-
-
     def create_log_files(self):
         ''' 
         create a log file to document cluster changes
@@ -642,206 +461,6 @@ class FileAligner():
             alignResultsClusters += fileResults[2]
 
         return {'results':alignResults,'files':alignResultsFiles,'clusters':alignResultsClusters}
-
-
-    def create_template_file(self,phi,thresholds=None,sampleStats=None):
-
-        ## create a pool
-        pool = Pool(processes=cpu_count(),maxtasksperchild=1)
-   
-        ## find file with fewest non-noise clusters
-        fileWithMinNumClusters = None
-        fileWithMaxNumClusters = None
-        minClusts = np.inf
-        maxClusts = -np.inf
-
-        if sampleStats == None:
-            sampleStats = self.sampleStats
-
-        if thresholds == None:
-            thresholds = self.withinThresholds
-
-        for fileInd in range(len(self.expListNames)):
-            fileName = self.expListNames[fileInd]
-            noiseClusters = 0
-        
-            ## check for the number of noise clusters
-            if self.modeNoiseClusters[str(phi)].has_key(fileName):
-                noiseClusters = len(self.modeNoiseClusters[str(phi)][fileName])
-
-            fileLabels = self.modeLabels[str(phi)][fileInd]
-            fileClusters = np.sort(np.unique(fileLabels))
-            fileClusterNumber = len(fileClusters) - noiseClusters
-
-            if fileClusterNumber < minClusts:
-                minClusts = fileClusterNumber
-                fileWithMinNumClusters = fileName
-            if fileClusterNumber > maxClusts:
-                maxClusts = fileClusterNumber
-                fileWithMaxNumClusters
-
-        ## create a copy of file to start template
-        fileWithMinNumClustersInd = self.expListNames.index(fileWithMinNumClusters)
-        templateData = self.get_events(fileWithMinNumClusters)
-        templateLabels = self.modeLabels[str(phi)][fileWithMinNumClustersInd]
-
-        ## remove noise clusters from file
-        if self.modeNoiseClusters[str(phi)].has_key(fileWithMinNumClusters):
-            noiseInds = np.array([])
-            for cid in self.modeNoiseClusters[str(phi)][fileWithMinNumClusters]:
-                noiseInds = np.hstack([noiseInds, np.where(templateLabels==int(cid))[0]])
-            nonNoiseInds = list(set(range(len(templateLabels))).difference(set(noiseInds)))
-            templateData = templateData[nonNoiseInds,:]
-            templateLabels = templateLabels[nonNoiseInds,:]
-
-        ## setup save variables
-        templateClusters = np.sort(np.unique(templateLabels))
-
-        ## more variables
-        fileCount = 0
-        clustCount = -1
-        newClusterCount = 0
-        newClusterData = None
-        newClusterLabels = None
-        appearedTwice = set([])
-        templateThresholds = {}
-
-        ## calculate within thresholds for template
-        for clusterID in templateClusters:
-
-            ## check for noise label
-            if self.modeNoiseClusters[str(phi)].has_key(fileName) and self.modeNoiseClusters[str(phi)][fileName].__contains__(str(clusterID)):
-                continue
-
-            ## check that cluster has min num events
-            templateEvents = templateData[np.where(templateLabels==int(clusterID))[0],:]
-            if len(templateEvents) < self.minNumEvents:
-                continue
-
-            ## determine distances
-            templateMean = templateEvents.mean(axis=0)
-            dc = DistanceCalculator(distType=self.distanceMetric)
-            if self.distanceMetric == 'mahalanobis':
-                inverseCov = dc.get_inverse_covariance(templateEvents)
-                if inverseCov != None:
-                    dc.calculate(templateEvents,matrixMeans=templateMean,inverseCov=inverseCov)
-                    distances = dc.get_distances()
-                else:
-                    dc.calculate(templateEvents,matrixMeans=templateMean)
-                    distances = dc.get_distances()
-                    distances = whiten(distances)
-            else:
-                dc.calculate(templateEvents,matrixMeans=templateMean)
-                distances = dc.get_distances()
-
-            ## use the eCDF to find a threshold
-            eCDF = EmpiricalCDF(distances)
-            thresholdLow = eCDF.get_value(0.025)
-            thresholdHigh = eCDF.get_value(0.975)
-            templateThresholds[str(int(clusterID))] = {'ci':(thresholdLow, thresholdHigh)}
-
-        ## rank file in in terms of k
-        listOfK = [sampleStats['k'][f] for f in self.expListNames]
-        orderedFiles = np.argsort(listOfK)
-
-        ## align template to all other files
-        fileDataList = []
-        fileLabelsList = []
-        fileClusterList = []
-        fileNameList = []
-        
-        for fileInd in orderedFiles:
-            fileName = self.expListNames[fileInd]
-        
-            ## skip the file used to make the template
-            if fileName == fileWithMinNumClusters:
-                continue
-
-            fileNameList.append(fileName)
-            fileDataList.append(self.get_events(fileName))
-            fileLabelsList.append(self.modeLabels[str(phi)][fileInd])
-            fileClustersList = [np.sort(np.unique(fl)) for fl in fileLabelsList]
-
-        ## set up variables to pass to pool
-        n = len(fileNameList)
-        args = zip(fileNameList,
-                   fileDataList,
-                   fileLabelsList,
-                   fileClustersList,
-                   [templateData]*n,
-                   [templateLabels]*n,
-                   [templateClusters]*n,
-                   [self.modeNoiseClusters[str(phi)]]*n,
-                   [thresholds]*n,
-                   [templateThresholds]*n,
-                   [phi]*n,
-                   [self.minNumEvents]*n)
-
-        self.alignmentLog.writerow(['start_file',"%s-%s"%(phi,fileWithMinNumClusters)])
- 
-        ## scan through all of the files to find nonmatches
-        results = pool.map(pool_compare_template,args)
-        newClusterData = None
-        newClusterLabels = None
-        appearedTwice = set([])
-        newClusterCount=0
-
-        ## determine which clusters to add to template file
-        for fileInd in range(len(fileNameList)):
-            fileName = fileNameList[fileInd]
-            fileData = self.get_events(fileName)
-            fileLabels = self.modeLabels[str(phi)][self.expListNames.index(fileName)]
-            nonMatches = results[fileInd]
-        
-            for clusterJ in nonMatches:
-                clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-
-                ## check for min cluster size
-                if len(clusterEventsJ) < self.minNumEvents:
-                    continue
-
-                ## scan against the other soon to be new clusters
-                isNew = True
-                if newClusterLabels != None:
-                    newIDs = np.sort(np.unique(newClusterLabels))
-                    for nid in newIDs:
-                        if isNew == False:
-                            continue
-
-                        savedEvents = newClusterData[np.where(newClusterLabels==nid)[0],:]
-                        overlap = event_count_compare(savedEvents,clusterEventsJ,fileName,clusterJ,thresholds)
-                
-                        ## use a constant value for phi when creating the template file
-                        #if overlap >= phi:
-                        if overlap >= 0.6:
-                            appearedTwice.update([nid])
-                            isNew = False
-                             
-                if isNew == False:
-                    continue
-
-                ## add to newClusters
-                newClusterCount += 1
-                if newClusterData == None:
-                    newClusterData = clusterEventsJ
-                    newClusterLabels = np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])
-                else:
-                    newClusterData = np.vstack([newClusterData,clusterEventsJ])
-                    newClusterLabels = np.hstack([newClusterLabels, np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])])
-        
-        ## add the clusters to the template file
-        if newClusterLabels != None:
-            newClusterLabels = newClusterLabels + np.max(templateLabels)
-            appearedTwice = np.array(list(appearedTwice)) + np.max(templateLabels)
-        
-            for cid in appearedTwice:
-                ncEvents = newClusterData[np.where(newClusterLabels == cid)[0],:]
-                ncLabels = np.array([cid]).repeat(ncEvents.shape[0])
-                templateData = np.vstack([templateData,ncEvents])
-                templateLabels = np.hstack([templateLabels, ncLabels])
-
-        self.templateData = templateData
-        self.templateLabels = templateLabels
 
     def scan_files_with_template(self,phi,thresholds=None,sampleStats=None):
 
@@ -926,7 +545,8 @@ class FileAligner():
                    [templateClusters]*n,
                    [templateThresholds]*n,
                    [phi]*n,
-                   [self.minNumEvents]*n)
+                   [self.minNumEvents]*n,
+                   [self.phi2NoiseClusters]*n)
 
         results = pool.map(pool_compare_scan,args)
         
