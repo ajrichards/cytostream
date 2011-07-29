@@ -94,6 +94,7 @@ class DistanceCalculator():
 
         ## get the covariance matrix and its inverse
         cov = np.cov(a)
+        
         try:
             invCov = np.linalg.inv(cov)
         except:

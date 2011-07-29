@@ -116,31 +116,31 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
   
                 ## remember the noise clusters
                 if isPhi2 == False:
-                    if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                    if fa.noiseClusters.has_key(fileName) and int(c) in fa.noiseClusters[fileName]:
                         if fa.modeNoiseClusters[str(phi)].has_key(fileName):
                             fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
                         else:
                             fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
                 else:
-                    if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                    if fa.noiseClusters.has_key(fileName) and int(c) in fa.noiseClusters[fileName]:
                         if fa.phi2NoiseClusters.has_key(fileName):
-                            fa.phi2NoiseClustes[fileName].append(str(clusterCount))
+                            fa.phi2NoiseClustes[fileName].append(clusterCount)
                         else:
-                            fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
+                            fa.phi2NoiseClusters[fileName] = [clusterCount]
 
                 ## call the clusters that have less than the min num required events as noise
                 if isPhi2 == False:
                     if len(np.where(fileLabels == c)[0]) < fa.minNumEvents:
                         if fa.modeNoiseClusters[str(phi)].has_key(fileName):
-                            fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                            fa.modeNoiseClusters[str(phi)][fileName].append(clusterCount)
                         else:
-                            fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+                            fa.modeNoiseClusters[str(phi)][fileName] = [clusterCount]
                 else:
                     if len(np.where(fileLabels == c)[0]) < fa.minNumEvents:
                         if fa.phi2NoiseClusters.has_key(fileName):
-                            fa.phi2NoiseClustes[fileName].append(str(clusterCount))
+                            fa.phi2NoiseClustes[fileName].append(clusterCount)
                         else:
-                            fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
+                            fa.phi2NoiseClusters[fileName] = [clusterCount]
                 
                 if clustersLeft.__contains__(c):
                     clustersLeft.remove(int(c))
@@ -152,17 +152,17 @@ def get_modes(fa,phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters, phi,
             newLabels[fileIndex][np.where(newLabels[fileIndex] == -1 * c)[0]] = clusterCount
             
             if isPhi2 == False:
-                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                if fa.noiseClusters.has_key(fileName) and c in fa.noiseClusters[fileName]:
                     if fa.modeNoiseClusters[str(phi)].has_key(fileName):
-                        fa.modeNoiseClusters[str(phi)][fileName].append(str(clusterCount))
+                        fa.modeNoiseClusters[str(phi)][fileName].append(clusterCount)
                     else:
-                        fa.modeNoiseClusters[str(phi)][fileName] = [str(clusterCount)]
+                        fa.modeNoiseClusters[str(phi)][fileName] = [clusterCount]
             else:
-                if fa.noiseClusters.has_key(fileName) and str(c) in fa.noiseClusters[fileName]:
+                if fa.noiseClusters.has_key(fileName) and c in fa.noiseClusters[fileName]:
                     if fa.phi2NoiseClusters.has_key(fileName):
-                        fa.phi2NoiseClusters[fileName].append(str(clusterCount))
+                        fa.phi2NoiseClusters[fileName].append(clusterCount)
                     else:
-                        fa.phi2NoiseClusters[fileName] = [str(clusterCount)]
+                        fa.phi2NoiseClusters[fileName] = [clusterCount]
 
     return newLabels
 
@@ -274,7 +274,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
                 ## fit the template cluster
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
-                kmeanResults = run_kmeans_with_sv(eventsJ,subsample=1000)
+                kmeanResults = run_kmeans_with_sv(eventsJ,subsample=2000)
                 kmeanLabels = kmeanResults['labels']
                 uniqueLabels = np.unique(kmeanLabels)
                 k = kmeanResults['k']
@@ -292,7 +292,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
             elif evaluator == 'bootstrap':
                 bootstrapResults = []
-                print "\t...bootstrapping for ", fileName, clusterID
+                #print "\t...bootstrapping for ", fileName, clusterID
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 for tm in templateMatches:
                     eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
@@ -300,7 +300,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                     bootstrapResults.append(bsResults['delta1'])
                 rankedInds = np.argsort(bootstrapResults)
             
-                print evaluator,bootstrapResults[rankedInds[0]],bootstrapResults[rankedInds[1]]
+                #print evaluator,bootstrapResults[rankedInds[0]],bootstrapResults[rankedInds[1]]
     
                 #allEventsI = []
                 #for tm in templateMatches:
@@ -332,8 +332,8 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                     klList = [klDist1.sum(),klDist2.sum()]
                     klDist = klList[np.argmax([klDist1.sum(),klDist2.sum()])] 
                     klResults.append(klDist)
-                    print "...",tm,klList
-                print klResults
+                    #print "...",tm,klList
+                #print klResults
                 rankedInds = np.argsort(klResults)
             
             ## if multiple matches handle
@@ -374,7 +374,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
     
     return newLabels
     
-def event_count_compare(clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds,inputThreshold=None):
+def event_count_compare(clusterEventsI,clusterEventsJ,clusterJ,threshold):
     '''
     model the sink (j) then determine number of events in source (i) that overlap
     '''
@@ -397,11 +397,6 @@ def event_count_compare(clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds,
         distances = dc.get_distances()
 
     ## calculate % overlap
-    if inputThreshold != None:
-        threshold = inputThreshold
-    else:
-        threshold = thresholds[fileJ][str(clusterJ)]['ci']
-
     overlappedInds1 = np.where(distances > threshold[0])[0]
     overlappedInds2 = np.where(distances < threshold[1])[0]
     overlappedInds = list(set(overlappedInds1).intersection(set(overlappedInds2)))
@@ -409,6 +404,9 @@ def event_count_compare(clusterEventsI,clusterEventsJ,fileJ,clusterJ,thresholds,
     if len(overlappedInds) == 0:
         return 0
  
+    if len(distances) == 0:
+        return 0
+
     return float(len(overlappedInds)) / float(len(distances))
 
 
@@ -555,9 +553,9 @@ def pool_compare_self(args):
                 continue
 
             ## check for noise label
-            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(str(clusterI)):
+            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(clusterI):
                 continue
-            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(str(clusterJ)):
+            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(clusterJ):
                 continue
 
             ## get events
@@ -577,8 +575,8 @@ def pool_compare_self(args):
             if eDist > threshold1 or eDist > threshold2:
                 continue
                     
-            overlap1 = event_count_compare(clusterEventsI,clusterEventsJ,fileName,clusterJ,thresholds)
-            overlap2 = event_count_compare(clusterEventsJ,clusterEventsI,fileName,clusterI,thresholds)
+            overlap1 = event_count_compare(clusterEventsI,clusterEventsJ,clusterJ,thresholds[fileName][str(clusterJ)]['ci'])
+            overlap2 = event_count_compare(clusterEventsJ,clusterEventsI,clusterI,thresholds[fileName][str(clusterI)]['ci'])
             overlap = np.max([overlap1, overlap2])
 
             ## save results
@@ -587,70 +585,6 @@ def pool_compare_self(args):
             alignResultsClusters.append("%s#%s"%(clusterI,clusterJ))
             
     return [alignResults,alignResultsFiles,alignResultsClusters]
-
-
-def pool_compare_template(args):
-
-    ## input variables
-    fileName = args[0]
-    fileData = args[1]
-    fileLabels = args[2]
-    fileClusters = args[3]
-    templateData = args[4]
-    templateLabels = args[5]
-    templateClusters = args[6]
-    modeNoiseClusters = args[7]
-    thresholds = args[8]
-    templateThresholds = args[9]
-    phi = args[10]
-    minNumEvents = args[11]
-
-    ## additional variables
-    clustersMatched = []
-    newClusterData = None
-    newClusterLabels = None
-    newClusterCount = 0
-    appearedTwice = set([])
-
-    for ci in range(len(templateClusters)):
-        clusterI = templateClusters[ci]
-        if templateThresholds.has_key(str(int(clusterI))) == False:
-            print 'in template skipping', fileName,clusterI
-            continue
-
-        templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
-        clusterMuI = templateEvents.mean(axis=0)
-
-        for cj in range(len(fileClusters)):
-            clusterJ = fileClusters[cj]
-
-            #print 'compare', fileName, clusterI, clusterJ
-
-            ## check to see if matched
-            if clusterJ in clustersMatched:
-                continue
-
-            ## check for noise label
-            if modeNoiseClusters.has_key(fileName) and modeNoiseClusters[fileName].__contains__(str(clusterJ)):
-                continue
-
-            ## check to see if cluster has less than min num events        
-            clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
-            if len(clusterEventsJ) < minNumEvents or len(templateEvents) < minNumEvents:
-                continue
-
-            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
-            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
-                                           inputThreshold=templateThresholds[str(clusterI)]['ci'])
-            overlap = np.max([overlap1, overlap2])
-
-            if overlap >= phi:
-                clustersMatched.append(clusterJ)
-                continue
-
-        nonMatches = list(set(fileClusters).difference(set(clustersMatched)))
-
-    return nonMatches
 
 def pool_compare_scan(args):
 
@@ -667,25 +601,35 @@ def pool_compare_scan(args):
     templateThresholds = args[9]
     phi = args[10]
     minNumEvents = args[11]
+    noiseClusters = args[12]
 
     ## additional variables
     alignResults = []
     alignResultsFiles = []
     alignResultsClusters = []
 
+    #print 'pool', fileName, noiseClusters
+    #print "\t", fileClusters, sampleStats['mus'][fileName].keys(),sampleStats['dists'][fileName].keys(), thresholds[fileName].keys()
+    #print "\t", templateClusters, templateThresholds.keys()
+
     for ci in range(len(templateClusters)):
-        clusterI = templateClusters[ci]
+        clusterI = int(templateClusters[ci])
         templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
         clusterMuI = templateEvents.mean(axis=0)
 
         for cj in range(len(fileClusters)):         
-            clusterJ = fileClusters[cj]
+            clusterJ = int(fileClusters[cj])
             clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
 
             if len(templateEvents) < minNumEvents or len(clusterEventsJ) < minNumEvents:
                 continue
             
             #print fileName, len(templateEvents), len(clusterEventsJ),sampleStats['mus'][fileName].has_key(clusterJ)
+           
+            ## check for noise label
+            if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(int(clusterJ)):
+                continue
+
             ## check that the centroids are at least a reasonable distance apart                    
             clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)]
             eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
@@ -693,10 +637,9 @@ def pool_compare_scan(args):
                     
             if eDist > threshold:
                 continue
-                    
-            overlap1 = event_count_compare(templateEvents,clusterEventsJ,fileName,clusterJ,thresholds)
-            overlap2 = event_count_compare(clusterEventsJ,templateEvents,fileName,clusterI,thresholds,
-                                           inputThreshold=templateThresholds[str(clusterI)]['ci'])
+            
+            overlap1 = event_count_compare(templateEvents,clusterEventsJ,clusterJ,thresholds[fileName][str(clusterJ)]['ci'])
+            overlap2 = event_count_compare(clusterEventsJ,templateEvents,clusterI,templateThresholds[str(clusterI)]['ci'])
             overlap = np.max([overlap1, overlap2])
    
             if overlap < phi:

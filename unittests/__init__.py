@@ -49,8 +49,13 @@ from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
 caculatorSuite = unittest.TestSuite([DistanceCalculatorSuite])
 
+## file aligner tests
+from TemplateFileCreatorTest import TemplateFileCreatorTest
 from FileAlignerTest1 import FileAlignerTest1
+
+TemplateFileCreatorTestSuite = unittest.TestLoader().loadTestsFromTestCase(TemplateFileCreatorTest)
 FileAlignerTestSuite1 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest1)
+
 #from FileAlignerTest2 import FileAlignerTest2
 #FileAlignerTestSuite2 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest2)
 

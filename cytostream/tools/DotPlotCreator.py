@@ -12,11 +12,12 @@ class DotPlotCreator():
 
     '''
 
-    def __init__(self,newLabelLists,expListNames,saveas=None,covariates=None):
+    def __init__(self,newLabelLists,expListNames,saveas=None,covariates=None,figName=None):
 
         self.newLabelLists = newLabelLists
         self.expListNames = expListNames
         self.saveas = saveas
+        self.figName = figName
         self.fontSize = 10
         self.fontName = 'arial'
         self.colors = get_all_colors()
@@ -99,5 +100,9 @@ class DotPlotCreator():
         #xtickNames = plt.setp(ax, xticklabels=[' ']+self.expListNames)
         #plt.setp(xtickNames, rotation=45, fontsize=8)
 
+        if self.figName != None:
+            ax.set_title(self.figName)
+
         if self.saveas != None:
             fig.savefig(self.saveas)
+

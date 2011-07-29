@@ -11,10 +11,6 @@ from cytostream import NoGuiAnalysis,SaveSubplots
 from SimulatedData3 import case1, case2, case3
 from SimulatedData3 import case1Labels, case2Labels, case3Labels
 
-## debugging the low num events
-#case1 = np.vstack([case1,np.array([15,6])])
-#case1Labels = np.hstack([case1Labels,np.array([99])])
-
 ## check for verbose flag
 VERBOSE=False
 optlist, args = getopt.getopt(sys.argv[1:], 'v')
@@ -35,6 +31,8 @@ class FileAlignerTest1(unittest.TestCase):
             self._initialize()
 
     def _initialize(self):
+        print 'initializing.....'
+
         cwd = os.getcwd()
         if os.path.split(cwd)[1] == 'unittests':
             BASEDIR = os.path.split(cwd)[0]
@@ -44,19 +42,19 @@ class FileAlignerTest1(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         ## run the no gui analysis
-        self.expListData = [case1,case2,case3]
+        self.__class__.expListData = [case1,case2,case3]
         channelList = ['channel1','channel2']
-        projectID = 'falign2'
-        self.homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
-        self.phiRange = [0.1]
+        projectID = 'falign3'
+        self.__class__.homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
+        self.__class__.phiRange = [0.1]
         self.useDPMM = False
         
         ## setup class to run model
-        self.nga = NoGuiAnalysis(self.homeDir,self.expListData,useSubsample=True,makeQaFigs=False,record=False,dType='array',
-                                 inputChannels=channelList)
+        self.__class__.nga = NoGuiAnalysis(self.homeDir,self.expListData,useSubsample=True,makeQaFigs=False,record=False,dType='array',
+                                           inputChannels=channelList)
         self.nga.set("subsample_analysis", "original")
         self.nga.set("thumbnail_results_default","components")
-        self.expListNames = self.nga.get_file_names()
+        self.__class__.expListNames = self.nga.get_file_names()
 
         if self.useDPMM == True:    
             self.expListLabels = []
@@ -65,11 +63,16 @@ class FileAlignerTest1(unittest.TestCase):
             for fileName in ['array1', 'array2', 'array3']:
                 statModel, statModelClasses = self.nga.get_model_results(fileName,'run1','components')
                 self.expListLabels.append(statModelClasses)
+            self.__class__.expListLabels = self.expListLabels
         else:
-            self.expListLabels = [case1Labels,case2Labels,case3Labels]
+            self.__class__.expListLabels = [case1Labels,case2Labels,case3Labels]
         
         ## make the non-aligned figures
         self._make_nonaligned_figures()
+
+        ## toggle the redo flag
+        self.__class__._initialized = True
+        
 
     def _make_nonaligned_figures(self):
         ## save the plots 
@@ -81,7 +84,7 @@ class FileAlignerTest1(unittest.TestCase):
         self.nga.set("plots_to_view_files",plotsToViewFiles)
         
         figsDir = os.path.join(self.homeDir,'figs')
-        self.numSubplots = len(self.expListData)
+        self.__class__.numSubplots = len(self.expListData)
         figName = os.path.join(figsDir,'subplots_orig_qa.png')
         figTitle = "unittest fa1 - unaligned qa"
         ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='qa',figTitle=figTitle,forceScale=True,drawState='heat')
@@ -103,7 +106,7 @@ class FileAlignerTest1(unittest.TestCase):
         evaluator = 'rank'
         print "Running file alignment..........%s"%evaluator
         fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator)
+                              alignmentDir=evaluator,dirClean=False)
         fa.run(evaluator=evaluator,filterNoise=True)
             
         ## saves a plot of the modes
@@ -113,9 +116,8 @@ class FileAlignerTest1(unittest.TestCase):
         figTitle = "Unaligned Modes Phi2"
         ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
 
-        print "making figures.......%s"%evaluator
+        ## saves a plot of the aligned modes
         for phi in self.phiRange:
-            ## saves a plot of the aligned modes
             alignLabels = fa.alignLabels[str(phi)]
             figName = os.path.join(figsDir,'aligned_%s.png'%phi)
             figTitle = "Aligned Modes %s"%phi
@@ -131,7 +133,7 @@ class FileAlignerTest1(unittest.TestCase):
         evaluator = 'kldivergence'
         print "Running file alignment..........%s"%evaluator
         fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator)
+                              alignmentDir=evaluator,dirClean=False)
         fa.run(evaluator=evaluator,filterNoise=True)
             
         ## saves a plot of the modes
@@ -141,9 +143,8 @@ class FileAlignerTest1(unittest.TestCase):
         figTitle = "Unaligned Modes Phi2"
         ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
 
-        print "making figures.......%s"%evaluator
+        ## saves a plot of the aligned modes
         for phi in self.phiRange:
-            ## saves a plot of the aligned modes
             alignLabels = fa.alignLabels[str(phi)]
             figName = os.path.join(figsDir,'aligned_%s.png'%phi)
             figTitle = "Aligned Modes %s"%phi
@@ -159,7 +160,7 @@ class FileAlignerTest1(unittest.TestCase):
         evaluator = 'mixpdf'
         print "Running file alignment..........%s"%evaluator
         fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator)
+                              alignmentDir=evaluator,dirClean=False)
         fa.run(evaluator=evaluator,filterNoise=True)
             
         ## saves a plot of the modes
@@ -169,9 +170,8 @@ class FileAlignerTest1(unittest.TestCase):
         figTitle = "Unaligned Modes Phi2"
         ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
 
-        print "making figures.......%s"%evaluator
+        ## saves a plot of the aligned modes
         for phi in self.phiRange:
-            ## saves a plot of the aligned modes
             alignLabels = fa.alignLabels[str(phi)]
             figName = os.path.join(figsDir,'aligned_%s.png'%phi)
             figTitle = "Aligned Modes %s"%phi

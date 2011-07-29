@@ -8,21 +8,21 @@ from cytostream.stats import SilValueGenerator
 
 
 
-def get_silhouette_values(labels,expListNames,get_data_fn,subsample=None,minNumEvents=0):
+def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
     silValues = {}
     silValuesElements = {}
-    for expName in expListNames:
-        silValues[expName] = {}
+    numFiles = len(matLabelList)
+    for expName in range(numFiles):
+        silValues[str(expName)] = {}
 
     ## create subset if data for large data sets 
     subsetExpData = []
     subsetExpLabels = []
 
     if subsample != None:
-        for expInd in range(len(expListNames)):
-            expName = expListNames[expInd]
-            expData =  get_data_fn(expName)
-            expLabels = labels[expInd]
+        for expInd in range(numFiles):
+            expData = matList[expInd]
+            expLabels = matLabelList[expInd]
             newIndices = []
 
             totalInds = 0
@@ -42,35 +42,53 @@ def get_silhouette_values(labels,expListNames,get_data_fn,subsample=None,minNumE
             subsetExpLabels.append(expLabels[newIndices])
 
     ## calculate the silvalues for each file and the subsampled clusters
-    for c in range(len(expListNames)):
-        expName = expListNames[c]
+    for fileInd in range(numFiles):
             
         if subsample != None:
-            fileData = subsetExpData[c]
-            fileLabels = subsetExpLabels[c]
+            fileData = subsetExpData[fileInd]
+            fileLabels = subsetExpLabels[fileInd]
         else:
-            fileData = get_data_fn(expName)
-            fileLabels = expLabels[c]
+            fileData = matList[fileInd]
+            fileLabels = matLabelList[fileInd]
 
         fileClusters = np.sort(np.unique(fileLabels))    
     
         ## calculate sil values
         svg = SilValueGenerator(fileData,fileLabels)
-        silValuesElements[expName] = svg.silValues
-        #silValuesElements[expName] = ._get_silhouette_values(fileData,fileLabels)
+        silValuesElements[str(fileInd)] = svg.silValues
         
         ## save only sil values for each cluster
         for clusterID in fileClusters:
             clusterElementInds = np.where(fileLabels == clusterID)[0]
             if len(clusterElementInds) < minNumEvents:
-                silValues[expName][str(clusterID)] = None
+                silValues[str(fileInd)][str(clusterID)] = None
             else:
-                clusterSilValue = silValuesElements[expName][clusterElementInds].mean()
-                silValues[expName][str(clusterID)] = clusterSilValue
+                clusterSilValue = silValuesElements[str(fileInd)][clusterElementInds].mean()
+                silValues[str(fileInd)][str(clusterID)] = clusterSilValue
 
             del clusterElementInds
         
     return silValues
+
+
+def find_noise(mat,labels,silValues=None,minNumEvents=4):
+    
+    ## determine which clusters are too small     
+    noiseClusters = []
+    numFiles = len(labels)
+    uniqueClusterIDs = np.unique(labels)
+    for uid in uniqueClusterIDs:
+        if np.where(labels==uid)[0].size < minNumEvents:
+            noiseClusters.append(noiseClusters)
+
+    ## determine noise based on silhouette values
+    if silValues != None:            
+        for key,item in silValues.iteritems():
+            if item < 0.0:
+                noiseClusters.append(int(key))
+
+
+    return noiseClusters
 
 def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
     '''
@@ -82,20 +100,13 @@ def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
 
     if subsample != None:
         newIndices = []
+        n,d = mat.shape
 
-        totalInds = 0
-        for cluster in np.sort(np.unique(expLabels)):
-            clusterInds = np.where(expLabels==cluster)[0]
-            totalInds += len(clusterInds)
+        if n > subsample:
+            newIndices = np.random.randint(0,n,subsample).tolist()
+        else:
+            newIndices = range(n)
 
-            if len(clusterInds) > subsample:
-                percentTotal = float(len(clusterInds)) / float(len(expLabels)) 
-                randSelected = clusterInds[np.random.randint(0,len(clusterInds),subsample)]
-                newIndices += randSelected.tolist()
-            else:
-                newIndices += clusterInds.tolist()
-
-        ## save indices and data
         toClusterMat = mat[newIndices,:]
     else:
         toClusterMat = mat
@@ -111,7 +122,7 @@ def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
             #try:
             kmeanResults, kmeanLabels = kmeans2(mat,k,minit='points')
             svg = SilValueGenerator(toClusterMat,kmeanLabels)
-            #avgSilVal = svg.silValues.mean()
+            avgSilVal = svg.silValues.mean()
             #except:
             #    kmeanResults, kmeanLabels, silVals = None, None, None
             #    print "kmeans error - ", sys.exc_info()[0]
