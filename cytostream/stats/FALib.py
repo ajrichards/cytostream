@@ -2,7 +2,7 @@
 functions that are used to align files
 '''
 
-import sys,re,os,csv
+import sys,re,os,csv,cPickle
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from scipy.cluster.vq import whiten
@@ -217,13 +217,15 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
     results = alignment['results']
     resultsFiles = alignment['files']
     resultsClusters = alignment['clusters']
-    newLabels = [np.array([-1 * int(label) for label in fa.phi2Labels[fn]]) for fn in range(len(fa.expListNames))]
+    
+    newLabels = [np.array([-1 * int(label) for label in fa.get_labels(fn)]) for fn in fa.expListNames]
     clusterCount = 10000
     noiseClustCount = 0
+    templateData = fa.get_template_data()
 
     for fileName in fa.expListNames:
         fileIndex = fa.expListNames.index(fileName)
-        fileLabels = fa.phi2Labels[fileIndex]
+        fileLabels = fa.get_labels(fileName)
         fileData = fa.get_events(fileName)
         fileClusters = np.sort(np.unique(fileLabels))
         fileInds = np.where(resultsFiles == fileIndex)[0]
@@ -245,7 +247,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
             matchSignif = fileSpecificResults[matchInds]
 
             ## skip noise 
-            if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(clusterID) in fa.modeNoiseClusters[str(phi)][fileName]:
+            if int(clusterID) in fa.noiseClusters[fileName]:
                 continue
             
             if len(templateMatches) < 1:
@@ -263,7 +265,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 covarJ = np.cov(eventsJ.T)
                 for tm in templateMatches:
-                   eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                   eventsI = templateData[np.where(fa.templateLabels==tm)[0],:]
                    covarI = np.cov(eventsJ.T)
                    varResults.append(np.abs(covarI - covarJ).sum())
                 rankedInds = np.argsort(varResults)
@@ -284,7 +286,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                 pi = np.array([float(len(np.where(kmeanLabels == i)[0])) / float(len(kmeanLabels)) for i in uniqueLabels])
 
                 for tm in templateMatches:
-                   eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                   eventsI = templateData[np.where(fa.templateLabels==tm)[0],:]
                    mnpdf = mixnormpdf(eventsI,pi,mu,sigma)                                   
                    mixpdfResults.append(mnpdf.mean())
                    
@@ -295,7 +297,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
                 #print "\t...bootstrapping for ", fileName, clusterID
                 eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 for tm in templateMatches:
-                    eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                    eventsI = templateData[np.where(fa.templateLabels==tm)[0],:]
                     bsResults = bootstrap_compare(eventsI, eventsJ)
                     bootstrapResults.append(bsResults['delta1'])
                 rankedInds = np.argsort(bootstrapResults)
@@ -304,7 +306,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
     
                 #allEventsI = []
                 #for tm in templateMatches:
-                #    allEventsI.append(fa.templateData[np.where(fa.templateLabels==tm)[0],:])
+                #    allEventsI.append(templateData[np.where(fa.templateLabels==tm)[0],:])
                 #eventsJ = fileData[np.where(fileLabels==clusterID)[0],:]
                 #pool = Pool(processes=cpu_count()-1,masktasksperchild=1)
                 #args = zip(allEventsI,
@@ -325,7 +327,8 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
 
                 ## things to try use max of both kldists 
                 for tm in templateMatches:
-                    eventsI = fa.templateData[np.where(fa.templateLabels==tm)[0],:]
+                    eventsI = templateData[np.where(fa.templateLabels==tm)[0],:]
+                    #print "kld", eventsJ.shape, eventsI.shape
                     gd2 = GaussianDistn(eventsI.mean(axis=0), np.cov(eventsI.T))
                     klDist1 = kullback_leibler(gd1,gd2)
                     klDist2 = kullback_leibler(gd2,gd1)
@@ -343,7 +346,7 @@ def get_alignment_labels(fa,alignment,phi,evaluator='rank'):
         clustersLeft = np.unique(newLabels[fileIndex][np.where(newLabels[fileIndex] < 0)])
 
         for c in clustersLeft:
-            if fa.modeNoiseClusters[str(phi)].has_key(fileName) and str(int(-1.0*c)) in fa.modeNoiseClusters[str(phi)][fileName]:
+            if int(-1.0*c) in fa.noiseClusters[fileName]:
                 noiseClustCount -= 1
                 newLabels[fileIndex][np.where(newLabels[fileIndex] ==  c)[0]] = noiseClustCount
             else:
@@ -608,10 +611,6 @@ def pool_compare_scan(args):
     alignResultsFiles = []
     alignResultsClusters = []
 
-    #print 'pool', fileName, noiseClusters
-    #print "\t", fileClusters, sampleStats['mus'][fileName].keys(),sampleStats['dists'][fileName].keys(), thresholds[fileName].keys()
-    #print "\t", templateClusters, templateThresholds.keys()
-
     for ci in range(len(templateClusters)):
         clusterI = int(templateClusters[ci])
         templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
@@ -625,13 +624,13 @@ def pool_compare_scan(args):
                 continue
             
             #print fileName, len(templateEvents), len(clusterEventsJ),sampleStats['mus'][fileName].has_key(clusterJ)
-           
+        
             ## check for noise label
             if noiseClusters.has_key(fileName) and noiseClusters[fileName].__contains__(int(clusterJ)):
                 continue
 
             ## check that the centroids are at least a reasonable distance apart                    
-            clusterMuJ = sampleStats['mus'][fileName][str(clusterJ)]
+            clusterMuJ = clusterEventsJ.mean(axis=0)#sampleStats['mus'][fileName][str(clusterJ)]
             eDist = pdist([clusterMuI,clusterMuJ],'euclidean')[0]
             threshold = sampleStats['dists'][fileName][str(clusterJ)]
                     
@@ -641,10 +640,10 @@ def pool_compare_scan(args):
             overlap1 = event_count_compare(templateEvents,clusterEventsJ,clusterJ,thresholds[fileName][str(clusterJ)]['ci'])
             overlap2 = event_count_compare(clusterEventsJ,templateEvents,clusterI,templateThresholds[str(clusterI)]['ci'])
             overlap = np.max([overlap1, overlap2])
-   
+
             if overlap < phi:
                 continue
-                    
+
             ## save results
             alignResults.append(overlap)
             alignResultsFiles.append(fileName)
@@ -688,25 +687,40 @@ def get_alignment_scores(homeDir,alignmentDir='alignment',makeFig=True):
 
     return alignScores
 
-#if self.overlapMetric == 'kldivergence':
-#    eCDF = EmpiricalCDF(nonNoiseResults)
-#    thresholdLow = eCDF.get_value(phi)
-#    phiIndices = np.where(nonNoiseResults < thresholdLow)[0]
-#    print thresholdLow
-#    print "out of %s cluster comparisons we need to consider %s"%(len(nonNoiseResults),len(phiIndices))
-#    print "phi", phi
-#    print 'not complete'
-#if len(phiIndices) > 0:
-#    self._get_modes(phiIndices,nonNoiseResults,nonNoiseFiles,nonNoiseClusters)
+def get_saved_template(homeDir='.',savePath=None):
+    '''
+    return a tuple of template events and templatelabels
 
-#if self.overlapMetric == 'kldivergence':
-#    ## assume normal distributions
-#gd1 = GaussianDistn(clusterEventsJ.mean(axis=0), np.cov(clusterEventsJ.T))
-#gd2 = GaussianDistn(clusterEventsI.mean(axis=0), np.cov(clusterEventsI.T))
-#klDist1 = kullback_leibler(gd1,gd2)
-#klDist2 = kullback_leibler(gd2,gd1)
-#klList = [klDist1,klDist2]
-#klDist = klList[np.argmin([klDist1.sum(),klDist2.sum()])]
-#alignResults[clustCount] = klDist.sum()
-#if klDist > 20000:
-#    continue 
+    '''
+    
+    if savePath == None:
+        savePath = os.path.join(homeDir,'results')
+
+    ## get the data
+    tmp =  open(os.path.join(savePath,"templateData.pickle"),'r')
+    if os.path.exists(os.path.join(savePath,"templateData.pickle")) == False:
+        print "ERROR: template data does not exist ", os.path.join(savePath,"templateData.pickle")
+        return [],[],[]
+
+    templateData = cPickle.load(tmp)
+    tmp.close()
+
+    ## get the components
+    tmp =  open(os.path.join(savePath,"templateComponents.pickle"),'r')
+    if os.path.exists(os.path.join(savePath,"templateComponents.pickle")) == False:
+        print "ERROR: template data does not exist ", os.path.join(savePath,"templateComponents.pickle")
+        return [],[],[]
+
+    templateComponents = cPickle.load(tmp)
+    tmp.close()
+
+    ## get the modes
+    tmp =  open(os.path.join(savePath,"templateModes.pickle"),'r')
+    if os.path.exists(os.path.join(savePath,"templateModes.pickle")) == False:
+        print "ERROR: template data does not exist ", os.path.join(savePath,"templateModes.pickle")
+        return [],[],[]
+
+    templateModes = cPickle.load(tmp)
+    tmp.close()
+
+    return templateData,templateComponents,templateModes

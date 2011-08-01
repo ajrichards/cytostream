@@ -6,7 +6,7 @@ import numpy as np
 if matplotlib.get_backend() != 'Agg':
     matplotlib.use('Agg')
 from cytostream.tools import PieChartCreator,DotPlotCreator
-from cytostream.stats import FileAligner
+from cytostream.stats import FileAligner,TemplateFileCreator,get_saved_template
 from cytostream import NoGuiAnalysis,SaveSubplots
 from SimulatedData3 import case1, case2, case3
 from SimulatedData3 import case1Labels, case2Labels, case3Labels
@@ -70,10 +70,12 @@ class FileAlignerTest1(unittest.TestCase):
         ## make the non-aligned figures
         self._make_nonaligned_figures()
 
+        ## create template file
+        self._create_template_file()
+
         ## toggle the redo flag
         self.__class__._initialized = True
         
-
     def _make_nonaligned_figures(self):
         ## save the plots 
         print 'making original figures without labels...'
@@ -83,14 +85,14 @@ class FileAlignerTest1(unittest.TestCase):
         plotsToViewFiles = range(16)
         self.nga.set("plots_to_view_files",plotsToViewFiles)
         
-        figsDir = os.path.join(self.homeDir,'figs')
+        self.__class__.figsDir = os.path.join(self.homeDir,'figs')
         self.__class__.numSubplots = len(self.expListData)
-        figName = os.path.join(figsDir,'subplots_orig_qa.png')
+        figName = os.path.join(self.figsDir,'subplots_orig_qa.png')
         figTitle = "unittest fa1 - unaligned qa"
         ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='qa',figTitle=figTitle,forceScale=True,drawState='heat')
 
         print 'making original figures with labels...'
-        figName = os.path.join(figsDir,'subplots_orig_dpmm.png')
+        figName = os.path.join(self.figsDir,'subplots_orig_dpmm.png')
         if self.useDPMM == True:
             figTitle = "unittest fa1 - unaligned dpmm"
         else:
@@ -101,89 +103,32 @@ class FileAlignerTest1(unittest.TestCase):
         else:
             ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True)
 
+    def _create_template_file(self):
+        tfc = TemplateFileCreator(self.expListData,self.expListLabels,savePath=os.path.join(self.homeDir,"results"))
+        figName = os.path.join(self.homeDir,'figs','templates.png')
+        tfc.draw_templates(saveas=figName)
+        templateData,templateComponents,templateModes = get_saved_template(self.homeDir)
+        self.__class__.templateFile = (templateData,templateModes[0])
+
     def test_by_rank(self):
         ## run file alignment
         evaluator = 'rank'
-        print "Running file alignment..........%s"%evaluator
-        fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator,dirClean=False)
-        fa.run(evaluator=evaluator,filterNoise=True)
-            
-        ## saves a plot of the modes
-        modeLabels = fa.phi2Labels
-        figsDir = os.path.join(self.homeDir,'results')
-        figName = os.path.join(figsDir,'modes_phi2.png')
-        figTitle = "Unaligned Modes Phi2"
-        ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
-
+        print "Running file alignment..........%s"%evaluator          
+        fa = FileAligner(self.templateFile,self.expListNames,self.expListLabels,self.expListData,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
+                              alignmentDir=evaluator)
+        fa.run(evaluator=evaluator)
+  
         ## saves a plot of the aligned modes
         for phi in self.phiRange:
             alignLabels = fa.alignLabels[str(phi)]
-            figName = os.path.join(figsDir,'aligned_%s.png'%phi)
+            figName = os.path.join(self.figsDir,'aligned_%s_%s.png'%(phi,evaluator))
             figTitle = "Aligned Modes %s"%phi
             ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=alignLabels)
 
         ## test that we picked up the noise cluster
-        #self.failIf(len(fa.noiseClusters['array1']) != 1) 
         bestPhi, bestScore = fa.get_best_match()
         self.assertEqual(bestPhi,0.1)
     
-    def test_by_kld(self):
-        ## run file alignment
-        evaluator = 'kldivergence'
-        print "Running file alignment..........%s"%evaluator
-        fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator,dirClean=False)
-        fa.run(evaluator=evaluator,filterNoise=True)
-            
-        ## saves a plot of the modes
-        modeLabels = fa.phi2Labels
-        figsDir = os.path.join(self.homeDir,'results')
-        figName = os.path.join(figsDir,'modes_phi2.png')
-        figTitle = "Unaligned Modes Phi2"
-        ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
-
-        ## saves a plot of the aligned modes
-        for phi in self.phiRange:
-            alignLabels = fa.alignLabels[str(phi)]
-            figName = os.path.join(figsDir,'aligned_%s.png'%phi)
-            figTitle = "Aligned Modes %s"%phi
-            ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=alignLabels)
-
-        ## test that we picked up the noise cluster
-        #self.failIf(len(fa.noiseClusters['array1']) != 1) 
-        bestPhi, bestScore = fa.get_best_match()
-        self.assertEqual(bestPhi,0.1)
-    
-    def test_by_mixpdf(self):
-        ## run file alignment
-        evaluator = 'mixpdf'
-        print "Running file alignment..........%s"%evaluator
-        fa = FileAligner(self.expListNames,self.expListData,self.expListLabels,self.phiRange,verbose=VERBOSE,homeDir=self.homeDir,
-                              alignmentDir=evaluator,dirClean=False)
-        fa.run(evaluator=evaluator,filterNoise=True)
-            
-        ## saves a plot of the modes
-        modeLabels = fa.phi2Labels
-        figsDir = os.path.join(self.homeDir,'results')
-        figName = os.path.join(figsDir,'modes_phi2.png')
-        figTitle = "Unaligned Modes Phi2"
-        ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=modeLabels)
-
-        ## saves a plot of the aligned modes
-        for phi in self.phiRange:
-            alignLabels = fa.alignLabels[str(phi)]
-            figName = os.path.join(figsDir,'aligned_%s.png'%phi)
-            figTitle = "Aligned Modes %s"%phi
-            ss = SaveSubplots(self.homeDir,figName,self.numSubplots,figMode='analysis',figTitle=figTitle,forceScale=True,inputLabels=alignLabels)
-
-        ## test that we picked up the noise cluster
-        #self.failIf(len(fa.noiseClusters['array1']) != 1) 
-        bestPhi, bestScore = fa.get_best_match()
-        self.assertEqual(bestPhi,0.1)
-
-
-
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()
