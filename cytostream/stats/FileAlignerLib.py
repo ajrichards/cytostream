@@ -36,9 +36,9 @@ class FileAligner():
 
     '''
 
-    def __init__(self,templateFile,expListNames,expListLabels=[],expListData=[],phiRange=[0.2,0.6],homeDir='.',alignmentDir='alignment',
+    def __init__(self,templateFile,expListNames,expListLabels,expListData=[],phiRange=[0.2,0.6],homeDir='.',alignmentDir='alignment',
                  refFile=None,verbose=False,excludedChannels=[],isProject=False,dirClean=True,noiseSample=2000,
-                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=False):
+                 modelRunID=None,distanceMetric='mahalanobis',medianTransform=False,useSavedNoise=True):
 
         ## declare variables
         self.expListNames = [expName for expName in expListNames]
@@ -70,7 +70,18 @@ class FileAligner():
         if self.verbose == True:
             print "Initializing file aligner"
 
-        ## begin time count     
+        ## handle saved noise
+        if useSavedNoise == True:
+            if os.path.exists(os.path.join(self.homeDir,'results','noiseClusters.pickle')) == False:
+                print "WARNING: FileAligner trying to used saved noise clusters when they do not exist"
+                self.savedNoise = None
+            tmp = open(os.path.join(self.homeDir,'results','noiseClusters.pickle'),'r')
+            self.savedNoise = cPickle.load(tmp)
+            tmp.close()
+        else:
+            self.savedNoise = None
+
+        ## begin time count
         self.timeBegin = time.time()
 
         ## handle labels
@@ -132,94 +143,51 @@ class FileAligner():
             print "INPUT ERROR: phi range is not a list or np.array", type(self.phiRange)
             return None
 
-    def run(self,filterNoise=True,evaluator='rank'):
+    def run(self,evaluator='rank'):
         ## get sample statistics
         if self.verbose == True:
             print "...getting sample statistics"
         self.sampleStats = self.get_sample_statistics()
 
         ## get sil values
-        if self.verbose == True:
-            print "...getting silhouette values"
-        allEvents = [self.get_events(expName) for expName in self.expListNames]
-        allLabels = [self.get_labels(expName) for expName in self.expListNames]
-        self.silValues = get_silhouette_values(allEvents,allLabels,subsample=self.noiseSample,
-                                               minNumEvents=self.minNumEvents)
+        if self.savedNoise != None:
+            if self.verbose == True:
+                print "...getting silhouette values"
+            allEvents = [self.get_events(expName) for expName in self.expListNames]
+            allLabels = [self.get_labels(expName) for expName in self.expListNames]
+            self.silValues = get_silhouette_values(allEvents,allLabels,subsample=self.noiseSample,
+                                                   minNumEvents=self.minNumEvents)
         ## filter the noise
+        if self.verbose == True:
+            print "...getting noise clusters"
         self.noiseClusters = {}
         
-        for fileInd in range(len(self.expListNames)):
-            expName = self.expListNames[fileInd]
-            mat = self.get_events(expName)
-            labels = self.get_labels(expName)
-            noiseClusters = find_noise(mat,labels,silValues=self.silValues[str(fileInd)],minNumEvents=self.minNumEvents)
-            self.noiseClusters[expName] = noiseClusters
-
+        if self.savedNoise == None:
+            for fileInd in range(len(self.expListNames)):
+                expName = self.expListNames[fileInd]
+                mat = self.get_events(expName)
+                labels = self.get_labels(expName)
+                noiseClusters = find_noise(mat,labels,silValues=self.silValues[str(fileInd)],minNumEvents=self.minNumEvents)
+                self.noiseClusters[expName] = noiseClusters
+        else:
+            for fileInd in range(len(self.expListNames)):
+                expName = self.expListNames[fileInd]
+                self.noiseClusters[expName] = self.savedNoise[fileInd]
+            
         ## get overlap thresholds
         if self.verbose == True:
             print "\n...calculating within thresholds"
         self.withinThresholds = _calculate_within_thresholds(self)
 
-        ## self alignment
-        if self.verbose == True:
-            print "\n...performing self alignment"
-        self.selfAlignment = self.run_self_alignment()
-        alignResults = np.array(self.selfAlignment['results'])
-        alignFiles = np.array(self.selfAlignment['files'])
-        alignClusters = np.array(self.selfAlignment['clusters'])
-
-        ## handle phi2
-        phi2Indices = np.where(alignResults >= self.phi2)[0]
-        self.phi2NoiseClusters = {}
-        self.phi2Labels = get_modes(self,phi2Indices,alignResults,alignFiles,alignClusters,self.phi2,isPhi2=True)
-
-        if self.verbose == True:
-            print "...getting sample statistics again"
-
-        self.sampleStatsPhi2 = self.get_sample_statistics(allLabels=self.phi2Labels)
-
-        ## get overlap thresholds
-        if self.verbose == True:
-            print "\n...calculating within thresholds"
-        self.withinThresholdsPhi2 = _calculate_within_thresholds(self,allLabels=self.phi2Labels)
-        
-        ## finish template file according to phi
-        #if self.verbose == True:
         print "noise", self.noiseClusters
-        print "noise phi2", self.phi2NoiseClusters
 
         ### loop through each phi ###
         for phi in self.phiRange:
-            if self.verbose == True:
-                print "...getting modes %s phi"%(phi)
-       
-            phiIndices = np.where(alignResults >= phi)[0]
-            self.modeNoiseClusters[str(phi)] = {}
-            newLabels = get_modes(self,phiIndices,alignResults,alignFiles,alignClusters,phi)
-            self.modeLabels[str(phi)] = newLabels
-            
-            ## noise debug
-            print 'noise',self.modeNoiseClusters[str(phi)]
-
-            if self.verbose == True:
-                print "...getting sample statistics again"
-
-            sampleStatsPhi = self.get_sample_statistics(allLabels=self.modeLabels[str(phi)])
-
-
-
-            ## get overlap thresholds
-            if self.verbose == True:
-                print "\n...calculating within thresholds"
-            withinThresholdsPhi = _calculate_within_thresholds(self,allLabels=self.modeLabels[str(phi)])
-                    
-            self.alignmentLog.writerow(['template_clusters',"%s-%s"%(phi,len(np.unique(self.templateLabels)))])
-
             ## scan files with template
             if self.verbose == True:
                 print "...scanning files with template"
 
-            alignment = self.scan_files_with_template(phi,thresholds=withinThresholdsPhi,sampleStats=sampleStatsPhi)
+            alignment = self.scan_files_with_template(phi,thresholds=self.withinThresholds,sampleStats=self.sampleStats)
             aLabels = get_alignment_labels(self,alignment,phi,evaluator=evaluator)
             self.alignLabels[str(phi)] = aLabels
     
@@ -232,7 +200,6 @@ class FileAligner():
             if self.verbose == True:
                 print "...calculating scores"
 
-            #silValuesPhi = self.get_silhouette_values(aLabels,subsample=self.noiseSubset)
             allEvents = [self.get_events(expName) for expName in self.expListNames]
             silValuesPhi = get_silhouette_values(allEvents,aLabels,subsample=self.noiseSample,
                                                  minNumEvents=self.minNumEvents)
@@ -303,6 +270,8 @@ class FileAligner():
             self.expListNames = self.nga.get_file_names()
         self.fileChannels = self.nga.get('alternate_channel_labels')
 
+        #print "using %s files"%len(self.expListNames)
+
     def make_dir_tree(self):
         if self.verbose == True and os.path.isdir(os.path.join(self.homeDir,'alignfigs')) == True:
             print "INFO: deleting old files for file aligner"
@@ -314,7 +283,6 @@ class FileAligner():
             
         if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir)) == True and self.dirClean == True:
             ## clean out figures dir
-            print 'CCCCCCCCCCCCCLLLLLLLLEEEEEEEEAAAAAAAAAAANNNNNNNNNIIIIIIIINNNNNNNNNGGGGGGg'
             for item1 in os.listdir(os.path.join(self.homeDir,self.alignmentDir)):
                 if os.path.isdir(os.path.join(self.homeDir,self.alignmentDir,item1)) == True:
                     for item2 in os.listdir(os.path.join(self.homeDir,self.alignmentDir,item1)):
@@ -334,6 +302,15 @@ class FileAligner():
         else:
             fileInd = self.expListNames.index(selectedFile)
             return self.expListLabels[fileInd]
+
+    def get_template_data(self):
+
+        events = self.templateData[:,self.includedChannels]
+
+        if self.medianTransform == True:
+            events = events - np.median(events,axis=0) + 5000
+
+        return events
 
     def get_events(self,selectedFile):
 
@@ -477,7 +454,7 @@ class FileAligner():
             thresholds = self.withinThresholds
 
         ## setup save variables
-        templateClusters = np.sort(np.unique(self.templateLabels))
+        templateClusters = np.unique(self.templateLabels)
         alignResults = []
         alignResultsFiles = []
         alignResultsClusters =[]
@@ -490,12 +467,13 @@ class FileAligner():
         newClusterLabels = None
         appearedTwice = set([])
         templateThresholds = {}
+        templateData = self.get_template_data()
 
         ## calculate within thresholds for template
         for clusterID in templateClusters:
 
             ## skip clusters that do not have enough events
-            templateEvents = self.templateData[np.where(self.templateLabels==int(clusterID))[0],:]
+            templateEvents = templateData[np.where(self.templateLabels==int(clusterID))[0],:]
             if len(templateEvents) < self.minNumEvents:
                 continue
 
@@ -525,7 +503,7 @@ class FileAligner():
         fileDataList = []
         fileLabelsList = []
         fileClusterList = []
-        fileLabelsList = self.phi2Labels
+        fileLabelsList = allLabels = [self.get_labels(expName) for expName in self.expListNames] #self.phi2Labels
 
         fileInd = -1
         for fileName in self.expListNames:
@@ -538,15 +516,15 @@ class FileAligner():
                    fileDataList,
                    fileLabelsList,
                    fileClustersList,
-                   [self.sampleStatsPhi2]*n,
-                   [self.withinThresholdsPhi2]*n,
-                   [self.templateData]*n,
+                   [sampleStats]*n,       # [self.sampleStatsPhi2]*2
+                   [thresholds]*n,  # [self.withinThresholdsPhi2]*n,
+                   [templateData]*n,
                    [self.templateLabels]*n,
                    [templateClusters]*n,
                    [templateThresholds]*n,
                    [phi]*n,
                    [self.minNumEvents]*n,
-                   [self.phi2NoiseClusters]*n)
+                   [self.noiseClusters]*n)
 
         results = pool.map(pool_compare_scan,args)
         

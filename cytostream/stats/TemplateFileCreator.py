@@ -6,7 +6,7 @@ class that creates a template file for file alignment
 The smaller the value for fixed overlap the more difficult it is to add new clusters to the template
 
 '''
-import os,sys
+import os,sys,cPickle,csv,re
 from multiprocessing import Pool, cpu_count
 import numpy as np
 from scipy.cluster import hierarchy
@@ -86,7 +86,7 @@ class TemplateFileCreator():
 
     '''
 
-    def __init__(self,matList,matLabelList,linkageMethod='average',templateSeedInd=None,excludedChannels=[]):
+    def __init__(self,matList,matLabelList,linkageMethod='average',templateSeedInd=None,excludedChannels=[],savePath="."):
         '''
         constructor
         
@@ -107,6 +107,7 @@ class TemplateFileCreator():
         self.excludedChannels = excludedChannels
         self.minNumEvents = 4
         self.noiseSample = 2000
+        self.savePath = savePath
 
         ## error checking 
         if len(self.matList) != len(self.matLabelList):
@@ -129,6 +130,9 @@ class TemplateFileCreator():
         else:
             self.includedChannels = np.arange(self.numChannels)
 
+        ## create log file
+        self.create_log()
+
         ## get sil values
         allEvents = [self.get_events(fid) for fid in range(self.numFiles)]
         allLabels = [self.get_labels(fid) for fid in range(self.numFiles)]
@@ -140,7 +144,8 @@ class TemplateFileCreator():
             mat = self.get_events(fileInd)
             self.noiseClusters.append(self._find_noise(fileInd,mat,labels))
 
-        print self.noiseClusters
+        self.templateLog.writerow(['noise_clusters',re.sub("\s+","",re.sub(",",";",str(self.noiseClusters)))])
+        print 'noise found in template', self.noiseClusters
 
         ## handle template seed
         if templateSeedInd != None:
@@ -149,7 +154,8 @@ class TemplateFileCreator():
             self.templateSeedInd = self._select_mat_for_seed()
 
         ## create the initial template from one of the files in the list
-        self.templateMat = self.get_events(self.templateSeedInd).copy()
+        self.templateMat = self.get_events(self.templateSeedInd).copy()  # has only specific channels
+        self.templateData = self.matList[self.templateSeedInd].copy()    # has all channels
         self.templateLabels = self.get_labels(self.templateSeedInd).copy()
         self.templateClusters = np.unique(self.templateLabels)
         
@@ -168,6 +174,25 @@ class TemplateFileCreator():
 
         ## run hier clustering
         self._run_hier_clust_on_centroids(method=linkageMethod)
+
+        ## error check on completion
+        if self.templateData.shape[0] != self.templateMat.shape[0]:
+            print "ERROR: TemplateFileCreator -- failed error check on completion" 
+
+        ## save labels, data and noise
+        self.save()
+        self.save_noise()
+        
+
+    def create_log(self):
+        ''' 
+        create a log file to document template file creation
+        
+        '''
+
+        self.templateLog = csv.writer(open(os.path.join(self.savePath,"Template.log"),'w'))        
+        self.templateLog.writerow(["num_files",str(self.numFiles)])
+        self.templateLog.writerow(["excluded_channels",re.sub("\s+","",re.sub(",",";",str(self.excludedChannels)))])
 
     def get_events(self,fileInd):
         '''
@@ -245,6 +270,7 @@ class TemplateFileCreator():
         results = pool.map(pool_compare_template,args)
         pool.close()
         newClusterData = None
+        newClusterDataAllDims = None
         newClusterLabels = None
         appearedTwice = set([])
         newClusterCount=0
@@ -253,11 +279,13 @@ class TemplateFileCreator():
         for fi in range(len(fileIndList)):
             fileInd = fileIndList[fi]
             fileData = self.get_events(fileInd)
+            actualData = self.matList[fileInd]
             fileLabels = self.get_labels(fileInd)
             nonMatches = results[fi]
         
             for clusterJ in nonMatches:
                 clusterEventsJ = fileData[np.where(fileLabels==clusterJ)[0],:]
+                actualClusterEventsJ = actualData[np.where(fileLabels==clusterJ)[0],:]
 
                 ## scan against the other soon to be new clusters 
                 isNew = True
@@ -268,6 +296,7 @@ class TemplateFileCreator():
                             continue
 
                         savedEvents = newClusterData[np.where(newClusterLabels==nid)[0],:]
+                        actualSavedEvents = actualNewClusterData[np.where(newClusterLabels==nid)[0],:]
                         overlap = event_count_compare(savedEvents,clusterEventsJ,clusterJ,self.thresholds[fileInd][str(clusterJ)]['ci'])
                         
                         ## use a constant value for phi when creating the template file
@@ -282,9 +311,11 @@ class TemplateFileCreator():
                 newClusterCount += 1
                 if newClusterData == None:
                     newClusterData = clusterEventsJ
+                    actualNewClusterData = actualClusterEventsJ
                     newClusterLabels = np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])
                 else:
                     newClusterData = np.vstack([newClusterData,clusterEventsJ])
+                    actualNewClusterData = np.vstack([actualNewClusterData,actualClusterEventsJ])
                     newClusterLabels = np.hstack([newClusterLabels, np.array([newClusterCount]).repeat(clusterEventsJ.shape[0])])
 
         ## add the clusters to the template file
@@ -295,7 +326,9 @@ class TemplateFileCreator():
 
             for cid in appearedTwice:
                 ncEvents = newClusterData[np.where(newClusterLabels == cid)[0],:]
+                actualEventsNC = actualNewClusterData[np.where(newClusterLabels == cid)[0],:]
                 ncLabels = np.array([cid]).repeat(ncEvents.shape[0])
+                self.templateData = np.vstack([self.templateData,actualEventsNC])
                 self.templateMat = np.vstack([self.templateMat,ncEvents])
                 self.templateLabels = np.hstack([self.templateLabels, ncLabels])
 
@@ -339,11 +372,6 @@ class TemplateFileCreator():
                 dc.calculate(fileClusterEvents,matrixMeans=fileClusterMean)
                 distances = dc.get_distances()
 
-            #nanCount = len(np.where(np.isnan(distances) == True)[0])
-            #if nanCount > 0:
-            #    print nanCount, len(distances),len(fileClusterEvents)
-            #    print "TemplateFileCreator encountered NaNs",maxVal
-                
             ## use the eCDF to find a threshold
             eCDF = EmpiricalCDF(distances)
             thresholdLow = eCDF.get_value(0.025)
@@ -362,11 +390,11 @@ class TemplateFileCreator():
         noiseInds = np.array([])
 
         for cid in fileSpecificNoiseClusters:
-            print type(self.templateLabels)
             noiseInds = np.hstack([noiseInds,np.where(self.templateLabels==int(cid))[0]])
 
         nonNoiseInds = list(set(range(len(self.templateLabels))).difference(set(noiseInds)))
         self.templateMat = self.templateMat[nonNoiseInds,:]
+        self.templateData = self.templateData[nonNoiseInds,:]
         self.templateLabels = self.templateLabels[nonNoiseInds,:]
 
     def _select_mat_for_seed(self):
@@ -477,30 +505,122 @@ class TemplateFileCreator():
             raise RuntimeError("TemplateFileCreator: data mismatch in matrix and labels")
 
     def draw_dendragram(self):
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8,4))
         dg = hierarchy.dendrogram(self.z)
         plt.savefig("dendragram.png")
 
     def draw_templates(self,dim1=0,dim2=1,saveas='templates.png'):
         colorList = get_all_colors()
         fig = plt.figure()
+        buff = 0.02
+        fontName = 'arial'
+        fontSize = 10
+        dpi = 300
+
+        def _draw(ax,events,labels,dim1,dim2,forceScale=True,title=None,centroids=None):
+            colorsToPlot = [colorList[l] for l in labels]
+            ax.scatter(events[:,dim1],events[:,dim2],marker='o',edgecolor='none',s=2,c=colorsToPlot)
+            ax.set_aspect(1./ax.get_data_ratio())
+                                                                                                                                                  
+            bufferX = buff * (events[:,dim1].max() - events[:,dim1].min())
+            bufferY = buff * (events[:,dim2].max() - events[:,dim2].min())
+            ax.set_xlim([events[:,dim1].min()-bufferX,events[:,dim1].max()+bufferX])
+            ax.set_ylim([events[:,dim2].min()-bufferY,events[:,dim2].max()+bufferY])
+
+            if title != None:
+                ax.set_title(title,fontname=fontName,fontsize=fontSize)
+
+            if centroids != None:
+                labelColor = "#0000D0"#"#C0C0C0"
+                alphaVal = 0.6
+                labelSize = fontSize-3
+                prefix=''
+
+                for k in np.unique(labels):
+                    k = int(k)
+                    if centroids.has_key(str(int(k))) == False:
+                        continue
+
+                    xPos = centroids[str(k)][dim1]
+                    yPos = centroids[str(k)][dim2]
+
+                    ax.text(xPos, yPos,'%s%s'%(prefix,k),color=labelColor,fontsize=labelSize,
+                            ha="center", va="center",
+                            bbox = dict(boxstyle="round",facecolor=colorList[k],alpha=alphaVal)
+                            )
+
+            ax.set_xlabel("dim%s"%dim1,fontname=fontName,fontsize=fontSize)
+            ax.set_ylabel("dim%s"%dim2,fontname=fontName,fontsize=fontSize)
+
+            for t in ax.get_xticklabels():
+                t.set_fontsize(fontSize)
+                t.set_fontname(fontName)
+               
+            for t in ax.get_yticklabels():
+                t.set_fontsize(fontSize)
+                t.set_fontname(fontName)
+
+            if forceScale == True:
+                ax.set_xlim([events[:,dim1].min()-bufferX,events[:,dim1].max()+bufferX])
+                ax.set_ylim([events[:,dim2].min()-bufferY,events[:,dim2].max()+bufferY])
+                ax.set_aspect(1./ax.get_data_ratio())
+
         ax = fig.add_subplot(131)
-        colorsToPlot = [colorList[l] for l in self.templateLabels]
-        ax.scatter(self.templateMat[:,dim1], self.templateMat[:,dim2],marker='o',edgecolor='none',s=2,c=colorsToPlot)
-        ax.set_title("Template")
-        ax.set_aspect(1./ax.get_data_ratio())
+        events = self.templateData
+        labels = self.templateLabels
+        centroids = {}
+        for k in np.unique(labels):
+            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+        _draw(ax,events,labels,dim1,dim2,title='Template',centroids=centroids)
 
         ax = fig.add_subplot(132)
-        colorsToPlot = [colorList[l] for l in self.bestModeLabels[0]]
-        ax.scatter(self.templateMat[:,dim1], self.templateMat[:,dim2],marker='o',edgecolor='none',s=2,c=colorsToPlot)
-        ax.set_title("Best Mode")
-        ax.set_aspect(1./ax.get_data_ratio())
+        labels = self.bestModeLabels[0]
+        centroids = {}
+        for k in np.unique(labels):
+            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+        _draw(ax,events,labels,dim1,dim2,title='Best',centroids=centroids)
 
         ax = fig.add_subplot(133)
-        colorsToPlot = [colorList[l] for l in self.bestModeLabels[1]]
-        ax.scatter(self.templateMat[:,dim1], self.templateMat[:,dim2],marker='o',edgecolor='none',s=2,c=colorsToPlot)
-        ax.set_title("Second Best Mode")
-        ax.set_aspect(1./ax.get_data_ratio())
+        labels = self.bestModeLabels[1]
+        centroids = {}
+        for k in np.unique(labels):
+            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+        _draw(ax,events,labels,dim1,dim2,title='Second Best',centroids=centroids)
+  
+        fig.subplots_adjust(wspace=0.32)
+        plt.savefig(saveas,dpi=dpi)
+        
 
-        plt.savefig(saveas)
+    def save(self,filePath=""):
+        '''
+        store the template file and its labels
+
+        '''
+
+        ## save the data
+        tmp =  open(os.path.join(self.savePath,"templateData.pickle"),'w')
+        cPickle.dump(self.templateMat,tmp)
+        tmp.close()
+
+        ## save the components
+        tmp =  open(os.path.join(self.savePath,"templateComponents.pickle"),'w')
+        cPickle.dump(self.templateLabels,tmp)
+        tmp.close()
+        
+        ## save the modes
+        tmp =  open(os.path.join(self.savePath,"templateModes.pickle"),'w')
+        cPickle.dump(self.bestModeLabels,tmp)
+        tmp.close()
+
+    def save_noise(self):
+        '''
+        store the clusters identified as noise
+        
+        '''
+        
+        ## save the cluster ids
+        tmp =  open(os.path.join(self.savePath,"noiseClusters.pickle"),'w')
+        cPickle.dump(self.noiseClusters,tmp)
+        tmp.close()
+
         

@@ -70,25 +70,27 @@ def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
         
     return silValues
 
-
 def find_noise(mat,labels,silValues=None,minNumEvents=4):
-    
+    '''
+    given a np.array of data (mat) and labels return clusters that are not well fit
+
+    '''
+
     ## determine which clusters are too small     
     noiseClusters = []
     numFiles = len(labels)
     uniqueClusterIDs = np.unique(labels)
     for uid in uniqueClusterIDs:
         if np.where(labels==uid)[0].size < minNumEvents:
-            noiseClusters.append(noiseClusters)
+            noiseClusters.append(uid)
 
     ## determine noise based on silhouette values
     if silValues != None:            
         for key,item in silValues.iteritems():
-            if item < 0.0:
+            if item < 0.0 or item == None :
                 noiseClusters.append(int(key))
 
-
-    return noiseClusters
+    return list(set(noiseClusters))
 
 def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
     '''
