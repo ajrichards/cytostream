@@ -108,7 +108,6 @@ class FileAlignerTest1(unittest.TestCase):
         tfc = TemplateFileCreator(self.expListData,self.expListLabels,savePath=os.path.join(self.homeDir,"results"))
         figName = os.path.join(self.homeDir,'figs','templates.png')
         tfc.draw_templates(saveas=figName)
-        #templateFile = (tfc.templateMat, tfc.bestModeLabels[0])
         templateData,templateComponents,templateModes = get_saved_template(self.homeDir)        
         self.__class__.templateFile = (templateData,templateModes[0])
 

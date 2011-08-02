@@ -201,6 +201,7 @@ class FileAligner():
                 print "...calculating scores"
 
             allEvents = [self.get_events(expName) for expName in self.expListNames]
+            
             silValuesPhi = get_silhouette_values(allEvents,aLabels,subsample=self.noiseSample,
                                                  minNumEvents=self.minNumEvents)
 
