@@ -33,7 +33,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
         clrs = colorList[indicesBG]
         dataX,dataY = (events[indicesBG,index1],events[indicesBG,index2])
         ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.5)
-        ms = markerSize + 3
+        ms = markerSize
 
     ## plot the foreground events
     if len(indicesFG) > 0:

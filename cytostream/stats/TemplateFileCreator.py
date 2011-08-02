@@ -43,7 +43,6 @@ def pool_compare_template(args):
     for ci in range(len(templateClusters)):
         clusterI = templateClusters[ci]
         if templateThresholds.has_key(str(int(clusterI))) == False:
-            print 'in template skipping', fileInd,clusterI
             continue
 
         templateEvents = templateData[np.where(templateLabels==clusterI)[0],:]
@@ -183,7 +182,6 @@ class TemplateFileCreator():
         self.save()
         self.save_noise()
         
-
     def create_log(self):
         ''' 
         create a log file to document template file creation
@@ -464,7 +462,7 @@ class TemplateFileCreator():
     
         ## save the top 3 modes 
         self.bestModeLabels = []
-        for rk in rankedK[:3]:
+        for rk in rankedK[:9]:
             centroidLabels = allCentroidLabels[str(rk)]
             self.bestModeLabels.append(self._get_mode_labels(self.templateLabels,centroidLabels,uniqueLabels))
    
@@ -514,7 +512,7 @@ class TemplateFileCreator():
         fig = plt.figure()
         buff = 0.02
         fontName = 'arial'
-        fontSize = 10
+        fontSize = 8
         dpi = 300
 
         def _draw(ax,events,labels,dim1,dim2,forceScale=True,title=None,centroids=None):
@@ -565,29 +563,73 @@ class TemplateFileCreator():
                 ax.set_ylim([events[:,dim2].min()-bufferY,events[:,dim2].max()+bufferY])
                 ax.set_aspect(1./ax.get_data_ratio())
 
-        ax = fig.add_subplot(131)
-        events = self.templateData
-        labels = self.templateLabels
-        centroids = {}
-        for k in np.unique(labels):
-            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-        _draw(ax,events,labels,dim1,dim2,title='Template',centroids=centroids)
+        if len(self.bestModeLabels) >= 0:
+            ax = fig.add_subplot(331)
+            events = self.templateData
+            labels = self.templateLabels
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Template',centroids=centroids)
+        elif len(self.bestModeLabels) >= 1:
+            ax = fig.add_subplot(332)
+            labels = self.bestModeLabels[0]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='First Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 2:
+            ax = fig.add_subplot(333)
+            labels = self.bestModeLabels[1]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Second Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 3:
+            ax = fig.add_subplot(334)
+            labels = self.bestModeLabels[2]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Third Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 4:
+            ax = fig.add_subplot(335)
+            labels = self.bestModeLabels[3]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Fourth Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 5:
+            ax = fig.add_subplot(336)
+            labels = self.bestModeLabels[4]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Fifth Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 6:
+            ax = fig.add_subplot(337)
+            labels = self.bestModeLabels[5]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Sixth Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 7:
+            ax = fig.add_subplot(338)
+            labels = self.bestModeLabels[6]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Seventh Best',centroids=centroids)
+        elif len(self.bestModeLabels) >= 8:
+            ax = fig.add_subplot(339)
+            labels = self.bestModeLabels[7]
+            centroids = {}
+            for k in np.unique(labels):
+                centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
+            _draw(ax,events,labels,dim1,dim2,title='Seventh Best',centroids=centroids)
 
-        ax = fig.add_subplot(132)
-        labels = self.bestModeLabels[0]
-        centroids = {}
-        for k in np.unique(labels):
-            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-        _draw(ax,events,labels,dim1,dim2,title='Best',centroids=centroids)
 
-        ax = fig.add_subplot(133)
-        labels = self.bestModeLabels[1]
-        centroids = {}
-        for k in np.unique(labels):
-            centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-        _draw(ax,events,labels,dim1,dim2,title='Second Best',centroids=centroids)
-  
-        fig.subplots_adjust(wspace=0.32)
+        fig.subplots_adjust(hspace=0.25,wspace=0.005)
         plt.savefig(saveas,dpi=dpi)
         
 
@@ -599,7 +641,7 @@ class TemplateFileCreator():
 
         ## save the data
         tmp =  open(os.path.join(self.savePath,"templateData.pickle"),'w')
-        cPickle.dump(self.templateMat,tmp)
+        cPickle.dump(self.templateData,tmp)
         tmp.close()
 
         ## save the components

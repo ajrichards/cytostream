@@ -6,8 +6,6 @@ from scipy.cluster.vq import kmeans2,kmeans
 from cytostream.stats import SilValueGenerator
 
 
-
-
 def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
     silValues = {}
     silValuesElements = {}
@@ -74,12 +72,16 @@ def find_noise(mat,labels,silValues=None,minNumEvents=4):
     '''
     given a np.array of data (mat) and labels return clusters that are not well fit
 
+    exclude all silhouette values with avg values less than zero
+    however if a cluster has more than 1% of events we include it by default
+
     '''
 
     ## determine which clusters are too small     
     noiseClusters = []
     numFiles = len(labels)
     uniqueClusterIDs = np.unique(labels)
+
     for uid in uniqueClusterIDs:
         if np.where(labels==uid)[0].size < minNumEvents:
             noiseClusters.append(uid)
@@ -88,6 +90,11 @@ def find_noise(mat,labels,silValues=None,minNumEvents=4):
     if silValues != None:            
         for key,item in silValues.iteritems():
             if item < 0.0 or item == None :
+                clusterPercent = float(np.where(labels==int(key))[0].size) / float(labels.size)
+                
+                if clusterPercent > 0.01:
+                    continue
+
                 noiseClusters.append(int(key))
 
     return list(set(noiseClusters))
