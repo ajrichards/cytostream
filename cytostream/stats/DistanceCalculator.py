@@ -73,7 +73,10 @@ class DistanceCalculator():
         else:
             raise RuntimeError("ERROR in distance calculator - input matrix does not have reasonable dimensions - %s"%dims)
         
-        matrixMeans = mat.mean(axis=0)
+        if len(dims) == 1:
+            matrixMeans = np.array([mat.mean(axis=0)])
+        else:
+            matrixMeans = mat.mean(axis=0)
 
         return matrixMeans
 

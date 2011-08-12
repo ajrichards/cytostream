@@ -30,7 +30,7 @@ def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
 
                 if len(clusterInds) > subsample:
                     percentTotal = float(len(clusterInds)) / float(len(expLabels)) 
-                    randSelected = clusterInds[np.random.randint(0,len(clusterInds),subsample)]
+                    randSelected = np.unique(clusterInds[np.random.randint(0,len(clusterInds),subsample)])
                     newIndices += randSelected.tolist()
                 else:
                     newIndices += clusterInds.tolist()
@@ -73,7 +73,7 @@ def find_noise(mat,labels,silValues=None,minNumEvents=4):
     given a np.array of data (mat) and labels return clusters that are not well fit
 
     exclude all silhouette values with avg values less than zero
-    however if a cluster has more than 1% of events we include it by default
+    however if a cluster has more than 0.05% of events we include it by default
 
     '''
 
@@ -92,7 +92,7 @@ def find_noise(mat,labels,silValues=None,minNumEvents=4):
             if item < 0.0 or item == None :
                 clusterPercent = float(np.where(labels==int(key))[0].size) / float(labels.size)
                 
-                if clusterPercent > 0.01:
+                if clusterPercent > 0.005:
                     continue
 
                 noiseClusters.append(int(key))

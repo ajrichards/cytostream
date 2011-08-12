@@ -98,6 +98,8 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling(self.controller.log.log['setting_max_scatter_display'])
         fileChannels = self.controller.model.get_master_channel_list()
         self.set('alternate_channel_labels',fileChannels)
+        fileList = self.get_file_names()
+        self.set('model_reference', fileList[0])
 
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)

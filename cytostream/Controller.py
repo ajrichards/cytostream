@@ -513,6 +513,8 @@ class Controller:
                 print "ERROR: Controller.run_selected_model - bad model reference"
                 return
             
+        ## if using model reference ensure ref comes first
+        if modelReference != None:
             refPosition = fileList.index(modelReference)
             if refPosition != 0:
                 refFile = fileList.pop(refPosition)
