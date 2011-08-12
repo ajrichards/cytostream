@@ -85,6 +85,7 @@ if filterInFocus == 'None':
 modelMode = log.log['model_mode']
 modelReference = log.log['model_reference']
 modelReferenceRunID =  log.log['model_reference_run_id']
+dpmmGamma = float(log.log['dpmm_gamma'])
 
 ## prepare model
 model = Model()
@@ -152,22 +153,42 @@ else:
 #m0.device = n % 4 + 1
 #r = m0.fit(y0)
 
-
-
 loadModel = False
 if modelMode == 'onefit' and modelReference == fileName:
     loadModel = False
 elif modelMode == 'onefit':
     loadModel = True
 
+loadParams = False
+forceFit = True
+if forceFit == True and modelReference == fileName:
+    loadParams = False
+elif forceFit == True:
+    loadParams = True
+
 modelRunStart = time.time()
 ## run the model 
 if loadModel == False:
-    mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
-    #mod.device = ...
-    mod.fit(nonZeroEvents,verbose=True)
-    full = mod.get_results()
-
+    if loadParams == False:
+        mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
+        mod.gamma = dpmmGamma
+        mod.fit(nonZeroEvents,verbose=True)
+        full = mod.get_results()
+        tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')
+        cPickle.dump(full,tmp0)
+        tmp0.close()
+    else:
+        tmp0 = open(os.path.join(homeDir,'models',modelReference+"_%s"%(modelNum)+"_dpmm.pickle"),'r')
+        refMod = cPickle.load(tmp0)
+        tmp0.close()
+        mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
+        mod.gamma = dpmmGamma
+        mod.load_mu(refMod.mus())
+        mod.load_sigma(refMod.sigmas())
+        mod.load_pi(refMod.pis())
+        mod.fit(nonZeroEvents,verbose=True)
+        full = mod.get_results()
+    
 ## use a saved model
 else:
     full, uselessClasses = model.load_model_results_pickle(modelReference,modelReferenceRunID,modelType='components')

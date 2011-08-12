@@ -26,6 +26,7 @@ class ControllerTest(unittest.TestCase):
         self.controller = Controller(debug=False)
         self.controller.create_new_project(self.homeDir,record=False)
         self.controller.load_files_handler([self.fcsFileName])
+        self.controller.log.log['model_reference'] = '3FITC_4PE_004'
     
     def testLog(self):
         self.controller.save()

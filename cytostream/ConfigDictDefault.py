@@ -38,6 +38,7 @@ configDictDefault = {
     'subsample_analysis'                    : '1e3',                # any float, int or string
     'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
     'dpmm_k'                                : '16',                 # an int divisible by 16
+    'dpmm_gamma'                            : '1.0',                # gamma value for dpmm
     'results_mode'                          : 'modes',              # modes, components
     'plots_to_view_channels'                : plotsToViewChannels,  # defined above'
     'plots_to_view_files'                   : plotsToViewFiles,     # defined above'
