@@ -218,6 +218,11 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model results"
             return None
 
+        modelsRun = self.get_models_run()
+        if modelRunID not in modelsRun:
+            print "ERROR: NoGuiAnalysis -- fileName is not in modelsRun - skipping get model results"
+            return None
+
         statModel, statModelClasses = self.controller.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
         
         return statModel, statModelClasses

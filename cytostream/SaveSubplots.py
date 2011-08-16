@@ -22,7 +22,7 @@ from cytostream import NoGuiAnalysis
 from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats, get_file_data, draw_plot
 
 class SaveSubplots():
-    def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,
+    def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,forceSimple=False,
                  forceScale=False,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3,useSubplotTitles=True):
 
         ## arg variables
@@ -35,6 +35,7 @@ class SaveSubplots():
         self.plotType = plotType
         self.buff = 0.02
         self.forceScale = forceScale
+        self.forceSimple = forceSimple
         self.inputLabels = None
         self.fontName = 'ariel'
         self.drawState = drawState
@@ -83,14 +84,14 @@ class SaveSubplots():
         if self.figTitle != None:
             plt.suptitle(self.figTitle,fontsize=10, fontname=self.fontName)
             
-        if self.numSubplots in [2]:
+        if self.numSubplots in [1,2]:
             self.fig.subplots_adjust(wspace=0.2)
             dpi = 150
         elif self.numSubplots in [3]:
             self.fig.subplots_adjust(wspace=0.32)
             dpi = 200
         elif self.numSubplots in [4]:
-            self.fig.subplots_adjust(hspace=0.25,wspace=0.005)
+            self.fig.subplots_adjust(hspace=0.2,wspace=0.005)
             dpi = 250
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
@@ -164,7 +165,7 @@ class SaveSubplots():
             showNoise = False
 
             ## handle args
-            args = [None for i in range(16)]
+            args = [None for i in range(17)]
             args[0] = events
             args[1] = subplotFile
             args[2] = index1
@@ -181,6 +182,7 @@ class SaveSubplots():
             args[13] = axesLabels
             args[14] = subplotTitle
             args[15] = showNoise
+            args[16] = self.forceSimple
 
             draw_plot(args)
 

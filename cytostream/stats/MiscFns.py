@@ -20,14 +20,20 @@ def kullback_leibler(d1,d2):
 
     return dist
 
-def two_component_em(clustEvents,verbose=False,emGuesses=None):
+def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="CD3"):
     '''
     given a 1D np.array of events and the labels associated with those events
     return a two component gaussian object and the cutpoint
     '''
 
     ## declare variables
-    subsampleSize = 10000     # subsample size
+    if subset in ['CD3','CD4']:
+        subsampleSize = 15000     # subsample size
+    elif subset in ['CD8']:
+        subsampleSize = 80000     # subsample size
+    else:
+        print "ERROR in two_component_em -- invalid subset specified"
+
     numIters = 25             # num em iters
     if emGuesses == None:
         numRuns = 3
@@ -38,7 +44,6 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None):
 
     resultsDict = {'maxLike':-np.inf,'params':None}
 
-
     if clustEvents.size > subsampleSize:
         #print 'getting subset for ', clustEvents.size
 
@@ -48,7 +53,7 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None):
             events = clustEvents.copy()[clustInds[:subsampleSize]]
 
             ## run em
-            tcg = TwoComponentGaussEM(events, numIters, numRuns,verbose=True,initialGuesses=emGuesses)
+            tcg = TwoComponentGaussEM(events, numIters, numRuns,verbose=True,initialGuesses=emGuesses,subset=subset)
             maxLike, bestEst = tcg.get_results()
 
             if maxLike > resultsDict['maxLike'] :
