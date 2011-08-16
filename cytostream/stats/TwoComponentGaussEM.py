@@ -11,11 +11,12 @@ from fcm.statistics.distributions import mvnormpdf
 
 class TwoComponentGaussEM():
 
-    def __init__(self, y, numIters, numRuns,verbose=False,initialGuesses=None):
+    def __init__(self, y, numIters, numRuns,verbose=False,initialGuesses=None,subset="CD3"):
         
         ## variables
         self.y = y.copy()
         self.verbose = verbose
+        self.subset = subset
 
         #print "\tdata", y.shape, y.mean(), np.median(y), y.var()
 
@@ -37,12 +38,25 @@ class TwoComponentGaussEM():
         n    = len(self.y)
         sortedVals = y.copy()
         sortedVals.sort()
-        mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
-        mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
-        sig1 = np.random.uniform(y.min(),y.max()*0.5)
-        sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
-        pi   = 0.5
-    
+
+        if self.subset in ['CD3','CD4']:
+            mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
+            mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
+            sig1 = np.random.uniform(y.min(),y.max()*0.5)
+            sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
+            pi   = 0.5
+        if self.subset in ['CD8']:
+            #mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
+            #mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
+            #mu2  = 2.5 * mu1
+            #sig1 = np.random.uniform(y.min(),y.max()*0.5)
+            #sig2 = np.random.uniform(y.max()*0.75,y.max()*2)
+            mu1 = np.random.uniform(200,500)
+            mu2 = np.random.uniform(550,750)
+            sig1 = np.random.uniform(5000,10000)
+            sig2 = np.random.uniform(1000,3000)
+            pi   = 0.8
+      
         return {'n':n, 'mu1':mu1, 'mu2':mu2, 'sig1':sig1, 'sig2':sig2, 'pi':pi}
 
     def perform_expectation(self, y, parms):

@@ -14,16 +14,16 @@ the functions here use CytostreamPlotter.py as a parent
 
 '''
 
-def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,colorList):
+def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,colorList,drawState='heat'):
     """
     draw the events in a scatte plot based on background and foreground
 
     """
 
-    myCmap = mpl.cm.gist_heat # spectral hot, gist_heat jet
+    myCmap = mpl.cm.spectral  # spectral hot, gist_heat jet
 
     ms = markerSize
-    if str(labels) == "None":
+    if str(labels) == "None" and drawState in ['scatter']:
         dataX,dataY = (events[:,index1],events[:,index2])
         ax.scatter([dataX],[dataY],color='blue',s=markerSize,edgecolor='none')
         return
@@ -32,7 +32,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
     if len(indicesBG) > 0:
         clrs = colorList[indicesBG]
         dataX,dataY = (events[indicesBG,index1],events[indicesBG,index2])
-        ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.5)
+        ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.8)
         ms = markerSize
 
     ## plot the foreground events
@@ -113,7 +113,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         for l in uniqueLabels:
             draw_centroid(l,index1,index2,labelSize)        
 
-def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,forceScale):
+def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,forceScale,forceSimple=False):
     ## handle data edge buffers     
     bufferX = buff * (events[:,index1].max() - events[:,index1].min())
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
@@ -134,7 +134,7 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
         t.set_fontsize(fontSize)
         t.set_fontname(fontName)
     
-    if forceScale != None:
+    if forceScale != None and forceScale != False:
         xAxLimit,yAxLimit = forceScale
         ax.set_xlim(xAxLimit)
         ax.set_ylim(yAxLimit)
@@ -142,7 +142,17 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
     if forceScale == True:
         ax.set_xlim(self.xAxLimit)
         ax.set_ylim(self.yAxLimit)
-    
+
+    ## for a simple version
+    if forceSimple == True:
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_title('')
+        ax.set_ylabel('')
+        ax.set_xlabel('')
+        ax.set_xlim([0,700])
+        ax.set_ylim([0,820])
+
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
@@ -165,6 +175,7 @@ def draw_plot(args,parent=None):
     axesLabels=args[13]
     subplotTitle=args[14]
     showNoise=args[15]
+    forceSimple=args[16]
 
     ## setup log
     if parent != None:
@@ -273,6 +284,8 @@ def draw_plot(args,parent=None):
     if str(highlight) != "None" and type(highlight) == type([]) and str(labels) != "None":
         
         indicesFG = np.array([])
+        
+        highlight = highlight[0]
         for clustID in highlight:
             if int(clustID) not in labels:
                 continue
@@ -286,23 +299,25 @@ def draw_plot(args,parent=None):
         indicesBG = []
 
     ## draw the points
-    if str(labels) != None and drawState == 'scatter':
+    if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
             print "WARNING: BasePlotters.draw_plot not enough colors in master color list"
+        #masterColorList = masterColorList[5:]
         colorList = masterColorList[labels]
-    if str(labels) != None and drawState == 'heat':
+
+    elif  drawState == 'heat':
         if totalPts >= 9e04:
-            bins = 80.0
+            bins = 130.0
         elif totalPts >= 8e04:
-            bins = 80.0
+            bins = 120.0
         elif totalPts >= 7e04:
-            bins = 80.0
+            bins = 110.0
         elif totalPts >= 6e04:
-            bins = 50.0
+            bins = 90.0
         elif totalPts >= 5e04:
-            bins = 40.0
+            bins = 60.0
         elif totalPts >= 4e04:
-            bins = 30.0
+            bins = 40.0
         elif totalPts >= 3e04:
             bins = 30.0
         elif totalPts >= 2e04:
@@ -311,7 +326,7 @@ def draw_plot(args,parent=None):
             bins = 30.0
         else:
             bins = 30.0
-            
+
         colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind],bins=bins)
     else:
        colorList = None
@@ -320,8 +335,10 @@ def draw_plot(args,parent=None):
         colorList = np.array(colorList)
                                            
     if drawState in ['scatter', 'heat']:
-        draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList)
-        draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots)
+        draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,drawState=drawState)
+        
+        if str(labels) != "None":
+            draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots)
         
         ## handle title and labels
         if parent != None and parent.title_cb.isChecked() == True:
@@ -340,7 +357,7 @@ def draw_plot(args,parent=None):
         if subplotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
 
-        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale)
+        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale,forceSimple)
 
         if parent != None:
             parent.canvas.draw()
