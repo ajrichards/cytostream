@@ -285,7 +285,9 @@ def draw_plot(args,parent=None):
         
         indicesFG = np.array([])
         
-        highlight = highlight[0]
+        if type(highlight) != type([]):
+            highlight = [highlight]
+
         for clustID in highlight:
             if int(clustID) not in labels:
                 continue

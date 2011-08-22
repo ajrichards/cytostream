@@ -101,7 +101,7 @@ class Model:
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
             
-    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None):
+    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None,compensationDict=None):
         """
         about: 
             This is a handler function for the script LoadFile.py which loads an fcs
@@ -157,10 +157,17 @@ class Model:
                 tmp1.close()
                 tmp2.close()
 
+            compensationFilePath = "None"
+            if compensationDict != None:
+                fileName = os.path.split(filePath)[-1]
+                print fileName
+                compensationFilePath = compensationDict[re.sub("\.txt|\.csv|\.fcs","",fileName,flags=re.IGNORECASE)]
+               
+
             ## if data is not of type array
             else:
-                cmd = "%s %s -f %s -h %s -d %s -t %s -c %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
-                                                             transform,fileChannelPath)
+                cmd = "%s %s -f %s -h %s -d %s -t %s -c %s -m %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
+                                                                   transform,fileChannelPath,compensationFilePath)
 
                 proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                 

@@ -1,4 +1,4 @@
-from Distributions import GaussianDistn
+from Distributions import GaussianDistn,BetaDistn
 from EmpiricalCDF import EmpiricalCDF
 from TwoComponentGaussEM import TwoComponentGaussEM
 from MiscFns import kullback_leibler, two_component_em, scale

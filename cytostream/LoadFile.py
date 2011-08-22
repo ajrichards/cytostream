@@ -9,7 +9,7 @@ if len(sys.argv) < 3:
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:m:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f filePath -h homeDir -d dataType"
     print "Note: fileName (-f) full file path" 
@@ -33,6 +33,8 @@ for o, a in optlist:
         transform = a
     if o == '-c':
         fileChannelsPath = a
+    if o == '-m':
+        compensationFilePath = a
 
 ## initial error checking
 if os.path.isdir(homeDir) == False:
@@ -41,6 +43,10 @@ if os.path.isdir(homeDir) == False:
 
 if os.path.isfile(filePath) == False:
     print "INPUT ERROR: file path does not exist", filePath
+    sys.exit()
+
+if compensationFilePath != "None" and os.path.isfile(filePath) == False:
+    print "INPUT ERROR: compensation matrix file  path does not exist", compensationFilePath
     sys.exit()
 
 if dataType not in ['fcs','tab','comma','array']:
@@ -56,7 +62,12 @@ if transform not in ['logicle','log']:
 projName = os.path.split(homeDir)[-1]
 
 if dataType == 'fcs':
-    fcsData = fcm.loadFCS(filePath,transform=transform)
+    if compensationFilePath != "None":
+        osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
+        fcsData = fcm.loadFCS(filePath,transform=transform,sidx=osidx, spill=ospill)
+    else:
+        fcsData = fcm.loadFCS(filePath,transform=transform)
+    
     fileChannels = fcsData.channels
 elif dataType == 'comma':
     fcsData = read_txt_into_array(filePath,delim=',')

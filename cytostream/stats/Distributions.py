@@ -94,7 +94,11 @@ class BetaDistn:
         return True
 
  
-
     def get_type(self):
         return self.__class__.__name__
+
+
+
+    def generate(self,n):
+         return np.random.beta(self.a,self.b,size=n)
 
