@@ -383,7 +383,7 @@ class Controller:
         ## used the selected transform
         transform = self.log.log['selected_transform']
         
-        self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath)
+        self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,compensationDict=self.compensationDict)
 
     def get_component_states(self):
         try:

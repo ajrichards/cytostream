@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,forceSimple=False,
-                 forceScale=False,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3,useSubplotTitles=True):
+                 forceScale=False,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3,useSubplotTitles=True,addLine=None):
 
         ## arg variables
         self.homeDir = homeDir
@@ -42,6 +42,7 @@ class SaveSubplots():
         self.showOnlyClusters = showOnlyClusters
         self.minNumEvents = minNumEvents
         self.useSubplotTitles = useSubplotTitles
+        self.addLine = addLine
 
         ## error check
         run = True
@@ -91,7 +92,7 @@ class SaveSubplots():
             self.fig.subplots_adjust(wspace=0.32)
             dpi = 200
         elif self.numSubplots in [4]:
-            self.fig.subplots_adjust(hspace=0.2,wspace=0.005)
+            self.fig.subplots_adjust(hspace=0.25,wspace=0.005)
             dpi = 250
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
@@ -185,6 +186,12 @@ class SaveSubplots():
             args[16] = self.forceSimple
 
             draw_plot(args)
+
+            ## add a line if specified (subplot,(lineX,lineY))
+            if self.addLine != None and self.addLine[0] == subplotIndex:
+                print 'adding line'
+                ax = self.get_axes(subplotIndex)
+                ax.plot(self.addLine[1][0],self.addLine[1][1],color='orange',linewidth=2.5)
 
     def handle_axes_limits(self):
 

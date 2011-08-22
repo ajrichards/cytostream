@@ -166,6 +166,9 @@ if forceFit == True and modelReference == fileName:
 elif forceFit == True:
     loadParams = True
 
+
+
+
 modelRunStart = time.time()
 ## run the model 
 if loadModel == False:

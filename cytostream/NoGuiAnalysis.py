@@ -16,7 +16,7 @@ BASEDIR = os.path.dirname(__file__)
 ## test class for the main window function
 class NoGuiAnalysis():
     def __init__(self,homeDir,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
-                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False):
+                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationDict=None):
         """
           class constructor 
 
@@ -40,6 +40,7 @@ class NoGuiAnalysis():
         self.record = record
         self.verbose = verbose
         self.inputChannels = inputChannels
+        self.compensationDict = compensationDict
 
         ## initialize
         if loadExisting == False:
@@ -92,6 +93,7 @@ class NoGuiAnalysis():
 
         """
 
+        self.controller.compensationDict = self.compensationDict
         self.controller.load_files_handler(self.filePathList,inputChannels=self.inputChannels)
         self.controller.handle_subsampling(self.controller.log.log['subsample_qa'])
         self.controller.handle_subsampling(self.controller.log.log['subsample_analysis'])
