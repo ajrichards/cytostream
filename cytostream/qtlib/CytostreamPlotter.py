@@ -130,7 +130,7 @@ class CytostreamPlotter(QtGui.QWidget):
         showNoise = False
 
         ## handle args                                                                                                                                                       
-        args = [None for i in range(16)]
+        args = [None for i in range(17)]
         #args[0] = events
         #args[1] = subplotFile
         #args[2] = index1
@@ -147,6 +147,7 @@ class CytostreamPlotter(QtGui.QWidget):
         #args[13] = axesLabels
         #args[14] = subplotTitle
         args[15] = showNoise
+        args[16] = False
 
         draw_plot(args,parent=self)
 
