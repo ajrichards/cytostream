@@ -164,7 +164,7 @@ class Controller:
             self.log.log["plots_to_view_files"] = plotsToViewFiles
             self.log.log["plots_to_view_highlights"] = plotsToViewHighlights
             self.log.log["plots_to_view_runs"] = plotsToViewRuns
-            numSubplots = 1
+
             for comp in comparisons:
                 plotsToViewChannels[0] = comp
                 self.log.log["plots_to_view_channels"] = plotsToViewChannels
@@ -176,12 +176,12 @@ class Controller:
                                                              self.log.log['plot_type']))
 
                 script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
-                ## error checking 
+                
                 if os.path.isfile(script) == False:
                     print 'ERROR: cannot find RunMakeScatterPlot.py'
                     return False
                 else:
-                    pltCmd = "%s %s -h %s"%(self.pythonPath,script,self.homeDir)
+                    pltCmd = "%s %s -h %s -f %s -m %s"%(self.pythonPath,script,self.homeDir,figName,mode)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                     while True:
                         try:
