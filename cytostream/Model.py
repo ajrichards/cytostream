@@ -204,7 +204,7 @@ class Model:
                 if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
                     print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
-    def get_events(self,fileName,subsample='original'):
+    def get_events(self,fileName,subsample='original',filterID=None):
         """
         about:
             this function handles the fetching of the events associated with a given file.
@@ -213,23 +213,28 @@ class Model:
         input:
             fileName - string representing the file without the full path and without a file extension
             subsample - any numeric string, int or float that specifies an already processed subsample 
+            filterID - a cytostream generated string 'filterX' where x is the numeric reference
         return:
             a np.array of event data
         """
         
-        if re.search('filter',str(subsample)):
-            pass
-        elif subsample != 'original':
+        if subsample != 'original':
             subsample = str(int(float(subsample)))
 
-        fileName = fileName + "_data_" + subsample + ".pickle"
-        if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
+        if not re.search('filter', str(filterID)):
+            filterUsed = None
+
+        if str(filterID) == "None":
+            dataFileName = fileName + "_data_" + subsample + ".pickle"
+        else:
+            dataFileName = fileName + "_data_%s.pickle"%filterID
+
+        if os.path.isfile(os.path.join(self.homeDir,'data',dataFileName)) == False:
             print "INPUT ERROR: bad file name specified in model.get_events"
-            print "\t", os.path.join(self.homeDir,'data',fileName)
-            
+            print "\t", os.path.join(self.homeDir,'data',dataFileName)
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',fileName),'r')
+        tmp = open(os.path.join(self.homeDir,'data',dataFileName),'r')
         events = cPickle.load(tmp)
         tmp.close()
         return events
@@ -355,38 +360,6 @@ class Model:
         cPickle.dump(randEvents,tmp)
         tmp.close()
         return randEvents
-
-    def create_thumbnail(self,indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType):
-        """
-        about:
-            handler function for RunMakeScatterPlot.py.
-        args:
-            indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType
-        return:
-            None
-        """
-
-        script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
-        
-        ## error checking
-        if os.path.isfile(script) == False:
-            print 'ERROR: cannot find RunMakeScatterPlot.py'
-        else:
-            pltCmd = "%s %s -p %s -i %s -j %s -f %s -s %s -a %s -m %s -t %s -h %s"%(self.pythonPath,script,self.projectID,indexI,indexJ,fileName,subsample,
-                                                                                    imgDir,modelRunID,modelType,self.homeDir)
-            proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-
-            while True:
-                try:
-                    next_line = proc.stdout.readline()
-                    proc.wait()
-                    if next_line == '' and proc.poll() != None:
-                        break
-                    else:
-                        print next_line 
-                except:
-                    proc.wait()
-                    break
 
     def load_model_results_pickle(self,fileName,modelNum,modelType='modes'):
         """

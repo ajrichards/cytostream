@@ -323,11 +323,11 @@ def draw_plot(args,parent=None):
         elif totalPts >= 3e04:
             bins = 30.0
         elif totalPts >= 2e04:
-            bins = 30.0
+            bins = 20.0
         elif totalPts >= 1e04:
-            bins = 30.0
+            bins = 15.0
         else:
-            bins = 30.0
+            bins = 10.0
 
         colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind],bins=bins)
     else:

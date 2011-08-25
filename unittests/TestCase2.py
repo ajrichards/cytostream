@@ -41,23 +41,20 @@ class TestCase2(unittest.TestCase):
         for fileName in fileNameList:
             self.nga.make_results_figures(fileName,'run1')
 
-        ## gate the data with a rectangle gate (filter)
-        subset = str(int(float(self.nga.get('subsample_analysis'))))
-        filterID1 = "%s_%s"%(subset,'filter1')
-        filteringDict1 = {(0,3):(400,800,150,300)}
-        self.nga.handle_filtering(fileName,filteringDict1)
-        self.nga.set('filter_in_focus',filterID1)
-        self.nga.run_model()
-        self.nga.make_results_figures(fileName,'run2')
+        ## handle filtering        
+        parentModelRunID = 'run1'
+        filterID = 'filter1'
+        modelMode = 'modes'
+        clusterIDs = [1,2]
+        for fileName in fileNameList:
+            self.nga.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
-        ## create a gate to filter the filtered data
-        self.nga.set('subsample_analysis',filterID1)
-        filteringDict2 = {(0,3):(700,750,250,300)}
-        self.nga.handle_filtering(fileName,filteringDict2)
-        filterID2 = "%s_%s"%(subset,'filter2')
-        self.nga.set('filter_in_focus',filterID2)
+        self.nga.set('filter_in_focus',filterID)
         self.nga.run_model()
-        self.nga.make_results_figures(fileName,'run3')
+
+        ## create all pairwise figs for all files
+        for fileName in fileNameList:
+            self.nga.make_results_figures(fileName,'run2')
 
         ## return filter in focus to default
         self.nga.set('filter_in_focus','None')
@@ -91,9 +88,9 @@ class TestCase2(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
         ## check run2 and relevant results
-        filterID = "%s_%s"%(subsample,'filter1')
-        events = self.nga.get_events(fileNameList[0],subsample=filterID)  
-        self.failIf(subsample < events.shape[0])
+        #filterID = "%s_%s"%(subsample,'filter1')
+        #events = self.nga.get_events(fileNameList[0],subsample=filterID)  
+        #self.failIf(subsample < events.shape[0])
 
 
 ### Run the tests 

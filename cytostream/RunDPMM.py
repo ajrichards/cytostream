@@ -95,15 +95,12 @@ numItersMCMC =  int(log.log['num_iters_mcmc'])
 cleanBorderEvents = log.log['clean_border_events']
 
 ## get events
-if re.search('filter',str(subsample)):
+if filterInFocus != None:
     pass
 elif subsample != 'original':
     subsample = str(int(float(subsample)))
 
-if filterInFocus == None:
-    events = model.get_events(fileName,subsample=subsample)
-else:
-    events = model.get_events(fileName,subsample=filterInFocus)
+events = model.get_events(fileName,subsample,filterID=filterInFocus)
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
@@ -165,9 +162,6 @@ if forceFit == True and modelReference == fileName:
     loadParams = False
 elif forceFit == True:
     loadParams = True
-
-
-
 
 modelRunStart = time.time()
 ## run the model 
