@@ -18,12 +18,12 @@ if mpl.get_backend() != 'agg':
 
 import matplotlib.pyplot as plt
 from cytostream import Logger, Model, get_fcs_file_names
-from cytostream import NoGuiAnalysis
 from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sample_stats, get_file_data, draw_plot
 
 class SaveSubplots():
-    def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',figTitle=None,forceSimple=False,
-                 forceScale=False,inputLabels=None,drawState='Heat',showOnlyClusters=None,minNumEvents=3,useSubplotTitles=True,addLine=None):
+    def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
+                 figTitle=None,forceSimple=False,forceScale=False,inputLabels=None,drawState='Heat',
+                 minNumEvents=3,useSubplotTitles=True,addLine=None,figSize=None):
 
         ## arg variables
         self.homeDir = homeDir
@@ -39,10 +39,10 @@ class SaveSubplots():
         self.inputLabels = None
         self.fontName = 'ariel'
         self.drawState = drawState
-        self.showOnlyClusters = showOnlyClusters
         self.minNumEvents = minNumEvents
         self.useSubplotTitles = useSubplotTitles
         self.addLine = addLine
+        self.figSize = figSize
 
         ## error check
         run = True
@@ -66,7 +66,11 @@ class SaveSubplots():
             self.resultsMode = self.log.log['results_mode']
         
             ## prepare figure
-            self.fig = plt.figure()
+            if self.figSize == None:
+                self.fig = plt.figure()
+            else:
+                self.fig = plt.figure(figsize=self.figSize)
+
             self.colors = get_all_colors()
 
             if self.forceScale == True:
@@ -87,10 +91,10 @@ class SaveSubplots():
             
         if self.numSubplots in [1,2]:
             self.fig.subplots_adjust(wspace=0.2)
-            dpi = 150
+            dpi = 200
         elif self.numSubplots in [3]:
             self.fig.subplots_adjust(wspace=0.32)
-            dpi = 200
+            dpi = 225
         elif self.numSubplots in [4]:
             self.fig.subplots_adjust(hspace=0.25,wspace=0.005)
             dpi = 250
@@ -144,16 +148,17 @@ class SaveSubplots():
             subplotRun = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
 
-            if self.figMode != 'qa' and self.inputLabels != None:
+            if self.figMode == 'analysis' and self.inputLabels != None:
                 labels = self.inputLabels[subplotIndex]
-            elif self.figMode != 'qa':
+            elif self.figMode == 'analysis':
                 statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRun,modelType=self.resultsMode)
                 labels = statModelClasses
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
 
             #print 'before', events.shape
-            events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
+            events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels,
+                                                  modelRunID=subplotRun)
             index1,index2 = subplotChannels
 
             ## labels
@@ -275,7 +280,7 @@ if __name__ == '__main__':
           otherwise use fileList = ['3FITC_4PE_004']
     
     '''
-    
+    from cytostream import NoGuiAnalysis    
     homeDir = os.path.join("projects","utest")
     run1File = os.path.join("projects","utest","models","3FITC_4PE_004_run1_modes.pickle")
     figName = os.path.join(os.getenv("HOME"),'test')

@@ -263,7 +263,24 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
 
-    def handle_filtering(self,fileName,filteringDict):
+    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+        fileList = self.get_file_names()
+        modelsRunList = self.get_models_run()
+
+        ## error checkings
+        if type(filterID) != type('abc'):
+            print "ERROR: NoGuiAnalysis -- Invalid filter id  - skipping filtering"
+            return None
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
+            return None
+        if parentModelRunID not in modelsRunList:
+            print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
+            return None
+
+        self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+
+    def handle_filtering_dict(self,fileName,filteringDict):
         fileList = self.get_file_names()
 
         if fileName not in fileList:
@@ -273,7 +290,7 @@ class NoGuiAnalysis():
         if type(filteringDict) != type({}):
             print "ERROR: NoGuiAnalysis.handle_filtering -- filteringDict must be of type dict"
     
-        self.controller.handle_filtering(fileName,filteringDict)
+        self.controller.handle_filtering_dict(fileName,filteringDict)
                                                                                                                                                         
     def get_aligned_labels(self,phi,alignmentDir='alignment'):
         fileName = os.path.join(self.controller.homeDir,alignmentDir,"alignLabels_%s.pickle"%(phi))

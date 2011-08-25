@@ -69,55 +69,42 @@ def get_all_colors():
     return np.array(colors * 3)
 
 
-def fetch_plotting_events(selectedFile,model,log,subsample,labels=None):
+def fetch_plotting_events(selectedFile,model,log,subsample,labels=None,modelRunID=None):
     
     ## declare variables
     fontName = log.log['font_name']
     markerSize = int(log.log['scatter_marker_size'])
     fontSize = log.log['font_size']
     plotType = log.log['plot_type']
-    filterInFocus = log.log['filter_in_focus']
     modelType = log.log['results_mode']
 
-    ## get events                                                                                                                       
-    if re.search('filter',str(subsample)):
-        pass
-    elif subsample != 'original':
+    if modelRunID != None:
+        modelLog = model.load_model_results_log(selectedFile,modelRunID)
+        filterUsed = modelLog['filter used']
+    else:
+        filterUsed = None
+
+    if not re.search('filter', str(filterUsed)):
+        filterUsed = None
+
+    ## get events
+    if subsample != 'original':
         subsample = str(int(float(subsample)))
 
-    if re.search('filter', subsample):
-        print "WARNING in fetch plotting events need to redo 'filter'"
+    ## ensure the proper events are being loaded
+    events = model.get_events(selectedFile,subsample=subsample,filterID=filterUsed)
 
-    ## ensure the proper events are being loaded 
-    if re.search('original',str(subsample)):
-
-        if log == None:
-            subsample = 7e04
-        else:
-            subsample = float(log.log['setting_max_scatter_display'])
-
-        events = model.get_events(selectedFile,subsample='original')
-
-        if events.shape[0] > subsample:
-            subsampleIndices = model.get_subsample_indices(subsample)
-            events = events[subsampleIndices,:]
-            if labels != None:
-                labels = labels[subsampleIndices,:]
-   
+    if log == None:
+        maxScatterSize =  7e04
     else:
-        events = model.get_events(selectedFile,subsample=subsample)
+        maxScatterSize = float(log.log['setting_max_scatter_display'])
 
-    #elif filterInFocus != None and filterInFocus != 'None' and re.search('filter',filterInFocus):
-    #    events = model.get_events(selectedFile,subsample=filterInFocus)
-    #elif re.search('original',str(subsample)):
-    #    if log == None:
-    #        subsample = 2e04
-    #    else:
-    #        subsample = log.log['setting_max_scatter_display']
-    #
-    #    subsampleIndices = model.get_subsample_indices(subsample)
-    #    events = model.get_events(selectedFile,subsample=subsample)
-    
+    if events.shape[0] > subsample:
+        subsampleIndices = model.get_subsample_indices(maxScatterSize)
+        events = events[subsampleIndices,:]
+        if labels != None:
+            labels = labels[subsampleIndices,:]
+   
     return events,labels
 
 class PlotDataOrganizer:

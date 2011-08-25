@@ -21,6 +21,7 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
 from FileControls import add_project_to_log
 from Logging import Logger
+from SaveSubplots import SaveSubplots
 
 class Controller:
     def __init__(self,viewType=None,configDict=None,debug=False):
@@ -54,6 +55,7 @@ class Controller:
         self.fileChannelPath = None
         self.baseDir = self.model.baseDir
         self.currentPlotView = None
+        self.compensationDict = None
 
         if self.debug == True:
             print 'DEBUG ON'
@@ -131,7 +133,9 @@ class Controller:
         percentDone = 0
         imageCount = 0
         
-        for fileName in fileList:
+        for fileInd in range(len(fileList)):
+            fileName = fileList[fileInd]
+         
             ## check to see that file is not in excluded files
             if fileName in excludedFiles:
                 continue
@@ -153,20 +157,52 @@ class Controller:
             ## specify model type to show as thumbnails
             modelType = self.log.log['thumbnail_results_default']
 
-            ## make the specifed figures
-            for indexI,indexJ in comparisons:
-                                        
-                ## create original for thumbnails
-                self.model.create_thumbnail(indexI,indexJ,fileName,subsample,imgDir,modelRunID,modelType)
+            plotsToViewChannels = [(0,1) for i in range(16)]
+            plotsToViewFiles = [fileInd for i in range(16)]
+            plotsToViewHighlights = [None for i in range(16)]
+            plotsToViewRuns = [modelRunID for i in range(16)]
+            self.log.log["plots_to_view_files"] = plotsToViewFiles
+            self.log.log["plots_to_view_highlights"] = plotsToViewHighlights
+            self.log.log["plots_to_view_runs"] = plotsToViewRuns
+            numSubplots = 1
+            for comp in comparisons:
+                plotsToViewChannels[0] = comp
+                self.log.log["plots_to_view_channels"] = plotsToViewChannels
+                self.save()
+
+                figName = os.path.join(imgDir,"%s_%s_%s.%s"%(fileName,
+                                                             fileChannels[comp[0]],
+                                                             fileChannels[comp[1]],
+                                                             self.log.log['plot_type']))
+
+                script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
+                ## error checking 
+                if os.path.isfile(script) == False:
+                    print 'ERROR: cannot find RunMakeScatterPlot.py'
+                    return False
+                else:
+                    pltCmd = "%s %s -h %s"%(self.pythonPath,script,self.homeDir)
+                    proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                    while True:
+                        try:
+                            next_line = proc.stdout.readline() 
+                            proc.wait()
+                            if next_line == '' and proc.poll() != None:
+                                break
+                            else:
+                                print next_line
+                        except:
+                            proc.wait()
+                            break 
 
                 imageCount += 1
                 progress = 1.0 / float(len(imageProgress)) *100.0
                 percentDone+=progress
-
+                     
                 if progressBar != None:
                     progressBar.move_bar(int(round(percentDone)))
                     #print 'moving', percentDone
-
+            
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName)
 
@@ -227,7 +263,7 @@ class Controller:
         '''
 
         ## if subsample is set to some filter
-        if re.search('filter', str(subsample)):
+        if str(self.log.log['filter_in_focus']) != "None":
             pass
         elif subsample != 'original':
             subsample = int(float(subsample))
@@ -391,82 +427,61 @@ class Controller:
         except:
             return None
 
-    def handle_filtering(self,fileName,filteringDict):
+    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+        '''
+        given a set of cluster ids the respective events are saved 
 
-        subsample = self.log.log['subsample_analysis']
-        if self.verbose == True:
-            print 'INFO: handling filtering...', subsample
+        '''
 
-        ## declare variables
-        if not re.search('filter', str(subsample)):
-            subsample = int(float(subsample))
-            
-        ## get the filter number id
-        subsampleStr = re.sub('filter\d+|\_','',str(subsample))
-        if self.log.log['filters_run_count'].has_key(fileName) == False:
-            self.log.log['filters_run_count'][fileName] = {subsampleStr:1}
-        else:
-            if self.log.log['filters_run_count'][fileName].has_key(subsampleStr):
-                self.log.log['filters_run_count'][fileName][subsampleStr]+=1
-            else:
-                self.log.log['filters_run_count'][fileName] = {subsampleStr:1}
-
-        self.save()
-       
-        filterNumber = int(self.log.log['filters_run_count'][fileName][subsampleStr])
-        channels = filteringDict.keys()[0]
-        boundries = [int(val) for val in filteringDict.values()[0]]
-
-        print "..............................................................."
-        print 'handling filtering...', subsample
-        print 'filter number', filterNumber
-        print 'filter dict', filteringDict
-        print 'filter run count', self.log.log['filters_run_count']
-        print "..............................................................."
-
-        filterID = "%s_filter%s"%(subsampleStr,filterNumber)
+        statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
+        modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
+        parentFilter = modelLog['filter used']
+        filterNumber = re.sub("\D","",filterID)
+        
+        if not re.search('filter', str(parentFilter)):
+            parentFilter = None
 
         ## check to see if a log file has been created for this project
-        filterLogFile = os.path.join(self.homeDir,'filterLog.log')
+        filterLogFile = os.path.join(self.homeDir,"data",'%s.log'%filterID)
         if os.path.isfile(filterLogFile) == True:
             filterLog = csv.writer(open(filterLogFile,'a'))
         else:
             filterLog = csv.writer(open(filterLogFile,'w'))
 
-        filterLog.writerow([fileName,subsample,filterID,filteringDict]) 
+        filterLog.writerow([fileName,filterID,str(clusterIDs)]) 
 
         ## get events
-        events = self.model.get_events(fileName,subsample=subsample)
+        events = self.model.get_events(fileName,subsample='original',filterID=parentFilter)
+        
+        ## check that labels are of right type
+        if type(clusterIDs[0]) != type(1):
+            clusterIDs = [int(cid) for cid in clusterIDs]
 
         ## get indices
-        xData = events[:,channels[0]]
-        yData = events[:,channels[1]]
+        filterIndices = None
 
-        xIndices1 = np.where(xData > float(boundries[0]))[0]
-        xIndices2 = np.where(xData < float(boundries[1]))[0]
-        xIndices = list(set(xIndices1).intersection(set(xIndices2)))
+        for cid in clusterIDs:
+            inds = np.where(fileLabels == cid)[0]
 
-        yIndices1 = np.where(yData > float(boundries[2]))[0]
-        yIndices2 = np.where(yData < float(boundries[3]))[0]
-        yIndices = list(set(yIndices1).intersection(set(yIndices2)))
-        filteredIndices = np.array(list(set(yIndices).intersection(set(xIndices))))
-        data = events[filteredIndices,:]
-        
+            if filterIndices == None:
+                filterIndices = inds
+            else:
+                filterIndices = np.hstack([filterIndices,inds])
+
+        data = events[filterIndices,:]
         newDataFileName = fileName + "_data_%s.pickle"%filterID
         logFileName = fileName + "_data_%s.log"%filterID
         tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
         cPickle.dump(data,tmp)
         tmp.close()
         logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
-        logFile.writerow(['filtering dict', str(filteringDict)])
-        logFile.writerow(['subsample',subsample])
         logFile.writerow(['original events',str(events.shape[0])])
         logFile.writerow(["timestamp", time.asctime()])
 
         if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
             print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
 
-            return True
+            return False
         else:
             return True
 

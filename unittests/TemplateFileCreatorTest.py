@@ -14,7 +14,6 @@ BASEDIR = os.path.dirname(__file__)
 ## test class for the main window function
 class TemplateFileCreatorTest(unittest.TestCase):
 
-
     def testForCorrectTemplateFileCreation(self):
         fileList = [case1,case2,case3]
         fileLabelList = [case1Labels,case2Labels,case3Labels]
@@ -46,9 +45,16 @@ class TemplateFileCreatorTest(unittest.TestCase):
         fileList = [case1,case2,case3]
         fileLabelList = [case1Labels,case2Labels,case3Labels]
         tfc = TemplateFileCreator(fileList,fileLabelList,templateSeedInd=2)
-
+        
         ## check that template contains correct num labels
         self.assertEqual(len(np.unique(tfc.templateLabels)),26)
+
+    def tearDown(self):
+        for fileName in ['Template.log','templateData.pickle','templateComponents.pickle','templateModes.pickle',
+                         'templates.png','noiseClusters.pickle']:
+            if os.path.exists(fileName):
+                os.remove(fileName)
+
 
 
 ### Run the tests 
