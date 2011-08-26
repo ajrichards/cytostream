@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,forceSimple=False,forceScale=False,inputLabels=None,drawState='Heat',
-                 minNumEvents=3,useSubplotTitles=True,addLine=None,figSize=None):
+                 minNumEvents=3,useSubplotTitles=True,addLine=None,figSize=None,axesOff=False):
 
         ## arg variables
         self.homeDir = homeDir
@@ -43,6 +43,7 @@ class SaveSubplots():
         self.useSubplotTitles = useSubplotTitles
         self.addLine = addLine
         self.figSize = figSize
+        self.axesOff = axesOff
 
         ## error check
         run = True
@@ -197,9 +198,9 @@ class SaveSubplots():
 
             ## add a line if specified {subplot:(lineX,lineY)}
             if self.addLine != None and subplotIndex in self.addLine.keys():
-                draw_plot(args,addLine=self.addLine[subplotIndex])
+                draw_plot(args,addLine=self.addLine[subplotIndex],axesOff=self.axesOff)
             else:
-                draw_plot(args)
+                draw_plot(args,axesOff=self.axesOff)
 
     def handle_axes_limits(self):
 

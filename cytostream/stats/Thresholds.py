@@ -23,8 +23,9 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
         ax = fig.add_subplot(2,3,pltCount)
         eventsInHist = cd3Events[np.where(cd3Events < 800)[0]]
         n, bins, patches = ax.hist(eventsInHist,18,normed=1,facecolor='gray',alpha=0.5)
-        maxX1 = 900
-        maxX2 = 900
+
+        maxX1 = cd3Events.max()
+        maxX2 = cd3Events.max()
         pdfX1 = np.linspace(0,maxX1,300)
         pdfY1 = stats.norm.pdf(pdfX1,emResults[fileName]['params']['mu1'], np.sqrt(emResults[fileName]['params']['sig1']))
         pdfX2 = np.linspace(0,maxX2,300)
@@ -51,6 +52,8 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
     fig.subplots_adjust(hspace=0.3,wspace=0.3)
     plt.savefig(figName)
 
+    #return threshX, threshY
+
 def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None,filterID=None):
     '''
     get cd3 positive clusters
@@ -65,7 +68,7 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=Fa
         fileName = fileList[fileInd]
         cd3Results[fileName] = {'indices':None,'clusters':None,'percent':None}
 
-        print "\n", fileName
+        #print "\n", fileName
 
         fileLabels = allLabels[fileInd]
         if filterID != None and re.search('filter',str(filterID)):
@@ -106,7 +109,7 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=Fa
 
         cd3Percent = float(len(cd3Indices)) / float(len(fileLabels))
         rawPercent = float(len(np.where(cd3Events > cutpoint)[0])) / float(len(cd3Events))
-        print fileName, len(cd3Indices),len(fileLabels), cd3Percent, rawPercent
+        #print fileName, len(cd3Indices),len(fileLabels), cd3Percent, rawPercent
 
         cd3Results[fileName]['indices'] = cd3Indices
         cd3Results[fileName]['clusters'] = cd3Positive
@@ -129,7 +132,7 @@ def find_positivity_threshold_cd8(cd8ChanIndex,fileList,nga,allLabels,cd3Results
         fileName = fileList[fileInd]
         cd8Results[fileName] = {'indices':None,'clusters':None,'percent':None}
 
-        print "\n", fileName
+        #print "\n", fileName
 
         fileLabels = allLabels[fileInd]
         uniqueLabels = np.sort(np.unique(fileLabels))
@@ -166,7 +169,7 @@ def find_positivity_threshold_cd8(cd8ChanIndex,fileList,nga,allLabels,cd3Results
 
         cd8Percent = float(len(cd8Indices)) / float(len(fileLabels))
         rawPercent = float(len(np.where(cd8Events > cutpoint)[0])) / float(len(cd8Events))
-        print fileName, len(cd8Indices),len(fileLabels), cd8Percent, rawPercent
+        #print fileName, len(cd8Indices),len(fileLabels), cd8Percent, rawPercent
 
         cd8Results[fileName]['indices'] = cd8Indices
         cd8Results[fileName]['clusters'] = cd8Positive
@@ -189,7 +192,7 @@ def find_positivity_threshold_cd4(cd4ChanIndex,fileList,nga,allLabels,cd3Results
         fileName = fileList[fileInd]
         cd4Results[fileName] = {'indices':None,'clusters':None,'percent':None}
 
-        print "\n", fileName
+        #print "\n", fileName
 
         fileLabels = allLabels[fileInd]
         uniqueLabels = np.sort(np.unique(fileLabels))
@@ -226,7 +229,7 @@ def find_positivity_threshold_cd4(cd4ChanIndex,fileList,nga,allLabels,cd3Results
 
         cd4Percent = float(len(cd4Indices)) / float(len(fileLabels))
         rawPercent = float(len(np.where(cd4Events > cutpoint)[0])) / float(len(cd4Events))
-        print fileName, len(cd4Indices),len(fileLabels), cd4Percent, rawPercent
+        #print fileName, len(cd4Indices),len(fileLabels), cd4Percent, rawPercent
 
         cd4Results[fileName]['indices'] = cd4Indices
         cd4Results[fileName]['clusters'] = cd4Positive
