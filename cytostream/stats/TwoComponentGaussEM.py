@@ -40,21 +40,22 @@ class TwoComponentGaussEM():
         sortedVals.sort()
 
         if self.subset in ['CD3','CD4']:
-            mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
-            mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
-            sig1 = np.random.uniform(y.min(),y.max()*0.5)
-            sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
-            pi   = 0.5
-        if self.subset in ['CD8']:
             #mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
             #mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
-            #mu2  = 2.5 * mu1
             #sig1 = np.random.uniform(y.min(),y.max()*0.5)
-            #sig2 = np.random.uniform(y.max()*0.75,y.max()*2)
-            mu1 = np.random.uniform(200,500)
-            mu2 = np.random.uniform(550,750)
-            sig1 = np.random.uniform(5000,10000)
-            sig2 = np.random.uniform(1000,3000)
+            #sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
+            #pi   = 0.5
+            mu1 = np.random.uniform(0.1 * y.max(),0.42*y.max()) ## 200, 500
+            mu2 = np.random.uniform(0.46 * y.max(),0.7*y.max()) ## 550,750
+            sig1 = np.random.uniform(6.0*y.max(),13.0*y.max())  ## 
+            sig2 = np.random.uniform(6.0*y.max(),13.0*y.max())
+            pi   = 0.8
+
+        if self.subset in ['CD8']:
+            mu1 = np.random.uniform(0.2 * y.max(),0.5*y.max()) ## 200, 500
+            mu2 = np.random.uniform(0.53 * y.max(),0.73*y.max()) ## 550,750
+            sig1 = np.random.uniform(6.6*y.max(),13.3*y.max()) ## 
+            sig2 = np.random.uniform(1.3*y.max(),4*y.max())
             pi   = 0.8
       
         return {'n':n, 'mu1':mu1, 'mu2':mu2, 'sig1':sig1, 'sig2':sig2, 'pi':pi}

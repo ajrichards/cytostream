@@ -470,10 +470,15 @@ class Controller:
 
         data = events[filterIndices,:]
         newDataFileName = fileName + "_data_%s.pickle"%filterID
+        filterIndicesFile = fileName + "_indices_%s.pickle"%filterID
+
         logFileName = fileName + "_data_%s.log"%filterID
-        tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-        cPickle.dump(data,tmp)
-        tmp.close()
+        tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
+        cPickle.dump(data,tmp1)
+        tmp1.close()
+        tmp2 = open(os.path.join(self.homeDir,'data',filterIndicesFile),'w')
+        cPickle.dump(filterIndices,tmp2)
+        tmp2.close()
         logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
         logFile.writerow(['original events',str(events.shape[0])])
         logFile.writerow(["timestamp", time.asctime()])

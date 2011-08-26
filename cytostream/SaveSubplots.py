@@ -55,6 +55,9 @@ class SaveSubplots():
             for labelList in inputLabels:
                 self.inputLabels.append(np.array([i for i in labelList]))
 
+        if self.figMode not in ['qa','analysis']:
+            print "ERROR: SaveSubplots.py -- figMode  must be 'qa' or 'analysis' not '%s'"%self.figMode
+
         ## initialize a logger and a model to get specified files and channels
         if run == True:
             self.log = Logger()
@@ -155,6 +158,8 @@ class SaveSubplots():
                 labels = statModelClasses
                 modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
                 subsample = modelLog['subsample']
+            else:
+                print "WARNING: unexpected event occured in SaveSubplots.py", self.figMode
 
             #print 'before', events.shape
             events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels,
@@ -190,13 +195,11 @@ class SaveSubplots():
             args[15] = showNoise
             args[16] = self.forceSimple
 
-            draw_plot(args)
-
-            ## add a line if specified (subplot,(lineX,lineY))
-            if self.addLine != None and self.addLine[0] == subplotIndex:
-                print 'adding line'
-                ax = self.get_axes(subplotIndex)
-                ax.plot(self.addLine[1][0],self.addLine[1][1],color='orange',linewidth=2.5)
+            ## add a line if specified {subplot:(lineX,lineY)}
+            if self.addLine != None and subplotIndex in self.addLine.keys():
+                draw_plot(args,addLine=self.addLine[subplotIndex])
+            else:
+                draw_plot(args)
 
     def handle_axes_limits(self):
 
