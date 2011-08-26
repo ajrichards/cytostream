@@ -7,6 +7,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 from matplotlib.nxutils import points_inside_poly
+from matplotlib.ticker import ScalarFormatter
 from cytostream.tools import rgb_to_hex, get_cmap_blues, get_file_sample_stats, get_all_colors
 from fcm.graphics import bilinear_interpolate
 '''
@@ -20,7 +21,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
 
     """
 
-    myCmap = mpl.cm.spectral  # spectral hot, gist_heat jet
+    myCmap = mpl.cm.hot  # spectral hot, gist_heat jet
 
     ms = markerSize
     if str(labels) == "None" and drawState in ['scatter']:
@@ -119,7 +120,14 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
     ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
     ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
-    
+
+    ## axes formatters
+    formatter = ScalarFormatter(useMathText=True) 
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-3,3))
+    ax.xaxis.set_major_formatter(formatter)
+    ax.yaxis.set_major_formatter(formatter) 
+
     ## handle labels and title
     channel1 = fileChannels[index1]
     channel2 = fileChannels[index2]
@@ -156,7 +164,7 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
-def draw_plot(args,parent=None):
+def draw_plot(args,parent=None,addLine=None):
 
     ## handle args
     events=args[0]
@@ -228,7 +236,6 @@ def draw_plot(args,parent=None):
         labels = parent.labels
         ax = parent.ax
     
-
     if type(labels) == type([]):
         labels = np.array(labels)
 
@@ -284,9 +291,10 @@ def draw_plot(args,parent=None):
     if str(highlight) != "None" and type(highlight) == type([]) and str(labels) != "None":
         
         indicesFG = np.array([])
-        
         if type(highlight) != type([]):
             highlight = [highlight]
+        if type(highlight[0]) == type([]):
+            highlight = highlight[0]
 
         for clustID in highlight:
             if int(clustID) not in labels:
@@ -335,7 +343,11 @@ def draw_plot(args,parent=None):
 
     if type(colorList) == type([]):
         colorList = np.array(colorList)
-                                           
+
+    ## add a line if specified {subplot:(lineX,lineY)}                                                                                                                   
+    if addLine != None:
+        ax.plot(addLine[0],addLine[1],color='orange',linewidth=2.0)
+                           
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,drawState=drawState)
         

@@ -172,7 +172,7 @@ class NoGuiAnalysis():
         self.controller.save()
 
 
-    def get_events(self,fileName,subsample='original'):
+    def get_events(self,fileName,subsample='original',filterID=None):
         """
         returns the events from a given file name
 
@@ -183,9 +183,22 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
             return None
 
-        events = self.controller.model.get_events(fileName,subsample=subsample)
+        events = self.controller.model.get_events(fileName,subsample=subsample,filterID=filterID)
 
         return events
+
+    def get_filter_indices(self,fileName,filterID):
+        pickleFile = os.path.join(self.homeDir,'data',fileName + "_indices_%s.pickle"%filterID)
+        if os.path.exists(pickleFile) == False:
+            print "ERROR: NoGuiAnalysis -- filter indices pickle file does not exist", 
+            print "...",pickleFile
+            return None
+
+        tmp = open(pickleFile,'r')
+        filterIndices = cPickle.load(tmp)
+        
+        return filterIndices
+
 
     def make_qa_figures(self):
         """

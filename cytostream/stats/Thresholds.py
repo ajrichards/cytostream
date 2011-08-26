@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import os,sys
+import os,sys,re
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from cytostream.stats import two_component_em, EmpiricalCDF
 
 
-def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3'):
+def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
     if len(fileNameList) > 6:
         print "make_positivity_plot only works with six or less subplots not", len(fileNameList)
@@ -17,7 +17,7 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
     fontSize = 8
     pltCount = 0
     for fileName in fileNameList:
-        events = nga.get_events(fileName)
+        events = nga.get_events(fileName,filterID=filterID)
         cd3Events = events[:,cd3ChanIndex]
         pltCount+=1
         ax = fig.add_subplot(2,3,pltCount)
@@ -51,7 +51,7 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
     fig.subplots_adjust(hspace=0.3,wspace=0.3)
     plt.savefig(figName)
 
-def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None):
+def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None,filterID=None):
     '''
     get cd3 positive clusters
     initialGuesses = {'n':cd3Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
@@ -68,8 +68,12 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=Fa
         print "\n", fileName
 
         fileLabels = allLabels[fileInd]
+        if filterID != None and re.search('filter',str(filterID)):
+            filterIndices = nga.get_filter_indices(fileName,filterID)
+            fileLabels = fileLabels[filterIndices]
+            
         uniqueLabels = np.sort(np.unique(fileLabels))
-        events = nga.get_events(fileName)
+        events = nga.get_events(fileName,filterID=filterID)
         cd3Events = events[:,cd3ChanIndex]
         cd3Positive = []
 
