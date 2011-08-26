@@ -8,6 +8,7 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from fcm.statistics.distributions import mvnormpdf
+from cytostream.stats import EmpiricalCDF
 
 class TwoComponentGaussEM():
 
@@ -17,6 +18,14 @@ class TwoComponentGaussEM():
         self.y = y.copy()
         self.verbose = verbose
         self.subset = subset
+
+
+        # ignore zero small 
+        #self.y = self.y[np.where(self.y > 0.0)[0]]
+        eCDF = EmpiricalCDF(self.y)
+        thresholdLow = eCDF.get_value(0.05)
+        self.y = self.y[np.where(self.y > thresholdLow)[0]]
+        
 
         #print "\tdata", y.shape, y.mean(), np.median(y), y.var()
 
@@ -38,6 +47,7 @@ class TwoComponentGaussEM():
         n    = len(self.y)
         sortedVals = y.copy()
         sortedVals.sort()
+        yMed = np.median(y)
 
         if self.subset in ['CD3','CD4']:
             #mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
@@ -45,18 +55,18 @@ class TwoComponentGaussEM():
             #sig1 = np.random.uniform(y.min(),y.max()*0.5)
             #sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
             #pi   = 0.5
-            mu1 = np.random.uniform(0.1 * y.max(),0.42*y.max()) ## 200, 500
-            mu2 = np.random.uniform(0.46 * y.max(),0.7*y.max()) ## 550,750
-            sig1 = np.random.uniform(6.0*y.max(),13.0*y.max())  ## 
-            sig2 = np.random.uniform(6.0*y.max(),13.0*y.max())
-            pi   = 0.8
+            mu1 = np.random.uniform(0.1 * yMed,0.9*yMed) ## 200, 500
+            mu2 = np.random.uniform(1.1 * yMed,1.9 *yMed) ## 550,750
+            sig1 = np.random.uniform(1.0*yMed,5.0*yMed)  ## 
+            sig2 = np.random.uniform(1.0*yMed,5.0*yMed)
+            pi   = np.random.uniform(0.1,0.9)
 
         if self.subset in ['CD8']:
-            mu1 = np.random.uniform(0.2 * y.max(),0.5*y.max()) ## 200, 500
-            mu2 = np.random.uniform(0.53 * y.max(),0.73*y.max()) ## 550,750
-            sig1 = np.random.uniform(6.6*y.max(),13.3*y.max()) ## 
-            sig2 = np.random.uniform(1.3*y.max(),4*y.max())
-            pi   = 0.8
+            mu1 = np.random.uniform(0.1*yMed,0.8*yMed)   ## 200, 500
+            mu2 = np.random.uniform(1.2 * yMed,1.9*yMed) ## 550,750
+            sig1 = np.random.uniform(0.1*yMed,1.0*yMed)  ## 
+            sig2 = np.random.uniform(0.1*yMed,1.0*yMed)
+            pi   = np.random.uniform(0.1,0.9)
       
         return {'n':n, 'mu1':mu1, 'mu2':mu2, 'sig1':sig1, 'sig2':sig2, 'pi':pi}
 
@@ -186,9 +196,9 @@ class TwoComponentGaussEM():
                 maxLike = logLike
                 bestEstimates = parms.copy()
 
-            if self.verbose == True:
-                print 'runNum: ',j + 1,'mu1: ',round(parms['mu1'],2),'mu2: ',round(parms['mu2'],2),'sig1: ',round(parms['sig1'],2),
-                print 'sig2: ',round(parms['sig2'],2),'pi: ',round(parms['pi'],2),'obs.data likelihood: ', round(logLike,4)
+            #if self.verbose == True:
+            #    print 'runNum: ',j + 1,'mu1: ',round(parms['mu1'],2),'mu2: ',round(parms['mu2'],2),'sig1: ',round(parms['sig1'],2),
+            #    print 'sig2: ',round(parms['sig2'],2),'pi: ',round(parms['pi'],2),'obs.data likelihood: ', round(logLike,4)
 
         return maxLike, bestEstimates
  

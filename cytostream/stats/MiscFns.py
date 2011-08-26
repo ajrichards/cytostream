@@ -28,7 +28,7 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="CD3"):
 
     ## declare variables
     if subset in ['CD3','CD4']:
-        subsampleSize = 15000     # subsample size
+        subsampleSize = 40000     # subsample size
     elif subset in ['CD8']:
         subsampleSize = 80000     # subsample size
     else:

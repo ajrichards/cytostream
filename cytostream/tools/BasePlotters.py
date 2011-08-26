@@ -21,7 +21,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
 
     """
 
-    myCmap = mpl.cm.hot  # spectral hot, gist_heat jet
+    myCmap = mpl.cm.jet  #  spectral hot, gist_heat jet
 
     ms = markerSize
     if str(labels) == "None" and drawState in ['scatter']:
@@ -114,7 +114,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         for l in uniqueLabels:
             draw_centroid(l,index1,index2,labelSize)        
 
-def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,forceScale,forceSimple=False):
+def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,forceScale,forceSimple=False,axesOff=False):
     ## handle data edge buffers     
     bufferX = buff * (events[:,index1].max() - events[:,index1].min())
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
@@ -151,6 +151,11 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
         ax.set_xlim(self.xAxLimit)
         ax.set_ylim(self.yAxLimit)
 
+    ## for an axesless vesion
+    if axesOff == True:
+        ax.set_yticks([])
+        ax.set_xticks([])
+
     ## for a simple version
     if forceSimple == True:
         ax.set_yticks([])
@@ -158,13 +163,13 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
         ax.set_title('')
         ax.set_ylabel('')
         ax.set_xlabel('')
-        ax.set_xlim([0,700])
-        ax.set_ylim([0,820])
+        #ax.set_xlim([0,700])
+        #ax.set_ylim([0,820])
 
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
-def draw_plot(args,parent=None,addLine=None):
+def draw_plot(args,parent=None,addLine=None,axesOff=False):
 
     ## handle args
     events=args[0]
@@ -319,9 +324,9 @@ def draw_plot(args,parent=None,addLine=None):
         if totalPts >= 9e04:
             bins = 130.0
         elif totalPts >= 8e04:
-            bins = 120.0
-        elif totalPts >= 7e04:
             bins = 110.0
+        elif totalPts >= 7e04:
+            bins = 100.0
         elif totalPts >= 6e04:
             bins = 90.0
         elif totalPts >= 5e04:
@@ -346,7 +351,8 @@ def draw_plot(args,parent=None,addLine=None):
 
     ## add a line if specified {subplot:(lineX,lineY)}                                                                                                                   
     if addLine != None:
-        ax.plot(addLine[0],addLine[1],color='orange',linewidth=2.0)
+        ax.plot(addLine[0],addLine[1],color='orange',linewidth='2.0')
+        #ax.plot(addLine[0],addLine[1],color='orange',linestyle='None',marker='o',markersize=3)
                            
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,drawState=drawState)
@@ -371,7 +377,7 @@ def draw_plot(args,parent=None,addLine=None):
         if subplotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
 
-        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale,forceSimple)
+        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale,forceSimple,axesOff)
 
         if parent != None:
             parent.canvas.draw()
