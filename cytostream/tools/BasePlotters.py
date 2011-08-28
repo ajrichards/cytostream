@@ -1,6 +1,5 @@
 import sys,os,re
 import numpy as np
-
 import matplotlib as mpl
 
 if mpl.get_backend() != 'agg':
@@ -21,7 +20,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
 
     """
 
-    myCmap = mpl.cm.jet  #  spectral hot, gist_heat jet
+    myCmap = mpl.cm.gist_heat  #  spectral hot, gist_heat jet
 
     ms = markerSize
     if str(labels) == "None" and drawState in ['scatter']:
@@ -259,6 +258,13 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     elif parent == None and str(labels) != "None":
         centroids,variances,sizes = get_file_sample_stats(events,labels)
 
+    ## get border events
+    borderEventsX = np.where(events[:,channel1Ind] == 0)[0]
+    borderEventsY = np.where(events[:,channel2Ind] == 0)[0]
+    borderEvents = np.hstack([borderEventsX,borderEventsY])
+    #print 'borderEvents', borderEvents.shape
+    #nonBorderEvents = np.array(list(set(range(events.shape[0])).difference(set(borderEvents))))
+
     ## error check
     if str(labels) != "None":
         n,d = events.shape
@@ -322,13 +328,13 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
 
     elif  drawState == 'heat':
         if totalPts >= 9e04:
-            bins = 130.0
+            bins = 80.0
         elif totalPts >= 8e04:
-            bins = 110.0
+            bins = 80.0
         elif totalPts >= 7e04:
-            bins = 100.0
+            bins = 70.0
         elif totalPts >= 6e04:
-            bins = 90.0
+            bins = 60.0
         elif totalPts >= 5e04:
             bins = 60.0
         elif totalPts >= 4e04:
@@ -342,7 +348,9 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         else:
             bins = 10.0
 
-        colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind],bins=bins)
+        colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind], bins=bins)
+        colorList = colorList + 500
+        colorList[borderEvents] = 0.0
     else:
        colorList = None
 
