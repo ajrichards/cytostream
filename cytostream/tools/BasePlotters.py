@@ -14,7 +14,8 @@ the functions here use CytostreamPlotter.py as a parent
 
 '''
 
-def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,colorList,drawState='heat'):
+def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,colorList,
+                 drawState='heat',borderEvents=[],nonBorderEvents=[]):
     """
     draw the events in a scatte plot based on background and foreground
 
@@ -30,18 +31,33 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
 
     ## plot the background events
     if len(indicesBG) > 0:
-        clrs = colorList[indicesBG]
+        #clrs = colorList[indicesBG]
         dataX,dataY = (events[indicesBG,index1],events[indicesBG,index2])
         ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.8)
         ms = markerSize
 
     ## plot the foreground events
     if len(indicesFG) > 0:
-        clrs = colorList[indicesFG]
-        dataX,dataY = (events[indicesFG,index1],events[indicesFG,index2])
-        ax.scatter([dataX],[dataY],c=clrs,s=ms,edgecolor='none',cmap=myCmap)
-
-
+        if drawState == 'heat':
+            borderEventsX = np.where(events[indicesFG,index1] == 0)[0]
+            borderEventsY = np.where(events[indicesFG,index2] == 0)[0]
+            borderEvents = np.hstack([borderEventsX,borderEventsY])
+            nonBorderEvents = np.array(list(set(range(len(indicesFG))).difference(set(borderEvents))))
+            colorList = bilinear_interpolate(events[nonBorderEvents,index1],events[nonBorderEvents,index2],bins=colorList)
+            ax.scatter([events[nonBorderEvents,index1]],[events[nonBorderEvents,index2]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
+            if borderEvents.size > 0:
+                ax.scatter([events[borderEvents,index1]],[events[borderEvents,index2]],c='k',s=1,edgecolor='none')
+ 
+    #        #ax.scatter([dataX],[dataY],c=colorList,s=1,edgecolor='none',cmap=myCmap)                                                        
+    #        #ax.scatter([events[borderEvents,0]],[events[borderEvents,1]],c='k',s=1,edgecolor='none')
+    #        ax.scatter([events[nonBorderEvents,0]],[events[nonBorderEvents,1]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
+    #        if borderEvents.size > 0:
+    #            ax.scatter([events[borderEvents,0]],[events[borderEvents,1]],c='k',s=1,edgecolor='none')            
+    #    else:
+    #        dataX,dataY = (events[indicesFG,index1],events[indicesFG,index2])
+    #        clrs = colorList[indicesFG]
+    #        ax.scatter([dataX],[dataY],c=clrs,s=ms,edgecolor='none',cmap=myCmap)
+        
 def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,centroids,numSubplots):
     """
     draw the labels based on sample centroids in a plot based on foreground and background
@@ -258,13 +274,6 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     elif parent == None and str(labels) != "None":
         centroids,variances,sizes = get_file_sample_stats(events,labels)
 
-    ## get border events
-    borderEventsX = np.where(events[:,channel1Ind] == 0)[0]
-    borderEventsY = np.where(events[:,channel2Ind] == 0)[0]
-    borderEvents = np.hstack([borderEventsX,borderEventsY])
-    #print 'borderEvents', borderEvents.shape
-    #nonBorderEvents = np.array(list(set(range(events.shape[0])).difference(set(borderEvents))))
-
     ## error check
     if str(labels) != "None":
         n,d = events.shape
@@ -319,6 +328,12 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         indicesFG = np.arange(totalPts)
         indicesBG = []
 
+    ## get border events
+    #borderEventsX = np.where(events[indicesFG,channel1Ind] == 0)[0]
+    #borderEventsY = np.where(events[indicesFG,channel2Ind] == 0)[0]
+    #borderEvents = np.hstack([borderEventsX,borderEventsY])
+    #nonBorderEvents = np.array(list(set(range(events.shape[0])).difference(set(borderEvents))))
+
     ## draw the points
     if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
@@ -328,29 +343,33 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
 
     elif  drawState == 'heat':
         if totalPts >= 9e04:
-            bins = 80.0
+            bins = 100.0
         elif totalPts >= 8e04:
-            bins = 80.0
+            bins = 100.0
         elif totalPts >= 7e04:
-            bins = 70.0
+            bins = 100.0
         elif totalPts >= 6e04:
-            bins = 60.0
+            bins = 90.0
         elif totalPts >= 5e04:
-            bins = 60.0
+            bins = 90.0
         elif totalPts >= 4e04:
-            bins = 40.0
+            bins = 80.0
         elif totalPts >= 3e04:
-            bins = 30.0
+            bins = 70.0
         elif totalPts >= 2e04:
-            bins = 20.0
+            bins = 60.0
         elif totalPts >= 1e04:
-            bins = 15.0
+            bins = 60.0
         else:
-            bins = 10.0
+            bins = 50.0
 
-        colorList = bilinear_interpolate(events[:,channel1Ind],events[:,channel2Ind], bins=bins)
-        colorList = colorList + 500
-        colorList[borderEvents] = 0.0
+        colorList=bins
+        ## plot events
+        #myCmap = mpl.cm.gist_heat  #  spectral hot, gist_heat jet
+        #colorList = bilinear_interpolate(events[:,0],events[,1],bins=bins)
+        #ax.scatter([events[nonBorderEvents,0]],[events[nonBorderEvents,1]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
+        #if borderEvents.size > 0:
+        #    ax.scatter([events[borderEvents,0]],[events[borderEvents,1]],c='k',s=1,edgecolor='none')
     else:
        colorList = None
 
@@ -363,7 +382,8 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         #ax.plot(addLine[0],addLine[1],color='orange',linestyle='None',marker='o',markersize=3)
                            
     if drawState in ['scatter', 'heat']:
-        draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,drawState=drawState)
+        draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
+                     drawState=drawState)
         
         if str(labels) != "None":
             draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots)

@@ -433,6 +433,10 @@ class Controller:
 
         '''
 
+        if len(clusterIDs) == 0:
+            print "WARNING: Controller.handle_filtering -- clusterIDs was empty"
+            return False
+
         statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
         modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
         parentFilter = modelLog['filter used']
