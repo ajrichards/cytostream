@@ -50,11 +50,6 @@ class TwoComponentGaussEM():
         yMed = np.median(y)
 
         if self.subset in ['cd3','cd4','ssc','fsc']:
-            #mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
-            #mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
-            #sig1 = np.random.uniform(y.min(),y.max()*0.5)
-            #sig2 = np.random.uniform(y.max()*0.5,y.max()*4)
-            #pi   = 0.5
             mu1 = np.random.uniform(0.1 * yMed,0.9*yMed) ## 200, 500
             mu2 = np.random.uniform(1.1 * yMed,1.9 *yMed) ## 550,750
             sig1 = np.random.uniform(1.0*yMed,5.0*yMed)  ## 
@@ -63,7 +58,7 @@ class TwoComponentGaussEM():
 
         if self.subset in ['cd8']:
             mu1 = np.random.uniform(0.1*yMed,0.8*yMed)   ## 200, 500
-            mu2 = np.random.uniform(1.2 * yMed,1.9*yMed) ## 550,750
+            mu2 = np.random.uniform(1.5 * yMed,3.9*yMed) ## 550,750
             sig1 = np.random.uniform(0.1*yMed,1.0*yMed)  ## 
             sig2 = np.random.uniform(0.1*yMed,1.0*yMed)
             pi   = np.random.uniform(0.1,0.9)
@@ -114,10 +109,10 @@ class TwoComponentGaussEM():
         ## ensure we are not dividing by 0
         if denomHat1 == 0.0:
             denomHat1 =  np.finfo(float).eps
-            print 'changing denomhat1', np.finfo(float).eps
+            #print 'changing denomhat1', np.finfo(float).eps
         if denomHat2 == 0.0:
             denomHat2 =  np.finfo(float).eps
-            print 'changing denomhat2', np.finfo(float).eps
+            #print 'changing denomhat2', np.finfo(float).eps
 
         ## calculate estimates
         muHat1 = numerMuHat1 / denomHat1

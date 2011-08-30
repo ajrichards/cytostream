@@ -23,7 +23,7 @@ from cytostream.tools import get_all_colors, fetch_plotting_events, get_file_sam
 class SaveSubplots():
     def __init__(self, homeDir, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,forceSimple=False,forceScale=False,inputLabels=None,drawState='Heat',
-                 minNumEvents=3,useSubplotTitles=True,addLine=None,figSize=None,axesOff=False):
+                 minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False):
 
         ## arg variables
         self.homeDir = homeDir
@@ -40,7 +40,7 @@ class SaveSubplots():
         self.fontName = 'ariel'
         self.drawState = drawState
         self.minNumEvents = minNumEvents
-        self.useSubplotTitles = useSubplotTitles
+        self.subplotTitles = subplotTitles
         self.addLine = addLine
         self.figSize = figSize
         self.axesOff = axesOff
@@ -168,8 +168,8 @@ class SaveSubplots():
             index1,index2 = subplotChannels
 
             ## labels
-            if self.useSubplotTitles == True:
-                subplotTitle = subplotFile
+            if self.subplotTitles != None:
+                subplotTitle = self.subplotTitles[subplotIndex]
             else:
                 subplotTitle = None
             
