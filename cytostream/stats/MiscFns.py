@@ -20,17 +20,21 @@ def kullback_leibler(d1,d2):
 
     return dist
 
-def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="CD3"):
+def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
     '''
     given a 1D np.array of events and the labels associated with those events
     return a two component gaussian object and the cutpoint
     '''
 
+    subset = subset.lower()
+
     ## declare variables
-    if subset in ['CD3','CD4']:
-        subsampleSize = 40000     # subsample size
-    elif subset in ['CD8']:
-        subsampleSize = 80000     # subsample size
+    if subset in ['cd3','cd4']:
+        subsampleSize = 30000    
+    elif subset in ['cd8']:
+        subsampleSize = 70000    
+    elif subset in ['ssc','fsc']:
+        subsampleSize = 20000    
     else:
         print "ERROR in two_component_em -- invalid subset specified"
 
@@ -67,9 +71,15 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="CD3"):
     
     ## get cut point
     if resultsDict['params']['mu2'] > resultsDict['params']['mu1']:
-        cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+        if subset in ['cd3','cd4','cd8']:
+            cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+        elif subset in ['ssc','fsc']:
+            cutpoint = stats.norm.ppf(0.5,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
     else:
-        cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+        if subset in ['cd3','cd4','cd8']:
+            cutpoint = stats.norm.ppf(0.025,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+        elif subset in ['ssc','fsc']:
+            cutpoint = stats.norm.ppf(0.5,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
 
     return resultsDict,cutpoint
 

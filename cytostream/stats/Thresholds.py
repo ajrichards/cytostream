@@ -118,7 +118,7 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
         ax.plot(threshX, threshY, 'r-', linewidth=2)
         #ax.set_ylim([0,max(p2)])
         #ax.set_ylim([0,max(pdfY2)])
-        ax.set_xlim(0,10)
+        #ax.set_xlim(0,10)
         ax.set_title(fileName,fontsize=9)
         xticklabels = plt.getp(plt.gca(),'xticklabels')
         yticklabels = plt.getp(plt.gca(),'yticklabels')
@@ -130,12 +130,17 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
 
     #return threshX, threshY
 
-def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None,filterID=None):
+def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None,filterID=None):
     '''
-    get cd3 positive clusters
+    get xx positive clusters
     initialGuesses = {'n':cd3Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
 
     '''
+    subset = subset.lower()
+
+    if subset not in ['cd3','cd8','cd4','fsc','ssc']:
+        print "ERROR: in find_positivity_threshold -- invalid subset"
+        return False
 
     cd3Results = {}
 
@@ -157,7 +162,7 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=Fa
         cd3Positive = []
 
         ## get lower threshold of larger component 
-        tcg,cutpoint = two_component_em(cd3Events,emGuesses=initialGuesses,verbose=verbose)
+        tcg,cutpoint = two_component_em(cd3Events,emGuesses=initialGuesses,verbose=verbose,subset=subset)
         
         ## need to redefine cd3Events?
         cd3Events = events[:,cd3ChanIndex]
@@ -194,123 +199,3 @@ def find_positivity_threshold_cd3(cd3ChanIndex,fileList,nga,allLabels,verbose=Fa
         cd3Results[fileName]['cutpoint'] = cutpoint
         
     return cd3Results
-
-def find_positivity_threshold_cd8(cd8ChanIndex,fileList,nga,allLabels,cd3Results,verbose=False,minNumEvents=3,initialGuesses=None):
-    '''
-    get cd8 positive clusters
-    initialGuesses = {'n':cd8Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
-    '''
-
-    cd8Results = {}
-
-    for fileInd in range(len(fileList)):        
-
-        fileName = fileList[fileInd]
-        cd8Results[fileName] = {'indices':None,'clusters':None,'percent':None}
-
-        #print "\n", fileName
-
-        fileLabels = allLabels[fileInd]
-        uniqueLabels = np.sort(np.unique(fileLabels))
-        events = nga.get_events(fileName)
-        cd8Events = events[:,cd8ChanIndex]
-        cd8Positive = []
-
-        ## get lower threshold of larger component 
-        tcg,cutpoint = two_component_em(cd8Events,emGuesses=initialGuesses,verbose=verbose,subset='CD8')
-        
-        ## need to redefine cd8Events?
-        cd8Events = events[:,cd8ChanIndex]
-
-        for cid in uniqueLabels:
-
-            ## ensure cluster has at least minnumevents
-            clusterEvents = cd8Events[np.where(fileLabels==cid)[0]]
-            if len(clusterEvents) < minNumEvents:
-                continue
-
-            ## find the cutoff for a given cluster
-            eCDF = EmpiricalCDF(clusterEvents)
-            percentileCut = eCDF.get_value(0.5)
-
-            ## determine if a cluster falls above the cutoff 
-            if percentileCut > cutpoint and cid in cd3Results[fileName]['clusters']:
-                cd8Positive.append(cid)
-         
-        ## count the cd8 clusters
-        cd8Indices = np.array([])
-        for cd8cid in cd8Positive:
-            _cd8Indices = np.where(fileLabels==cd8cid)[0]
-            cd8Indices = np.hstack([cd8Indices,_cd8Indices])
-
-        cd8Percent = float(len(cd8Indices)) / float(len(fileLabels))
-        rawPercent = float(len(np.where(cd8Events > cutpoint)[0])) / float(len(cd8Events))
-        #print fileName, len(cd8Indices),len(fileLabels), cd8Percent, rawPercent
-
-        cd8Results[fileName]['indices'] = cd8Indices
-        cd8Results[fileName]['clusters'] = cd8Positive
-        cd8Results[fileName]['percent'] = cd8Percent
-        cd8Results[fileName]['params'] = tcg['params'].copy()
-        cd8Results[fileName]['cutpoint'] = cutpoint
-        
-    return cd8Results
-
-def find_positivity_threshold_cd4(cd4ChanIndex,fileList,nga,allLabels,cd3Results,cd8Results,verbose=False,minNumEvents=3,initialGuesses=None):
-    '''
-    get cd4 positive clusters
-    initialGuesses = {'n':cd4Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
-    '''
-
-    cd4Results = {}
-
-    for fileInd in range(len(fileList)):        
-
-        fileName = fileList[fileInd]
-        cd4Results[fileName] = {'indices':None,'clusters':None,'percent':None}
-
-        #print "\n", fileName
-
-        fileLabels = allLabels[fileInd]
-        uniqueLabels = np.sort(np.unique(fileLabels))
-        events = nga.get_events(fileName)
-        cd4Events = events[:,cd4ChanIndex]
-        cd4Positive = []
-
-        ## get lower threshold of larger component 
-        tcg,cutpoint = two_component_em(cd4Events,emGuesses=initialGuesses,verbose=verbose,subset='CD4')
-        
-        ## need to redefine cd4Events?
-        cd4Events = events[:,cd4ChanIndex]
-
-        for cid in uniqueLabels:
-
-            ## ensure cluster has at least minnumevents
-            clusterEvents = cd4Events[np.where(fileLabels==cid)[0]]
-            if len(clusterEvents) < minNumEvents:
-                continue
-
-            ## find the cutoff for a given cluster
-            eCDF = EmpiricalCDF(clusterEvents)
-            percentileCut = eCDF.get_value(0.5)
-
-            ## determine if a cluster falls above the cutoff 
-            if percentileCut > cutpoint and cid in cd3Results[fileName]['clusters'] and cid not in cd8Results[fileName]['clusters']:
-                cd4Positive.append(cid)
-         
-        ## count the cd4 clusters
-        cd4Indices = np.array([])
-        for cd4cid in cd4Positive:
-            _cd4Indices = np.where(fileLabels==cd4cid)[0]
-            cd4Indices = np.hstack([cd4Indices,_cd4Indices])
-
-        cd4Percent = float(len(cd4Indices)) / float(len(fileLabels))
-        rawPercent = float(len(np.where(cd4Events > cutpoint)[0])) / float(len(cd4Events))
-        #print fileName, len(cd4Indices),len(fileLabels), cd4Percent, rawPercent
-
-        cd4Results[fileName]['indices'] = cd4Indices
-        cd4Results[fileName]['clusters'] = cd4Positive
-        cd4Results[fileName]['percent'] = cd4Percent
-        cd4Results[fileName]['params'] = tcg['params'].copy()
-        cd4Results[fileName]['cutpoint'] = cutpoint
-        
-    return cd4Results
