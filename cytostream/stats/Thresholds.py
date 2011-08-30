@@ -7,6 +7,82 @@ import scipy.stats as stats
 from cytostream.stats import two_component_em, EmpiricalCDF
 
 
+## functions
+def get_fscore(positiveEvents,negativeEvents,pdfX,pdfPos,pdfNeg,threshold,bins,beta=1.0):
+
+    beta,threshold = map(float,[beta,threshold])
+    thresholdIdx = None
+
+    for i in range(len(pdfX)):
+        if pdfX[i] >= threshold:
+            thresholdIdx = i
+            break
+
+    if thresholdIdx == None:
+        print "could not find threshold index"
+        return 0.0
+
+    tp,fn = 0,0
+
+    if positiveEvents.size == 0:
+        tpfp = np.where(positiveEvents >= pdfX[thresholdIdx])[0].size
+    elif negativeEvents.size == 0:
+        tpfp = np.where(negativeEvents >= pdfX[thresholdIdx])[0].size
+    else:
+        tpfp = np.where(positiveEvents >= pdfX[thresholdIdx])[0].size + np.where(negativeEvents >= pdfX[thresholdIdx])[0].size
+ 
+    ## speeding up the process
+    negThresholds = np.dot(pdfNeg + np.hstack([pdfNeg[1:],[0]]),0.5)
+    posBinCounts = np.digitize(positiveEvents,bins)
+
+    for b in np.arange(thresholdIdx,pdfX.size-1):
+        posInds = np.where(posBinCounts == b)[0]
+        if posInds.size > 0:
+            posEvents = positiveEvents[posInds]
+            tp+= np.where(posEvents >= negThresholds[b])[0].size
+            
+    for b in np.arange(0,thresholdIdx):
+        posInds = np.where(posBinCounts == b)[0]
+        if posInds.size > 0:
+            posEvents = positiveEvents[posInds]
+            fn+= np.where(posEvents >= negThresholds[b])[0].size
+            
+    tp,fn,tpfp = map(float,[tp,fn,tpfp])
+    
+    if tpfp == 0.0:
+        precision = 0.0
+    else:
+        precision = tp/tpfp
+    if tp+fn == 0.0:
+        recall = 0.0
+    else:
+        recall = tp/(tp+fn)
+        
+    if (beta*beta*precision + recall) == 0.0:
+        fscore = 0.0
+    else:
+        fscore = (1+beta*beta)*(precision*recall)/(beta*beta*precision + recall)
+    return fscore
+
+def get_fscore_pdfs(positiveEvents,negativeEvents,numBins=200):
+    dataMin = np.min([positiveEvents.min(),negativeEvents.min()])
+    dataMax = np.max([positiveEvents.max(),negativeEvents.max()])
+    bins = np.linspace(dataMin,dataMax,numBins)
+    pdfPos, lowlim1, binsize1, extrapoints1 = stats.relfreq(positiveEvents, numbins=numBins, defaultreallimits=(dataMin,dataMax))
+    pdfX = np.linspace(dataMin,dataMax,numBins)
+    pdfNeg, lowlim2, binsize2, extrapoints2 = stats.relfreq(negativeEvents, numbins=numBins, defaultreallimits=(dataMin,dataMax))
+
+    return pdfX,pdfPos,pdfNeg,bins
+
+def calculate_fscores(positiveEvents,negativeEvents,pdfX,pdfPos,pdfNeg,searchRange,bins,beta=1.0):
+    fscores = np.zeros((searchRange.size),)
+    
+    for t in range(searchRange.size):
+        threshold = searchRange[t]
+        fscores[t] = get_fscore(positiveEvents,negativeEvents,pdfX,pdfPos,pdfNeg,threshold,bins,beta=beta)
+
+    return fscores
+
 def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
     if len(fileNameList) > 6:
