@@ -12,7 +12,7 @@ from cytostream.stats import EmpiricalCDF
 
 class TwoComponentGaussEM():
 
-    def __init__(self, y, numIters, numRuns,verbose=False,initialGuesses=None,subset="CD3"):
+    def __init__(self, y, numIters, numRuns,verbose=False,initialGuesses=None,subset="cd3"):
         
         ## variables
         self.y = y.copy()
@@ -49,7 +49,7 @@ class TwoComponentGaussEM():
         sortedVals.sort()
         yMed = np.median(y)
 
-        if self.subset in ['CD3','CD4']:
+        if self.subset in ['cd3','cd4','ssc','fsc']:
             #mu1  = sortedVals[np.random.randint(0,int(round(n*0.5)))]
             #mu2  = sortedVals[np.random.randint(int(round(n*0.5)),n)]
             #sig1 = np.random.uniform(y.min(),y.max()*0.5)
@@ -61,7 +61,7 @@ class TwoComponentGaussEM():
             sig2 = np.random.uniform(1.0*yMed,5.0*yMed)
             pi   = np.random.uniform(0.1,0.9)
 
-        if self.subset in ['CD8']:
+        if self.subset in ['cd8']:
             mu1 = np.random.uniform(0.1*yMed,0.8*yMed)   ## 200, 500
             mu2 = np.random.uniform(1.2 * yMed,1.9*yMed) ## 550,750
             sig1 = np.random.uniform(0.1*yMed,1.0*yMed)  ## 
