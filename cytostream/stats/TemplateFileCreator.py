@@ -162,14 +162,14 @@ class TemplateFileCreator():
         self._clean_template()
 
         ## calculate within thresholds for all files
-        for fileInd in range(self.numFiles):
-            th = self._get_within_thresholds(fileInd,fileNoiseClusters=self.noiseClusters[fileInd])
-            self.thresholds.append(th)
-        
-        self.templateThresholds = self.thresholds[self.templateSeedInd]
+        #for fileInd in range(self.numFiles):
+        #    th = self._get_within_thresholds(fileInd,fileNoiseClusters=self.noiseClusters[fileInd])
+        #    self.thresholds.append(th)
+        #
+        #self.templateThresholds = self.thresholds[self.templateSeedInd]
 
         ## add components to template that are represented in at least 2 non-template files
-        self._add_nonseed_clusters_to_template()
+        #self._add_nonseed_clusters_to_template()
 
         ## run hier clustering
         self._run_hier_clust_on_centroids(method=linkageMethod)
@@ -462,7 +462,7 @@ class TemplateFileCreator():
     
         ## save the top 3 modes 
         self.bestModeLabels = []
-        for rk in rankedK[:9]:
+        for rk in rankedK[:25]:
             centroidLabels = allCentroidLabels[str(rk)]
             self.bestModeLabels.append(self._get_mode_labels(self.templateLabels,centroidLabels,uniqueLabels))
    

@@ -89,7 +89,7 @@ def find_noise(mat,labels,silValues=None,minNumEvents=4):
     ## determine noise based on silhouette values
     if silValues != None:            
         for key,item in silValues.iteritems():
-            if item < 0.0 or item == None :
+            if item < -0.1 or item == None :
                 clusterPercent = float(np.where(labels==int(key))[0].size) / float(labels.size)
                 
                 if clusterPercent > 0.005:
