@@ -78,6 +78,15 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         if centroids.has_key(str(int(l))) == False:
             return
 
+        ##################
+        if len(labels) != events.shape[0]:
+            print "WARNING: BasePlotters.py -- problem drawing cluster centroids"
+
+        #clusterInds = np.where(labels==l)[0]
+        #xPos = events[clusterInds,index1].mean()
+        #yPos = events[clusterInds,index2].mean()
+        #################
+
         xPos = centroids[str(int(l))][index1]
         yPos = centroids[str(int(l))][index2]
 

@@ -20,12 +20,11 @@ class TwoComponentGaussEM():
         self.subset = subset
 
 
-        # ignore zero small 
-        #self.y = self.y[np.where(self.y > 0.0)[0]]
+        # ignore zero and very small 
+        self.y = self.y[np.where(self.y > 0.0)[0]]
         eCDF = EmpiricalCDF(self.y)
         thresholdLow = eCDF.get_value(0.05)
         self.y = self.y[np.where(self.y > thresholdLow)[0]]
-        
 
         #print "\tdata", y.shape, y.mean(), np.median(y), y.var()
 
@@ -51,13 +50,12 @@ class TwoComponentGaussEM():
 
         if self.subset in ['cd3','cd4','ssc','fsc']:
             mu1 = np.random.uniform(0.1 * yMed,0.9*yMed) ## 200, 500
-            mu2 = np.random.uniform(1.1 * yMed,2.5 *yMed) ## 550,750
-            sig1 = np.random.uniform(1.0*yMed,5.0*yMed)  ## 
-            sig2 = np.random.uniform(1.0*yMed,5.0*yMed)
-            pi   = np.random.uniform(0.1,0.9)
-
+            mu2 = np.random.uniform(1.5 * yMed,3.9 *yMed) ## 550,750
+            sig1 = np.random.uniform(1.0*yMed,1.0*yMed)  ## 
+            sig2 = np.random.uniform(1.0*yMed,1.0*yMed)
+            pi   = np.random.uniform(0.2,0.8)
         if self.subset in ['cd8']:
-            mu1 = np.random.uniform(0.1*yMed,0.8*yMed)   ## 200, 500
+            mu1 = np.random.uniform(0.1*yMed,0.9*yMed)   ## 200, 500
             mu2 = np.random.uniform(1.5 * yMed,3.9*yMed) ## 550,750
             sig1 = np.random.uniform(0.1*yMed,1.0*yMed)  ## 
             sig2 = np.random.uniform(0.1*yMed,1.0*yMed)
