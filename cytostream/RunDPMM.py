@@ -157,7 +157,7 @@ elif modelMode == 'onefit':
     loadModel = True
 
 loadParams = False
-forceFit = True
+forceFit = False
 if forceFit == True and modelReference == fileName:
     loadParams = False
 elif forceFit == True:
