@@ -317,11 +317,14 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     cd4cd8Thresholds = {}
     for fileName in fileList:
         if cd8Results[fileName]['params']['mu2'] > cd8Results[fileName]['params']['mu1']:
-            cutpointA = stats.norm.ppf(0.9999,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
-            cutpointB = stats.norm.ppf(0.0001,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
+            cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+            cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
         else:
-            cutpointA = stats.norm.ppf(0.9999,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
-            cutpointB = stats.norm.ppf(0.0001,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+            cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
+            cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+
+        #if cutpointB < cutpointA:
+        #    cutPointB = cutpointA
 
         cutpoints = [cutpointA,cutpointB]
         cutpoints.sort()
@@ -354,15 +357,23 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             clusterEventsInds = np.where(filteredLabels==cid)[0]
             clusterEventsCD8 = cd3Events[clusterEventsInds,cd8ChanIndex]
             clusterEventsCD4 = cd3Events[clusterEventsInds,cd4ChanIndex]
-         
+            clusterEventsCD3 = cd3Events[clusterEventsInds,channelIDs['cd3']]
+            clusterEventsCyto = cd3Events[clusterEventsInds,channelIDs['IFNg-IL2']]
+
             #print cid, clusterEventsCD8.mean(), cd4cd8Thresholds[fileName], clusterEventsCD4.mean(), cd4Results[fileName]['cutpoint']
 
             ## find double positives
-            if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
+            if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 dpClusters[fileName].append(cid)
-                continue ## toggle to include/exclude double positives
+                (a_s,b_s,r,tt,stderr)=stats.linregress(clusterEventsCD3,clusterEventsCyto)
 
-            if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0]:
+                if r > 0.5:
+                    continue
+                else:
+                    cd8PosClusters[fileName].append(cid)
+                    continue
+
+            if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0] and clusterEventsCD4.mean() < cd4Results[fileName]['cutpoint']:
                 cd8PosClusters[fileName].append(cid)
             elif clusterEventsCD8.mean() < cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 cd4PosClusters[fileName].append(cid)
@@ -419,8 +430,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
         for fn in range(len(fileList)):
             ## set file names
+            actualFileList = nga.get_file_names()
             fileName = fileList[fn]
-            plotsToViewFiles = [fn for i in range(16)]
+            fileInd = actualFileList.index(fileName)
+            plotsToViewFiles = [fileInd for i in range(16)]
             nga.set("plots_to_view_files",plotsToViewFiles)
             
             ## set highlights
@@ -437,17 +450,29 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
-def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None):
+def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsDir=None):
     
+    if figsDir == None:
+        figsDir = os.path.join(nga.homeDir,'results',modelRunID)
+    elif os.path.isdir(figsDir) == None:
+        print "WARNING: handle_dump_filtering -- bad specified figsDirs... using default"
+        figsDir = os.path.join(nga.homeDir,'results',modelRunID)
+
+    if os.path.isdir(figsDir) == False:
+        os.mkdir(figsDir)
+
     if fileList == None:
         fileList = nga.get_file_names()
 
     undumpedClusters = {}
     thresholdLines = {}
     for fileName in fileList:
+        print fileName
+    
         fileData = nga.get_events(fileName)
         fscData = fileData[:,channelInds['fsc']]
         dumpData = fileData[:,channelInds['dump']]
+        undumpedClusters[fileName] = []
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         centroids,variances,sizes = get_file_sample_stats(fileData,fileLabels)
 
@@ -482,6 +507,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None):
 
         subsampleInds = np.array(map(int,map(round,np.linspace(0,399,35))))
         thresholdLines[fileName] = {0:(curveX[subsampleInds],curveY[subsampleInds])}
+        nga.handle_filtering('filter_dump',fileName,modelRunID,'components',undumpedClusters[fileName])
 
     create = True
     if create == True:
@@ -495,11 +521,13 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None):
         nga.set('plots_to_view_runs',plotsToViewRuns)
         numSubplots = 2
         nga.set('results_mode','components')
+        actualFileList = nga.get_file_names()
 
         for fn in range(len(fileList)):
             ## set file names
             fileName = fileList[fn]
-            plotsToViewFiles = [fn for i in range(16)]
+            fileInd = actualFileList.index(fileName)
+            plotsToViewFiles = [fileInd for i in range(16)]
             nga.set("plots_to_view_files",plotsToViewFiles)
             
             ## set highlights
@@ -508,6 +536,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None):
             nga.set('plots_to_view_highlights',plotsToViewHighlights)
 
             figName = os.path.join(figsDir,'viability_%s.png'%fileName)
+            print '...saving', figName
             figTitle = "Auto Gating Strategy %s"%(fileName)
-            ss = SaveSubplots(nga.homeDir,'results',numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
+            ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)

@@ -30,20 +30,20 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
 
     ## declare variables
     if subset in ['cd3','cd4']:
-        subsampleSize = 10000    
+        subsampleSize = 20000    
     elif subset in ['cd8']:
-        subsampleSize = 15000    
+        subsampleSize = 55000    
     elif subset in ['ssc','fsc']:
-        subsampleSize = 10000    
+        subsampleSize = 20000    
     else:
         print "ERROR in two_component_em -- invalid subset specified"
 
     numIters = 25             # num em iters
     if emGuesses == None:
-        numRuns = 8
+        numRuns = 6
     else:
         numRuns = 1
-    numReps = 8               # num times to draw sample
+    numReps = 6               # num times to draw sample
     eps = np.finfo(float).eps
 
     resultsDict = {'maxLike':-np.inf,'params':None}
@@ -75,34 +75,38 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
             cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
             #cutpoint = resultsDict['params']['mu1'] + (2.0 * np.sqrt(resultsDict['params']['sig1']))
         elif subset in ['ssc']:
-            cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+            cutpoint = resultsDict['params']['mu1'] + (6 * np.sqrt(resultsDict['params']['sig1']))
+            #cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
             #cutpoint = resultsDict['params']['mu1'] + (2.0 * np.sqrt(resultsDict['params']['sig1']))
     else:
         if subset in ['fsc']:
             cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
             #cutpoint = resultsDict['params']['mu2'] + (2.0 * np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['ssc']:
-            cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+            cutpoint = resultsDict['params']['mu2'] + (6 * np.sqrt(resultsDict['params']['sig2']))
+            #cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
             #cutpoint = resultsDict['params']['mu2'] + (2.0 * np.sqrt(resultsDict['params']['sig2']))
         
     if resultsDict['params']['mu2'] > resultsDict['params']['mu1']:
         if subset in ['cd8']:
             cutpoint = stats.norm.ppf(0.975,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
         elif subset in ['cd3']:
-            cutpoint = stats.norm.ppf(0.005,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+            cutpoint = stats.norm.ppf(0.001,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['cd4']:
-            cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
-            cutpoint = np.array([cutpointA,cutpointB]).mean()  
+            #cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+            #cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1'])) 
+            #cutpoint = np.array([cutpointA,cutpointB]).mean()  
+            cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
     else:
         if subset in ['cd8']:
             cutpoint = stats.norm.ppf(0.975,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['cd3']:
-            cutpoint = stats.norm.ppf(0.005,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+            cutpoint = stats.norm.ppf(0.001,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
         elif subset in ['cd4']:
-            cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
-            cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            cutpoint = np.array([cutpointA,cutpointB]).mean()
+            #cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+            #cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+            #cutpoint = np.array([cutpointA,cutpointB]).mean()
+            cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
 
     return resultsDict,cutpoint
 
