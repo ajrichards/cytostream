@@ -293,6 +293,18 @@ class NoGuiAnalysis():
 
         self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
+    def is_valid_filter(self,filterID,fileName):
+        '''
+        check for a valid filter id
+        '''
+
+        filterFile = os.path.join(self.homeDir,'data',fileName + "_indices_%s.pickle"%filterID)
+  
+        if os.path.exists(filterFile) == False:
+            return False
+        else:
+            return True
+
     def handle_filtering_dict(self,fileName,filteringDict):
         fileList = self.get_file_names()
 

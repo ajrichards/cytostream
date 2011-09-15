@@ -85,7 +85,7 @@ class TemplateFileCreator():
 
     '''
 
-    def __init__(self,matList,matLabelList,linkageMethod='average',templateSeedInd=None,excludedChannels=[],savePath="."):
+    def __init__(self,matList,matLabelList,linkageMethod='average',templateSeedInd=None,excludedChannels=[],savePath=".",includedClusters=None):
         '''
         constructor
         
@@ -93,7 +93,9 @@ class TemplateFileCreator():
         labels - list or np.array of labels of size n
         linkageMethod - ['average','centroid','single','complete','weighted'] 
                      for more see scipy.cluster.hierarchy.linkage
-
+        includedClusters - a list of length file length where each element is a 
+                     list of clusters (ints) corresponding to a respective files
+                     included clusters.
         '''
 
         ## declare variables
@@ -107,6 +109,7 @@ class TemplateFileCreator():
         self.minNumEvents = 4
         self.noiseSample = 2000
         self.savePath = savePath
+        self.includedClusters = includedClusters
 
         ## error checking 
         if len(self.matList) != len(self.matLabelList):
@@ -142,6 +145,11 @@ class TemplateFileCreator():
             labels = self.get_labels(fileInd)
             mat = self.get_events(fileInd)
             self.noiseClusters.append(self._find_noise(fileInd,mat,labels))
+
+            if self.includedClusters != None:
+                _noise = list(set(labels).difference(set(self.includedClusters[fileInd])))
+                if len(_noise) > 0:
+                    self.noiseClusters[-1] += _noise
 
         self.templateLog.writerow(['noise_clusters',re.sub("\s+","",re.sub(",",";",str(self.noiseClusters)))])
         print 'noise found in template', self.noiseClusters
