@@ -384,7 +384,8 @@ class FileAligner():
 
             for cid in range(len(centroidListIDs[expName])):
                 cID = centroidListIDs[expName][cid]
-                threshold = stats.norm.ppf(0.6,loc=means[cid],scale=stds[cid])
+                #threshold = stats.norm.ppf(0.6,loc=means[cid],scale=stds[cid])
+                threshold = stats.norm.ppf(0.1,loc=means[cid],scale=stds[cid])
                 clusterDists[expName][str(cID)] = threshold
 
         return {'mus':centroids,'sigmas':variances,'k':numClusts,'n':numDataPoints,'dists':clusterDists}

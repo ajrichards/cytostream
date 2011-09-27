@@ -468,12 +468,34 @@ class TemplateFileCreator():
         
         centroidLabels = allCentroidLabels[str(rankedK[0])]
     
-        ## save the top 3 modes 
+        ## save the top xx modes 
         self.bestModeLabels = []
+        print 'doing ranking...'
+       
         for rk in rankedK[:25]:
             centroidLabels = allCentroidLabels[str(rk)]
-            self.bestModeLabels.append(self._get_mode_labels(self.templateLabels,centroidLabels,uniqueLabels))
-   
+            modeLabels = self._get_mode_labels(self.templateLabels,centroidLabels,uniqueLabels)
+            self.bestModeLabels.append(modeLabels)
+        
+        ## provide silvalue ranks in case we wish to reorder the top xx modes by sil value
+        self.modeSilValues = []
+        self.modeSizes = []
+        allEvents = [self.templateData]
+
+        for count in range(len(self.bestModeLabels)):
+            numClusters = np.unique(self.bestModeLabels[count]).size
+            silValues = get_silhouette_values(allEvents,[self.bestModeLabels[count]],subsample=self.noiseSample,
+                                              minNumEvents=5000,resultsType='raw')
+            silMean = silValues['0'].mean()
+            self.modeSilValues.append(silValues['0'].mean())
+            self.modeSizes.append(numClusters)
+
+        silValues = get_silhouette_values(allEvents,[self.templateLabels],subsample=self.noiseSample,
+                                          minNumEvents=5000,resultsType='raw')
+        self.clusterSilValues = silValues['0'].mean()
+        self.modeSilValues = np.array(self.modeSilValues)
+        self.modeSizes = np.array(self.modeSizes)
+
     def _get_mode_labels(self,labels,centroidLabels,uniqueLabels):
         '''
         internal method to convert centroid labels to modes
@@ -517,7 +539,7 @@ class TemplateFileCreator():
 
     def draw_templates(self,dim1=0,dim2=1,saveas='templates.png'):
         colorList = get_all_colors()
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10,8))
         buff = 0.02
         fontName = 'arial'
         fontSize = 8
@@ -559,11 +581,11 @@ class TemplateFileCreator():
             ax.set_ylabel("dim%s"%dim2,fontname=fontName,fontsize=fontSize)
 
             for t in ax.get_xticklabels():
-                t.set_fontsize(fontSize)
+                t.set_fontsize(labelSize)
                 t.set_fontname(fontName)
                
             for t in ax.get_yticklabels():
-                t.set_fontsize(fontSize)
+                t.set_fontsize(labelSize)
                 t.set_fontname(fontName)
 
             if forceScale == True:
@@ -571,7 +593,8 @@ class TemplateFileCreator():
                 ax.set_ylim([events[:,dim2].min()-bufferY,events[:,dim2].max()+bufferY])
                 ax.set_aspect(1./ax.get_data_ratio())
 
-        if len(self.bestModeLabels) >= 0:
+        ## draw each subplot
+        if len(self.bestModeLabels) >= 1:
             ax = fig.add_subplot(331)
             events = self.templateData
             labels = self.templateLabels
@@ -579,67 +602,65 @@ class TemplateFileCreator():
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
             _draw(ax,events,labels,dim1,dim2,title='Template',centroids=centroids)
-        elif len(self.bestModeLabels) >= 1:
+        if len(self.bestModeLabels) >= 2:
             ax = fig.add_subplot(332)
             labels = self.bestModeLabels[0]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='First Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 2:
+            _draw(ax,events,labels,dim1,dim2,title='1st Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 3:
             ax = fig.add_subplot(333)
             labels = self.bestModeLabels[1]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Second Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 3:
+            _draw(ax,events,labels,dim1,dim2,title='2nd Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 4:
             ax = fig.add_subplot(334)
             labels = self.bestModeLabels[2]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Third Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 4:
+            _draw(ax,events,labels,dim1,dim2,title='3rd Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 5:
             ax = fig.add_subplot(335)
             labels = self.bestModeLabels[3]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Fourth Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 5:
+            _draw(ax,events,labels,dim1,dim2,title='4th Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 6:
             ax = fig.add_subplot(336)
             labels = self.bestModeLabels[4]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Fifth Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 6:
+            _draw(ax,events,labels,dim1,dim2,title='5th Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 7:
             ax = fig.add_subplot(337)
             labels = self.bestModeLabels[5]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Sixth Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 7:
+            _draw(ax,events,labels,dim1,dim2,title='6th Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 7:
             ax = fig.add_subplot(338)
             labels = self.bestModeLabels[6]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Seventh Best',centroids=centroids)
-        elif len(self.bestModeLabels) >= 8:
+            _draw(ax,events,labels,dim1,dim2,title='7th Best',centroids=centroids)
+        if len(self.bestModeLabels) >= 8:
             ax = fig.add_subplot(339)
             labels = self.bestModeLabels[7]
             centroids = {}
             for k in np.unique(labels):
                 centroids[str(int(k))] = events[np.where(labels==k)[0]].mean(axis=0)
-            _draw(ax,events,labels,dim1,dim2,title='Seventh Best',centroids=centroids)
+            _draw(ax,events,labels,dim1,dim2,title='8th Best',centroids=centroids)
 
-
-        fig.subplots_adjust(hspace=0.25,wspace=0.005)
+        fig.subplots_adjust(hspace=0.25,wspace=0.001)
         plt.savefig(saveas,dpi=dpi)
-        
 
     def save(self,filePath=""):
         '''

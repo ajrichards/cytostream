@@ -55,8 +55,10 @@ def _calculate_within_thresholds(fa,allLabels=None):
 
             ## use the eCDF to find a threshold
             eCDF = EmpiricalCDF(distances)        
-            thresholdLow = eCDF.get_value(0.025)
-            thresholdHigh = eCDF.get_value(0.975)
+            #thresholdLow = eCDF.get_value(0.025)
+            #thresholdHigh = eCDF.get_value(0.975)
+            thresholdLow = eCDF.get_value(0.4)
+            thresholdHigh = eCDF.get_value(0.6)
             withinThresholds[fileName][str(int(clusterID))] = {'ci':(thresholdLow, thresholdHigh)}
 
     return withinThresholds
@@ -413,40 +415,44 @@ def event_count_compare(clusterEventsI,clusterEventsJ,clusterJ,threshold):
     return float(len(overlappedInds)) / float(len(distances))
 
 
-def make_bootstrap_comparision(fa):
-        
-    ## make bootstrap comparisons
-    templateClusters = np.sort(np.unique(templateLabels))
-    comparisons = []
-    totalComparisons = (float(len(templateClusters)) * (float(len(templateClusters)) - 1.0)) / 2.0
-    print 'bootstrapping hypo test'
-    compareCount = 0
-    for ci in range(len(templateClusters)):
-        clusterI = templateClusters[ci]
-        eventsI = templateData[np.where(templateLabels==int(clusterI))[0],:]
-        for cj in range(len(templateClusters)):
-            
-            if ci >= cj:
-                continue
-
-            ## debug 
-            #if compareCount > 10:
-            #    continue
-
-            compareCount += 1
-            clusterJ = templateClusters[cj]
-            eventsJ = templateData[np.where(templateLabels==int(clusterJ))[0],:]
-            n,m = len(eventsI),len(eventsJ)
-            bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
-            bootstrapData = np.vstack([eventsI,eventsJ])
-            bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=500)
-            bresults = bstpr.get_results()
-                
-            if bresults['delta1'] < 0.1:
-                comparisons.append([clusterI,clusterJ,bresults['delta1']])
-            print clusterI, clusterJ, bresults['delta1'],"%s/%s"%(compareCount,totalComparisons)  
-         
-    print 'template', fileWithMinNumClusters
+#def make_bootstrap_comparision(fa):
+#        
+#    ## make bootstrap comparisons
+#    templateClusters = np.sort(np.unique(templateLabels))
+#    comparisons = []
+#    totalComparisons = (float(len(templateClusters)) * (float(len(templateClusters)) - 1.0)) / 2.0
+#    print 'bootstrapping hypo test'
+#    compareCount = 0
+#    for ci in range(len(templateClusters)):
+#        clusterI = templateClusters[ci]
+#        eventsI = templateData[np.where(templateLabels==int(clusterI))[0],:]
+#        for cj in range(len(templateClusters)):
+#            
+#            if ci >= cj:
+#                continue
+#
+#            ## debug 
+#            #if compareCount > 10:
+#            #    continue#
+#
+#
+#
+#
+#            compareCount += 1
+#            clusterJ = templateClusters[cj]
+#            eventsJ = templateData[np.where(templateLabels==int(clusterJ))[0],:]
+#            n,m = len(eventsI),len(eventsJ)
+#            bootstrapDataLabels = np.hstack([np.array([0]).repeat(n),np.array([1]).repeat(m)])
+#            bootstrapData = np.vstack([eventsI,eventsJ])
+#            bstpr = BootstrapHypoTest(bootstrapData, bootstrapDataLabels, nrep=500)
+#            bresults = bstpr.get_results()
+#                
+#            ## ICI ICI
+#            if bresults['delta1'] < 0.1:
+#                comparisons.append([clusterI,clusterJ,bresults['delta1']])
+#            print clusterI, clusterJ, bresults['delta1'],"%s/%s"%(compareCount,totalComparisons)  
+#         
+#    print 'template', fileWithMinNumClusters
 
 def get_master_label_list(expListLabels):
     labelMasterList = set([])

@@ -6,7 +6,18 @@ from scipy.cluster.vq import kmeans2,kmeans
 from cytostream.stats import SilValueGenerator
 
 
-def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
+def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4,resultsType='clusterMeans'):
+    '''
+    returns a dict of results where files are indexed by a string of the int index
+
+    resultsType -- defines the value of
+
+    example $> silResults = get_silhouette_values([matData1, matData2], [matLabels1, matLabs2])
+    silResults 
+
+    '''
+
+
     silValues = {}
     silValuesElements = {}
     numFiles = len(matLabelList)
@@ -56,16 +67,19 @@ def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4):
         silValuesElements[str(fileInd)] = svg.silValues
         
         ## save only sil values for each cluster
-        for clusterID in fileClusters:
-            clusterElementInds = np.where(fileLabels == clusterID)[0]
-            if len(clusterElementInds) < minNumEvents:
-                silValues[str(fileInd)][str(clusterID)] = None
-            else:
-                clusterSilValue = silValuesElements[str(fileInd)][clusterElementInds].mean()
-                silValues[str(fileInd)][str(clusterID)] = clusterSilValue
+        if resultsType == 'clusterMeans':
+            for clusterID in fileClusters:
+                clusterElementInds = np.where(fileLabels == clusterID)[0]
+                if len(clusterElementInds) < minNumEvents:
+                    silValues[str(fileInd)][str(clusterID)] = None
+                else:
+                    clusterSilValue = silValuesElements[str(fileInd)][clusterElementInds].mean()
+                    silValues[str(fileInd)][str(clusterID)] = clusterSilValue
 
-            del clusterElementInds
-        
+                del clusterElementInds
+        elif resultsType == 'raw':
+            silValues[str(fileInd)] = svg.silValues
+
     return silValues
 
 def find_noise(mat,labels,silValues=None,minNumEvents=4):
