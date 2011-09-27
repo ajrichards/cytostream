@@ -152,7 +152,9 @@ class SaveSubplots():
             subplotRun = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
 
-            if self.figMode == 'analysis' and self.inputLabels != None:
+            if self.figMode == 'qa':
+                pass
+            elif self.figMode == 'analysis' and self.inputLabels != None:
                 labels = self.inputLabels[subplotIndex]
             elif self.figMode == 'analysis':
                 statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRun,modelType=self.resultsMode)
