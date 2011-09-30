@@ -129,6 +129,10 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
         plt.setp(xticklabels, fontsize=fontSize-1)
         plt.setp(yticklabels, fontsize=fontSize-1)
 
+        ax.set_xlabel(round(emResults[fileName]['params']['likelihood']))
+
+        ax.set_xticks([])
+
     fig.subplots_adjust(hspace=0.3,wspace=0.3)
     plt.savefig(figName)
 
@@ -211,8 +215,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     if fileList == None:
         fileList = nga.get_file_names()
     if figsDir == None:
-        figsDir = os.path.join(nga.homeDir,'results','thresholding')
-    
+        figsDir = os.path.join(nga.homeDir,'results',modelRunID,'thresholding')
+        if os.path.isdir(figsDir) == False:
+            os.mkdir(figsDir)
+        
     thresholdLines = {}
 
     ## prepare output
@@ -231,6 +237,9 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     figName = os.path.join(figsDir,'ThresholdsEM_cd3.png')
     make_positivity_plot(nga,fileList,cd3ChanIndex,figName,cd3Results)
 
+    for fileName in fileList:
+        thresholdLines[fileName] = {}
+
     ## save data
     for fileName in fileList:
         nga.handle_filtering('filter1',fileName,modelRunID,'components',cd3Results[fileName]['clusters'])
@@ -238,7 +247,12 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         chanMax = fileEvents[:,cd3ChanIndex].max()
         cd3ThreshX = np.array([cd3Results[fileName]['cutpoint']]).repeat(25)
         cd3ThreshY = np.linspace(0,chanMax,25)
-        thresholdLines[fileName] = {0:(cd3ThreshX,cd3ThreshY)}
+        thresholdLines[fileName][0] = (cd3ThreshX,cd3ThreshY)
+
+        print fileEvents[:,cd3ChanIndex].max(), fileEvents[:,cd3ChanIndex].min()
+        print cd3Results[fileName]['cutpoint']
+
+
 
     ########### fsc  ##################
     print 'getting fsc events...'
@@ -451,6 +465,8 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
             figName = os.path.join(figsDir,'autoGatingStrategy_%s.png'%fileName)
             figTitle = "Auto Gating Strategy %s"%(fileName)
+            for key,item in thresholdLines[fileName].iteritems():
+                print key, len(item[0]), len(item[1])
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
@@ -511,7 +527,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
 
         subsampleInds = np.array(map(int,map(round,np.linspace(0,399,35))))
         thresholdLines[fileName] = {0:(curveX[subsampleInds],curveY[subsampleInds])}
-        nga.handle_filtering('filter_dump',fileName,modelRunID,'components',undumpedClusters[fileName])
+        nga.handle_filtering('dump',fileName,modelRunID,'components',undumpedClusters[fileName])
 
     create = True
     if create == True:

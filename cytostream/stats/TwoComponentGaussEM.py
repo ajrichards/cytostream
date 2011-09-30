@@ -188,6 +188,7 @@ class TwoComponentGaussEM():
             if logLike > maxLike:
                 maxLike = logLike
                 bestEstimates = parms.copy()
+                bestEstimates['likelihood'] = maxLike
 
             #if self.verbose == True:
             #    print 'runNum: ',j + 1,'mu1: ',round(parms['mu1'],2),'mu2: ',round(parms['mu2'],2),'sig1: ',round(parms['sig1'],2),
