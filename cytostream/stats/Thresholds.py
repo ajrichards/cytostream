@@ -205,7 +205,7 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
     return cd3Results
 
 
-def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',fileList=None,figsDir=None):
+def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',fileList=None,figsDir=None,undumpedClusters=None):
 
     ## variables
     if fileList == None:
@@ -276,6 +276,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         cd3PosClusters[fileName] = []
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         events = nga.get_events(fileName)
+        fileInd = fileList.index(fileName)
 
         for cid in np.unique(fileLabels):
             clusterEventsInds = np.where(fileLabels==cid)[0]
@@ -288,6 +289,9 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             if clusterEventsSSC.mean() > sscResults[fileName]['cutpoint']:
                 continue
             if clusterEventsFSC.mean() > fscResults[fileName]['cutpoint']:
+                continue
+
+            if undumpedClusters != None and cid not in undumpedClusters[fileInd]:
                 continue
 
             cd3PosClusters[fileName].append(cid)
@@ -358,20 +362,20 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             clusterEventsCD8 = cd3Events[clusterEventsInds,cd8ChanIndex]
             clusterEventsCD4 = cd3Events[clusterEventsInds,cd4ChanIndex]
             clusterEventsCD3 = cd3Events[clusterEventsInds,channelIDs['cd3']]
-            clusterEventsCyto = cd3Events[clusterEventsInds,channelIDs['IFNg-IL2']]
+            #clusterEventsCyto = cd3Events[clusterEventsInds,channelIDs['IFNg-IL2']]
 
             #print cid, clusterEventsCD8.mean(), cd4cd8Thresholds[fileName], clusterEventsCD4.mean(), cd4Results[fileName]['cutpoint']
 
             ## find double positives
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
-                dpClusters[fileName].append(cid)
-                (a_s,b_s,r,tt,stderr)=stats.linregress(clusterEventsCD3,clusterEventsCyto)
-
-                if r > 0.5:
-                    continue
-                else:
-                    cd8PosClusters[fileName].append(cid)
-                    continue
+                #dpClusters[fileName].append(cid)
+                #(a_s,b_s,r,tt,stderr)=stats.linregress(clusterEventsCD3,clusterEventsCyto)
+                #
+                #if r > 0.5:
+                #    continue
+                #else:
+                cd8PosClusters[fileName].append(cid)
+                #continue
 
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0] and clusterEventsCD4.mean() < cd4Results[fileName]['cutpoint']:
                 cd8PosClusters[fileName].append(cid)
