@@ -305,6 +305,29 @@ class NoGuiAnalysis():
         else:
             return True
 
+    def get_undumped_clusters(self,modelRunID,modelType='components'):
+
+        fileList = self.get_file_names()
+        if self.is_valid_filter('dump',fileList[0]) == False:
+            print "WARNING: NoGuiAnalysis: cannot access undumped clusters"
+            return None
+
+        expListLabels = []
+        for fileName in fileList:
+            fModel, fClasses = self.get_model_results(fileName,modelRunID,modelType)
+            expListLabels.append(fClasses)
+        
+        ## assemble the undumped clusters                                                                                                                                         
+        undumpedClusters = []
+        for fileInd in range(len(fileList)):
+            fileName = fileList[fileInd]
+            fileLabels = expListLabels[fileInd]
+            filterIndices = self.get_filter_indices(fileName,'dump')
+            undumpedClusters.append(np.unique(fileLabels[filterIndices]).tolist())
+
+
+
+
     def handle_filtering_dict(self,fileName,filteringDict):
         fileList = self.get_file_names()
 
