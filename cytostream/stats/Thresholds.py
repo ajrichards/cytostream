@@ -372,7 +372,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             clusterEventsCD4 = cd3Events[clusterEventsInds,cd4ChanIndex]
             clusterEventsCD3 = cd3Events[clusterEventsInds,channelIDs['cd3']]
             #clusterEventsCyto = cd3Events[clusterEventsInds,channelIDs['IFNg-IL2']]
-
             #print cid, clusterEventsCD8.mean(), cd4cd8Thresholds[fileName], clusterEventsCD4.mean(), cd4Results[fileName]['cutpoint']
 
             ## find double positives
@@ -451,6 +450,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             
             ## set highlights
             plotsToViewHighlights = [None for c in range(16)]
+
+            if undumpedClusters != None:
+                plotsToViewHighlights[0] = undumpedClusters[fileInd]
+
             plotsToViewHighlights[1] = cd3Results[fileName]['clusters']
             plotsToViewHighlights[2] = cd3Results[fileName]['clusters']
             plotsToViewHighlights[3] = cd3PosClusters[fileName]
@@ -460,8 +463,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
             figName = os.path.join(figsDir,'autoGatingStrategy_%s.png'%fileName)
             figTitle = "Auto Gating Strategy %s"%(fileName)
-            for key,item in thresholdLines[fileName].iteritems():
-                print key, len(item[0]), len(item[1])
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 

@@ -427,21 +427,23 @@ class Controller:
         except:
             return None
 
-    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices=False):
         '''
-        given a set of cluster ids the respective events are saved 
-
+        given a set of cluster ids (list) the respective events are saved 
+        alternativly clusters ids may be the indices themselved using (use usingIndices flag)
         '''
 
         if len(clusterIDs) == 0:
             print "WARNING: Controller.handle_filtering -- clusterIDs was empty"
             return False
 
-        statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
-        modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
-        parentFilter = modelLog['filter used']
-        filterNumber = re.sub("\D","",filterID)
-        
+        if usingIndices == False:
+            statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
+            modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
+            parentFilter = modelLog['filter used']
+        else:
+            parentFilter = None
+
         if not re.search('filter', str(parentFilter)):
             parentFilter = None
 
@@ -452,25 +454,35 @@ class Controller:
         else:
             filterLog = csv.writer(open(filterLogFile,'w'))
 
-        filterLog.writerow([fileName,filterID,str(clusterIDs)]) 
+        if usingIndices == False:
+            filterLog.writerow([fileName,filterID,str(clusterIDs)]) 
+        else:
+            filterLog.writerow([fileName,filterID,"NA"]) 
 
         ## get events
         events = self.model.get_events(fileName,subsample='original',filterID=parentFilter)
         
-        ## check that labels are of right type
-        if type(clusterIDs[0]) != type(1):
-            clusterIDs = [int(cid) for cid in clusterIDs]
 
-        ## get indices
-        filterIndices = None
+        if usingIndices == False:
 
-        for cid in clusterIDs:
-            inds = np.where(fileLabels == cid)[0]
+            ## check that labels are of right type
+            if type(clusterIDs[0]) != type(1):
+                clusterIDs = [int(cid) for cid in clusterIDs]
 
-            if filterIndices == None:
-                filterIndices = inds
-            else:
-                filterIndices = np.hstack([filterIndices,inds])
+            ## get indices
+            filterIndices = None
+
+            for cid in clusterIDs:
+                inds = np.where(fileLabels == cid)[0]
+
+                if filterIndices == None:
+                    filterIndices = inds
+                else:
+                    filterIndices = np.hstack([filterIndices,inds])
+        else:
+            if type(clusterIDs) == type([]):
+                clusterIDs = np.array(clusterIDs)
+            filterIndices = clusterIDs
 
         data = events[filterIndices,:]
         newDataFileName = fileName + "_data_%s.pickle"%filterID

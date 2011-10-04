@@ -325,7 +325,7 @@ class NoGuiAnalysis():
             filterIndices = self.get_filter_indices(fileName,'dump')
             undumpedClusters.append(np.unique(fileLabels[filterIndices]).tolist())
 
-
+        return undumpedClusters
 
 
     def handle_filtering_dict(self,fileName,filteringDict):
