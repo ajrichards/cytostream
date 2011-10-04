@@ -30,17 +30,17 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
 
     ## declare variables
     if subset in ['cd3','cd4']:
-        subsampleSize = 30000    
+        subsampleSize = 8000    
     elif subset in ['cd8']:
-        subsampleSize = 70000    
+        subsampleSize = 8000    
     elif subset in ['ssc','fsc']:
-        subsampleSize = 20000    
+        subsampleSize = 8000    
     else:
         print "ERROR in two_component_em -- invalid subset specified"
 
     numIters = 25             # num em iters
     if emGuesses == None:
-        numRuns = 6
+        numRuns = 15
     else:
         numRuns = 1
     numReps = 6               # num times to draw sample
