@@ -244,15 +244,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     for fileName in fileList:
         nga.handle_filtering('filter1',fileName,modelRunID,'components',cd3Results[fileName]['clusters'])
         fileEvents = nga.get_events(fileName)
-        chanMax = fileEvents[:,cd3ChanIndex].max()
+        chanMax = fileEvents[:,channelIDs['ssc']].max()
         cd3ThreshX = np.array([cd3Results[fileName]['cutpoint']]).repeat(25)
         cd3ThreshY = np.linspace(0,chanMax,25)
         thresholdLines[fileName][0] = (cd3ThreshX,cd3ThreshY)
-
-        print fileEvents[:,cd3ChanIndex].max(), fileEvents[:,cd3ChanIndex].min()
-        print cd3Results[fileName]['cutpoint']
-
-
 
     ########### fsc  ##################
     print 'getting fsc events...'

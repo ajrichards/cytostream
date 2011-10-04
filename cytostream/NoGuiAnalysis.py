@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,os,unittest,time,re,cPickle
+import sys,os,unittest,time,re,cPickle,csv,ast
 from PyQt4 import QtGui, QtCore
 import subprocess
 import matplotlib as mpl
@@ -352,6 +352,32 @@ class NoGuiAnalysis():
         tmp.close()
         return alignedLabels
 
+    def get_basic_subset_info(self,modelRunID):
+        '''        
+        get basic subset information
+        '''
+
+        bsFilePath = os.path.join(self.controller.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID)
+        if os.path.exists(bsFilePath) == False:
+            print "ERROR: NoGuiAnalysis: cannot find basic subsets -- rerun appropriate funciton"
+            return None
+
+        reader = csv.reader(open(bsFilePath,'r'))
+        header = reader.next()
+        fileList = []
+        subsetList = []
+        totalEventList = []
+        percentageList = []
+        clusterIDsList = []
+        
+        for linja in reader:
+            fileList.append(linja[0])
+            subsetList.append(linja[1])
+            totalEventList.append(int(linja[2]))
+            percentageList.append(float(linja[3]))
+            clusterIDsList.append(ast.literal_eval(linja[4]))
+            
+        return {'files':fileList,'subsets':subsetList,'totalevents':totalEventList,'percentages':percentageList,'clusters':clusterIDsList}
 
 
 ### Run the tests 

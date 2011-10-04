@@ -382,11 +382,8 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     if type(colorList) == type([]):
         colorList = np.array(colorList)
 
-    ## add a line if specified {subplot:(lineX,lineY)}                                                                                                                   
-    if addLine != None:
-        ax.plot(addLine[0],addLine[1],color='orange',linewidth='2.0')
-        #ax.plot(addLine[0],addLine[1],color='orange',linestyle='None',marker='o',markersize=3)
-                           
+    ## here
+                        
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
                      drawState=drawState)
@@ -411,9 +408,71 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         if subplotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
 
+        ## add a line if specified {subplot:(lineX,lineY)}                                                                                                                   
+        if addLine != None:
+            ax.plot(addLine[0],addLine[1],color='orange',linewidth='2.0')
+   
         finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale,forceSimple,axesOff)
 
         if parent != None:
             parent.canvas.draw()
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
+
+
+def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,yLabel=True,xLabel=True):
+    buff = 0.02
+    fontName = 'arial'
+    myCmap = mpl.cm.gist_heat
+
+    ## load events                                         
+    events = nga.get_events(fileName,filterID=filterID)
+    dataX,dataY = (events[:,index1],events[:,index2])
+
+    ## get border events                
+    borderEventsX1 = np.where(dataX == 0)[0]
+    borderEventsX2 = np.where(dataY == dataX.max())[0]
+    borderEventsY1 = np.where(dataY == 0)[0]
+    borderEventsY2 = np.where(dataY == dataY.max())[0]
+    borderEventsX = np.hstack([borderEventsX1,borderEventsX2])
+    borderEventsY = np.hstack([borderEventsY1,borderEventsY2])
+    borderEvents = np.hstack([borderEventsX,borderEventsY])
+    nonBorderEvents = np.array(list(set(range(events.shape[0])).difference(set(borderEvents))))
+    colorList = bilinear_interpolate(dataX[nonBorderEvents],dataY[nonBorderEvents], bins=bins)
+
+    ## plot events  
+    ax.scatter([dataX[nonBorderEvents]],[dataY[nonBorderEvents]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
+    ax.scatter([dataX[borderEvents]],[dataY[borderEvents]],c='k',s=1,edgecolor='none')
+
+    fileChannels = nga.get_file_channels()
+    if xLabel == True:
+        ax.set_xlabel(fileChannels[index1],fontname=fontName,fontsize=fontSize) # index1
+    if yLabel == True:
+        ax.set_ylabel(fileChannels[index2],fontname=fontName,fontsize=fontSize)
+    #ax.set_title("tnf alpha",fontname=fontName,fontsize=fontSize)
+
+    ## add threshold
+    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color='b',linestyle='-',linewidth=1.0)
+    positiveEventInds = np.where(dataY > fThreshold)[0]
+    if positiveEventInds.size > 0:
+        ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='b',s=1,edgecolor='none')
+
+    ## fonts axes etc 
+    bufferX = buff * (dataX.max() - dataX.min())
+    bufferY = buff * (dataY.max() - dataY.min())
+    ax.set_xlim([dataX.min()-bufferX,dataX.max()+bufferX])
+    ax.set_ylim([dataY.min()-bufferY,dataY.max()+bufferY])
+
+    for t in ax.get_xticklabels():
+        t.set_fontsize(fontSize)
+        t.set_fontname(fontName)
+
+    for t in ax.get_yticklabels():
+        t.set_fontsize(fontSize)
+        t.set_fontname(fontName)
+
+    ax.set_yticks([])
+    ax.set_xticks([])
+    ax.set_aspect(1./ax.get_data_ratio())
+
+
