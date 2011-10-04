@@ -53,7 +53,7 @@ class TwoComponentGaussEM():
             mu2 = np.random.uniform(1.5 * yMed,3.9 *yMed) ## 550,750
             sig1 = np.random.uniform(1.0*yMed,1.0*yMed)  ## 
             sig2 = np.random.uniform(1.0*yMed,1.0*yMed)
-            pi   = np.random.uniform(0.2,0.8)
+            pi   = np.random.uniform(0.1,0.9)
         if self.subset in ['cd8']:
             mu1 = np.random.uniform(0.1*yMed,0.9*yMed)   ## 200, 500
             mu2 = np.random.uniform(1.5 * yMed,3.9*yMed) ## 550,750

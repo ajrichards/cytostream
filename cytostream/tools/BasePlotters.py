@@ -420,7 +420,8 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
 
-def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,yLabel=True,xLabel=True):
+def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,
+                            yLabel=True,xLabel=True,title=None,yLim=None,xLim=None):
     buff = 0.02
     fontName = 'arial'
     myCmap = mpl.cm.gist_heat
@@ -449,10 +450,12 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
         ax.set_xlabel(fileChannels[index1],fontname=fontName,fontsize=fontSize) # index1
     if yLabel == True:
         ax.set_ylabel(fileChannels[index2],fontname=fontName,fontsize=fontSize)
-    #ax.set_title("tnf alpha",fontname=fontName,fontsize=fontSize)
+
+    if title != None:
+        ax.set_title(title,fontname=fontName,fontsize=fontSize)
 
     ## add threshold
-    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color='b',linestyle='-',linewidth=1.0)
+    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color='orange',linestyle='-',linewidth=1.0)
     positiveEventInds = np.where(dataY > fThreshold)[0]
     if positiveEventInds.size > 0:
         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='b',s=1,edgecolor='none')
@@ -460,8 +463,16 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
     ## fonts axes etc 
     bufferX = buff * (dataX.max() - dataX.min())
     bufferY = buff * (dataY.max() - dataY.min())
-    ax.set_xlim([dataX.min()-bufferX,dataX.max()+bufferX])
-    ax.set_ylim([dataY.min()-bufferY,dataY.max()+bufferY])
+
+    
+    if xLim == None:
+        ax.set_xlim([dataX.min()-bufferX,dataX.max()+bufferX])
+    else:
+        ax.set_xlim(xLim)
+    if yLim == None:
+        ax.set_ylim([dataY.min()-bufferY,dataY.max()+bufferY])
+    else:
+        ax.set_ylim(yLim)
 
     for t in ax.get_xticklabels():
         t.set_fontsize(fontSize)
