@@ -209,12 +209,65 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
     return cd3Results
 
 
+def examine_double_positive(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
+    create = True
+    plotsToViewChannels = [(channelIDs['cd4'],channelIDs['cd8']),
+                           (channelIDs['cd3'],channelIDs['ssc']),
+                           (channelIDs['cd3'],channelIDs['fsc']),
+                           (channelIDs['cd3'],channelIDs['cd4']),
+                           (channelIDs['cd3'],channelIDs['cd8']),
+                           (channelIDs['fsc'],channelIDs['ssc']),
+                           (channelIDs['fsc'],channelIDs['ssc'])] + [(0,0)] * 9
+
+    events = nga.get_events(fileName,filterID='filter2')
+    filterIndices = nga.get_filter_indices(fileName,'filter2')
+    statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
+    filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
+    clusterEventsInds = np.where(filteredLabels==clusterID)[0]
+    rValues = []
+    cd3CoeffVar = events[clusterEventsInds,channelIDs['cd3']].std() / np.abs(events[clusterEventsInds,channelIDs['cd3']].mean())
+    for channels in plotsToViewChannels[:7]:
+        (a_s,b_s,r,tt,stderr)=stats.linregress(events[clusterEventsInds,channels[0]],events[clusterEventsInds,channels[1]])
+        rValues.append(r)
+    
+    if create == True:
+        ## set channels to view
+        subplotTitles = ["r=%s,cv=%s"%(round(rVal,2),round(cd3CoeffVar,2)) for rVal in rValues]
+        nga.set("plots_to_view_channels",plotsToViewChannels)
+        plotsToViewRuns = [modelRunID for i in range(16)]
+        nga.set('plots_to_view_runs',plotsToViewRuns)
+        numSubplots = 6
+        nga.set('results_mode','components')
+
+        ## set file names
+        actualFileList = nga.get_file_names()
+        fileInd = actualFileList.index(fileName)
+        plotsToViewFiles = [fileInd for i in range(16)]
+        nga.set("plots_to_view_files",plotsToViewFiles)
+
+        ## set highlights 
+        plotsToViewHighlights = [None for c in range(16)]
+        plotsToViewHighlights[0] = [clusterID]
+        plotsToViewHighlights[1] = [clusterID]
+        plotsToViewHighlights[2] = [clusterID]
+        plotsToViewHighlights[3] = [clusterID]
+        plotsToViewHighlights[4] = [clusterID]
+        plotsToViewHighlights[5] = [clusterID]
+        nga.set('plots_to_view_highlights',plotsToViewHighlights)
+
+        figName = os.path.join(figsDir,'dp_%s_%s.png'%(fileName,clusterID))
+        figTitle = "Double positive cluster %s"%(fileName)
+        ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
+                          axesOff=True,subplotTitles=subplotTitles)
+
 def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',fileList=None,figsDir=None,undumpedClusters=None):
 
     ## variables
     if fileList == None:
         fileList = nga.get_file_names()
     if figsDir == None:
+        if os.path.isdir(os.path.join(nga.homeDir,'results',modelRunID)) == False:
+            os.mkdir(os.path.join(nga.homeDir,'results',modelRunID))
         figsDir = os.path.join(nga.homeDir,'results',modelRunID,'thresholding')
         if os.path.isdir(figsDir) == False:
             os.mkdir(figsDir)
@@ -376,6 +429,8 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
             ## find double positives
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
+                
+                dpFlag = examine_double_positive(nga,channelIDs,fileName,cid,figsDir,modelRunID=modelRunID)
                 #dpClusters[fileName].append(cid)
                 #(a_s,b_s,r,tt,stderr)=stats.linregress(clusterEventsCD3,clusterEventsCyto)
                 #
