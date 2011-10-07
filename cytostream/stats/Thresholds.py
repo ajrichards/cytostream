@@ -209,8 +209,19 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
     return cd3Results
 
 
+def get_cluster_coeff_var(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
+    events = nga.get_events(fileName,filterID='filter2')
+    filterIndices = nga.get_filter_indices(fileName,'filter2')
+    statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
+    filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
+    clusterEventsInds = np.where(filteredLabels==clusterID)[0]
+    cd3CoeffVar = events[clusterEventsInds,channelIDs['cd3']].std() / np.abs(events[clusterEventsInds,channelIDs['cd3']].mean())
+    sscCoeffVar = events[clusterEventsInds,channelIDs['ssc']].std() / np.abs(events[clusterEventsInds,channelIDs['ssc']].mean())
+   
+    return cd3CoeffVar, sscCoeffVar
+
 def examine_double_positive(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
-    create = True
+    create = False
     plotsToViewChannels = [(channelIDs['cd4'],channelIDs['cd8']),
                            (channelIDs['cd3'],channelIDs['ssc']),
                            (channelIDs['cd3'],channelIDs['fsc']),
@@ -341,6 +352,13 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         fileInd = fileList.index(fileName)
 
         for cid in np.unique(fileLabels):
+
+            ## filter based on coefficient of variation
+            cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,figsDir,modelRunID='run1')
+
+            if cvCD3 > 0.2 or cvSSC > 0.25:
+                continue
+
             clusterEventsInds = np.where(fileLabels==cid)[0]
             clusterEventsCD3 = events[clusterEventsInds,cd3ChanIndex]
             clusterEventsSSC = events[clusterEventsInds,sscChanIndex]
@@ -410,10 +428,12 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     cd4PosClusters = {}
     cd8PosClusters = {}
     dpClusters = {}
+    cd3ToRemove = {}
     for fileName in fileList:
         cd4PosClusters[fileName] = []
         cd8PosClusters[fileName] = []
         dpClusters[fileName] = []
+        cd3ToRemove[fileName] = []
         filterIndices = nga.get_filter_indices(fileName,'filter2')
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
@@ -431,19 +451,32 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 
                 dpFlag = examine_double_positive(nga,channelIDs,fileName,cid,figsDir,modelRunID=modelRunID)
-                #dpClusters[fileName].append(cid)
-                #(a_s,b_s,r,tt,stderr)=stats.linregress(clusterEventsCD3,clusterEventsCyto)
-                #
-                #if r > 0.5:
-                #    continue
+                #if dpFlag == True:
+                #    dpClusters[fileName].append(cid)
                 #else:
+                #    cd3ToRemove[fileName].append(cid)
+        
                 cd8PosClusters[fileName].append(cid)
-                #continue
 
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0] and clusterEventsCD4.mean() < cd4Results[fileName]['cutpoint']:
                 cd8PosClusters[fileName].append(cid)
             elif clusterEventsCD8.mean() < cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 cd4PosClusters[fileName].append(cid)
+
+
+    ### save the cd3 positive clusters
+    #for fileName in fileList:
+    #    ## remove cd3 events that do not pass filtering
+    #    refinedCD3 = cd3PosClusters[fileName])
+    #    for cid in cd3ToRemove:
+    #        if cid in refinedCD3:
+    #            refinedCD3.remove(cid)
+    #
+    #    nga.handle_filtering('filterCD3',fileName,modelRunID,'components',cd3PosClusters[fileName])
+    #    events1 = nga.get_events(fileName,filterID='filterCD3')
+    #    events2 = nga.get_events(fileName)
+    #    fPercent = float(events1.shape[0]) / float(events2.shape[0])
+    #    writer.writerow([fileName,"CD3",events1.shape[0],fPercent,str(cd3PosClusters[fileName])])
 
     ### save cd4 and cd8 clusters ###
     for fileName in fileList:    
