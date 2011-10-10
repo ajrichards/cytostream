@@ -210,8 +210,8 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
 
 
 def get_cluster_coeff_var(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
-    events = nga.get_events(fileName,filterID='filter2')
-    filterIndices = nga.get_filter_indices(fileName,'filter2')
+    events = nga.get_events(fileName,filterID='filter1')
+    filterIndices = nga.get_filter_indices(fileName,'filter1')
     statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
     filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
     clusterEventsInds = np.where(filteredLabels==clusterID)[0]
@@ -356,7 +356,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             ## filter based on coefficient of variation
             cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,figsDir,modelRunID='run1')
 
-            if cvCD3 > 0.2 or cvSSC > 0.25:
+            if cvCD3 > 0.2:# or cvSSC > 0.25:
                 continue
 
             clusterEventsInds = np.where(fileLabels==cid)[0]
