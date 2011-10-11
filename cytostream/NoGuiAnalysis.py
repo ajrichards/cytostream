@@ -276,7 +276,7 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
 
-    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices=False):
         fileList = self.get_file_names()
         modelsRunList = self.get_models_run()
 
@@ -291,7 +291,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+        self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices)
 
     def is_valid_filter(self,filterID,fileName):
         '''
