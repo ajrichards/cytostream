@@ -387,32 +387,63 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     cd4ChanIndex = channelIDs['cd4']
     print 'getting cd4 events...'
     cd4Results = find_positivity_threshold('cd4',cd4ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2')#filter2
+    for fileName in fileList:
+        refinedCD3a = [i for i in cd3PosClusters[fileName]]
+        refinedCD3b = [i for i in cd3PosClusters[fileName]]
+        fileEvents = nga.get_events(fileName,filterID='filter2')
+        filterIndices = nga.get_filter_indices(fileName,'filter2')
+        statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
+        filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
+
+        for cid in cd3PosClusters[fileName]:
+            clusterEventsInds = np.where(filteredLabels==cid)[0]
+            clusterMean = fileEvents[clusterEventsInds,cd4ChanIndex].mean()
+            if clusterMean < cd4Results[fileName]['cutpoint']:
+                refinedCD3b.remove(cid)
+            else:
+                refinedCD3a.remove(cid)
+
+        nga.handle_filtering('filter2a',fileName,modelRunID,'components',refinedCD3a)
+        nga.handle_filtering('filter2b',fileName,modelRunID,'components',refinedCD3b)
+   
     figName = os.path.join(figsDir,'ThresholdsEM_cd4.png')
     make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filter2')
+
 
     ########### CD8 ##################
     cd8ChanIndex = channelIDs['cd8']
     print 'getting cd8 events...'
-    cd8Results = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2')
-    figName = os.path.join(figsDir,'ThresholdsEM_cd8.png')
-    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8Results,filterID='filter2')
+    cd8ResultsA = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2a')
+    cd8ResultsB = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2b')
+    figName = os.path.join(figsDir,'ThresholdsEM_cd8a.png')
+    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsA,filterID='filter2a')
+    figName = os.path.join(figsDir,'ThresholdsEM_cd8b.png')
+    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsB,filterID='filter2b')
+
 
     ########## create the cd4-cd8 positive line ##############
     cd4cd8Thresholds = {}
     for fileName in fileList:
-        if cd8Results[fileName]['params']['mu2'] > cd8Results[fileName]['params']['mu1']:
-            cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
-            cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
+        #if cd8Results[fileName]['params']['mu2'] > cd8Results[fileName]['params']['mu1']:
+        #    cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+        #    cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
+        #else:
+        #    cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
+        #    cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+
+        #cutpoints = [cutpointA,cutpointB]
+        #cutpoints.sort()
+        #cutpointA, cutpointB = cutpoints 
+
+        if cd8ResultsA[fileName]['params']['mu2'] > cd8ResultsA[fileName]['params']['mu1']:
+            cutpointA = stats.norm.ppf(0.0001,loc=cd8ResultsA[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
         else:
-            cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
-            cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
+            cutpointA = stats.norm.ppf(0.0001,loc=cd8ResultsA[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
 
-        #if cutpointB < cutpointA:
-        #    cutPointB = cutpointA
-
-        cutpoints = [cutpointA,cutpointB]
-        cutpoints.sort()
-        cutpointA, cutpointB = cutpoints 
+        if cd8ResultsB[fileName]['params']['mu2'] > cd8ResultsB[fileName]['params']['mu1']:
+            cutpointB = stats.norm.ppf(0.999,loc=cd8ResultsB[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
+        else:
+            cutpointB = stats.norm.ppf(0.999,loc=cd8ResultsB[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
 
         events1 = nga.get_events(fileName,filterID='filter2')
         chanMax = events1[:,cd4ChanIndex].max()
