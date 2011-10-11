@@ -436,14 +436,14 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         #cutpointA, cutpointB = cutpoints 
 
         if cd8ResultsA[fileName]['params']['mu2'] > cd8ResultsA[fileName]['params']['mu1']:
-            cutpointA = stats.norm.ppf(0.0001,loc=cd8ResultsA[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
+            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
         else:
-            cutpointA = stats.norm.ppf(0.0001,loc=cd8ResultsA[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
+            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
 
         if cd8ResultsB[fileName]['params']['mu2'] > cd8ResultsB[fileName]['params']['mu1']:
-            cutpointB = stats.norm.ppf(0.999,loc=cd8ResultsB[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
+            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
         else:
-            cutpointB = stats.norm.ppf(0.999,loc=cd8ResultsB[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
+            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
 
         events1 = nga.get_events(fileName,filterID='filter2')
         chanMax = events1[:,cd4ChanIndex].max()

@@ -99,7 +99,7 @@ class LatexReportCreator():
         self.end("center")
         self.end("figure")
 
-    def include_table(self,rowDict,colHeader,justifications=None,caption=None,label=None,fontSize='normalsize',ordered=False):
+    def include_table(self,rowDict,colHeader=None,customHeader=None,justifications=None,caption=None,label=None,fontSize='normalsize',ordered=False):
         '''
         rowDict - which has row header elements as keys and lists to fill out the cols as values
         colHeader - are the header elements for the columns
@@ -124,15 +124,20 @@ class LatexReportCreator():
         elif justifications == None and numericKeys == True:
             justifications = '|l|'+'c'*(numCols-1)+"|"
             
-
         self.fid.write('\\begin{table}[!h]\n')
         self.begin('center')
         self.begin(fontSize)
         self.fid.write("\\begin{tabular}{%s}\n"%justifications)
         self.fid.write("\\hline\n")
-        header = "".join([i + "&" for i in colHeader])[:-1]+"\\\ \n"
-        self.fid.write(header)
-        self.fid.write("\\hline\n")
+
+        if customHeader != None:
+            self.fid.write(customHeader)
+            self.fid.write("\\hline\n")
+        
+        if colHeader != None:
+            header = "".join([i + "&" for i in colHeader])[:-1]+"\\\ \n"
+            self.fid.write(header)
+            self.fid.write("\\hline\n")
 
         if numericKeys == True:      
             sk = [int(k) for k in rowDict.keys()]
