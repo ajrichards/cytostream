@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys,getopt,os,re,cPickle,time,csv
+import sys,getopt,os,re,cPickle,time,csv,ast
 import fcm
 from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
 
@@ -9,19 +9,21 @@ if len(sys.argv) < 3:
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:m:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:m:a:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f filePath -h homeDir -d dataType"
     print "Note: fileName (-f) full file path" 
     print "      homeDir  (-h) home directory for current project"
     print "             k (-d) data type ('fcs','comma','tab')"
     print " fileChansPath (-c) file channels path"
+    print " autoComp      (-a) auto compensation flag"
     sys.exit()
 
 transform = 'log'
 filePath = None
 homeDir = None
 dataType = 'fcs'
+autoComp = True
 for o, a in optlist:
     if o == '-f':
         filePath = a
@@ -31,6 +33,8 @@ for o, a in optlist:
         dataType = a
     if o == '-t':
         transform = a
+    if o == '-a':
+        autoComp = a
     if o == '-c':
         fileChannelsPath = a
     if o == '-m':
@@ -40,6 +44,11 @@ for o, a in optlist:
 if os.path.isdir(homeDir) == False:
     print "INPUT ERROR: not a valid project", homeDir
     sys.exit()
+
+autoComp = ast.literal_eval(str(autoComp))
+if autoComp not in [True,False]:
+    print "WARNING: LoadFile invalid value for autoComp", autoComp
+    autoComp = True
 
 if os.path.isfile(filePath) == False:
     print "INPUT ERROR: file path does not exist", filePath
@@ -53,10 +62,9 @@ if dataType not in ['fcs','tab','comma','array']:
     print "INPUT ERROR: bad data type specified", dataType
     sys.exit()
 
-if transform not in ['logicle','log']:
-    print "INPUT ERROR: bas data transform specified ", dataType
+if transform not in ['logicle','log',None]:
+    print "INPUT ERROR: bas data transform specified ", transform
     sys.exit()
-
 
 ## variables
 projName = os.path.split(homeDir)[-1]
@@ -64,10 +72,9 @@ projName = os.path.split(homeDir)[-1]
 if dataType == 'fcs':
     if compensationFilePath != "None":
         osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
-        fcsData = fcm.loadFCS(filePath,transform=transform,sidx=osidx, spill=ospill)
+        fcsData = fcm.loadFCS(filePath,transform=transform,sidx=osidx,spill=ospill,auto_comp=autoComp)
     else:
-        fcsData = fcm.loadFCS(filePath,transform=transform)
-    
+        fcsData = fcm.loadFCS(filePath,transform=transform,auto_comp=autoComp)
     fileChannels = fcsData.channels
 elif dataType == 'comma':
     fcsData = read_txt_into_array(filePath,delim=',')
