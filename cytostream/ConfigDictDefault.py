@@ -63,5 +63,6 @@ configDictDefault = {
     'visualization_mode'                    : 'thumbnails',         # thumbs, 1D-viewer etc
     'fa_phi_range'                          : '[0.4]',              # a list or np.array of phis
     'fa_min_merge_sil_value'                : '0.3',                # min silhouette value for merge    
-    'fa_distance_metric'                    : 'mahalanobis'         # mahalanobis or euclidean
+    'fa_distance_metric'                    : 'mahalanobis',        # mahalanobis or euclidean
+    'auto_compensation'                     : 'True'                # True or False
 }

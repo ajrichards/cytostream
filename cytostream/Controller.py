@@ -418,8 +418,10 @@ class Controller:
 
         ## used the selected transform
         transform = self.log.log['selected_transform']
-        
-        self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,compensationDict=self.compensationDict)
+        autoComp = self.log.log['auto_compensation']
+
+        self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,
+                              compensationDict=self.compensationDict,transform=transform,autoComp=autoComp)
 
     def get_component_states(self):
         try:
