@@ -426,20 +426,8 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
     fontName = 'arial'
     myCmap = mpl.cm.gist_heat
 
-    ## load events                                         
-    events = nga.get_events(fileName,filterID=filterID)
-  
-    if useTransform == True:
-        #events[np.where(np.isnan(events)==True)] = 0
-        events[np.where(events <=1)] = 1
-        events = np.log(events)
-        #print events.shape
-        #print np.isnan(events).shape
-        #print np.where(np.isnan(events)==False)[0].shape
-        #for i in range(events.shape[1]):
-        events[np.where(np.isnan(events)==True)] = 0
-        #print events.shape
-
+    ## load events
+    events = nga.get_events(fileName,filterID=filterID,transform=useTransform)
     dataX,dataY = (events[:,index1],events[:,index2])
 
     ## get border events
