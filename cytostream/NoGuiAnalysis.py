@@ -291,9 +291,9 @@ class NoGuiAnalysis():
         if fileName not in fileList:
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
             return None
-        if parentModelRunID not in modelsRunList:
-            print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
-            return None
+        #if parentModelRunID not in modelsRunList:
+        #    print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
+        #    return None
 
         self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices)
 
