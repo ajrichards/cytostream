@@ -355,7 +355,10 @@ class Model:
             #    subsample = minNumObs
            
         ## get the random ints and save as a pickle
-        randEvents = np.random.random_integers(0,minNumObs-1,subsample)
+        try:
+            randEvents = np.random.random_integers(0,minNumObs-1,subsample)
+        except:
+            randEvents = np.array([])
         tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
         cPickle.dump(randEvents,tmp)
         tmp.close()

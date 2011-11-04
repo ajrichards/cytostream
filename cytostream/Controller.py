@@ -284,7 +284,10 @@ class Controller:
                 if len(self.subsampleIndices) >= n:
                     data = events
                 else:
-                    data = events[self.subsampleIndices,:]
+                    try:
+                        data = events[self.subsampleIndices,:]
+                    except:
+                        data = events
 
                 newDataFileName = fileName + "_data_%s.pickle"%subsample
 
