@@ -234,7 +234,7 @@ class Model:
             print "\t", os.path.join(self.homeDir,'data',dataFileName)
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',dataFileName),'r')
+        tmp = open(os.path.join(self.homeDir,'data',dataFileName),'rb')
         events = cPickle.load(tmp)
         tmp.close()
         return events
