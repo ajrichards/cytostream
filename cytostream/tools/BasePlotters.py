@@ -420,10 +420,9 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
 
-def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,
-                            yLabel=True,xLabel=True,title=None,yLim=None,xLim=None,useTransform=False):
+def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
+                            yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,useTransform=False):
     buff = 0.02
-    fontName = 'arial'
     myCmap = mpl.cm.gist_heat
 
     ## load events
@@ -446,10 +445,14 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
     ax.scatter([dataX[borderEvents]],[dataY[borderEvents]],c='k',s=1,edgecolor='none')
 
     fileChannels = nga.get_file_channels()
-    if xLabel == True:
+    if xLabel == 'default':
         ax.set_xlabel(fileChannels[index1],fontname=fontName,fontsize=fontSize) # index1
-    if yLabel == True:
+    elif xLabel != None:
+        ax.set_xlabel(xLabel,fontname=fontName,fontsize=fontSize)
+    if yLabel == 'default':
         ax.set_ylabel(fileChannels[index2],fontname=fontName,fontsize=fontSize)
+    elif yLabel != None:
+        ax.set_ylabel(yLabel,fontname=fontName,fontsize=fontSize)
 
     if title != None:
         ax.set_title(title,fontname=fontName,fontsize=fontSize)
@@ -464,7 +467,6 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
     bufferX = buff * (dataX.max() - dataX.min())
     bufferY = buff * (dataY.max() - dataY.min())
 
-    
     if xLim == None:
         ax.set_xlim([dataX.min()-bufferX,dataX.max()+bufferX])
     else:
