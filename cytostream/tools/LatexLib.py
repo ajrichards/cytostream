@@ -152,7 +152,7 @@ class LatexReportCreator():
         elif type(ordered) == type([]):
             for rowHead in ordered:
                 row = rowDict[rowHead]
-                if row[0] == 'hline':
+                if rowHead == 'hline':
                     self.fid.write("\\hline\n")
                 else:
                     row = rowHead + "&" + "".join([i + "&" for i in row])[:-1]+"\\\ \n"
