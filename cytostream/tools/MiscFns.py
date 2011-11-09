@@ -189,7 +189,7 @@ def get_models_run_list(log):
     maxModelRun = int(log['models_run_count'])
     
     if maxModelRun == 0:
-        print "WARNING: tools.get_models_run_list has no models run"
+        #print "WARNING: tools.get_models_run_list has no models run"
         return []
 
     modelsRunList = ['run'+str(i+1) for i in range(maxModelRun)]
