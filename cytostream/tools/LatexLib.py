@@ -13,7 +13,8 @@ class LatexReportCreator():
         self.verbose = verbose
         self.generatedBy = generatedBy
         self.extraPackages = extraPackages
-        
+        self.fontSizeList = ["tiny","scriptsize","footnotesize","small","normalsize","large","Large","LARGE","huge","Huge"] 
+
         ## error check
         if type(self.extraPackages) != type([]):
             print "INPUT ERROR: extra packages must be in list form"
@@ -52,10 +53,16 @@ class LatexReportCreator():
 
     ## convenience functions
     def begin(self,item):
-        self.fid.write("\\begin{%s}\n"%item)
+        if item in self.fontSizeList:
+            self.fid.write("{\%s}\n"%item)
+        else:
+            self.fid.write("\\begin{%s}\n"%item)
 
     def end(self,item):
-        self.fid.write("\end{%s}\n"%item)
+        if item in self.fontSizeList:
+            self.fid.write("\normalsize\n")
+        else:
+            self.fid.write("\end{%s}\n"%item)
 
     def section(self,sectionName,sectionType="section",numbers=True,toc=False):
         '''
@@ -109,8 +116,6 @@ class LatexReportCreator():
         numericKeys = False
         if not re.search('\D',str(rowDict.keys()[0])): 
             numericKeys = True
-
-        #print 'table has', len(rowDict)
 
         ## error checking
         if type(rowDict) != type({}):
