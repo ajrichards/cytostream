@@ -22,7 +22,7 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2):
     fscores = (1+beta*beta)*(precision*recall)/(beta*beta*precision + recall)
     fscores[np.where(np.isnan(fscores)==True)[0]]=0
 
-    return fscores
+    return fscores,precision,recall
 
 def calculate_fscores(neg,pos,numBins=100,beta=1.0,fullOutput=True):
     neg = neg.copy()
@@ -31,11 +31,12 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0,fullOutput=True):
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
     xs = (bins[:-1]+bins[1:])/2.0
     theta = 1.0
-    fscores = _calculate_fscores(pdfNeg, pdfPos,beta=beta, theta=theta)
+    fscores,precision,recall = _calculate_fscores(pdfNeg, pdfPos,beta=beta, theta=theta)
     fThreshold = xs[np.argmax(fscores)]
 
     if fullOutput == True:
-        return {'threshold':fThreshold, 'fscores':fscores, 'pdfx': xs, 'pdfpos':pdfPos, 'pdfneg':pdfNeg}
+        return {'threshold':fThreshold, 'fscores':fscores, 'pdfx': xs, 'pdfpos':pdfPos, 'pdfneg':pdfNeg,
+                'precision':precision,'recall':recall}
     else:
         fThreshold
 
