@@ -344,7 +344,6 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
             print "WARNING: BasePlotters.draw_plot not enough colors in master color list"
-        #masterColorList = masterColorList[5:]
         colorList = masterColorList[labels]
 
     elif  drawState == 'heat':
@@ -370,12 +369,6 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
             bins = 50.0
 
         colorList=bins
-        ## plot events
-        #myCmap = mpl.cm.gist_heat  #  spectral hot, gist_heat jet
-        #colorList = bilinear_interpolate(events[:,0],events[,1],bins=bins)
-        #ax.scatter([events[nonBorderEvents,0]],[events[nonBorderEvents,1]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
-        #if borderEvents.size > 0:
-        #    ax.scatter([events[borderEvents,0]],[events[borderEvents,1]],c='k',s=1,edgecolor='none')
     else:
        colorList = None
 
@@ -421,9 +414,17 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
 
 
 def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
-                            yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,useTransform=False):
+                            yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,useTransform=False,
+                            useColor=True):
     buff = 0.02
-    myCmap = mpl.cm.gist_heat
+    if useColor == True:
+        myCmap = mpl.cm.gist_heat
+        scatterColor = 'blue'
+        thresholdColor = 'orange'
+    else:
+        myCmap = mpl.cm.gray
+        scatterColor = '#555555'
+        thresholdColor = 'k'
 
     ## load events
     events = nga.get_events(fileName,filterID=filterID,transform=useTransform)
@@ -458,10 +459,10 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
         ax.set_title(title,fontname=fontName,fontsize=fontSize)
 
     ## add threshold
-    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color='orange',linestyle='-',linewidth=1.0)
+    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color=thresholdColor,linestyle='-',linewidth=1.0)
     positiveEventInds = np.where(dataY > fThreshold)[0]
     if positiveEventInds.size > 0:
-        ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='b',s=1,edgecolor='none')
+        ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c=scatterColor,s=1,edgecolor='none')
 
     ## fonts axes etc 
     bufferX = buff * (dataX.max() - dataX.min())
