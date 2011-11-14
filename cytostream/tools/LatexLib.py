@@ -54,7 +54,7 @@ class LatexReportCreator():
     ## convenience functions
     def begin(self,item):
         if item in self.fontSizeList:
-            self.fid.write("{\%s}\n"%item)
+            self.fid.write("\%s\n"%item)
         else:
             self.fid.write("\\begin{%s}\n"%item)
 
