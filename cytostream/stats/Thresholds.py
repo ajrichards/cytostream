@@ -38,7 +38,7 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0,fullOutput=True):
         return {'threshold':fThreshold, 'fscores':fscores, 'pdfx': xs, 'pdfpos':pdfPos, 'pdfneg':pdfNeg,
                 'precision':precision,'recall':recall}
     else:
-        fThreshold
+        return fThreshold
 
 def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
