@@ -459,8 +459,8 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
         ax.set_title(title,fontname=fontName,fontsize=fontSize)
 
     ## add threshold
-    ax.plot(np.linspace(0,dataX.max(),50),np.array([fThreshold]).repeat(50),color=thresholdColor,linestyle='-',linewidth=1.0)
-    positiveEventInds = np.where(dataY > fThreshold)[0]
+    ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color=thresholdColor,linestyle='-',linewidth=1.0)
+    positiveEventInds = np.where(dataX > fThreshold)[0]
     if positiveEventInds.size > 0:
         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c=scatterColor,s=1,edgecolor='none')
 
