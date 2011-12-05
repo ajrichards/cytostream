@@ -9,7 +9,7 @@ from cytostream.stats import two_component_em, EmpiricalCDF,scale
 from cytostream.tools import get_file_sample_stats
 
 ## functions
-def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2):
+def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2.0):
     n = len(neg_pdf)
     fpos = np.where(pos_pdf > theta*neg_pdf, pos_pdf-neg_pdf, 0)
     tp = np.array([np.sum(fpos[i:]) for i in range(n)])
@@ -24,13 +24,12 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2):
 
     return fscores,precision,recall
 
-def calculate_fscores(neg,pos,numBins=100,beta=1.0,fullOutput=True):
+def calculate_fscores(neg,pos,numBins=100,beta=1.0, theta=2.0, fullOutput=True):
     neg = neg.copy()
     pos = pos.copy()
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
     xs = (bins[:-1]+bins[1:])/2.0
-    theta = 1.0
     fscores,precision,recall = _calculate_fscores(pdfNeg, pdfPos,beta=beta, theta=theta)
     fThreshold = xs[np.argmax(fscores)]
 
