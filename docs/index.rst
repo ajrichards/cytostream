@@ -1,4 +1,5 @@
-.. cytostream documentation master file, created by sphinx-quickstart on Fri Jul 16 22:18:29 2010.
+.. cytostream documentation master file, created by
+   sphinx-quickstart on Tue Dec  6 13:35:36 2011.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -9,14 +10,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   
-   getting_started.rst
-   tutorial.rst
+
+   GettingStarted
+   Tutorials
+   FAQs
+
 
 Indices and tables
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+Welcome to documentation of cytostream.
