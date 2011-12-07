@@ -72,10 +72,18 @@ projName = os.path.split(homeDir)[-1]
 if dataType == 'fcs':
     if compensationFilePath != "None":
         osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
-        fcsData = fcm.loadFCS(filePath,transform=transform,sidx=osidx,spill=ospill,auto_comp=autoComp)
+        fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp)
     else:
-        fcsData = fcm.loadFCS(filePath,transform=transform,auto_comp=autoComp)
+        fcsData = fcm.loadFCS(filePath,auto_comp=autoComp)
     fileChannels = fcsData.channels
+
+    if transform != None:
+        pass
+    if transform == 'logicle':
+        fcsData.logicle()
+    if transform == 'log':
+        fcsData.log(fcsData.markers)
+
 elif dataType == 'comma':
     fcsData = read_txt_into_array(filePath,delim=',')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
