@@ -25,7 +25,7 @@ configDictDefault = {
     ########### immutable variables ##########################################################
     'input_data_type'                       : 'fcs',                # fcs, comma, tab, array
     'setting_max_scatter_display'           : '7e4',                # any float, int or string
-    'selected_transform'                    : 'log',                # log, logicle
+    'selected_transform'                    : 'logicle',            # log, logicle
     'num_iters_mcmc'                        : '1100',               # an int
     'thumbnail_results_default'             : 'modes',              # modes, components
     'scatter_marker_size'                   : '2',                  # mpl scatter marker size
