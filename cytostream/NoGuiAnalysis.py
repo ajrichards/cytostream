@@ -172,7 +172,7 @@ class NoGuiAnalysis():
         self.controller.save()
 
 
-    def get_events(self,fileName,subsample='original',filterID=None,transform=False):
+    def get_events(self,fileName,subsample='original',filterID=None):
         """
         returns the events from a given file name
 
@@ -184,11 +184,6 @@ class NoGuiAnalysis():
             return None
 
         events = self.controller.model.get_events(fileName,subsample=subsample,filterID=filterID)
-
-        if transform == True:
-            events[np.where(events <=1)] = 1
-            events = np.log(events)
-            events[np.where(np.isnan(events)==True)] = 0
 
         return events
 
