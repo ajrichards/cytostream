@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-from fcm.statistics.distributions import mvnormpdf
 from cytostream.stats import EmpiricalCDF
 
 class TwoComponentGaussEM():
