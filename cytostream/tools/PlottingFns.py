@@ -192,14 +192,14 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(scale)
         ax.set_xticks(minorTicks,minor=True)
-        ax.set_xticklabels(labels,fontsize=fontsize,fontname=fontname)
+        ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
 
     ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(scale)
         ax.set_yticks(minorTicks, minor=True)
-        ax.set_yticklabels(labels,fontsize=fontsize,fontname=fontname)
+        ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
 
     ## set axis limits
     ax.set_xlim([0, 262144])
@@ -212,7 +212,7 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
 
     if numTicks == 6:
         tickVals = [250000,200000,150000,100000,50000,0]
-        tickLabels = ['250K','200K','150k','100K','50K','0']
+        tickLabels = ['250K','200K','150K','100K','50K','0']
     elif numTicks == 4:
         tickVals = [250000,150000,50000,0]
         tickLabels = ['250K','150k','50K','0']
@@ -223,10 +223,10 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     ## format the x axix
     if axis in ['x','both']:
         ax.set_xticks(tickVals)
-        ax.set_xticklabels(tickLabels,fontsize=fontsize,fontname=fontname)
+        ax.set_xticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
 
     ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(tickVals)
-        ax.set_yticklabels(tickLabels,fontsize=fontsize,fontname=fontname)
+        ax.set_yticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
