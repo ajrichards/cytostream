@@ -114,7 +114,6 @@ class PlotDataOrganizer:
 
     '''
 
-    
     def __init__(self):
 
         self.plotDict = {}
@@ -165,40 +164,69 @@ class PlotDataOrganizer:
 
         return plotID, channelsID
 
-def set_logicle_transformed_ticks(ax,axis='x'):
+def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     '''
     to map an axis to a scale that immunologists are used to this function may be used as follows
-        ax = fig.add_subplot(111)
-        ax.plot_logicle_transformed_fcs_events
-        
+        ~$ ax = fig.add_subplot(111)
+        ~$ data = fcm.loadFCS('blah.fcs')                                                                                                                                                           
+        ~$ data.logicle(scale_max=262144)   
+        ~$ ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')    
+        ~$ set_logicle_transformed_ticks(ax)
     '''
 
     if axis not in ['x','y','both']:
         print "ERROR set_logicle_transformed_ticks: invalid axis arg"
         return None
-
-    #data = fcm.loadFCS('J6901HJ1-06_SEB_CD8.fcs')
-    #data.logicle(scale_max=262144)
-    #x = 17
-    #y = 3
-    #print data.channels
-    # ax = pylab.subplot(1,2,1)
-    # ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')
-    #ax = pylab.subplot(1,1,1)
-    #ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')
+    
+    ## setup scales
     scale = 262144*logicle(np.array([0, 100, 10**3, 10**4, 10**5]), 262144, 4.5, None, 0.5)
-    minorscale = 262144*logicle(np.linspace(1000,10000,10), 262144, 4.5, None, 0.5)
-    labels = ['0', '$10^2$', '$10^3$', '$10^4$', '$10^5$']
+    tickPairs = [(0,9),(10,90),(100,900),(1000,9000),(10000,90000)]
+    minorScale = [262144*logicle(np.linspace(ab[0],ab[1],9),262144,4.5,None,0.5) for ab in tickPairs]
+    labels = ['$0$', '$10^2$', '$10^3$', '$10^4$', '$10^5$']
+    minorTicks = np.array([])
 
+    for mTicks in minorScale:
+        minorTicks = np.hstack([minorTicks,np.array(mTicks)])
+
+    ## format the x axix
     if axis in ['x','both']:
         ax.set_xticks(scale)
-        ax.set_xticks(minorscale, minor=True)
-        ax.set_xticklabels(labels)
-        
+        ax.set_xticks(minorTicks,minor=True)
+        ax.set_xticklabels(labels,fontsize=fontsize,fontname=fontname)
+        ax.xaxis.set_ticks_position('bottom')
+
+    ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(scale)
-        ax.set_yticks(minorscale, minor=True)
-        ax.set_yticklabels(labels)
+        ax.set_yticks(minorTicks, minor=True)
+        ax.set_yticklabels(labels,fontsize=fontsize,fontname=fontname)
 
+    ## set axis limits
     ax.set_xlim([0, 262144])
     ax.set_ylim([0, 262144])
+
+def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
+    '''
+    formats a scatter axis ticks to the K format
+    '''
+
+    if numTicks == 6:
+        tickVals = [250000,200000,150000,100000,50000,0]
+        tickLabels = ['250K','200K','150k','100K','50K','0']
+    elif numTicks == 4:
+        tickVals = [250000,150000,50000,0]
+        tickLabels = ['250K','150k','50K','0']
+    else:
+        print "ERROR: set_scatter_ticks: invalid number of ticks"
+        return None
+
+    ## format the x axix
+    if axis in ['x','both']:
+        ax.set_xticks(tickVals)
+        ax.set_xticklabels(tickLabels,fontsize=fontsize,fontname=fontname)
+
+    ## format the y axis
+    if axis in ['y','both']:
+        ax.set_yticks(tickVals)
+        ax.set_yticklabels(tickLabels,fontsize=fontsize,fontname=fontname)
+        ax.yaxis.set_ticks_position('left')
