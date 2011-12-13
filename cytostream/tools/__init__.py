@@ -1,6 +1,7 @@
 from MiscFns import get_file_data,read_txt_to_file_channels,read_txt_into_array
 from MiscFns import get_sample_statistics, get_file_sample_stats, get_master_label_list, get_models_run_list
 from PlottingFns import get_all_colors, PlotDataOrganizer, rgb_to_hex, get_cmap_blues, fetch_plotting_events
+from PlottingFns import set_logicle_transformed_ticks
 from Gating import DrawGateInteractor, PolyGateInteractor
 from BasePlotters import draw_plot,create_cytokine_subplot
 from LatexLib import LatexReportCreator

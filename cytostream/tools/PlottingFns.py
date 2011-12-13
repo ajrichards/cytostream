@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.ticker import MaxNLocator
 from cytostream.tools import read_txt_to_file_channels, read_txt_into_array, get_file_data, get_file_sample_stats
+from fcm.core.transforms import _logicle as logicle
 import fcm
 
 def get_n_color_colorbar(n,cmapName='jet'):# Spectral #gist_rainbow 
@@ -163,3 +164,41 @@ class PlotDataOrganizer:
             self.plotDict[plotID][channelsID] = {}
 
         return plotID, channelsID
+
+def set_logicle_transformed_ticks(ax,axis='x'):
+    '''
+    to map an axis to a scale that immunologists are used to this function may be used as follows
+        ax = fig.add_subplot(111)
+        ax.plot_logicle_transformed_fcs_events
+        
+    '''
+
+    if axis not in ['x','y','both']:
+        print "ERROR set_logicle_transformed_ticks: invalid axis arg"
+        return None
+
+    #data = fcm.loadFCS('J6901HJ1-06_SEB_CD8.fcs')
+    #data.logicle(scale_max=262144)
+    #x = 17
+    #y = 3
+    #print data.channels
+    # ax = pylab.subplot(1,2,1)
+    # ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')
+    #ax = pylab.subplot(1,1,1)
+    #ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')
+    scale = 262144*logicle(np.array([0, 100, 10**3, 10**4, 10**5]), 262144, 4.5, None, 0.5)
+    minorscale = 262144*logicle(np.linspace(1000,10000,10), 262144, 4.5, None, 0.5)
+    labels = ['0', '$10^2$', '$10^3$', '$10^4$', '$10^5$']
+
+    if axis in ['x','both']:
+        ax.set_xticks(scale)
+        ax.set_xticks(minorscale, minor=True)
+        ax.set_xticklabels(labels)
+        
+    if axis in ['y','both']:
+        ax.set_yticks(scale)
+        ax.set_yticks(minorscale, minor=True)
+        ax.set_yticklabels(labels)
+
+    ax.set_xlim([0, 262144])
+    ax.set_ylim([0, 262144])
