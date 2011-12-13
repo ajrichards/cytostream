@@ -80,7 +80,7 @@ if dataType == 'fcs':
     if transform != None:
         pass
     if transform == 'logicle':
-        fcsData.logicle()
+        fcsData.logicle(scale_max=262144)
     if transform == 'log':
         fcsData.log(fcsData.markers)
 
