@@ -166,12 +166,7 @@ class PlotDataOrganizer:
 
 def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     '''
-    to map an axis to a scale that immunologists are used to this function may be used as follows
-        ~$ ax = fig.add_subplot(111)
-        ~$ data = fcm.loadFCS('blah.fcs')                                                                                                                                                           
-        ~$ data.logicle(scale_max=262144)   
-        ~$ ax.scatter(data[:,x],data[:,y], s=1, edgecolors='none')    
-        ~$ set_logicle_transformed_ticks(ax)
+    to map an axis to a scale that immunologists are familar with
     '''
 
     if axis not in ['x','y','both']:
@@ -180,7 +175,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     
     ## setup scales
     scale = 262144*logicle(np.array([0, 100, 10**3, 10**4, 10**5]), 262144, 4.5, None, 0.5)
-    tickPairs = [(0,9),(10,90),(100,900),(1000,9000),(10000,90000)]
+    tickPairs = [(1,9),(10,90),(100,900),(1000,9000),(10000,90000)]
     minorScale = [262144*logicle(np.linspace(ab[0],ab[1],9),262144,4.5,None,0.5) for ab in tickPairs]
     labels = ['$0$', '$10^2$', '$10^3$', '$10^4$', '$10^5$']
     minorTicks = np.array([])
@@ -194,16 +189,52 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.set_xticks(minorTicks,minor=True)
         ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
+        ax.set_xlim([0, 262144])
 
     ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(scale)
         ax.set_yticks(minorTicks, minor=True)
         ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.yaxis.set_ticks_position('left')
+        ax.set_ylim([0, 262144])
 
-    ## set axis limits
-    ax.set_xlim([0, 262144])
-    ax.set_ylim([0, 262144])
+
+def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
+    '''
+    to map an axis to a scale that immunologists are familar with
+    '''
+
+    if axis not in ['x','y','both']:
+        print "ERROR set_logicle_transformed_ticks: invalid axis arg"
+        return None
+    
+    ## setup scales
+    scale = np.log10(np.array([1e01,1e02,1e03,1e04,1e05]))
+    tickPairs = [(1,9),(10,90),(100,900),(1000,9000),(10000,90000)]
+    minorScale = [np.log10(np.linspace(ab[0],ab[1],9)) for ab in tickPairs]
+    labels = ['$10^1$', '$10^2$', '$10^3$', '$10^4$','$10^5$']
+    minorTicks = np.array([])
+
+    for mTicks in minorScale:
+       minorTicks = np.hstack([minorTicks,np.array(mTicks)])
+
+    ## format the x axix
+    if axis in ['x','both']:
+        ax.set_xticks(scale)
+        ax.set_xticks(minorTicks,minor=True)
+        ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.set_xlim([0, np.log10(262144)])
+
+    ## format the y axis
+    if axis in ['y','both']:
+        ax.set_yticks(scale)
+        ax.set_yticks(minorTicks, minor=True)
+        ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.yaxis.set_ticks_position('left')
+        ax.set_ylim([0, np.log10(262144)])
+
 
 def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     '''
@@ -224,9 +255,11 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(tickVals)
         ax.set_xticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_xlim([0, 262144])
 
     ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(tickVals)
         ax.set_yticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
+        ax.set_ylim([0, 262144])
