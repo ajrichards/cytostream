@@ -8,7 +8,9 @@ if mpl.get_backend() != 'agg':
 from matplotlib.nxutils import points_inside_poly
 from matplotlib.ticker import ScalarFormatter
 from cytostream.tools import rgb_to_hex, get_cmap_blues, get_file_sample_stats, get_all_colors
+from cytostream.tools import set_logicle_transformed_ticks, set_scatter_ticks, set_log_transformed_ticks
 from fcm.graphics import bilinear_interpolate
+
 '''
 the functions here use CytostreamPlotter.py as a parent
 
@@ -412,10 +414,9 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
-
 def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
-                            yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,useTransform=False,
-                            useColor=True):
+                            yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,
+                            useColor=True,transform=('logicle','x')):
     buff = 0.02
     if useColor == True:
         myCmap = mpl.cm.gist_heat
@@ -427,7 +428,7 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
         thresholdColor = 'k'
 
     ## load events
-    events = nga.get_events(fileName,filterID=filterID,transform=useTransform)
+    events = nga.get_events(fileName,filterID=filterID)
     dataX,dataY = (events[:,index1],events[:,index2])
 
     ## get border events
@@ -464,29 +465,12 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
     if positiveEventInds.size > 0:
         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c=scatterColor,s=1,edgecolor='none')
 
-    ## fonts axes etc 
-    bufferX = buff * (dataX.max() - dataX.min())
-    bufferY = buff * (dataY.max() - dataY.min())
-
-    if xLim == None:
-        ax.set_xlim([dataX.min()-bufferX,dataX.max()+bufferX])
+    ## axes
+    if transform[0] == 'logicle':
+        set_logicle_transformed_ticks(ax,axis=transform[1],fontsize=fontSize,fontname=fontName)
+        set_scatter_ticks(ax,'y',fontsize=fontSize,fontname=fontName)
     else:
-        ax.set_xlim(xLim)
-    if yLim == None:
-        ax.set_ylim([dataY.min()-bufferY,dataY.max()+bufferY])
-    else:
-        ax.set_ylim(yLim)
-
-    for t in ax.get_xticklabels():
-        t.set_fontsize(fontSize)
-        t.set_fontname(fontName)
-
-    for t in ax.get_yticklabels():
-        t.set_fontsize(fontSize)
-        t.set_fontname(fontName)
-
-    ax.set_yticks([])
-    ax.set_xticks([])
+        set_log_transformed_ticks(ax,axis=transform[1],fontsize=fontSize,fontname=fontName)
+        set_scatter_ticks(ax,'y',fontsize=fontSize,fontname=fontName)
+        
     ax.set_aspect(1./ax.get_data_ratio())
-
-
