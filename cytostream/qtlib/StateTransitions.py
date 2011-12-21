@@ -14,6 +14,7 @@ import os,sys,re
 import numpy as np
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names, get_project_names
+from cytostream.opengl import LogoWidget
 from cytostream.qtlib import remove_left_dock, add_left_dock
 from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
@@ -48,12 +49,19 @@ def move_to_initial(mainWindow):
     ## add image widget(s)
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     scienceImg =  os.path.join(mainWindow.controller.baseDir,"applications-science.png")
-    si = Imager(scienceImg,mainWindow.mainWidget)
-    hbl2.addWidget(si)
+    #si = Imager(scienceImg,mainWindow.mainWidget)
+    logoWidget = LogoWidget()
+    hbl2.addWidget(logoWidget)
+    #hbl2.addWidget(si)
+    #hbl2.addWidget(si,mainWindow.mainWidge)
+
 
     ## finalize layout
     mainWindow.vboxCenter.addLayout(hbl1)
     mainWindow.vboxCenter.addLayout(hbl2)
+    #mainWindow.vboxCenter.addWidget(logoWidget)
+    #mainWindow.vbl.addWidget(logoWidget)
+    #mainWindow.vbl.addLayout(hbl2)
     mainWindow.mainWidget.setLayout(mainWindow.vbl)
     mainWindow.refresh_main_widget()
 

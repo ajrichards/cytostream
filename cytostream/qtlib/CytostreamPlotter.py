@@ -125,27 +125,34 @@ class CytostreamPlotter(QtGui.QWidget):
             self.uniqueLabels = None
 
     def draw(self):
+        '''
+        args[0] = events
+        args[1] = subplotFile
+        args[2] = index1
+        args[3] = index2
+        args[4] = subsample
+        args[5] = labels
+        args[6] = subplotRun
+        args[7] = subplotHighlight
+        args[8] = self.log.log
+        args[9] = self.get_axes(subplotIndex)
+        args[10] = self.drawState.lower()
+        args[11] = self.numSubplots
+        args[12] = self.forceScale
+        args[13] = axesLabels
+        args[14] = subplotTitle
+        args[15] = showNoise
+        args[16] = False
+        
+        '''
+
         self.ax.clear()
         self.gate_clear_callback()
         showNoise = False
 
-        ## handle args                                                                                                                                                       
+        ## handle args 
         args = [None for i in range(17)]
-        #args[0] = events
-        #args[1] = subplotFile
-        #args[2] = index1
-        #args[3] = index2
-        #args[4] = subsample
-        #args[5] = labels
-        #args[6] = subplotRun
-        #args[7] = subplotHighlight
-        #args[8] = self.log.log
-        #args[9] = self.get_axes(subplotIndex)
         args[10] = self.drawState.lower()
-        #args[11] = self.numSubplots
-        #args[12] = self.forceScale
-        #args[13] = axesLabels
-        #args[14] = subplotTitle
         args[15] = showNoise
         args[16] = False
 
