@@ -60,7 +60,7 @@ class LatexReportCreator():
 
     def end(self,item):
         if item in self.fontSizeList:
-            self.fid.write("\normalsize\n")
+            self.fid.write("\\normalsize\n")
         else:
             self.fid.write("\end{%s}\n"%item)
 
