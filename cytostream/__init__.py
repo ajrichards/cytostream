@@ -19,6 +19,7 @@ from Model import Model
 from Controller import Controller
 from SaveSubplots import SaveSubplots
 from NoGuiAnalysis import NoGuiAnalysis
+import opengl
 import qtlib
 import tools
 import stats

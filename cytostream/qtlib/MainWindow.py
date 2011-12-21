@@ -41,7 +41,7 @@ from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
 from cytostream.qtlib import ThumbnailViewer, NWayViewer, CytostreamPlotter
 
-__version__ = "0.2"
+__version__ = "0.9"
 
 class MainWindow(QtGui.QMainWindow):
 
