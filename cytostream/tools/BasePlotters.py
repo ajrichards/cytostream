@@ -137,7 +137,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         for l in uniqueLabels:
             draw_centroid(l,index1,index2,labelSize)        
 
-def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,forceScale,forceSimple=False,axesOff=False):
+def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,useSimple=False,axesOff=False):
     ## handle data edge buffers     
     bufferX = buff * (events[:,index1].max() - events[:,index1].min())
     bufferY = buff * (events[:,index2].max() - events[:,index2].min())
@@ -165,22 +165,13 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
         t.set_fontsize(fontSize)
         t.set_fontname(fontName)
     
-    if forceScale != None and forceScale != False:
-        xAxLimit,yAxLimit = forceScale
-        ax.set_xlim(xAxLimit)
-        ax.set_ylim(yAxLimit)
-    
-    if forceScale == True:
-        ax.set_xlim(self.xAxLimit)
-        ax.set_ylim(self.yAxLimit)
-
     ## for an axesless vesion
     if axesOff == True:
         ax.set_yticks([])
         ax.set_xticks([])
 
     ## for a simple version
-    if forceSimple == True:
+    if useSimple == True:
         ax.set_yticks([])
         ax.set_xticks([])
         ax.set_title('')
@@ -192,30 +183,48 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,fo
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
-def draw_plot(args,parent=None,addLine=None,axesOff=False):
+def draw_plot(args,parent=None,axesOff=False):
+    ''' 
+    draw_plot takes args to create a plot 
+    can be entirely independent of classes however a parent
+    or a CytostreamPlotter instance may be provided 
+
+    args[0] = ax                       [required]  matplotlib axes
+    args[1] = events                   [required]  np.array (N,D)
+    args[2] = channel1Index            [required]  int
+    args[3] = channel2Index            [required]  int
+    args[4] = subsample                [required]  float | 'original'
+    args[5] = labels                   [optional]  np.array (N,1)
+    args[6] = subplotHighlight         [optional]  None|clusterID (str(int))
+    args[7] = logger                   [optional]  Logger instance
+    args[8] = drawState                [optional]  scatter | heat | contour
+    args[9] = numSubplots              [optional]  int 1-16
+    args[10] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
+    args[11] = plotTitle               [optional]  None | str
+    args[12] = showNoise               [optional]  True | False
+    args[13] = useSimple               [optional]  False | True
+
+    '''
 
     ## handle args
-    events=args[0]
-    selectedFileName=args[1]
-    channel1Ind=args[2]
-    channel2Ind=args[3]
-    subsample=args[4]
-    labels=args[5]
-    modelRunID=args[6]
-    highlight=args[7]
-    log=args[8]
-    ax=args[9]
-    drawState=args[10]
-    numSubplots=args[11]
-    forceScale=args[12]
-    axesLabels=args[13]
-    subplotTitle=args[14]
-    showNoise=args[15]
-    forceSimple=args[16]
+    ax           = args[0]
+    events       = args[1]
+    channel1Ind  = args[2]
+    channel2Ind  = args[3]
+    subsample    = args[4]
+    labels       = args[5]
+    highlight    = args[6]
+    log          = args[7]
+    drawState    = args[8]
+    numSubplots  = args[9]
+    axesLabels   = args[10]
+    plotTitle    = args[11]
+    showNoise    = args[12]
+    useSimple    = args[13]
 
-    ## setup log
-    if parent != None:
-        log = parent.log.log
+    ## force drawState to heat if necessary
+    if labels == None:
+        drawState = 'heat'
 
     ## other variables
     centroids = None
@@ -224,7 +233,7 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     masterColorList = get_all_colors()
 
     if parent != None and channel1Ind != None:
-        parent.selectedChannel1=channel1Ind
+        widet.selectedChannel1=channel1Ind
         parent.channel1Selector.setCurrentIndex(parent.selectedChannel1)
     if parent != None and channel2Ind != None:
         parent.selectedChannel2=channel2Ind
@@ -240,11 +249,9 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         highlight = [parent.highlight]
 
     ## clear axis
+    ax.clear()    
     if parent != None:
-        parent.ax.clear()
         parent.ax.grid(parent.grid_cb.isChecked())
-    else:
-        ax.clear()
 
     ## declare variables
     if log == None:
@@ -262,7 +269,6 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
     if parent != None:
         events = parent.events
         labels = parent.labels
-        ax = parent.ax
     
     if type(labels) == type([]):
         labels = np.array(labels)
@@ -336,12 +342,6 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
         indicesFG = np.arange(totalPts)
         indicesBG = []
 
-    ## get border events
-    #borderEventsX = np.where(events[indicesFG,channel1Ind] == 0)[0]
-    #borderEventsY = np.where(events[indicesFG,channel2Ind] == 0)[0]
-    #borderEvents = np.hstack([borderEventsX,borderEventsY])
-    #nonBorderEvents = np.array(list(set(range(events.shape[0])).difference(set(borderEvents))))
-
     ## draw the points
     if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
@@ -376,9 +376,7 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
 
     if type(colorList) == type([]):
         colorList = np.array(colorList)
-
-    ## here
-                        
+   
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
                      drawState=drawState)
@@ -400,14 +398,10 @@ def draw_plot(args,parent=None,addLine=None,axesOff=False):
             if axesLabels[1] != None:
                 ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
-        if subplotTitle != None:
+        if plotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
 
-        ## add a line if specified {subplot:(lineX,lineY)}                                                                                                                   
-        if addLine != None:
-            ax.plot(addLine[0],addLine[1],color='orange',linewidth='2.0')
-   
-        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,forceScale,forceSimple,axesOff)
+        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,useSimple,axesOff)
 
         if parent != None:
             parent.canvas.draw()

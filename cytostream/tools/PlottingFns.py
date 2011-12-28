@@ -108,7 +108,7 @@ def fetch_plotting_events(selectedFile,model,log,subsample,labels=None,modelRunI
    
     return events,labels
 
-class PlotDataOrganizer:
+class Centroids:
     ''' 
     the finding of centroids is time consuming and to get around this values are stored in a dictionary
 
