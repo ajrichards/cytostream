@@ -17,7 +17,7 @@ from matplotlib.mlab import griddata
 from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names 
 from cytostream.tools import fetch_plotting_events, get_all_colors, Centroids, draw_plot
-from cytostream.tools import DrawGateInteractor, PolyGateInteractor
+from cytostream.tools import DrawGateInteractor, PolyGateInteractor, get_fontsize, get_fontname
 from cytostream.qtlib import RadioBtnWidget
 
 class CytostreamPlotter(QtGui.QWidget):
@@ -27,12 +27,13 @@ class CytostreamPlotter(QtGui.QWidget):
 
     '''
 
-    def __init__(self,fileNameList,eventsList,fileChannels,drawState='heat',
-                 parent=None,background=True,selectedChannel1=0,selectedChannel2=1,
-                 mainWindow=None,uniqueLabels=None,enableGating=False,homeDir=None,
-                 compactMode=False,labelList=None,minNumEvents=3,showNoise=False,
-                 subsample=70000,numSubplots=1,axesLabels=None,plotTitle=None,
-                 useSimple=False):
+    def __init__(self,fileNameList,eventsList,fileChannels,channelDict,
+                 drawState='heat',parent=None,background=True,selectedChannel1=0,
+                 selectedChannel2=1,mainWindow=None,uniqueLabels=None,
+                 enableGating=False,homeDir=None,compactMode=False,labelList=None,
+                 minNumEvents=3,showNoise=False,subsample=70000,numSubplots=1,
+                 axesLabels=None,plotTitle=None,useSimple=False,dpi=100,
+                 transform='logicle'):
         '''
         constructor
 
@@ -49,6 +50,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.fileNameList = fileNameList
         self.eventsList = eventsList
         self.fileChannels = fileChannels
+        self.channelDict = channelDict
 
         ## optional variables
         self.drawState = drawState.lower()
@@ -67,6 +69,8 @@ class CytostreamPlotter(QtGui.QWidget):
         self.axesLabels = axesLabels
         self.plotTitle = plotTitle
         self.useSimple = useSimple
+        self.dpi = dpi
+        self.transform = transform
 
         ## additional class variables
         self.colors = get_all_colors()
@@ -77,14 +81,16 @@ class CytostreamPlotter(QtGui.QWidget):
         self.log = None
         self.model = None
         self.markerSize = 1
-
+        self.fontName = get_fontname()
+        self.fontSize = get_fontsize(self.numSubplots) 
+        
         ## variables to be used when class is called for drawing
         self.events = None
         self.selectedFileName = None
         self.subsample = None
         self.line = None
         self.labels = None
-        self.highlight = None
+        self.selectedHighlight = None
         self.vizList = ['heat','scatter','contour']
 
         ## subsample 
@@ -108,56 +114,63 @@ class CytostreamPlotter(QtGui.QWidget):
         ## prepare figure widget for drawing
         self.create_figure_widget()
 
-    def draw(self,selectedFile):
+    def draw(self,cbInt=None,selectedFile=None):
         '''
         args[0] = ax                       [required]  matplotlib axes
         args[1] = events                   [required]  np.array (N,D)
-        args[2] = channel1Index            [required]  int
-        args[3] = channel2Index            [required]  int
-        args[4] = subsample                [required]  float | 'original'
-        args[5] = labels                   [optional]  np.array (N,1)
-        args[6] = highlight                [optional]  None|clusterID (str(int))
-        args[7] = logger                   [optional]  Logger instance
-        args[8] = drawState                [optional]  'scatter' | 'heat' | 'contour'
-        args[9] = numSubplots             [optional]  int 1-16
-        args[10] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
-        args[11] = plotTitle               [optional]  None | str
-        args[12] = showNoise               [optional]  True | False
-        args[13] = useSimple               [optional]  False | True
+        args[2] = channelDict              [required]  {'ssc':0,'fsc':1}
+        args[3] = channel1Index            [required]  int
+        args[4] = channel2Index            [required]  int
+        args[5] = subsample                [required]  float | 'original'
+        args[6] = transform                [required]  'log' | 'logicle'
+        args[7] = labels                   [optional]  np.array (N,1)
+        args[8] = highlight                [optional]  None|clusterID (str(int))
+        args[9] = logger                   [optional]  Logger instance
+        args[10] = drawState               [optional]  'scatter' | 'heat' | 'contour'
+        args[11] = numSubplots             [optional]  int 1-16
+        args[12] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
+        args[13] = plotTitle               [optional]  None | str
+        args[14] = showNoise               [optional]  True | False
+        args[15] = useSimple               [optional]  False | True
         
         '''
 
-        ## error checkiig
-        if selectedFile not in self.fileNameList:
-            print "ERROR: CytostreamPlotter.draw() - Invalid selectedFile specified"
+        ## error checking
+        if selectedFile != None:
+            self.selectedFileName = selectedFile
+        if self.selectedFileName not in self.fileNameList:
+            print "ERROR: CytostreamPlotter.draw() - Invalid selectedFile specified", self.selectedFileName
 
         ## ensure clean axis
         self.ax.clear()
         self.gate_clear_callback()
 
         ## handle args
-        args = [None for i in range(14)]
+        args = [None for i in range(16)]
         args[0] = self.ax
-        args[1] = self.eventsList[self.fileNameList.index(selectedFile)]
-        args[2] = self.selectedChannel1
-        args[3] = self.selectedChannel2
-        args[4] = self.subsample
+        args[1] = self.eventsList[self.fileNameList.index(self.selectedFileName)]
+        args[2] = self.channelDict
+        args[3] = self.selectedChannel1
+        args[4] = self.selectedChannel2
+        args[5] = self.subsample
+        args[6] = self.transform
         if self.labelList != None:
-            args[5] = self.labelList[self.fileNameList.index(selectedFile)]
-        args[6] = self.highlight
-        args[7] = self.log
-        args[8] = self.drawState
-        args[9] = self.numSubplots
-        args[10] = self.axesLabels
-        args[11] = self.plotTitle
-        args[12] = self.showNoise
-        args[13] = self.useSimple
- 
-        draw_plot(args)
+            args[7] = self.labelList[self.fileNameList.index(self.selectedFileName)]
+        args[8] = self.selectedHighlight
+        args[9] = self.log
+        args[10] = self.drawState
+        args[11] = self.numSubplots
+        args[12] = self.axesLabels
+        args[13] = self.plotTitle
+        args[14] = self.showNoise
+        args[15] = self.useSimple
+
+        ## draw on canvas
+        draw_plot(args,parent=self)
+        self.fig.canvas.draw()
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()
-        self.dpi = 100
         self.fig = Figure(dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self.figureWidget)
@@ -263,7 +276,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
         self.title_cb = QtGui.QCheckBox("Title")
         self.title_cb.setChecked(True)
-        self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
+        self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.title_set_callback)
 
         defaultMS = 1
         self.markerSliderLabel = QtGui.QLabel(str(defaultMS))
@@ -484,7 +497,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
     def highlight_selector_callback(self,selectedInd):
         selectedTxt = str(self.highlightSelector.currentText())
-        self.highlight = selectedTxt
+        self.selectedHighlight = selectedTxt
         self.draw()
 
         if self.mainWindow != None:
@@ -568,6 +581,12 @@ class CytostreamPlotter(QtGui.QWidget):
         self.ax.add_line(self.line)
         self.canvas.draw()
 
+    def title_set_callback(self,cb):
+        if self.title_cb.isChecked() == True and self.plotTitle != None:
+            self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=True)
+        else:
+            self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=False)
+            
     def gate_clear_callback(self):
         if self.gateInteractor != None:
             self.gateInteractor.clean()
@@ -632,7 +651,6 @@ class CytostreamPlotter(QtGui.QWidget):
 
 if __name__ == '__main__':
 
-
     # how to use CytostreamPlotter with fcm
     import fcm
 
@@ -640,20 +658,23 @@ if __name__ == '__main__':
     baseDir = os.getcwd()
     selectedFile = "3FITC_4PE_004"
     filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
-    fcsData = fcm.loadFCS(filePath)
-    fileChannels = fcsData.channels
+    fcsData = fcm.loadFCS(filePath,auto_comp=False)
+    fcsData.logicle(scale_max=262144)
     events = fcsData[:,:].copy()
-    subsample = 1000
+
 
     ## declare the necessary variables
     fileNameList = [selectedFile]
     eventsList = [events]
+    fileChannels = fcsData.channels
+    channelDict = {'fsc-h':0,'ssc-h':1}
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
     cp = CytostreamPlotter(fileNameList,
                            eventsList,
                            fileChannels,
+                           channelDict,
                            drawState='heat',
                            parent=None,
                            background=True,
@@ -668,13 +689,13 @@ if __name__ == '__main__':
                            minNumEvents=3,
                            showNoise=False,
                            axesLabels=None,
-                           plotTitle=None
+                           plotTitle=None,
+                           dpi=100,
+                           subsample = 'original',
+                           transform='logicle'
                            )
 
-    #cp.init_labels_events(self.log.log['selected_file'],modelRunID,modelType=modelType)
-    cp.draw(selectedFile)
-
-    #draw_heat_scatter(sp,events,selectedFile,channel1,channel2,subsample,labels=labels,highlight=None,modelRunID=modelRunID)
+    cp.draw(selectedFile=selectedFile)
 
     ## show it
     cp.show()
