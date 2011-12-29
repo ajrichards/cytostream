@@ -1,6 +1,7 @@
 import sys,os,re
 import numpy as np
 import matplotlib as mpl
+import PyQt4.QtGui as QtGui
 
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
@@ -9,6 +10,8 @@ from matplotlib.nxutils import points_inside_poly
 from matplotlib.ticker import ScalarFormatter
 from cytostream.tools import rgb_to_hex, get_cmap_blues, get_file_sample_stats, get_all_colors
 from cytostream.tools import set_logicle_transformed_ticks, set_scatter_ticks, set_log_transformed_ticks
+from cytostream.tools import get_fontsize, get_fontname, set_logicle_transformed_ticks
+from cytostream.tools import set_scatter_ticks,set_log_transformed_ticks
 from fcm.graphics import bilinear_interpolate
 
 '''
@@ -137,33 +140,29 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         for l in uniqueLabels:
             draw_centroid(l,index1,index2,labelSize)        
 
-def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,useSimple=False,axesOff=False):
-    ## handle data edge buffers     
-    bufferX = buff * (events[:,index1].max() - events[:,index1].min())
-    bufferY = buff * (events[:,index2].max() - events[:,index2].min())
-    ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
-    ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
-
-    ## axes formatters
-    formatter = ScalarFormatter(useMathText=True) 
-    formatter.set_scientific(True)
-    formatter.set_powerlimits((-3,3))
-    ax.xaxis.set_major_formatter(formatter)
-    ax.yaxis.set_major_formatter(formatter) 
-
-    ## handle labels and title
-    channel1 = fileChannels[index1]
-    channel2 = fileChannels[index2]
-    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
-
-    for t in ax.get_xticklabels():
-        t.set_fontsize(fontSize)
-        t.set_fontname(fontName)
+def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False):
     
-    for t in ax.get_yticklabels():
-        t.set_fontsize(fontSize)
-        t.set_fontname(fontName)
+    ## handle scatter axes
+    scatterList = ['fsc','fsc-a','fsc-w','fsc-h','ssc','ssc-a','ssc-w','ssc-h']    
+    xTransformed, yTransformed = False, False
+    for key,val in channelDict.iteritems():
+        if key in scatterList and index1 == val:
+            set_scatter_ticks(ax,'x',fontsize=fontSize,fontname=fontName)
+            xTransformed = True
+        if key in scatterList and index2 == val:
+            set_scatter_ticks(ax,'y',fontsize=fontSize,fontname=fontName)
+            yTransformed = True
+
+    ## handle other channels
+    if xTransformed == False and transform == 'logicle':
+        set_logicle_transformed_ticks(ax,axis='x',fontsize=fontSize,fontname=fontName)
+    elif xTransformed == False and transform == 'log':
+        set_log_transformed_ticks(ax,axis='x',fontsize=fontSize,fontname=fontName)
+
+    if yTransformed == False and transform == 'logicle':
+        set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
+    elif yTransformed == False and transform == 'log':
+        set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
     
     ## for an axesless vesion
     if axesOff == True:
@@ -177,8 +176,6 @@ def finalize_draw(ax,events,index1,index2,fileChannels,buff,fontSize,fontName,us
         ax.set_title('')
         ax.set_ylabel('')
         ax.set_xlabel('')
-        #ax.set_xlim([0,700])
-        #ax.set_ylim([0,820])
 
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
@@ -191,49 +188,62 @@ def draw_plot(args,parent=None,axesOff=False):
 
     args[0] = ax                       [required]  matplotlib axes
     args[1] = events                   [required]  np.array (N,D)
-    args[2] = channel1Index            [required]  int
-    args[3] = channel2Index            [required]  int
-    args[4] = subsample                [required]  float | 'original'
-    args[5] = labels                   [optional]  np.array (N,1)
-    args[6] = subplotHighlight         [optional]  None|clusterID (str(int))
-    args[7] = logger                   [optional]  Logger instance
-    args[8] = drawState                [optional]  scatter | heat | contour
-    args[9] = numSubplots              [optional]  int 1-16
-    args[10] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
-    args[11] = plotTitle               [optional]  None | str
-    args[12] = showNoise               [optional]  True | False
-    args[13] = useSimple               [optional]  False | True
+    args[2] = channelDict              [required]  cytostream channel dict
+    args[3] = channel1Index            [required]  int
+    args[4] = channel2Index            [required]  int
+    args[5] = subsample                [required]  float | 'original'
+    args[6] = transform                [required]  'log' | 'logicle'
+    args[7] = labels                   [optional]  np.array (N,1)
+    args[8] = subplotHighlight         [optional]  None|clusterID (str(int))
+    args[9] = logger                   [optional]  Logger instance
+    args[10] = drawState               [optional]  scatter | heat | contour
+    args[11] = numSubplots             [optional]  int 1-16
+    args[12] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
+    args[13] = plotTitle               [optional]  None | str
+    args[14] = showNoise               [optional]  True | False
+    args[15] = useSimple               [optional]  False | True
 
     '''
 
     ## handle args
     ax           = args[0]
     events       = args[1]
-    channel1Ind  = args[2]
-    channel2Ind  = args[3]
-    subsample    = args[4]
-    labels       = args[5]
-    highlight    = args[6]
-    log          = args[7]
-    drawState    = args[8]
-    numSubplots  = args[9]
-    axesLabels   = args[10]
-    plotTitle    = args[11]
-    showNoise    = args[12]
-    useSimple    = args[13]
+    channelDict  = args[2]
+    channel1Ind  = args[3]
+    channel2Ind  = args[4]
+    subsample    = args[5]
+    transform    = args[6]
+    labels       = args[7]
+    highlight    = args[8]
+    log          = args[9]
+    drawState    = args[10]
+    numSubplots  = args[11]
+    axesLabels   = args[12]
+    plotTitle    = args[13]
+    showNoise    = args[14]
+    useSimple    = args[15]
 
     ## force drawState to heat if necessary
-    if labels == None:
+    if labels == None and drawState != 'heat':
+        msg = "Forcing draw state to heat because labels were not provided"
+        if parent != None:
+            reply = QtGui.QMessageBox.warning(parent, "Warning", msg)
+            parent.vizSelector.btns['heat'].setChecked(True)
+            parent.vizSelector.selectedItem = 'heat'
+            parent.drawState = 'heat'
+        else:
+            print "WARNING:"+msg
         drawState = 'heat'
 
     ## other variables
     centroids = None
-    buff = 0.02
     markerSize = 1
     masterColorList = get_all_colors()
+    fontName = get_fontname()
+    fontSize = get_fontsize(numSubplots)
 
     if parent != None and channel1Ind != None:
-        widet.selectedChannel1=channel1Ind
+        parent.selectedChannel1=channel1Ind
         parent.channel1Selector.setCurrentIndex(parent.selectedChannel1)
     if parent != None and channel2Ind != None:
         parent.selectedChannel2=channel2Ind
@@ -243,32 +253,15 @@ def draw_plot(args,parent=None,axesOff=False):
         numSubplots = 1
 
     ## highlight
-    if parent != None and str(parent.highlight) == "None":
-        parent.highlight = None
-    elif parent != None and str(parent.highlight) != "None":
-        highlight = [parent.highlight]
+    if parent != None and str(parent.selectedHighlight) == "None":
+        parent.selectedHighlight = None
+    elif parent != None and str(parent.selectedHighlight) != "None":
+        highlight = [parent.selectedHighlight]
 
     ## clear axis
     ax.clear()    
     if parent != None:
         parent.ax.grid(parent.grid_cb.isChecked())
-
-    ## declare variables
-    if log == None:
-        fontName = 'Arial'
-        plotType = 'png'
-        filterInFocus = None
-        fileChannels = ['blah1','blah2','blah3','blah4']
-    else:
-        fontName = log['font_name']
-        plotType = log['plot_type']
-        filterInFocus = log['filter_in_focus']
-        fileChannels = log['alternate_channel_labels']
-
-    ## specify events and labels
-    if parent != None:
-        events = parent.events
-        labels = parent.labels
     
     if type(labels) == type([]):
         labels = np.array(labels)
@@ -277,16 +270,13 @@ def draw_plot(args,parent=None,axesOff=False):
     if parent != None:
         channel1Ind = int(parent.selectedChannel1)
         channel2Ind = int(parent.selectedChannel2)
-    
-    channel1 = fileChannels[channel1Ind]
-    channel2 = fileChannels[channel2Ind]
-    
+        
     ## get centroids
-    if parent != None and str(labels) != "None":
-        plotID, channelsID = parent.pdo.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
-        centroids = parent.pdo.get_centroids(parent.events,parent.labels,plotID,channelsID)
-    elif parent == None and str(labels) != "None":
-        centroids,variances,sizes = get_file_sample_stats(events,labels)
+    #if parent != None and str(labels) != "None":
+    #    plotID, channelsID = parent.pdo.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
+    #    centroids = parent.pdo.get_centroids(parent.events,parent.labels,plotID,channelsID)
+    #elif parent == None and str(labels) != "None":
+    #    centroids,variances,sizes = get_file_sample_stats(events,labels)
 
     ## error check
     if str(labels) != "None":
@@ -294,24 +284,6 @@ def draw_plot(args,parent=None,axesOff=False):
         if n != labels.size:
             print "ERROR: ScatterPlotter.py -- labels and events do not match",n,labels.size
             return None
-
-    ## handle fontSize, labelSize
-    if numSubplots in [1]:
-        fontSize = 11
-    elif numSubplots in [2]:
-        fontSize = 10
-    elif numSubplots in [3]:
-        fontSize = 8
-    elif numSubplots in [4]:
-        fontSize = 8
-    elif numSubplots in [5,6]:
-        fontSize = 7
-    elif numSubplots in [7,8,9]:
-        fontSize = 6
-    elif numSubplots in [10,11,12]:
-        fontSize = 5
-    elif numSubplots in [13,14,15,16]:
-        fontSize = 4
 
     ## handle highlighting
     totalPts,totalDims = events.shape
@@ -385,33 +357,32 @@ def draw_plot(args,parent=None,axesOff=False):
             draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots)
         
         ## handle title and labels
-        if parent != None and parent.title_cb.isChecked() == True:
-            parent.ax.set_title("%s_%s_%s"%(channel1,channel2,parent.selectedFileName),fontname=fontName,fontsize=fontSize)
+        if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
+            parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
         
-        if parent != None and parent.axLab_cb.isChecked() == True:
-            ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-            ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+        #if parent != None and parent.axLab_cb.isChecked() == True:
+        #    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+        #    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
         if axesLabels != None:
-            if axesLabels[0] != None:
-                ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-            if axesLabels[1] != None:
-                ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+            if parent != None and parent.axLab_cb.isChecked == False:
+                pass
+            else:
+                if axesLabels[0] != None:
+                    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
+                if axesLabels[1] != None:
+                    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None:
             ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
 
-        finalize_draw(ax,events,channel1Ind,channel2Ind,fileChannels,buff,fontSize,fontName,useSimple,axesOff)
-
-        if parent != None:
-            parent.canvas.draw()
+        finalize_draw(ax,events,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff)
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
 def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
                             yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,
                             useColor=True,transform=('logicle','x')):
-    buff = 0.02
     if useColor == True:
         myCmap = mpl.cm.gist_heat
         scatterColor = 'blue'

@@ -263,3 +263,27 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
         ax.set_yticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, 262144])
+
+def get_fontsize(numSubplots):
+
+    if numSubplots in [1]:
+        fontSize = 11
+    elif numSubplots in [2]:
+        fontSize = 10
+    elif numSubplots in [3]:
+        fontSize = 8
+    elif numSubplots in [4]:
+        fontSize = 8
+    elif numSubplots in [5,6]:
+        fontSize = 7
+    elif numSubplots in [7,8,9]:
+        fontSize = 6
+    elif numSubplots in [10,11,12]:
+        fontSize = 5
+    elif numSubplots in [13,14,15,16]:
+        fontSize = 4
+
+    return fontSize
+
+def get_fontname():
+    return 'Arial'
