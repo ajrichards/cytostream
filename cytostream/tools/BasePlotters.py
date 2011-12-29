@@ -140,16 +140,49 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         for l in uniqueLabels:
             draw_centroid(l,index1,index2,labelSize)        
 
-def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False):
-    
-    ## handle scatter axes
-    scatterList = ['fsc','fsc-a','fsc-w','fsc-h','ssc','ssc-a','ssc-w','ssc-h']    
+def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False,useScaled=False):
+
+    ## variables
+    scatterList = ['fsc','fsc-a','fsc-w','fsc-h','ssc','ssc-a','ssc-w','ssc-h']
     xTransformed, yTransformed = False, False
+    buff = 0.02
+
+    ## handle data edge buffers
+    def scaled_axis(axis):
+        formatter = ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        formatter.set_powerlimits((-3,3))
+        
+        if axis == 'x':
+            bufferX = buff * (events[:,index1].max() - events[:,index1].min())
+            ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
+            ax.xaxis.set_major_formatter(formatter)
+        elif axis == 'y':
+            bufferY = buff * (events[:,index2].max() - events[:,index2].min())
+            ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])        
+            ax.yaxis.set_major_formatter(formatter)
+
+    ## check to see if we force scale the axes
+    if useScaled == True:
+        scaled_axis('x')
+        scaled_axis('y')
+        xTransformed = True
+        yTransformed = True
+
+    ## check for time scaling
+    if channelDict.has_key('time') and index1 == channelDict['time']:
+        scaled_axis('x')
+        xTransformed = True
+    if channelDict.has_key('time') and index2 == channelDict['time']:
+        scaled_axis('y')
+        yTransformed = True
+
+    ## handle scatter axes
     for key,val in channelDict.iteritems():
-        if key in scatterList and index1 == val:
+        if xTransformed == False and key in scatterList and index1 == val:
             set_scatter_ticks(ax,'x',fontsize=fontSize,fontname=fontName)
             xTransformed = True
-        if key in scatterList and index2 == val:
+        if yTransformed == False and key in scatterList and index2 == val:
             set_scatter_ticks(ax,'y',fontsize=fontSize,fontname=fontName)
             yTransformed = True
 
@@ -177,6 +210,15 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
         ax.set_ylabel('')
         ax.set_xlabel('')
 
+    ## ensure the same fontsize, type
+    for t in ax.get_yticklabels():
+        t.set_fontsize(fontSize)
+        t.set_fontname(fontName)
+
+    for t in ax.get_xticklabels():
+        t.set_fontsize(fontSize)
+        t.set_fontname(fontName)
+      
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
@@ -374,9 +416,15 @@ def draw_plot(args,parent=None,axesOff=False):
                     ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None:
-            ax.set_title(subplotTitle,fontname=fontName,fontsize=fontSize)
+            ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
-        finalize_draw(ax,events,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff)
+        ## check for forced scaling
+        if parent != None and parent.scale_cb.isChecked() == True:
+            useScaled = True
+        else:
+            useScaled = False
+
+        finalize_draw(ax,events,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
