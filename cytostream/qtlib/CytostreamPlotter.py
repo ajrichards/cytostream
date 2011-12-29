@@ -225,7 +225,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## lower controls 
         if self.enableGating == True:
-            gatingLabel = QtGui.QLabel('Gate Controls')
+            #gatingLabel = QtGui.QLabel('Gate Controls')
             self.gateSelector = QtGui.QComboBox(self)
             for gt in ["None","Draw","Polygon", "Rectangle", "Square"]:
                 self.gateSelector.addItem(gt)
@@ -261,14 +261,13 @@ class CytostreamPlotter(QtGui.QWidget):
             self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.gate_vert_selector_callback)
             self.vertSlider.setEnabled(False)
 
-        figControlsLabel = QtGui.QLabel('Figure Controls')
         self.grid_cb = QtGui.QCheckBox("Grid")
         self.grid_cb.setChecked(False)
         self.connect(self.grid_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
 
-        self.labels_cb = QtGui.QCheckBox("Label")
-        self.labels_cb.setChecked(True)
-        self.connect(self.labels_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
+        self.scale_cb = QtGui.QCheckBox("Scale")
+        self.scale_cb.setChecked(False)
+        self.connect(self.scale_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
         
         self.axLab_cb = QtGui.QCheckBox("Axes")
         self.axLab_cb.setChecked(True)
@@ -278,15 +277,15 @@ class CytostreamPlotter(QtGui.QWidget):
         self.title_cb.setChecked(True)
         self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.title_set_callback)
 
-        defaultMS = 1
-        self.markerSliderLabel = QtGui.QLabel(str(defaultMS))
-        self.markerSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        self.markerSlider.setRange(1,10)
-        self.markerSlider.setValue(defaultMS)
-        self.markerSlider.setTracking(True)
-        self.markerSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        self.connect(self.markerSlider, QtCore.SIGNAL('valueChanged(int)'), self.marker_slider_callback)
-        self.markerSlider.setEnabled(True)
+        #defaultMS = 1
+        #self.markerSliderLabel = QtGui.QLabel(str(defaultMS))
+        #self.markerSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        #self.markerSlider.setRange(1,10)
+        #self.markerSlider.setValue(defaultMS)
+        #self.markerSlider.setTracking(True)
+        #self.markerSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
+        #self.connect(self.markerSlider, QtCore.SIGNAL('valueChanged(int)'), self.marker_slider_callback)
+        #self.markerSlider.setEnabled(True)
     
         self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback,vertical=True)
         self.vizSelector.btns[self.drawState].setChecked(True)
@@ -322,13 +321,13 @@ class CytostreamPlotter(QtGui.QWidget):
         hbox4a = QtGui.QHBoxLayout()
         hbox4a.setAlignment(QtCore.Qt.AlignLeft)
         hbox5 = QtGui.QHBoxLayout()
-        hbox5.setAlignment(QtCore.Qt.AlignLeft)
+        hbox5.setAlignment(QtCore.Qt.AlignCenter)
         hbox6a = QtGui.QHBoxLayout()
         hbox6a.setAlignment(QtCore.Qt.AlignCenter)
         hbox6 = QtGui.QHBoxLayout()
         hbox6.setAlignment(QtCore.Qt.AlignCenter)
         hbox7 = QtGui.QHBoxLayout()
-        hbox7.setAlignment(QtCore.Qt.AlignLeft)
+        hbox7.setAlignment(QtCore.Qt.AlignCenter)
         hbox8 = QtGui.QHBoxLayout()
         hbox8.setAlignment(QtCore.Qt.AlignCenter)
         hbox9 = QtGui.QHBoxLayout()
@@ -385,18 +384,17 @@ class CytostreamPlotter(QtGui.QWidget):
        
         ## plot controls layout
         hbox5.addWidget(QtGui.QLabel('Plot Controls'))
-        
         plotOptionBox1 = QtGui.QVBoxLayout()
         plotOptionBox1.setAlignment(QtCore.Qt.AlignLeft)
         plotOptionBox2 = QtGui.QVBoxLayout()
         plotOptionBox2.setAlignment(QtCore.Qt.AlignLeft)
         plotOptionBox1.addWidget(self.grid_cb)
-        plotOptionBox1.addWidget(self.labels_cb)
+        plotOptionBox1.addWidget(self.scale_cb)
         plotOptionBox2.addWidget(self.axLab_cb)
         plotOptionBox2.addWidget(self.title_cb)
 
-        hbox6.addWidget(self.markerSliderLabel)
-        hbox6.addWidget(self.markerSlider)
+        #hbox6.addWidget(self.markerSliderLabel)
+        #hbox6.addWidget(self.markerSlider)
         hbox6a.addLayout(plotOptionBox1)
         hbox6a.addLayout(plotOptionBox2)
  
@@ -565,10 +563,10 @@ class CytostreamPlotter(QtGui.QWidget):
         self.currentPolyVerts = int(value)
         self.canvas.draw()
 
-    def marker_slider_callback(self, value):
-        self.markerSliderLabel.setText(str(value))
-        self.markerSize = int(value)
-        self.draw()
+    #def marker_slider_callback(self, value):
+    #    self.markerSliderLabel.setText(str(value))
+    #    self.markerSize = int(value)
+    #    self.draw()
         
     def gate_set_callback(self):
 
@@ -586,7 +584,8 @@ class CytostreamPlotter(QtGui.QWidget):
             self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=True)
         else:
             self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=False)
-            
+        self.canvas.draw()
+
     def gate_clear_callback(self):
         if self.gateInteractor != None:
             self.gateInteractor.clean()
@@ -656,18 +655,21 @@ if __name__ == '__main__':
 
     ## check that unittests were run and necessary data is present
     baseDir = os.getcwd()
-    selectedFile = "3FITC_4PE_004"
-    filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
+    #selectedFile = "3FITC_4PE_004"
+    #filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
+    #channelDict = {'fsc-h':0,'ssc-h':1}
+    selectedFile = "J6901HJ1-06_CMV_CD8"
+    filePath = os.path.join("/","home","clemmys","research","manuscripts","PositivityThresholding","scripts","data","eqapol11C",selectedFile+".fcs")
+    channelDict = {'fsc-a':0, 'fsc-h':1, 'fsc-w':2, 'ssc-a':3, 'ssc-h':4, 'ssc-w':5, 'time':6}
+
     fcsData = fcm.loadFCS(filePath,auto_comp=False)
     fcsData.logicle(scale_max=262144)
     events = fcsData[:,:].copy()
-
 
     ## declare the necessary variables
     fileNameList = [selectedFile]
     eventsList = [events]
     fileChannels = fcsData.channels
-    channelDict = {'fsc-h':0,'ssc-h':1}
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
@@ -678,7 +680,7 @@ if __name__ == '__main__':
                            drawState='heat',
                            parent=None,
                            background=True,
-                           selectedChannel1=0,
+                           selectedChannel1=6,
                            selectedChannel2=3,
                            mainWindow=None,
                            uniqueLabels=None,
@@ -689,7 +691,7 @@ if __name__ == '__main__':
                            minNumEvents=3,
                            showNoise=False,
                            axesLabels=None,
-                           plotTitle=None,
+                           plotTitle="example plot title",
                            dpi=100,
                            subsample = 'original',
                            transform='logicle'
