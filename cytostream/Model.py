@@ -331,7 +331,7 @@ class Model:
 
         ## otherwise create the pickle file
         fileList = get_fcs_file_names(self.homeDir)
-        minNumObs = np.inf
+        minNumEvents = np.inf
 
         ## error checking
         if len(fileList) == 0:
@@ -342,23 +342,23 @@ class Model:
         for fileName in fileList:
             fcsData = self.get_events(fileName,subsample='original')
             n,d = np.shape(fcsData)
+        
+            if n < minNumEvents:
+                minNumEvents = n
+        
+        ## handle subsampling 
+        if type(0) == type(subsample):
+            if subsample < minNumEvents:
+                ssSize = subsample
+            else:
+                ssSize = n
 
-            if n < minNumObs:
-                minNumObs = n
+            randEvents = np.arange(minNumEvents)
+            np.random.shuffle(randEvents)
+            randEvents = randEvents[:subsample]
+        else:
+            print "WARNING: Model.py get_sumsample_indices -- subsample must be the array or an int -- using original data"
 
-            #if subsample >= d:
-            #    subsample
-
-            ## check to see that the specified subsample is <= the number of events
-            #if subsample > minNumObs:
-            #    print "WARNING: subsample greater than minimum num events in file --- using all events", fileName
-            #    subsample = minNumObs
-           
-        ## get the random ints and save as a pickle
-        try:
-            randEvents = np.random.random_integers(0,minNumObs-1,subsample)
-        except:
-            randEvents = np.array([])
         tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
         cPickle.dump(randEvents,tmp)
         tmp.close()

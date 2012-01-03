@@ -255,6 +255,7 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(tickVals)
         ax.set_xticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
+        ax.yaxis.set_ticks_position('bottom')
         ax.set_xlim([0, 262144])
 
     ## format the y axis

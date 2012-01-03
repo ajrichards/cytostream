@@ -33,7 +33,6 @@ class ControllerTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
 
     def testCreateNewProject(self):
-        ## test creation of a project
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"models")))
@@ -61,13 +60,14 @@ class ControllerTest(unittest.TestCase):
         events = self.controller.model.get_events(fileName,subsample=subsample)
         self.assertEqual(events.shape[0], 1000)
     
+    
     def testProcessImagesQa(self):
         subsample = '1e3'
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-
+    '''
     def testRunModel(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -101,7 +101,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
+    '''
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

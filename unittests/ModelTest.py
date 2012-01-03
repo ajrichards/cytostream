@@ -1,5 +1,6 @@
 import sys,os,unittest,time,re
-from cytostream import Controller, Model
+import numpy as np
+from cytostream import Model
 
 ## test class for the Model
 class ModelTest(unittest.TestCase):
@@ -52,6 +53,10 @@ class ModelTest(unittest.TestCase):
     def testGetSubsampleIndices(self):
         fromStrInput = self.model.get_subsample_indices('1e3')
         fromIntInput = self.model.get_subsample_indices(1000)
+        print type(fromStrInput)
+
+        self.assertEqual(type(np.array([])), type(fromStrInput))
+        self.assertEqual(type(np.array([])), type(fromIntInput))
         self.assertEqual(len(fromStrInput),1000)
         self.assertEqual(len(fromIntInput),1000)
 

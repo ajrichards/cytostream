@@ -149,26 +149,26 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
 
     ## handle data edge buffers
     def scaled_axis(axis):
-        formatter = ScalarFormatter(useMathText=True)
-        formatter.set_scientific(True)
-        formatter.set_powerlimits((-3,3))
+        #formatter = ScalarFormatter(useMathText=True)
+        #formatter.set_scientific(True)
+        #formatter.set_powerlimits((-3,3))
         
         if axis == 'x':
             bufferX = buff * (events[:,index1].max() - events[:,index1].min())
             ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
-            ax.xaxis.set_major_formatter(formatter)
+            #ax.xaxis.set_major_formatter(formatter)
         elif axis == 'y':
             bufferY = buff * (events[:,index2].max() - events[:,index2].min())
             ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])        
-            ax.yaxis.set_major_formatter(formatter)
+            #ax.yaxis.set_major_formatter(formatter)
 
     ## check to see if we force scale the axes
-    if useScaled == True:
-        scaled_axis('x')
-        scaled_axis('y')
-        xTransformed = True
-        yTransformed = True
-
+    #if useScaled == True:
+    #    scaled_axis('x')
+    #    scaled_axis('y')
+    #    xTransformed = True
+    #    yTransformed = True
+    
     ## check for time scaling
     if channelDict.has_key('time') and index1 == channelDict['time']:
         scaled_axis('x')
@@ -196,7 +196,12 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
         set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
     elif yTransformed == False and transform == 'log':
         set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
-    
+ 
+    ## check to see if we force scale the axes
+    if useScaled == True:
+        scaled_axis('x')
+        scaled_axis('y')
+ 
     ## for an axesless vesion
     if axesOff == True:
         ax.set_yticks([])
@@ -230,40 +235,44 @@ def draw_plot(args,parent=None,axesOff=False):
 
     args[0] = ax                       [required]  matplotlib axes
     args[1] = events                   [required]  np.array (N,D)
-    args[2] = channelDict              [required]  cytostream channel dict
-    args[3] = channel1Index            [required]  int
-    args[4] = channel2Index            [required]  int
-    args[5] = subsample                [required]  float | 'original'
-    args[6] = transform                [required]  'log' | 'logicle'
-    args[7] = labels                   [optional]  np.array (N,1)
-    args[8] = subplotHighlight         [optional]  None|clusterID (str(int))
-    args[9] = logger                   [optional]  Logger instance
-    args[10] = drawState               [optional]  scatter | heat | contour
-    args[11] = numSubplots             [optional]  int 1-16
-    args[12] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
-    args[13] = plotTitle               [optional]  None | str
-    args[14] = showNoise               [optional]  True | False
-    args[15] = useSimple               [optional]  False | True
+    args[2] = channelList              [required]  channel listx
+    args[3] = channelDict              [required]  cytostream channel dict
+    args[4] = channel1Index            [required]  int
+    args[5] = channel2Index            [required]  int
+    args[6] = subsample                [required]  float | 'original'
+    args[7] = transform                [required]  'log' | 'logicle'
+    args[8] = labels                   [optional]  np.array (N,1)
+    args[9] = subplotHighlight         [optional]  None|clusterID (str(int))
+    args[10] = logger                   [optional]  Logger instance
+    args[11] = drawState               [optional]  scatter | heat | contour
+    args[12] = numSubplots             [optional]  int 1-16
+    args[13] = axisLabels              [optional]  True | False
+    args[14] = plotTitle               [optional]  None | str
+    args[15] = showNoise               [optional]  True | False
+    args[16] = useSimple               [optional]  False | True
+    args[17] = useScaled               [optional]  False | True
 
     '''
 
     ## handle args
     ax           = args[0]
     events       = args[1]
-    channelDict  = args[2]
-    channel1Ind  = args[3]
-    channel2Ind  = args[4]
-    subsample    = args[5]
-    transform    = args[6]
-    labels       = args[7]
-    highlight    = args[8]
-    log          = args[9]
-    drawState    = args[10]
-    numSubplots  = args[11]
-    axesLabels   = args[12]
-    plotTitle    = args[13]
-    showNoise    = args[14]
-    useSimple    = args[15]
+    channelList  = args[2]
+    channelDict  = args[3]
+    channel1Ind  = args[4]
+    channel2Ind  = args[5]
+    subsample    = args[6]
+    transform    = args[7]
+    labels       = args[8]
+    highlight    = args[9]
+    log          = args[10]
+    drawState    = args[11]
+    numSubplots  = args[12]
+    axesLabels   = args[13]
+    plotTitle    = args[14]
+    showNoise    = args[15]
+    useSimple    = args[16]
+    useScaled    = args[17]
 
     ## force drawState to heat if necessary
     if labels == None and drawState != 'heat':
@@ -276,6 +285,27 @@ def draw_plot(args,parent=None,axesOff=False):
         else:
             print "WARNING:"+msg
         drawState = 'heat'
+
+    ## handle subsampling
+    n,d = events.shape
+    if type(np.array([])) == type(subsample):
+        randEvents = subsample
+    elif type(0) == type(subsample):
+        if subsample < n:
+            ssSize = subsample
+        else:
+            ssSize = n
+
+        randEvents = np.arange(ssSize)
+        np.random.shuffle(randEvents)
+    else:
+        print "WARNING: BasePlotters.py draw_plot -- subsample must be the array or an int -- using original data"
+
+    ## ensure that subsample size is appropriate
+    if randEvents.size > n:
+        subsampleInds = randEvents[:n]
+    else:
+        subsampleInds = randEvents
 
     ## other variables
     centroids = None
@@ -322,9 +352,8 @@ def draw_plot(args,parent=None,axesOff=False):
 
     ## error check
     if str(labels) != "None":
-        n,d = events.shape
         if n != labels.size:
-            print "ERROR: ScatterPlotter.py -- labels and events do not match",n,labels.size
+            print "ERROR: draw_plot -- labels and events do not match",n,labels.size
             return None
 
     ## handle highlighting
@@ -351,9 +380,9 @@ def draw_plot(args,parent=None,axesOff=False):
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
 
         indicesFG = [int(i) for i in indicesFG]
-        indicesBG = list(set(np.arange(totalPts)).difference(set(indicesFG)))
+        indicesBG = list(set(subsampleInds).difference(set(indicesFG)))
     else:
-        indicesFG = np.arange(totalPts)
+        indicesFG = subsampleInds
         indicesBG = []
 
     ## draw the points
@@ -402,18 +431,13 @@ def draw_plot(args,parent=None,axesOff=False):
         if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
             parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
         
-        #if parent != None and parent.axLab_cb.isChecked() == True:
-        #    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-        #    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
-
-        if axesLabels != None:
-            if parent != None and parent.axLab_cb.isChecked == False:
-                pass
-            else:
-                if axesLabels[0] != None:
-                    ax.set_xlabel(channel1,fontname=fontName,fontsize=fontSize)
-                if axesLabels[1] != None:
-                    ax.set_ylabel(channel2,fontname=fontName,fontsize=fontSize)
+        if parent != None and parent.axLab_cb.isChecked == False:
+            pass
+        elif axesLabels == False:
+            pass
+        else:
+            ax.set_xlabel(channelList[channel1Ind],fontname=fontName,fontsize=fontSize)
+            ax.set_ylabel(channelList[channel2Ind],fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None:
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
@@ -421,7 +445,7 @@ def draw_plot(args,parent=None,axesOff=False):
         ## check for forced scaling
         if parent != None and parent.scale_cb.isChecked() == True:
             useScaled = True
-        else:
+        elif parent != None and parent.scale_cb.isChecked() == False:        
             useScaled = False
 
         finalize_draw(ax,events,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
