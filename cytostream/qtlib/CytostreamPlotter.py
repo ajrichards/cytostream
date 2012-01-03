@@ -27,13 +27,13 @@ class CytostreamPlotter(QtGui.QWidget):
 
     '''
 
-    def __init__(self,fileNameList,eventsList,fileChannels,channelDict,
+    def __init__(self,fileNameList,eventsList,channelList,channelDict,
                  drawState='heat',parent=None,background=True,selectedChannel1=0,
                  selectedChannel2=1,mainWindow=None,uniqueLabels=None,
                  enableGating=False,homeDir=None,compactMode=False,labelList=None,
                  minNumEvents=3,showNoise=False,subsample=70000,numSubplots=1,
-                 axesLabels=None,plotTitle=None,useSimple=False,dpi=100,
-                 transform='logicle'):
+                 axesLabels=True,plotTitle=None,useSimple=False,dpi=100,
+                 transform='logicle',useScaled=False):
         '''
         constructor
 
@@ -49,7 +49,7 @@ class CytostreamPlotter(QtGui.QWidget):
         ## required vaiables
         self.fileNameList = fileNameList
         self.eventsList = eventsList
-        self.fileChannels = fileChannels
+        self.channelList = channelList
         self.channelDict = channelDict
 
         ## optional variables
@@ -61,16 +61,17 @@ class CytostreamPlotter(QtGui.QWidget):
         self.uniqueLabels = uniqueLabels
         self.enableGating = enableGating
         self.homeDir = homeDir
+        self.axesLabels = axesLabels
         self.compactMode = compactMode
         self.labelList = labelList
         self.minNumEvents = minNumEvents
         self.showNoise = showNoise
         self.numSubplots = numSubplots
-        self.axesLabels = axesLabels
         self.plotTitle = plotTitle
         self.useSimple = useSimple
         self.dpi = dpi
         self.transform = transform
+        self.useScaled = useScaled
 
         ## additional class variables
         self.colors = get_all_colors()
@@ -83,7 +84,8 @@ class CytostreamPlotter(QtGui.QWidget):
         self.markerSize = 1
         self.fontName = get_fontname()
         self.fontSize = get_fontsize(self.numSubplots) 
-        
+        self.currentAxesLabels = None
+
         ## variables to be used when class is called for drawing
         self.events = None
         self.selectedFileName = None
@@ -118,21 +120,23 @@ class CytostreamPlotter(QtGui.QWidget):
         '''
         args[0] = ax                       [required]  matplotlib axes
         args[1] = events                   [required]  np.array (N,D)
-        args[2] = channelDict              [required]  {'ssc':0,'fsc':1}
-        args[3] = channel1Index            [required]  int
-        args[4] = channel2Index            [required]  int
-        args[5] = subsample                [required]  float | 'original'
-        args[6] = transform                [required]  'log' | 'logicle'
-        args[7] = labels                   [optional]  np.array (N,1)
-        args[8] = highlight                [optional]  None|clusterID (str(int))
-        args[9] = logger                   [optional]  Logger instance
-        args[10] = drawState               [optional]  'scatter' | 'heat' | 'contour'
-        args[11] = numSubplots             [optional]  int 1-16
-        args[12] = axesLabels              [optional]  None | (xAxisLabel,yAxisLabel)
-        args[13] = plotTitle               [optional]  None | str
-        args[14] = showNoise               [optional]  True | False
-        args[15] = useSimple               [optional]  False | True
-        
+        args[2] = channelList              [required]  ['chan1','chan2']
+        args[3] = channelDict              [required]  {'ssc':0,'fsc':1}
+        args[4] = channel1Index            [required]  int
+        args[5] = channel2Index            [required]  int
+        args[6] = subsample                [required]  float | 'original'
+        args[7] = transform                [required]  'log' | 'logicle'
+        args[8] = labels                   [optional]  np.array (N,1)
+        args[9] = highlight                [optional]  None|clusterID (str(int))
+        args[10] = logger                   [optional]  Logger instance
+        args[11] = drawState               [optional]  'scatter' | 'heat' | 'contour'
+        args[12] = numSubplots             [optional]  int 1-16
+        args[13] = axesLabels              [optional]  True | False
+        args[14] = plotTitle               [optional]  None | str
+        args[15] = showNoise               [optional]  True | False
+        args[16] = useSimple               [optional]  False | True
+        args[17] = useScaled               [optional]  False | True
+           
         '''
 
         ## error checking
@@ -146,24 +150,29 @@ class CytostreamPlotter(QtGui.QWidget):
         self.gate_clear_callback()
 
         ## handle args
-        args = [None for i in range(16)]
+        args = [None for i in range(18)]
         args[0] = self.ax
         args[1] = self.eventsList[self.fileNameList.index(self.selectedFileName)]
-        args[2] = self.channelDict
-        args[3] = self.selectedChannel1
-        args[4] = self.selectedChannel2
-        args[5] = self.subsample
-        args[6] = self.transform
+        args[2] = self.channelList
+        args[3] = self.channelDict
+        args[4] = self.selectedChannel1
+        args[5] = self.selectedChannel2
+        args[6] = self.subsample
+        args[7] = self.transform
         if self.labelList != None:
-            args[7] = self.labelList[self.fileNameList.index(self.selectedFileName)]
-        args[8] = self.selectedHighlight
-        args[9] = self.log
-        args[10] = self.drawState
-        args[11] = self.numSubplots
-        args[12] = self.axesLabels
-        args[13] = self.plotTitle
-        args[14] = self.showNoise
-        args[15] = self.useSimple
+            args[8] = self.labelList[self.fileNameList.index(self.selectedFileName)]
+        args[9] = self.selectedHighlight
+        args[10] = self.log
+        args[11] = self.drawState
+        args[12] = self.numSubplots
+        args[13] = self.axesLabels
+        if self.plotTitle == 'default':
+            args[14] = self.selectedFileName
+        else:
+            args[14] = self.plotTitle
+        args[15] = self.showNoise
+        args[16] = self.useSimple
+        args[17] = self.useScaled
 
         ## draw on canvas
         draw_plot(args,parent=self)
@@ -180,7 +189,7 @@ class CytostreamPlotter(QtGui.QWidget):
         maxWidth = 100
         channelsLabel = QtGui.QLabel('Channels')
         self.channel1Selector = QtGui.QComboBox(self)
-        for channel in self.fileChannels:
+        for channel in self.channelList:
             self.channel1Selector.addItem(channel)
         self.channel1Selector.setMaximumWidth(maxWidth)
         self.channel1Selector.setMinimumWidth(maxWidth)
@@ -188,7 +197,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.connect(self.channel1Selector, QtCore.SIGNAL('activated(int)'),self.channel1_selector_callback)
 
         self.channel2Selector = QtGui.QComboBox(self)
-        for channel in self.fileChannels:
+        for channel in self.channelList:
             self.channel2Selector.addItem(channel)
             
         self.channel2Selector.setMaximumWidth(maxWidth)
@@ -271,7 +280,7 @@ class CytostreamPlotter(QtGui.QWidget):
         
         self.axLab_cb = QtGui.QCheckBox("Axes")
         self.axLab_cb.setChecked(True)
-        self.connect(self.axLab_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
+        self.connect(self.axLab_cb,QtCore.SIGNAL('stateChanged(int)'), self.axes_labels_set_callback)
 
         self.title_cb = QtGui.QCheckBox("Title")
         self.title_cb.setChecked(True)
@@ -313,7 +322,7 @@ class CytostreamPlotter(QtGui.QWidget):
         hbox4 = QtGui.QHBoxLayout()
         hbox4.setAlignment(QtCore.Qt.AlignCenter)
         hbox1a = QtGui.QHBoxLayout()
-        hbox1a.setAlignment(QtCore.Qt.AlignLeft)
+        hbox1a.setAlignment(QtCore.Qt.AlignCenter)
         hbox2a = QtGui.QHBoxLayout()
         hbox2a.setAlignment(QtCore.Qt.AlignLeft)
         hbox3a = QtGui.QHBoxLayout()
@@ -569,7 +578,6 @@ class CytostreamPlotter(QtGui.QWidget):
     #    self.draw()
         
     def gate_set_callback(self):
-
         self.gate_clear_callback()
         gate =  self.gateInteractor.gate
 
@@ -584,6 +592,16 @@ class CytostreamPlotter(QtGui.QWidget):
             self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=True)
         else:
             self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=False)
+        self.canvas.draw()
+
+    def axes_labels_set_callback(self,cb):
+        if self.axLab_cb.isChecked() == True:
+            self.ax.set_xlabel(self.channelList[self.selectedChannel1],fontname=self.fontName,fontsize=self.fontSize,visible=True)
+            self.ax.set_ylabel(self.channelList[self.selectedChannel2],fontname=self.fontName,fontsize=self.fontSize,visible=True)
+        else:
+            self.ax.set_xlabel(self.channelList[self.selectedChannel1],fontname=self.fontName,fontsize=self.fontSize,visible=False)
+            self.ax.set_ylabel(self.channelList[self.selectedChannel2],fontname=self.fontName,fontsize=self.fontSize,visible=False)
+
         self.canvas.draw()
 
     def gate_clear_callback(self):
@@ -669,18 +687,18 @@ if __name__ == '__main__':
     ## declare the necessary variables
     fileNameList = [selectedFile]
     eventsList = [events]
-    fileChannels = fcsData.channels
+    channelList = fcsData.channels
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
     cp = CytostreamPlotter(fileNameList,
                            eventsList,
-                           fileChannels,
+                           channelList,
                            channelDict,
                            drawState='heat',
                            parent=None,
                            background=True,
-                           selectedChannel1=6,
+                           selectedChannel1=0,
                            selectedChannel2=3,
                            mainWindow=None,
                            uniqueLabels=None,
@@ -690,8 +708,9 @@ if __name__ == '__main__':
                            labelList=None,
                            minNumEvents=3,
                            showNoise=False,
-                           axesLabels=None,
-                           plotTitle="example plot title",
+                           axesLabels=True,
+                           useScaled=False,
+                           plotTitle="default",
                            dpi=100,
                            subsample = 'original',
                            transform='logicle'
