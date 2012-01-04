@@ -8,14 +8,13 @@ import matplotlib as mpl
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
-from cytostream import Controller, get_fcs_file_names
-from cytostream.tools import get_models_run_list
+from cytostream import Controller, get_fcs_file_names,get_models_run_list
 import numpy as np
 BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
+    def __init__(self,homeDir,channelsDict,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationDict=None):
         """
           class constructor 
@@ -41,6 +40,7 @@ class NoGuiAnalysis():
         self.verbose = verbose
         self.inputChannels = inputChannels
         self.compensationDict = compensationDict
+        self.channelsDict = channelsDict
 
         ## initialize
         if loadExisting == False:
@@ -78,7 +78,7 @@ class NoGuiAnalysis():
         """
 
         self.controller = Controller(configDict=self.configDict,debug=self.verbose)
-        self.controller.create_new_project(self.homeDir,record=self.record)
+        self.controller.create_new_project(self.homeDir,self.channelsDict,record=self.record)
     def initialize_existing(self):
         '''
         initialize existing project
@@ -86,7 +86,7 @@ class NoGuiAnalysis():
         print 'initializing existing'
         self.controller = Controller(debug=self.verbose)
         self.controller.initialize_project(self.homeDir,loadExisting=True)
-  
+
     def load_files(self):
         """
         loads the list of files supplied as input into the project

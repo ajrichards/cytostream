@@ -176,23 +176,7 @@ def get_file_sample_stats(events,labels):
         clusterInds = np.where(labels==cluster)[0]
         centroids[str(int(cluster))] = events[clusterInds,:].mean(axis=0)
         variances[str(int(cluster))] = events[clusterInds,:].var(axis=0)
+            
         n[str(int(cluster))] = len(np.where(labels==cluster)[0])
 
     return centroids,variances,n 
-
-def get_models_run_list(log):
-    """
-    returns a list of the models run for a given project
-
-    """
-    
-    maxModelRun = int(log['models_run_count'])
-    
-    if maxModelRun == 0:
-        #print "WARNING: tools.get_models_run_list has no models run"
-        return []
-
-    modelsRunList = ['run'+str(i+1) for i in range(maxModelRun)]
-   
-    return modelsRunList
-

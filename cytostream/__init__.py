@@ -12,7 +12,7 @@ adam.richards@stat.duke.edu
 import sys,os,re
 
 ## general classes
-from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from FileControls import get_fcs_file_names,get_img_file_names,get_models_run_list,get_project_names
 from ConfigDictDefault import configDictDefault
 from Logging import Logger
 from Model import Model

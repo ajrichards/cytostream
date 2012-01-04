@@ -60,7 +60,6 @@ class ControllerTest(unittest.TestCase):
         events = self.controller.model.get_events(fileName,subsample=subsample)
         self.assertEqual(events.shape[0], 1000)
     
-    
     def testProcessImagesQa(self):
         subsample = '1e3'
         self.controller.log.log['subsample_qa'] = subsample

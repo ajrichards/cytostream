@@ -23,7 +23,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from scipy.stats import gaussian_kde
 from cytostream import get_fcs_file_names, Logger, Model
-from cytostream.tools import fetch_plotting_events, get_all_colors
+from cytostream.tools import get_all_colors
 from matplotlib.widgets import CheckButtons
 
 class OneDimViewer(QtGui.QWidget):
