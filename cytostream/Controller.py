@@ -18,8 +18,8 @@ if mpl.get_backend() != 'agg':
 
 from PyQt4 import QtGui
 from Model import Model
-from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
-from FileControls import add_project_to_log
+from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
+from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
 from SaveSubplots import SaveSubplots
 
@@ -56,6 +56,10 @@ class Controller:
         self.baseDir = self.model.baseDir
         self.currentPlotView = None
         self.compensationDict = None
+        self.eventsList = None
+        self.fileNameList = None
+        self.channelDict = None
+        self.subsampleDict = {}
 
         if self.debug == True:
             print 'DEBUG ON'
@@ -75,7 +79,60 @@ class Controller:
         self.homeDir = homeDir
         self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
+        self.fileNameList = get_fcs_file_names(self.homeDir)
+        self.eventsList = [self.model.get_events(fn,subsample='original') for fn in self.fileNameList]
+        self.labelsList = {}
 
+    def labels_load(self,modelRunID,modelType='components'):
+        '''
+        load the labels from a given model run
+        
+        '''
+
+        modelsRunList = get_models_run_list(self.log.log)
+        if modelRunID not in modelsRunList:
+            print "DEBUGG: no model present"
+            return None
+        else:
+            if self.labelsList.has_key(modelRunID) == True:
+                return None
+            
+            _labelsList = []
+            for fileName in self.fileNameList:
+                fModel, fClasses = self.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
+                #fModel, fClasses = self.get_model_results(fileName,modelRunID,modelType)
+                _labelsList.append(fClasses)
+            self.labelsList[modelRunID] = _labelsList
+                
+    def get_events(self,selectedFileName,subsample='original'):
+        if selectedFileName not in self.fileNameList:
+            print "ERROR: Controller.get_events - Invalid selectedFile specified", selectedFileName
+            return None
+            
+        events =  self.eventsList[self.fileNameList.index(selectedFileName)]
+
+        if subsample == 'original':
+            return events
+        else:
+            self.handle_subsampling(subsample)
+            key = str(int(float(subsample)))
+            return events[self.subsampleDict[key],:]
+    
+    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original'):
+        modelsRunList = get_models_run_list(self.log.log)
+
+        if selectedFileName not in self.fileNameList:
+            print "ERROR: Controller.get_labels - Invalid selectedFile specified", selectedFileName
+            return None
+
+        self.labels_load(modelRunID,modelType=modelType)
+        labels = self.labelsList[modelRunID][self.fileNameList.index(selectedFileName)]
+
+        if subsample == 'original':
+            return labels
+        else:
+            return labels[self.subsampleDict[key],:]
+        
     def process_images(self,mode,modelRunID=None,progressBar=None,view=None):
 
         ## error check
@@ -88,7 +145,6 @@ class Controller:
             return None
 
         ## declare variables
-        fileList = get_fcs_file_names(self.homeDir)
         numImagesToCreate = 0
 
         ## ensure alternate_labels have been selected
@@ -111,10 +167,11 @@ class Controller:
             self.handle_subsampling(maxViewSubsample)
         
         ## specify which images to create NOTE: assumption that all channel indices are always the same 
+        ## this function is still under development and turned OFF by default
         comparisons = self.log.log['thumbnails_to_view']
         
         if comparisons == None:
-            fileChannels = self.model.get_file_channel_list(fileList[0])
+            fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
             channelIndices = range(len(fileChannels))
             comparisons = []
             for i in channelIndices:
@@ -125,7 +182,7 @@ class Controller:
             self.log.log['thumbnails_to_view'] = comparisons
 
         ## get num images to create
-        for fileName in fileList:
+        for fileName in self.fileNameList:
             fileChannels = self.model.get_file_channel_list(fileName)
             n = float(len(fileChannels) - len(excludedChannels))
             numImagesToCreate += (n * (n - 1.0)) / 2.0
@@ -133,8 +190,8 @@ class Controller:
         percentDone = 0
         imageCount = 0
         
-        for fileInd in range(len(fileList)):
-            fileName = fileList[fileInd]
+        for fileInd in range(len(self.fileNameList)):
+            fileName = self.fileNameList[fileInd]
          
             ## check to see that file is not in excluded files
             if fileName in excludedFiles:
@@ -267,40 +324,17 @@ class Controller:
             pass
         elif subsample != 'original':
             subsample = int(float(subsample))
-            self.subsampleIndices = self.model.get_subsample_indices(subsample)
 
-            if type(self.subsampleIndices) == type(np.array([])):
-                pass
-            else:
-                print "WARNING: No subsample indices were returned to controller"
-                return False
-
-            # save pickle files of subsampled events
-            fileList = get_fcs_file_names(self.homeDir)
-            for fileName in fileList:
-                events = self.model.get_events(fileName,subsample='original')
-                n,d = events.shape
-
-                if len(self.subsampleIndices) >= n:
-                    data = events
+            key = str(int(float(subsample)))
+            if self.subsampleDict.has_key(key) == False:
+                subsampleIndices = self.model.get_subsample_indices(subsample)
+                if type(subsampleIndices) == type(np.array([])):
+                    pass
                 else:
-                    try:
-                        data = events[self.subsampleIndices,:]
-                    except:
-                        data = events
+                    print "WARNING: No subsample indices were returned to controller"
+                    return False
 
-                newDataFileName = fileName + "_data_%s.pickle"%subsample
-
-                if os.path.exists(os.path.join(newDataFileName)) == True:
-                    return True
-                else:
-                    tmp = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-                    cPickle.dump(data,tmp)
-                    tmp.close()
-
-                    if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-                        print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-
+                self.subsampleDict[key] = subsampleIndices
             return True
         else:
             return True
@@ -315,6 +349,7 @@ class Controller:
 
         ## initialize project
         self.initialize_project(homeDir)
+
 
         ## remove previous
         if os.path.exists(self.homeDir) == True:
@@ -527,9 +562,8 @@ class Controller:
         modelMode = self.log.log['model_mode']
         modelReference = self.log.log['model_reference']
         subsample = self.log.log['subsample_analysis']
-        fileList = get_fcs_file_names(self.homeDir)
         percentDone = 0
-        totalIters = float(len(fileList)) * numItersMCMC
+        totalIters = float(len(self.fileNameList)) * numItersMCMC
         percentagesReported = []
         self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
         self.save()
@@ -543,11 +577,13 @@ class Controller:
             return
 
         ## set the data in focus
-        if fileInFocus != 'all' and fileInFocus not in fileList:
+        if fileInFocus != 'all' and fileInFocus not in self.fileNameList:
             print "ERROR: Controller.run_selected_model -- fileInFocus cannot be found"
-        elif fileInFocus != 'all' and fileInFocus in fileList:
+        elif fileInFocus != 'all' and fileInFocus in self.fileNameList:
             fileList = [fileInFocus]
-            
+        else:
+            fileList = self.fileNameList
+
         ## if model mode is 'onefit' ensure the reference file comes first
         if modelMode == 'onefit':
             if fileList.__contains__(modelReference) == False:

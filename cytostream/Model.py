@@ -35,7 +35,7 @@ except:
 
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
-from FileControls import get_fcs_file_names,get_img_file_names,get_models_run,get_project_names
+from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from matplotlib import rc
 import matplotlib.cm as cm
 from PyQt4 import QtCore, QtGui

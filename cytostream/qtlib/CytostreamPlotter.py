@@ -16,7 +16,7 @@ from matplotlib.mlab import griddata
 
 from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names 
-from cytostream.tools import fetch_plotting_events, get_all_colors, Centroids, draw_plot
+from cytostream.tools import get_all_colors, Centroids, draw_plot
 from cytostream.tools import DrawGateInteractor, PolyGateInteractor, get_fontsize, get_fontname
 from cytostream.qtlib import RadioBtnWidget
 
@@ -112,6 +112,10 @@ class CytostreamPlotter(QtGui.QWidget):
             print "INPUT ERROR: CytostreamPlotter - fileNameList and eventsList size mismatch"
         if self.drawState not in self.vizList:
             print "INPUT ERROR: CytostreamPlotter - drawState not valid",self.drawState
+
+        ## save an instance of the centroids to speed up plotting
+        if self.labelList != None:
+            self.centroids = Centroids()
 
         ## prepare figure widget for drawing
         self.create_figure_widget()

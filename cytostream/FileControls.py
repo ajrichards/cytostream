@@ -70,35 +70,6 @@ def get_img_file_names(homeDir):
             
     return fileList
 
-def get_models_run(homeDir, possibleModels):
-    '''
-    returns the models run
-    
-    '''
-    modelList = []
-    for fileName in os.listdir(os.path.join(homeDir,"models")):
-        # ignore classifications
-        if re.search("classify|\.log",fileName):
-            continue
-        
-        modelFound = None
-        for possibleModelUsed in possibleModels:
-            if modelFound != None:
-                continue
-
-            if re.search(possibleModelUsed,fileName):
-                modelList.append(re.sub("\_components\.pickle|\_modes\.pickle","",possibleModelUsed))
-        
-    modelList = list(set(modelList))
-
-    print "WARNING: FileControls -- get_models_run deprec. use tools.get_model_run_list"
-
-
-    #if re.search("\.pickle",fileName):
-    #    modelList.append(fileName)
-
-    return modelList
-
 def get_project_names(baseDir):    
     '''
     returns all the projects on local computer
@@ -118,3 +89,17 @@ def get_project_names(baseDir):
             if dirName != 'utest':
                 projectNamesList.append(dirName)
     return projectNamesList
+
+def get_models_run_list(log):
+    """
+    returns a list of the models run for a given project 
+    """
+
+    maxModelRun = int(log['models_run_count'])
+
+    if maxModelRun == 0:
+        return []
+
+    modelsRunList = ['run'+str(i+1) for i in range(maxModelRun)]
+
+    return modelsRunList

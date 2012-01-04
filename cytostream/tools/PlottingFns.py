@@ -1,8 +1,5 @@
 #!/usr/bin/python
 #
-# to run an example
-# python RunMakeFigures.py -p Demo -i 0 -j 1 -f 3FITC_4PE_004.fcs -h ./projects/Demo
-#
 
 import getopt,sys,os,re,csv
 import numpy as np
@@ -70,43 +67,43 @@ def get_all_colors():
     return np.array(colors * 3)
 
 
-def fetch_plotting_events(selectedFile,model,log,subsample,labels=None,modelRunID=None):
-    
-    ## declare variables
-    fontName = log.log['font_name']
-    markerSize = int(log.log['scatter_marker_size'])
-    fontSize = log.log['font_size']
-    plotType = log.log['plot_type']
-    modelType = log.log['results_mode']
-
-    if modelRunID != None:
-        modelLog = model.load_model_results_log(selectedFile,modelRunID)
-        filterUsed = modelLog['filter used']
-    else:
-        filterUsed = None
-
-    if not re.search('filter', str(filterUsed)):
-        filterUsed = None
-
-    ## get events
-    if subsample != 'original':
-        subsample = str(int(float(subsample)))
-
-    ## ensure the proper events are being loaded
-    events = model.get_events(selectedFile,subsample=subsample,filterID=filterUsed)
-
-    if log == None:
-        maxScatterSize =  7e04
-    else:
-        maxScatterSize = float(log.log['setting_max_scatter_display'])
-
-    if events.shape[0] > subsample:
-        subsampleIndices = model.get_subsample_indices(maxScatterSize)
-        events = events[subsampleIndices,:]
-        if labels != None:
-            labels = labels[subsampleIndices,:]
-   
-    return events,labels
+#def fetch_plotting_events(selectedFile,model,log,subsample,labels=None,modelRunID=None):
+#    
+#    ## declare variables
+#    fontName = log.log['font_name']
+#    markerSize = int(log.log['scatter_marker_size'])
+#    fontSize = log.log['font_size']
+#    plotType = log.log['plot_type']
+#    modelType = log.log['results_mode']
+#
+#    if modelRunID != None:
+#        modelLog = model.load_model_results_log(selectedFile,modelRunID)
+#        filterUsed = modelLog['filter used']
+#    else:
+#        filterUsed = None
+#
+#    if not re.search('filter', str(filterUsed)):
+#        filterUsed = None
+#
+#    ## get events
+#    if subsample != 'original':
+#        subsample = str(int(float(subsample)))
+#
+#    ## ensure the proper events are being loaded
+#    events = model.get_events(selectedFile,subsample=subsample,filterID=filterUsed)
+#
+#    if log == None:
+#        maxScatterSize =  7e04
+#    else:
+#        maxScatterSize = float(log.log['setting_max_scatter_display'])
+#
+#    if events.shape[0] > subsample:
+#        subsampleIndices = model.get_subsample_indices(maxScatterSize)
+#        events = events[subsampleIndices,:]
+#        if labels != None:
+#            labels = labels[subsampleIndices,:]
+#   
+#    return events,labels
 
 class Centroids:
     ''' 
@@ -255,7 +252,7 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(tickVals)
         ax.set_xticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
-        ax.yaxis.set_ticks_position('bottom')
+        ax.xaxis.set_ticks_position('bottom')
         ax.set_xlim([0, 262144])
 
     ## format the y axis

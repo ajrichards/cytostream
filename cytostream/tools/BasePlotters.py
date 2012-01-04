@@ -345,16 +345,16 @@ def draw_plot(args,parent=None,axesOff=False):
         
     ## get centroids
     #if parent != None and str(labels) != "None":
-    #    plotID, channelsID = parent.pdo.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
-    #    centroids = parent.pdo.get_centroids(parent.events,parent.labels,plotID,channelsID)
-    #elif parent == None and str(labels) != "None":
-    #    centroids,variances,sizes = get_file_sample_stats(events,labels)
-
+    #    plotID, channelsID = parent.centroid.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
+    #    centroids = parent.centroid.get_centroids(parent.events,parent.labels,plotID,channelsID)
+    if parent == None and str(labels) != "None":
+        centroids,variances,sizes = get_file_sample_stats(events,labels)
+        
     ## error check
-    if str(labels) != "None":
-        if n != labels.size:
-            print "ERROR: draw_plot -- labels and events do not match",n,labels.size
-            return None
+    #if str(labels) != "None":
+    #    if n != labels.size:
+    #        print "ERROR: draw_plot -- labels and events do not match",n,labels.size
+    #        return None
 
     ## handle highlighting
     totalPts,totalDims = events.shape
