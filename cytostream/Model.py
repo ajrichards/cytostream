@@ -224,19 +224,32 @@ class Model:
         if not re.search('filter', str(filterID)):
             filterUsed = None
 
-        if str(filterID) == "None":
-            dataFileName = fileName + "_data_" + subsample + ".pickle"
+        ## open the original file name
+        originalFileName = fileName + "_data_original.pickle"
+        tmp = open(os.path.join(self.homeDir,'data',originalFileName),'rb')
+        originalEvents = cPickle.load(tmp)
+        tmp.close()
+
+        if filterID == 'original':
+            subsetIndsFileName == None
+        elif str(filterID) == "None":
+            subsetIndsFileName = fileName + "_data_" + subsample + ".pickle"
         else:
-            dataFileName = fileName + "_data_%s.pickle"%filterID
+            subsetIndsFileName = fileName + "_data_%s.pickle"%filterID
+
+        ## handle the subset stuff -- I am here
+        ici
+
+        #if str(filterID) == "None":
+        #    dataFileName = fileName + "_data_" + subsample + ".pickle"
+        #else:
+        #    dataFileName = fileName + "_data_%s.pickle"%filterID
 
         if os.path.isfile(os.path.join(self.homeDir,'data',dataFileName)) == False:
             print "INPUT ERROR: bad file name specified in model.get_events"
             print "\t", os.path.join(self.homeDir,'data',dataFileName)
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',dataFileName),'rb')
-        events = cPickle.load(tmp)
-        tmp.close()
         return events
         
     def get_master_channel_list(self):

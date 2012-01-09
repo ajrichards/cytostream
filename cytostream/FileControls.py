@@ -33,7 +33,10 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
     
     '''
 
-    if homeDir == None:
+    if os.path.exists(homeDir) == False:
+        return []
+
+    if os.path.exists(os.path.join(homeDir,"data")) == False:
         return []
 
     if type(excludedFiles) != type([]):

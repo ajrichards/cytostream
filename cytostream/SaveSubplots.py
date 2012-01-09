@@ -144,13 +144,6 @@ class SaveSubplots():
         if len(plotsToViewChannels) < self.numSubplots:
             print "ERROR: SaveSubplots -- failed error check 3 make_scatter_plots"
 
-        ## get subsample
-        #if self.figMode == 'qa':
-        #    self.subsample = self.log.log['subsample_qa'] 
-        #    labels = None
-        #else:
-        #    self.subsample = self.log.log['subsample_analysis']
-
         ## loop through all subplots
         for subplotIndex in range(self.numSubplots):
             subplotFile = self.fileNameList[int(plotsToViewFiles[int(subplotIndex)])]
@@ -321,7 +314,7 @@ if __name__ == '__main__':
     if os.path.exists(run1File) == False:
         print "utest model run was not found.....running"
         filePathList = [os.path.join(".","example_data","3FITC_4PE_004.fcs")]
-        nga = NoGuiAnalysis(homeDir,channelDict,filePathList,channelDict,useSubsample=True,makeQaFigs=False,record=False,verbose=False)
+        nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False,verbose=False)
         nga.run_model()
     else:
         nga = NoGuiAnalysis(os.path.join(homeDir),channelDict,loadExisting=True)
