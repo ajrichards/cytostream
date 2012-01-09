@@ -41,8 +41,6 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
         ms = markerSize
 
     ## plot the foreground events
-    print 'indsfg', indicesFG.shape
-
     if len(indicesFG) > 0:
         if drawState == 'heat':
             dataX,dataY = (events[indicesFG,index1],events[indicesFG,index2])
@@ -85,22 +83,9 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         if centroids.has_key(str(int(l))) == False:
             return
 
-        ## if the label list < events find matching subsample and use
-        #if len(labels) != events.shape[0]:
-            #print "WARNING: BasePlotters.py -- problem drawing cluster centroids"
-
-
-        #clusterInds = np.where(labels==l)[0]
-        #xPos = events[clusterInds,index1].mean()
-        #yPos = events[clusterInds,index2].mean()
-        #################
-
         xPos = centroids[str(int(l))][index1]
         yPos = centroids[str(int(l))][index2]
 
-        #if xPos < 0 or yPos <0:
-        #    continue
-         
         ax.text(xPos, yPos, '%s%s'%(prefix,l),color='#FFFF00',fontsize=labelSize,
                 ha="center", va="center",
                 bbox = dict(boxstyle="round",facecolor=labelColor,alpha=alphaVal)
@@ -296,10 +281,12 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         randEvents = np.arange(ssSize)
         np.random.shuffle(randEvents)
     else:
-        print "WARNING: BasePlotters.py draw_plot -- subsample must be the array or an int -- using original data"
+        print "WARNING: BasePlotters.py draw_plot -- subsample must be the array or an int -- using original data", type(subsample), subsample
 
     ## ensure that subsample size is appropriate
-    if randEvents.size > n:
+    if subsample == 'original':
+        subsampleInds = np.arange(events.shape[0])
+    elif randEvents.size > n:
         subsampleInds = randEvents[:n]
     else:
         subsampleInds = randEvents
@@ -347,23 +334,23 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         centroids,variances,sizes = get_file_sample_stats(events,labels)
 
     # determine of the events those to plot
-    print 'labels',len(labels),'events',events.shape, type(subsample)
     eventsToPlot = events[subsampleInds,:]
-        
+
+
     if str(labels) != "None" and eventsToPlot.shape[0] != len(labels):
         print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
 
     ## error check
-    #if str(labels) != "None":
-    #    if n != labels.size:
-    #        print "ERROR: draw_plot -- labels and events do not match",n,labels.size
-    #        return None
+    if str(labels) != "None":
+        if eventsToPlot.shape[0] != labels.size:
+            print "ERROR: draw_plot -- labels and events do not match",n,labels.size
+            return None
 
     ## handle highlighting
     totalPts,totalDims = eventsToPlot.shape
 
     if str(highlight) != "None" and str(labels) == "None":
-        print "ERROR in BasePlotters highlight must have labels too"
+        print "ERROR in BasePlotters highlight cannot be specified without labels"
 
     if str(highlight) != "None" and type(highlight) != type([]):
         print "ERROR: in BasePlotters highlight call must be of type list"
@@ -385,7 +372,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         indicesFG = [int(i) for i in indicesFG]
         indicesBG = list(set(np.array(eventsToPlot.shape[0])).difference(set(indicesFG)))
     else:
-        indicesFG = eventsToPlot[:,:]#subsampleInds
+        indicesFG = subsampleInds#np.array(eventsToPlot.shape[0])#[:,:]#subsampleInds
         indicesBG = []
 
     ## draw the points

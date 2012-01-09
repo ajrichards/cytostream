@@ -26,5 +26,5 @@ for o, a in optlist:
     if o == '-m':
         mode = a
 
-ss = SaveSubplots(homeDir,figName,1,figMode=mode,forceScale=False,
-                  forceSimple=True,drawState='heat',figSize=(2,2))
+ss = SaveSubplots(homeDir,figName,1,figMode=mode,figTitle='Example title',useScale=False,drawState='heat',
+                  useSimple=True,figSize=(2,2))

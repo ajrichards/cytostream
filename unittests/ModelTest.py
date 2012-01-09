@@ -53,7 +53,6 @@ class ModelTest(unittest.TestCase):
     def testGetSubsampleIndices(self):
         fromStrInput = self.model.get_subsample_indices('1e3')
         fromIntInput = self.model.get_subsample_indices(1000)
-        print type(fromStrInput)
 
         self.assertEqual(type(np.array([])), type(fromStrInput))
         self.assertEqual(type(np.array([])), type(fromIntInput))
