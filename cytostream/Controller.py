@@ -345,17 +345,22 @@ class Controller:
     #
     ##################################################################################################
            
-    def create_new_project(self,homeDir,record=True):
+    def create_new_project(self,homeDir,channelDict=None,record=True):
 
         ## initialize project
         self.initialize_project(homeDir)
+        self.channelDict = channelDict
 
+        print '..........homedir', homeDir
 
         ## remove previous
         if os.path.exists(self.homeDir) == True:
             if self.verbose == True:
                 print 'INFO: overwriting project of same name...', self.homeDir
             self.remove_project(self.homeDir)
+
+        print '..........creating project'
+
 
         if self.homeDir != None:
             os.mkdir(self.homeDir)
@@ -364,7 +369,10 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"models"))
             os.mkdir(os.path.join(self.homeDir,"results"))
             os.mkdir(os.path.join(self.homeDir,"documents"))
-            
+
+        ## class wide variables
+        self.fileNameList = get_fcs_file_names(self.homeDir)
+
         ## record project creation in log
         if record == True:
             add_project_to_log(self.baseDir,self.homeDir,'created')
@@ -553,7 +561,10 @@ class Controller:
     ##################################################################################################
 
     def run_selected_model(self,progressBar=None,view=None,useSubsample=True):
-        
+        ## ensure filelist variable is up to date
+        if len(self.fileNameList) == 0:
+            self.fileNameList = get_fcs_file_names(self.homeDir)
+
         ## determine the data in focus
         fileInFocus = self.log.log['file_in_focus']
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
@@ -592,6 +603,7 @@ class Controller:
             
         ## if using model reference ensure ref comes first
         if modelReference != None:
+            
             refPosition = fileList.index(modelReference)
             if refPosition != 0:
                 refFile = fileList.pop(refPosition)

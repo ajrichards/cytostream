@@ -41,6 +41,8 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
         ms = markerSize
 
     ## plot the foreground events
+    print 'indsfg', indicesFG.shape
+
     if len(indicesFG) > 0:
         if drawState == 'heat':
             dataX,dataY = (events[indicesFG,index1],events[indicesFG,index2])
@@ -83,9 +85,10 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
         if centroids.has_key(str(int(l))) == False:
             return
 
-        ##################
-        if len(labels) != events.shape[0]:
-            print "WARNING: BasePlotters.py -- problem drawing cluster centroids"
+        ## if the label list < events find matching subsample and use
+        #if len(labels) != events.shape[0]:
+            #print "WARNING: BasePlotters.py -- problem drawing cluster centroids"
+
 
         #clusterInds = np.where(labels==l)[0]
         #xPos = events[clusterInds,index1].mean()
@@ -124,6 +127,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
     elif numSubplots in [13,14,15,16]:
         labelSize = 5
 
+    ## adjust label size based on number of clusters
     if len(uniqueLabels) > 50:
         labelSize = labelSize - 2
     elif len(uniqueLabels) > 25:
@@ -163,13 +167,6 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
             #ax.yaxis.set_major_formatter(formatter)
 
     ## check to see if we force scale the axes
-    #if useScaled == True:
-    #    scaled_axis('x')
-    #    scaled_axis('y')
-    #    xTransformed = True
-    #    yTransformed = True
-    
-    ## check for time scaling
     if channelDict.has_key('time') and index1 == channelDict['time']:
         scaled_axis('x')
         xTransformed = True
@@ -227,7 +224,7 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
-def draw_plot(args,parent=None,axesOff=False):
+def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     ''' 
     draw_plot takes args to create a plot 
     can be entirely independent of classes however a parent
@@ -286,7 +283,7 @@ def draw_plot(args,parent=None,axesOff=False):
             print "WARNING:"+msg
         drawState = 'heat'
 
-    ## handle subsampling
+    ## handle subsampling by ensuring subsample Inds are present
     n,d = events.shape
     if type(np.array([])) == type(subsample):
         randEvents = subsample
@@ -309,7 +306,6 @@ def draw_plot(args,parent=None,axesOff=False):
 
     ## other variables
     centroids = None
-    markerSize = 1
     masterColorList = get_all_colors()
     fontName = get_fontname()
     fontSize = get_fontsize(numSubplots)
@@ -331,7 +327,7 @@ def draw_plot(args,parent=None,axesOff=False):
         highlight = [parent.selectedHighlight]
 
     ## clear axis
-    ax.clear()    
+    ax.clear()
     if parent != None:
         parent.ax.grid(parent.grid_cb.isChecked())
     
@@ -349,7 +345,14 @@ def draw_plot(args,parent=None,axesOff=False):
     #    centroids = parent.centroid.get_centroids(parent.events,parent.labels,plotID,channelsID)
     if parent == None and str(labels) != "None":
         centroids,variances,sizes = get_file_sample_stats(events,labels)
+
+    # determine of the events those to plot
+    print 'labels',len(labels),'events',events.shape, type(subsample)
+    eventsToPlot = events[subsampleInds,:]
         
+    if str(labels) != "None" and eventsToPlot.shape[0] != len(labels):
+        print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
+
     ## error check
     #if str(labels) != "None":
     #    if n != labels.size:
@@ -357,7 +360,7 @@ def draw_plot(args,parent=None,axesOff=False):
     #        return None
 
     ## handle highlighting
-    totalPts,totalDims = events.shape
+    totalPts,totalDims = eventsToPlot.shape
 
     if str(highlight) != "None" and str(labels) == "None":
         print "ERROR in BasePlotters highlight must have labels too"
@@ -380,9 +383,9 @@ def draw_plot(args,parent=None,axesOff=False):
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
 
         indicesFG = [int(i) for i in indicesFG]
-        indicesBG = list(set(subsampleInds).difference(set(indicesFG)))
+        indicesBG = list(set(np.array(eventsToPlot.shape[0])).difference(set(indicesFG)))
     else:
-        indicesFG = subsampleInds
+        indicesFG = eventsToPlot[:,:]#subsampleInds
         indicesBG = []
 
     ## draw the points
@@ -448,7 +451,7 @@ def draw_plot(args,parent=None,axesOff=False):
         elif parent != None and parent.scale_cb.isChecked() == False:        
             useScaled = False
 
-        finalize_draw(ax,events,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
+        finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
 
