@@ -208,8 +208,8 @@ class Model:
         """
         about:
             this function handles the fetching of the events associated with a given file.
-            those events may be either all (original) or some specified subset.  To succesfully obtain a 
-            subsample the function model.get_subsample_indices must first be run.
+            those events may be either all (original) or some specified subset.  A filter is a subset
+            of the original data.
         input:
             fileName - string representing the file without the full path and without a file extension
             subsample - any numeric string, int or float that specifies an already processed subsample 
@@ -230,26 +230,17 @@ class Model:
         originalEvents = cPickle.load(tmp)
         tmp.close()
 
-        if filterID == 'original':
-            subsetIndsFileName == None
-        elif str(filterID) == "None":
-            subsetIndsFileName = fileName + "_data_" + subsample + ".pickle"
+        if str(filterID) == "None":
+            subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
         else:
-            subsetIndsFileName = fileName + "_data_%s.pickle"%filterID
+            subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
 
-        ## handle the subset stuff -- I am here
-        ici
+        ## handle the subsets and filters
+        if subsetInds != None:
+            events = originalEvents[subsetInds,:]
+        else:
+            events = originalEvents
 
-        #if str(filterID) == "None":
-        #    dataFileName = fileName + "_data_" + subsample + ".pickle"
-        #else:
-        #    dataFileName = fileName + "_data_%s.pickle"%filterID
-
-        if os.path.isfile(os.path.join(self.homeDir,'data',dataFileName)) == False:
-            print "INPUT ERROR: bad file name specified in model.get_events"
-            print "\t", os.path.join(self.homeDir,'data',dataFileName)
-            return None
-        
         return events
         
     def get_master_channel_list(self):
@@ -457,3 +448,24 @@ class Model:
         """
 
         return '#%02x%02x%02x' % rgb[:3]
+
+
+    def save_channel_dict(self,channelDict):
+        '''
+        save the channelDict for future use
+        '''
+
+        tmp = open(os.path.join(self.homeDir,'data','channelDict.pickle'),'w')
+        cPickle.dump(channelDict,tmp)
+        tmp.close()
+
+    def load_channel_dict(self):
+        '''
+        load the channel dict
+        '''
+
+        tmp = open(os.path.join(self.homeDir,'data','channelDict.pickle'),'rb')
+        channelDict = cPickle.load(tmp)
+        tmp.close()
+
+        return channelDict

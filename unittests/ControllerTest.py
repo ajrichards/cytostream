@@ -24,7 +24,8 @@ class ControllerTest(unittest.TestCase):
         self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
         self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")    
         self.controller = Controller(debug=False)
-        self.controller.create_new_project(self.homeDir,record=False)
+        channelDict = {'fsc-h':0,'ssc-h':1}
+        self.controller.create_new_project(self.homeDir,channelDict=channelDict,record=False)
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
     

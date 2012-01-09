@@ -83,6 +83,11 @@ class Controller:
         self.eventsList = [self.model.get_events(fn,subsample='original') for fn in self.fileNameList]
         self.labelsList = {}
 
+        if len(self.fileNameList) > 0:
+            self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
+        else:
+            self.fileChannels = None
+
     def labels_load(self,modelRunID,modelType='components'):
         '''
         load the labels from a given model run
@@ -100,7 +105,6 @@ class Controller:
             _labelsList = []
             for fileName in self.fileNameList:
                 fModel, fClasses = self.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
-                #fModel, fClasses = self.get_model_results(fileName,modelRunID,modelType)
                 _labelsList.append(fClasses)
             self.labelsList[modelRunID] = _labelsList
                 
@@ -120,6 +124,9 @@ class Controller:
     
     def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original'):
         modelsRunList = get_models_run_list(self.log.log)
+
+        if modelRunID not in modelsRunList:
+            return None
 
         if selectedFileName not in self.fileNameList:
             print "ERROR: Controller.get_labels - Invalid selectedFile specified", selectedFileName
@@ -169,10 +176,9 @@ class Controller:
         ## specify which images to create NOTE: assumption that all channel indices are always the same 
         ## this function is still under development and turned OFF by default
         comparisons = self.log.log['thumbnails_to_view']
-        
+
         if comparisons == None:
-            fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
-            channelIndices = range(len(fileChannels))
+            channelIndices = range(len(self.fileChannels))
             comparisons = []
             for i in channelIndices:
                 for j in channelIndices:
@@ -183,8 +189,7 @@ class Controller:
 
         ## get num images to create
         for fileName in self.fileNameList:
-            fileChannels = self.model.get_file_channel_list(fileName)
-            n = float(len(fileChannels) - len(excludedChannels))
+            n = float(len(self.fileChannels) - len(excludedChannels))
             numImagesToCreate += (n * (n - 1.0)) / 2.0
         
         percentDone = 0
@@ -222,14 +227,15 @@ class Controller:
             self.log.log["plots_to_view_highlights"] = plotsToViewHighlights
             self.log.log["plots_to_view_runs"] = plotsToViewRuns
 
-            for comp in comparisons:
+            for comp in comparisons[:1]: ## ici
                 plotsToViewChannels[0] = comp
                 self.log.log["plots_to_view_channels"] = plotsToViewChannels
                 self.save()
 
+
                 figName = os.path.join(imgDir,"%s_%s_%s.%s"%(fileName,
-                                                             fileChannels[comp[0]],
-                                                             fileChannels[comp[1]],
+                                                             self.fileChannels[comp[0]],
+                                                             self.fileChannels[comp[1]],
                                                              self.log.log['plot_type']))
 
                 script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
@@ -239,6 +245,7 @@ class Controller:
                     return False
                 else:
                     pltCmd = "%s %s -h %s -f %s -m %s"%(self.pythonPath,script,self.homeDir,figName,mode)
+
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                     while True:
                         try:
@@ -282,23 +289,22 @@ class Controller:
 
     def make_thumb(self,imgFile,thumbDir,fileName):
         if os.path.isfile(imgFile) == True:
-            fileChannels = self.model.get_file_channel_list(fileName)
 
-            if len(fileChannels) <= 4:
+            if len(self.fileChannels) <= 4:
                 thumbSize = 210
-            elif len(fileChannels) == 5:
+            elif len(self.fileChannels) == 5:
                 thumbSize = 160
-            elif len(fileChannels) == 6:
+            elif len(self.fileChannels) == 6:
                 thumbSize = 120
-            elif len(fileChannels) == 7:
+            elif len(self.fileChannels) == 7:
                 thumbSize = 90
-            elif len(fileChannels) == 8:
+            elif len(self.fileChannels) == 8:
                 thumbSize = 70
-            elif len(fileChannels) == 9:
+            elif len(self.fileChannels) == 9:
                 thumbSize = 60
-            elif len(fileChannels) == 10:
+            elif len(self.fileChannels) == 10:
                 thumbSize = 50
-            elif len(fileChannels) > 10:
+            elif len(self.fileChannels) > 10:
                 thumbSize = 40
           
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
@@ -344,23 +350,17 @@ class Controller:
     # data dealings -- handling file, project, model and figure data
     #
     ##################################################################################################
-           
-    def create_new_project(self,homeDir,channelDict=None,record=True):
+
+    def create_new_project(self,homeDir,channelDict={},record=True):
 
         ## initialize project
         self.initialize_project(homeDir)
-        self.channelDict = channelDict
-
-        print '..........homedir', homeDir
 
         ## remove previous
         if os.path.exists(self.homeDir) == True:
             if self.verbose == True:
                 print 'INFO: overwriting project of same name...', self.homeDir
             self.remove_project(self.homeDir)
-
-        print '..........creating project'
-
 
         if self.homeDir != None:
             os.mkdir(self.homeDir)
@@ -371,7 +371,9 @@ class Controller:
             os.mkdir(os.path.join(self.homeDir,"documents"))
 
         ## class wide variables
+        self.model.save_channel_dict(channelDict)
         self.fileNameList = get_fcs_file_names(self.homeDir)
+        self.channelDict = self.model.load_channel_dict()
 
         ## record project creation in log
         if record == True:
@@ -468,6 +470,12 @@ class Controller:
 
         self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,
                               compensationDict=self.compensationDict,transform=transform,autoComp=autoComp)
+
+        ## initialize class wide variables 
+        self.fileNameList = get_fcs_file_names(self.homeDir)
+        self.eventsList = [self.model.get_events(fn,subsample='original') for fn in self.fileNameList]
+        self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
+        self.channelDict = self.model.load_channel_dict()
 
     def get_component_states(self):
         try:

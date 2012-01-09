@@ -19,15 +19,15 @@ if mpl.get_backend() != 'agg':
 import matplotlib.pyplot as plt
 from cytostream import Model, Logger, get_fcs_file_names
 from cytostream.tools import get_all_colors, get_file_sample_stats, get_file_data, draw_plot
+import Controller
 
 class SaveSubplots():
-    def __init__(self, controller, channelDict, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
+    def __init__(self, controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',
                  minNumEvents=3,subplotTitle=False,addLine=None,figSize=None,axesOff=False,subsample='original'):
 
         ## arg variables
         self.controller = controller
-        self.channelDict = channelDict
         self.numSubplots = numSubplots
         self.mainWindow = mainWindow
         self.figMode = figMode
@@ -48,10 +48,15 @@ class SaveSubplots():
         self.subsample = subsample
         self.resultsMode = 'components'
 
+        ## if given a homeDir initialize a controller
+        if type(self.controller) == type('a') and os.path.exists(self.controller):
+            self.controller = Controller.Controller(debug=False)
+            self.controller.initialize_project(controller,loadExisting=True)
+            print '.............initializing project'
+            
         ## error check
         run = True
-        print type(self.controller)
-        if os.path.isdir(homeDir) == False:
+        if os.path.isdir(self.controller.homeDir) == False:
             print "ERROR: SaveSubplots.py -- homedir does not exist -- bad project name", projectID, homeDir
             run = False
         if run == True:
@@ -60,8 +65,10 @@ class SaveSubplots():
 
         ## other variables
         self.fileNameList = self.controller.fileNameList 
-        self.homeDir = controller.homeDir
+        self.homeDir = self.controller.homeDir
         self.channelList = self.log.log['alternate_channel_labels']
+        self.channelDict = self.controller.model.load_channel_dict()
+        print ".............", self.channelDict
 
         if inputLabels != None:
             self.inputLabels = []
@@ -166,9 +173,6 @@ class SaveSubplots():
             ## get original events and labels for draw_plot
             events = self.controller.get_events(subplotFile,'original')
             labels = self.controller.get_labels(subplotFile,subplotRunID,subsample='original')
-
-            print events.shape
-            print labels.shape
 
             ## give draw plot an array for subsample
             if type(np.array([])) == type(self.subsample):
@@ -321,5 +325,11 @@ if __name__ == '__main__':
 
     figMode = 'analysis'
     numSubplots = 12
-    ss = SaveSubplots(nga.controller,channelDict,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True)
+
+
+    ## different ways to test the class
+    # exchange nga.controller for homeDir
+
+
+    ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True)
     print 'plot saved as ', figName
