@@ -204,7 +204,7 @@ class Model:
                 if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
                     print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
-    def get_events(self,fileName,subsample='original',filterID=None):
+    def get_events(self,fileName,subsample='original'):
         """
         about:
             this function handles the fetching of the events associated with a given file.
@@ -213,16 +213,13 @@ class Model:
         input:
             fileName - string representing the file without the full path and without a file extension
             subsample - any numeric string, int or float that specifies an already processed subsample 
-            filterID - a cytostream generated string 'filterX' where x is the numeric reference
+            subsample - may also be a filterID such as 'filter1'
         return:
             a np.array of event data
         """
         
-        if subsample != 'original':
+        if type(subsample) != type('original'):
             subsample = str(int(float(subsample)))
-
-        if not re.search('filter', str(filterID)):
-            filterUsed = None
 
         ## open the original file name
         originalFileName = fileName + "_data_original.pickle"
@@ -230,13 +227,11 @@ class Model:
         originalEvents = cPickle.load(tmp)
         tmp.close()
 
-        if str(filterID) == "None":
-            subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
-        else:
+        if subsample != "original":
             subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
 
         ## handle the subsets and filters
-        if subsetInds != None:
+        if subsample != "original":
             events = originalEvents[subsetInds,:]
         else:
             events = originalEvents

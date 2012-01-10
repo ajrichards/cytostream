@@ -76,11 +76,6 @@ log.initialize(homeDir,load=True)
 selectedTransform = log.log['selected_transform']
 
 ## check to see if this is a filtering step
-filterInFocus = log.log['filter_in_focus']
-
-if filterInFocus == 'None':
-    filterInFocus = None
-
 ## determine the model mode
 modelMode = log.log['model_mode']
 modelReference = log.log['model_reference']
@@ -95,12 +90,10 @@ numItersMCMC =  int(log.log['num_iters_mcmc'])
 cleanBorderEvents = log.log['clean_border_events']
 
 ## get events
-if filterInFocus != None:
-    pass
-elif subsample != 'original':
+if type(subsample) != type('original'):
     subsample = str(int(float(subsample)))
 
-events = model.get_events(fileName,subsample,filterID=filterInFocus)
+events = model.get_events(fileName,subsample)
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
@@ -248,7 +241,6 @@ writer.writerow(["number events",str(n)])
 writer.writerow(["number zero events",str(len(allZeroInds))])
 writer.writerow(["zeros events removed", str(cleanBorderEvents)])
 writer.writerow(["number modes",str(len(list(set(classifyModes))))])
-writer.writerow(["filter used", filterInFocus])
 writer.writerow(["model mode", modelMode])
 writer.writerow(["transform", selectedTransform])
 

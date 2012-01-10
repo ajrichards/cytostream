@@ -317,19 +317,28 @@ class Controller:
         else:
             print "ERROR: bad file name specified",fileName
 
-    def handle_subsampling(self,subsample):
+    def handle_subsampling(self,subsample,isFilter=False):
         '''
         if subsampling is specified at the qa or analysis stage and the number is the same this function enables 
         the use of only a single subsampling.
 
+        When isFilter is set to False -- the subsample arg is an int or float
+        When isFilter is set to True  -- the subsample arg is a np.array of indices
+
         '''
 
+        ## ensure 
+        if isFilter == True and type(subsample) != type(np.array([])):
+            print "ERROR: Controller.handle_subsampling invalid input with isFilter flag on"
+            
         ## if subsample is set to some filter
-        if str(self.log.log['filter_in_focus']) != "None":
-            pass
+        if type(subsample) == type('abc') and subsample == 'original':
+            return True
+
+        ## handle non filtering subsampling 
         elif subsample != 'original':
             subsample = int(float(subsample))
-
+            
             key = str(int(float(subsample)))
             if self.subsampleDict.has_key(key) == False:
                 subsampleIndices = self.model.get_subsample_indices(subsample)
@@ -482,25 +491,24 @@ class Controller:
         except:
             return None
 
-    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices=False):
+    def get_indices_for_filter(self,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices=False):
         '''
-        given a set of cluster ids (list) the respective events are saved 
-        alternativly clusters ids may be the indices themselved using (use usingIndices flag)
+        given a set of cluster ids (list) the respective events indices are found and returned
         '''
 
         if len(clusterIDs) == 0:
-            print "WARNING: Controller.handle_filtering -- clusterIDs was empty"
+            print "WARNING: Controller.get_indices_for_filter -- clusterIDs was empty"
             return False
 
-        if usingIndices == False:
-            statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
-            modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
-            parentFilter = modelLog['filter used']
-        else:
-            parentFilter = None
+        #if usingIndices == False:
+        statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
+        modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
+        parentFilter = modelLog['filter used']
+        #else:
+        #    parentFilter = None
 
-        if not re.search('filter', str(parentFilter)):
-            parentFilter = None
+        #if not re.search('filter', str(parentFilter)):
+        #    parentFilter = None
 
         ## check to see if a log file has been created for this project
         filterLogFile = os.path.join(self.homeDir,"data",'%s.log'%filterID)
@@ -509,15 +517,9 @@ class Controller:
         else:
             filterLog = csv.writer(open(filterLogFile,'w'))
 
-        if usingIndices == False:
-            filterLog.writerow([fileName,filterID,str(clusterIDs)]) 
-        else:
-            filterLog.writerow([fileName,filterID,"NA"]) 
-
         ## get events
         events = self.model.get_events(fileName,subsample='original',filterID=parentFilter)
         
-
         if usingIndices == False:
 
             ## check that labels are of right type

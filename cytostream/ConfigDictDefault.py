@@ -53,7 +53,6 @@ configDictDefault = {
     'alternate_channel_labels'              : '[]',                 # a list of labels
     'alternate_file_labels'                 : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
-    'filter_in_focus'                       : 'None',               # all or e.g. '1000_filter1'
     'clean_border_events'                   : 'True',               # True, False      
     'model_mode'                            : 'normal',             # normal,onefit,pooled,target
     'model_reference'                       : 'None',               # fileName, pooled

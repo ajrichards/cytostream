@@ -69,8 +69,7 @@ class SaveSubplots():
             self.channelList = self.controller.fileChannels
         else:
             self.channelList = self.log.log['alternate_channel_labels']
-        #print '..............', self.channelList
-        #print '..............', self.controller.fileChannels
+
         self.channelDict = self.controller.model.load_channel_dict()
 
         if inputLabels != None:
@@ -327,10 +326,8 @@ if __name__ == '__main__':
     figMode = 'analysis'
     numSubplots = 12
 
-
     ## different ways to test the class
     # exchange nga.controller for homeDir
-
 
     ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True)
     print 'plot saved as ', figName
