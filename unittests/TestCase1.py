@@ -24,6 +24,7 @@ class TestCase1(unittest.TestCase):
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
+        channelDict = {'fsc-h':0,'ssc-h':1}
 
         ## run the initial model for all files
         configDict = configDictDefault.copy()
@@ -31,7 +32,7 @@ class TestCase1(unittest.TestCase):
         configDict['subsample_qa'] = 500
         configDict['subsample_analysis'] = 500
 
-        self.nga = NoGuiAnalysis(homeDir,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
+        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
         self.nga.run_model()
         fileNameList = self.nga.get_file_names()
     
