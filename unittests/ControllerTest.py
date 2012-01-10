@@ -40,7 +40,7 @@ class ControllerTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"documents")))
     
         ## test that files can be loaded
-        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,"data"))) != 2)
+        self.failIf(len(os.listdir(os.path.join(self.controller.homeDir,"data"))) != 3)
     
         ## test that events and channels may be retrieved
         fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
@@ -67,7 +67,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-    '''
+
     def testRunModel(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -101,7 +101,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-    '''
+    
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

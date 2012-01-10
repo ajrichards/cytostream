@@ -23,7 +23,7 @@ import Controller
 
 class SaveSubplots():
     def __init__(self, controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
-                 figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',
+                 figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
                  minNumEvents=3,subplotTitle=False,addLine=None,figSize=None,axesOff=False,subsample='original'):
 
         ## arg variables
@@ -38,7 +38,7 @@ class SaveSubplots():
         self.useScale = useScale
         self.useSimple = useSimple
         self.inputLabels = None
-        self.fontName = 'Ariel'
+        self.fontName = fontName
         self.drawState = drawState
         self.minNumEvents = minNumEvents
         self.subplotTitle = subplotTitle
@@ -52,7 +52,6 @@ class SaveSubplots():
         if type(self.controller) == type('a') and os.path.exists(self.controller):
             self.controller = Controller.Controller(debug=False)
             self.controller.initialize_project(controller,loadExisting=True)
-            print '.............initializing project'
             
         ## error check
         run = True
@@ -66,9 +65,13 @@ class SaveSubplots():
         ## other variables
         self.fileNameList = self.controller.fileNameList 
         self.homeDir = self.controller.homeDir
-        self.channelList = self.log.log['alternate_channel_labels']
+        if len(self.log.log['alternate_channel_labels']) == 0:
+            self.channelList = self.controller.fileChannels
+        else:
+            self.channelList = self.log.log['alternate_channel_labels']
+        #print '..............', self.channelList
+        #print '..............', self.controller.fileChannels
         self.channelDict = self.controller.model.load_channel_dict()
-        print ".............", self.channelDict
 
         if inputLabels != None:
             self.inputLabels = []
@@ -78,14 +81,6 @@ class SaveSubplots():
         if self.figMode not in ['qa','analysis']:
             print "ERROR: SaveSubplots.py -- figMode  must be 'qa' or 'analysis' not '%s'"%self.figMode
 
-        ## initialize a logger and a model to get specified files and channels
-            #self.log.initialize(self.homeDir,load=True)
-            #self.model = Model()
-            #self.model.initialize(self.homeDir)
-            #self.fontName = self.log.log['font_name']
-            #self.filterInFocus = self.log.log['filter_in_focus']
-            #self.resultsMode = self.log.log['results_mode']
-        
         ## prepare figure
         if self.figSize == None:
             self.fig = plt.figure()
@@ -181,6 +176,12 @@ class SaveSubplots():
                 key = str(int(float(self.subsample)))
                 self.controller.handle_subsampling(self.subsample)
                 self.subsample = self.controller.subsampleDict[key]
+
+            ## If labels are smaller than events the subsample must match that size
+            if labels == None:
+                pass
+            elif events.shape[0] != len(labels) and len(labels) != self.subsample.shape[0]:
+                print "ERROR: SaveSubplots Error Check -- subsample, labels and events don't match", events.shape, len(labels), type(self.subsample)
 
             index1,index2 = subplotChannels
 

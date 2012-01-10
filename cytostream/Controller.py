@@ -195,24 +195,24 @@ class Controller:
         percentDone = 0
         imageCount = 0
         
+        ## get img dir
+        if mode == 'analysis':
+            imgDir = os.path.join(self.homeDir,'figs',modelRunID)
+        elif mode == 'qa':
+            imgDir = os.path.join(self.homeDir,"figs",'qa')
+
+        if os.path.isdir(imgDir) == False:
+            if self.verbose == True:
+                print 'INFO: making img dir', imgDir
+            os.mkdir(imgDir)
+        
         for fileInd in range(len(self.fileNameList)):
             fileName = self.fileNameList[fileInd]
          
             ## check to see that file is not in excluded files
             if fileName in excludedFiles:
                 continue
-
-            ## get img dir
-            if mode == 'analysis':
-                imgDir = os.path.join(self.homeDir,'figs',modelRunID)
-            elif mode == 'qa':
-                imgDir = os.path.join(self.homeDir,"figs",'qa')
-
-            if os.path.isdir(imgDir) == False:
-                if self.verbose == True:
-                    print 'INFO: making img dir', imgDir
-                os.mkdir(imgDir)
-        
+    
             ## progress point information 
             imageProgress = range(int(numImagesToCreate))
         
@@ -227,11 +227,10 @@ class Controller:
             self.log.log["plots_to_view_highlights"] = plotsToViewHighlights
             self.log.log["plots_to_view_runs"] = plotsToViewRuns
 
-            for comp in comparisons[:1]: ## ici
+            for comp in comparisons:
                 plotsToViewChannels[0] = comp
                 self.log.log["plots_to_view_channels"] = plotsToViewChannels
                 self.save()
-
 
                 figName = os.path.join(imgDir,"%s_%s_%s.%s"%(fileName,
                                                              self.fileChannels[comp[0]],

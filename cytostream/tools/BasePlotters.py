@@ -135,28 +135,28 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
     scatterList = ['fsc','fsc-a','fsc-w','fsc-h','ssc','ssc-a','ssc-w','ssc-h']
     xTransformed, yTransformed = False, False
     buff = 0.02
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-3,3))
 
     ## handle data edge buffers
     def scaled_axis(axis):
-        #formatter = ScalarFormatter(useMathText=True)
-        #formatter.set_scientific(True)
-        #formatter.set_powerlimits((-3,3))
         
         if axis == 'x':
             bufferX = buff * (events[:,index1].max() - events[:,index1].min())
             ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
-            #ax.xaxis.set_major_formatter(formatter)
         elif axis == 'y':
             bufferY = buff * (events[:,index2].max() - events[:,index2].min())
-            ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])        
-            #ax.yaxis.set_major_formatter(formatter)
+            ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
 
     ## check to see if we force scale the axes
     if channelDict.has_key('time') and index1 == channelDict['time']:
         scaled_axis('x')
         xTransformed = True
+        ax.xaxis.set_major_formatter(formatter)
     if channelDict.has_key('time') and index2 == channelDict['time']:
         scaled_axis('y')
+        ax.yaxis.set_major_formatter(formatter)
         yTransformed = True
 
     ## handle scatter axes
@@ -280,9 +280,11 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
         randEvents = np.arange(ssSize)
         np.random.shuffle(randEvents)
+    elif subsample == 'original':
+        pass
     else:
-        print "WARNING: BasePlotters.py draw_plot -- subsample must be the array or an int -- using original data", type(subsample), subsample
-
+        print "WARNING: BasePlotters.py draw_plot -- subsample must be the array or an int or 'original' not ", type(subsample)
+        
     ## ensure that subsample size is appropriate
     if subsample == 'original':
         subsampleInds = np.arange(events.shape[0])
@@ -336,7 +338,6 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     # determine of the events those to plot
     eventsToPlot = events[subsampleInds,:]
 
-
     if str(labels) != "None" and eventsToPlot.shape[0] != len(labels):
         print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
 
@@ -380,8 +381,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         if max(labels) > len(masterColorList):
             print "WARNING: BasePlotters.draw_plot not enough colors in master color list"
         colorList = masterColorList[labels]
-
-    elif  drawState == 'heat':
+    elif drawState == 'heat':
         if totalPts >= 9e04:
             bins = 120.0
         elif totalPts >= 8e04:
@@ -420,14 +420,20 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         ## handle title and labels
         if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
             parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
-        
+
         if parent != None and parent.axLab_cb.isChecked == False:
             pass
         elif axesLabels == False:
             pass
         else:
-            ax.set_xlabel(channelList[channel1Ind],fontname=fontName,fontsize=fontSize)
-            ax.set_ylabel(channelList[channel2Ind],fontname=fontName,fontsize=fontSize)
+            if len(channelList) < channel1Ind + 1:
+                print "WARNING: draw_plot -- bad channel index specified max(%s)"%len(channelList), channel1Ind 
+            else:
+                ax.set_xlabel(channelList[channel1Ind],fontname=fontName,fontsize=fontSize)
+            if len(channelList) < channel2Ind + 1:
+                print "WARNING: draw_plot -- bad channel index specified max(%s)"%len(channelList), channel2Ind 
+            else:
+                ax.set_ylabel(channelList[channel2Ind],fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None:
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
