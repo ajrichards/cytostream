@@ -324,6 +324,7 @@ class Model:
 
             if self.verbose == True:
                 print 'INFO: using pickled subsampled indices'
+
             return subsampleIndices
 
         ## otherwise create the pickle file
@@ -390,12 +391,7 @@ class Model:
 
         ## load the model
         model = cPickle.load(tmp1)
-        #samplesFromPostr = 1.0
-        #k = int(model.pis().size / samplesFromPostr)
-        
-        #classify = cPickle.load(tmp2)
         tmp1.close()
-        #tmp2.close()
 
         return model,classify
     

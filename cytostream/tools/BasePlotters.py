@@ -60,10 +60,10 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
             if borderEvents.size > 0:
                 ax.scatter([dataX[borderEvents]],[dataY[borderEvents]],c='k',s=1,edgecolor='none')
         elif drawState == 'scatter':
-            dataX,dataY = (events[:,index1],events[:,index2])
+            dataX,dataY = (events[indicesFG,index1],events[indicesFG,index2])
             ax.scatter([dataX],[dataY],c=colorList,s=markerSize,edgecolor='none')
 
-def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,centroids,numSubplots):
+def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,centroids,numSubplots,drawState):
     """
     draw the labels based on sample centroids in a plot based on foreground and background
 
@@ -80,16 +80,23 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 
     def draw_centroid(l,index1,index2,labelSize):
         
-        labelColor = "#0000D0"#"#C0C0C0"
-        alphaVal = 0.6
+        labelColor = "#C0C0C0"
+        alphaVal = 0.9
 
         if centroids.has_key(str(int(l))) == False:
             return
 
+        if drawState == 'scatter':
+            labelColor = colorList[l]
+
         xPos = centroids[str(int(l))][index1]
         yPos = centroids[str(int(l))][index2]
 
-        ax.text(xPos, yPos, '%s%s'%(prefix,l),color='#FFFF00',fontsize=labelSize,
+        fontColor = 'black'
+        if labelColor in ['k','b',"#002200","#660033","#990033"]:
+            fontColor = 'white'
+
+        ax.text(xPos, yPos, '%s%s'%(prefix,l),color=fontColor,fontsize=labelSize,
                 ha="center", va="center",
                 bbox = dict(boxstyle="round",facecolor=labelColor,alpha=alphaVal)
                 )
@@ -283,6 +290,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
         randEvents = np.arange(ssSize)
         np.random.shuffle(randEvents)
+        print 'draw_plot -- creating new rand inds'
     elif subsample == 'original':
         pass
     else:
@@ -331,15 +339,15 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         channel1Ind = int(parent.selectedChannel1)
         channel2Ind = int(parent.selectedChannel2)
         
+    # determine of the events those to plot
+    eventsToPlot = events[subsampleInds,:]
+
     ## get centroids
     #if parent != None and str(labels) != "None":
     #    plotID, channelsID = parent.centroid.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
     #    centroids = parent.centroid.get_centroids(parent.events,parent.labels,plotID,channelsID)
     if parent == None and str(labels) != "None":
-        centroids,variances,sizes = get_file_sample_stats(events,labels)
-
-    # determine of the events those to plot
-    eventsToPlot = events[subsampleInds,:]
+        centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
 
     if str(labels) != "None" and eventsToPlot.shape[0] != len(labels):
         print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
@@ -418,7 +426,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
                      drawState=drawState)
         
         if str(labels) != "None":
-            draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots)
+            draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots,drawState)
         
         ## handle title and labels
         if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
@@ -438,7 +446,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             else:
                 ax.set_ylabel(channelList[channel2Ind],fontname=fontName,fontsize=fontSize)
 
-        if plotTitle != None:
+        if plotTitle != None and plotTitle != False:
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
         ## check for forced scaling
