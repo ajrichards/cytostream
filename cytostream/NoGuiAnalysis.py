@@ -172,7 +172,7 @@ class NoGuiAnalysis():
         self.controller.save()
 
 
-    def get_events(self,fileName,subsample='original',filterID=None):
+    def get_events(self,fileName,subsample='original'):
         """
         returns the events from a given file name
 
@@ -183,7 +183,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
             return None
 
-        events = self.controller.model.get_events(fileName,subsample=subsample,filterID=filterID)
+        #events = self.controller.model.get_events(fileName,subsample=subsample)
 
         return events
 

@@ -80,7 +80,7 @@ class Controller:
         self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
-        self.eventsList = [self.model.get_events(fn,subsample='original') for fn in self.fileNameList]
+        self.eventsList = [self.model.get_events_from_pickle(fn,subsample='original') for fn in self.fileNameList]
         self.labelsList = {}
 
         if len(self.fileNameList) > 0:
@@ -109,14 +109,26 @@ class Controller:
             self.labelsList[modelRunID] = _labelsList
                 
     def get_events(self,selectedFileName,subsample='original'):
+        '''
+            input:
+                selectedFileName - string representing the file without the full path and without a file extension
+                subsample - any numeric string, int or float that specifies an already processed subsample
+                subsample - may also be a filterID such as 'filter1'
+        '''
+  
+        ## error checking
         if selectedFileName not in self.fileNameList:
             print "ERROR: Controller.get_events - Invalid selectedFile specified", selectedFileName
             return None
-            
-        events =  self.eventsList[self.fileNameList.index(selectedFileName)]
+        
+        ## check to see if orig events are in memory otherwise load them from pickle
+        if len(self.eventsList > 0):
+            origEvents =  self.eventsList[self.fileNameList.index(selectedFileName)]
+        else:
+            origEvents =  self.model.get_events_from_pickle(selectedFileName)
 
         if subsample == 'original':
-            return events
+            return origEvents
         else:
             self.handle_subsampling(subsample)
             key = str(int(float(subsample)))
@@ -518,8 +530,10 @@ class Controller:
             filterLog = csv.writer(open(filterLogFile,'w'))
 
         ## get events
-        events = self.model.get_events(fileName,subsample='original',filterID=parentFilter)
+        ## ici
+        events = self.get_events(fileName,subsample='original')
         
+
         if usingIndices == False:
 
             ## check that labels are of right type

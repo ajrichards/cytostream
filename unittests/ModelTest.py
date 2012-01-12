@@ -40,7 +40,7 @@ class ModelTest(unittest.TestCase):
 
     def testGetEventsChannels(self):
         fileName = re.sub('\.fcs|\.txt|\.out','',self.fileName)
-        events = self.model.get_events(fileName,subsample='original')
+        events = self.model.get_events_from_pickle(fileName)
         self.assertEqual(events.shape[0],94569)
         self.assertEqual(events.shape[1],4)
         fileChannels = self.model.get_file_channel_list(fileName)

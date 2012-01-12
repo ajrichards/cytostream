@@ -328,6 +328,7 @@ if __name__ == '__main__':
 
     ## different ways to test the class
     # exchange nga.controller for homeDir
+    # change draw state ['heat','scatter']
 
-    ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True)
+    ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True,drawState='scatter')
     print 'plot saved as ', figName

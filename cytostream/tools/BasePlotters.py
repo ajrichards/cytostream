@@ -59,7 +59,10 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
             ax.scatter([dataX[nonBorderEvents]],[dataY[nonBorderEvents]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
             if borderEvents.size > 0:
                 ax.scatter([dataX[borderEvents]],[dataY[borderEvents]],c='k',s=1,edgecolor='none')
-        
+        elif drawState == 'scatter':
+            dataX,dataY = (events[:,index1],events[:,index2])
+            ax.scatter([dataX],[dataY],c=colorList,s=markerSize,edgecolor='none')
+
 def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,highlight,centroids,numSubplots):
     """
     draw the labels based on sample centroids in a plot based on foreground and background
@@ -269,6 +272,9 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         drawState = 'heat'
 
     ## handle subsampling by ensuring subsample Inds are present
+    print 'subsample', type(subsample)
+
+
     n,d = events.shape
     if type(np.array([])) == type(subsample):
         randEvents = subsample
