@@ -29,10 +29,11 @@ class ControllerTest(unittest.TestCase):
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
     
+    
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
-
+    
     def testCreateNewProject(self):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
@@ -45,7 +46,10 @@ class ControllerTest(unittest.TestCase):
         ## test that events and channels may be retrieved
         fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
         fileName = re.sub('\.fcs|\.txt|\.out','',fileName)
-        events = self.controller.model.get_events(fileName,subsample='original')
+        events = self.controller.model.get_events_from_file(fileName)
+        self.assertEqual(events.shape[0],94569)
+        self.assertEqual(events.shape[1],4)
+        events = self.controller.get_events(fileName)
         self.assertEqual(events.shape[0],94569)
         self.assertEqual(events.shape[1],4)
 
@@ -58,9 +62,9 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
         fileName = re.sub('\.fcs|\.txt|\.out','',fileName)
-        events = self.controller.model.get_events(fileName,subsample=subsample)
+        events = self.controller.get_events(fileName,subsample=subsample)
         self.assertEqual(events.shape[0], 1000)
-    
+
     def testProcessImagesQa(self):
         subsample = '1e3'
         self.controller.log.log['subsample_qa'] = subsample
@@ -101,7 +105,8 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-    
+
+
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

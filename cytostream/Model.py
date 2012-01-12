@@ -229,7 +229,7 @@ class Model:
             return None
 
         ## open the original file name
-        events = np.fromfile(originalFilePath)
+        events = np.fromfile(originalFilePath,dtype=int)
         fileChannels = self.get_master_channel_list()
         numCols = len(fileChannels)
         events = events.reshape(events.shape[0]/numCols,numCols)
@@ -292,7 +292,7 @@ class Model:
             print "\t" + fileChannelsPath
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',fileChannelsPath),'r')
+        tmp = open(fileChannelsPath,'r')
         fileChannels = cPickle.load(tmp)
         tmp.close()
         fileChannels = np.array([re.sub("\s","_",c) for c in fileChannels])
@@ -386,7 +386,7 @@ class Model:
             print "ERROR: bad model file specified -- path does not exist"
 
         ## load the labels
-        classify = np.fromfile(originalFilePath,dtype=int)
+        classify = np.fromfile(tmp2File,dtype=int)
 
         ## load the model
         model = cPickle.load(tmp1)

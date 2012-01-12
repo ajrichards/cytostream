@@ -34,7 +34,6 @@ class ModelTest(unittest.TestCase):
 
         self.assertTrue(os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)))
         self.assertTrue(os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)))
-
     
     def testGetEventsChannels(self):
         fileName = re.sub('\.fcs|\.txt|\.out','',self.fileName)
@@ -44,8 +43,6 @@ class ModelTest(unittest.TestCase):
         fileChannels = self.model.get_file_channel_list(fileName)
         self.assertEqual(len(fileChannels),4)
 
-
-    
     def testGetMasterChannelList(self):
         allChannels = self.model.get_master_channel_list()
         self.assertEqual(len(allChannels),4)
