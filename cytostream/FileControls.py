@@ -47,15 +47,15 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
     for fileName in os.listdir(os.path.join(homeDir,"data")):
         if not re.search("data",fileName):
             continue
-        if not re.search("\.pickle",fileName):
+        if not re.search("\.array",fileName):
             continue
-        if not re.search("original",fileName):
+        if not re.search("data",fileName):
             continue
 
         if fileName not in excludedFiles:
             fileList.append(fileName)
 
-    fileList = [re.sub("\_data_original.pickle","", fi) for fi in fileList]
+    fileList = [re.sub("\_data.array","", fi) for fi in fileList]
     fileList.sort()
 
     return fileList

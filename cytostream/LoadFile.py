@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-import sys,getopt,os,re,cPickle,time,csv,ast
+import sys,getopt,os,re,time,csv,ast,cPickle
+import numpy as np
 import fcm
 from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
 
@@ -91,16 +92,18 @@ elif dataType == 'tab':
     fcsData = read_txt_into_array(filePath,delim='\t')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
     
-## save the np.array of data and the channels
+## prepare to save np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
-newDataFileName = newFileName + "_data_original.pickle"
-newChanFileName = newFileName + "_channels_original.pickle" 
+newDataFileName = newFileName + "_data.array"
+newDataFilePath = os.path.join(homeDir,'data',newDataFileName) 
+newChanFileName = newFileName + "_channels.pickle" 
+newChanFilePath = os.path.join(homeDir,'data',newChanFileName)
 
-tmp1 = open(os.path.join(homeDir,'data',newDataFileName),'w')
-tmp2 = open(os.path.join(homeDir,'data',newChanFileName),'w')
+## save
 data = fcsData[:,:].copy()
-cPickle.dump(data,tmp1)
-cPickle.dump([chan for chan in fileChannels],tmp2)
-tmp1.close()
-tmp2.close()
+data.tofile(newDataFilePath)
+fileChannels = [chan for chan in fileChannels]
+tmp = open(newChanFilePath,'w')
+cPickle.dump(fileChannels,tmp)
+tmp.close()

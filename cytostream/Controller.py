@@ -80,7 +80,7 @@ class Controller:
         self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
-        self.eventsList = [self.model.get_events_from_pickle(fn,subsample='original') for fn in self.fileNameList]
+        self.eventsList = [self.model.get_events_from_file(fn,subsample='original') for fn in self.fileNameList]
         self.labelsList = {}
 
         if len(self.fileNameList) > 0:
@@ -125,7 +125,7 @@ class Controller:
         if len(self.eventsList > 0):
             origEvents =  self.eventsList[self.fileNameList.index(selectedFileName)]
         else:
-            origEvents =  self.model.get_events_from_pickle(selectedFileName)
+            origEvents =  self.model.get_events_from_file(selectedFileName)
 
         if subsample == 'original':
             return origEvents

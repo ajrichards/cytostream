@@ -93,7 +93,12 @@ cleanBorderEvents = log.log['clean_border_events']
 if type(subsample) != type('original'):
     subsample = str(int(float(subsample)))
 
-events = model.get_events(fileName,subsample)
+## handle getting events
+events = model.get_events_from_file(fileName)
+
+if subsample != 'original':
+    subsampleIndices = model.get_subsample_indices(subsample)
+    events = [subsample,:]
 
 ## account for excluded channels
 fileChannels = model.get_file_channel_list(fileName)
@@ -191,12 +196,14 @@ if verbose == True:
     print 'RunDPMM.py - dumping components fit'
 
 tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.pickle"),'w')
-tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.pickle"),'w')
+componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.array")
+classifyComponents.tofile(componentsFilePath)
+#tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.pickle"),'w')
 
 cPickle.dump(full,tmp1)
-cPickle.dump(classifyComponents,tmp2)
+#cPickle.dump(classifyComponents,tmp2)
 tmp1.close()
-tmp2.close()
+#tmp2.close()
 
 ## classify the modes
 modes = full.make_modal()
@@ -205,13 +212,15 @@ if verbose == True:
     print 'RunDPMM.py - dumping modes fit'
 print '...........................................................................................'
 
-tmp3 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.pickle"),'w')
-tmp4 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.pickle"),'w')
+tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.pickle"),'w')
+modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.array")
+#tmp4 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.pickle"),'w')
+classifyModes.tofile(modesFilePath)
 
-cPickle.dump(modes,tmp3)
-cPickle.dump(classifyModes,tmp4)
-tmp3.close()
-tmp4.close()
+cPickle.dump(modes,tmp2)
+#cPickle.dump(classifyModes,tmp4)
+tmp2.close()
+#tmp4.close()
 
 ## write a log file
 if verbose == True:
