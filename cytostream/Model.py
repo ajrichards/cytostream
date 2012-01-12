@@ -133,8 +133,6 @@ class Model:
         ## create script
         script = os.path.join(self.baseDir,"LoadFile.py")
 
-        #print 'debug', dataType, type(filePath), fileChannelPath
-
         fileCount = 0
         for filePath in fileList:
             if self.verbose == True:
@@ -148,22 +146,23 @@ class Model:
                 data = filePath
                 existingFiles = get_fcs_file_names(self.homeDir)
                 numFiles = len(existingFiles)
-                newDataFileName = 'array'+ str(numFiles+1) + "_data_original.pickle"
-                newChanFileName = 'array'+ str(numFiles+1) + "_channels_original.pickle"
-                tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-                tmp2 = open(os.path.join(self.homeDir,'data',newChanFileName),'w')
-                cPickle.dump(data,tmp1)
-                cPickle.dump([chan for chan in fileChannels],tmp2)
-                tmp1.close()
-                tmp2.close()
+                newDataFileName = 'array'+ str(numFiles+1) + "_data.array"
+                newDataFilePath = os.path.join(self.homeDir,'data',newDataFileName)
+                newChanFileName = 'array'+ str(numFiles+1) + "_channels.pickle"
+                newChanFilePath = os.path.join(self.homeDir,'data',newChanFileName)
+                
+                ## write
+                data.tofile(newDataFilePath)
+                fileChannels = [chan for chan in fileChannels]
+                tmp = open(newChanFilePath,'w')
+                cPickle.dump(fileChannels,tmp)
+                tmp.close()
 
             compensationFilePath = "None"
             if compensationDict != None:
                 fileName = os.path.split(filePath)[-1]
-                print fileName
                 compensationFilePath = compensationDict[re.sub("\.txt|\.csv|\.fcs","",fileName,flags=re.IGNORECASE)]
                
-
             ## if data is not of type array
             else:
                 cmd = "%s %s -f %s -h %s -d %s -t %s -c %s -m %s -a %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
@@ -190,51 +189,52 @@ class Model:
                 progressBar.move_bar(int(round(percentDone)))
                 progressBar.show()
                 QtCore.QCoreApplication.processEvents()
-                #time.sleep(2)
 
             ## check to see that files were made
-            if dataType not in ['array']:
-                newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
-                newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
-                newDataFileName = newFileName +"_data_original.pickle"
-                newChanFileName = newFileName +"_channels_original.pickle"
+            #if dataType not in ['array']:
+            newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
+            newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
+            newDataFileName = newFileName +"_data.array"
+            newChanFileName = newFileName +"_channels.pickle"
+            
+            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
+                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
-                if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-                    print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-                if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
-                    print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
-
-    def get_events_from_pickle(self,fileName):
+    def get_events_from_file(self,fileName,fileDir=None):
         """
         about:
             this function handles the fetching of the events associated with a given file.
         input:
-            fileName - string representing the file without the full path and without a file extension
-            subsample - any numeric string, int or float that specifies an already processed subsample 
-            subsample - may also be a filterID such as 'filter1'
+            fileName - may be a fileName from the fileName list or it may be a link to a pickle file elsewhere
         return:
             a np.array of event data
         """
         
-        #if type(subsample) != type('original'):
-        #    subsample = str(int(float(subsample)))
+        fileList = get_fcs_file_names(self.homeDir)
+        
+        if fileName not in fileList and fileDir != None:
+            if os.path.isdir(fileDir) == False:
+                print "ERROR: Model.get_events_from_pickle -- Invalid fileDir specified"
+                return None
+            originalFilePath = os.path.join(fileDir,fileName + "_data.array")
+        else:
+            originalFilePath = os.path.join(self.homeDir,'data',fileName + "_data.array")
+
+        ## error check
+        if os.path.exists(originalFilePath) == False:
+            print "ERROR: Model.get_events_from_file -- Specified events pickle does not exist"
+            print originalFilePath
+            return None
 
         ## open the original file name
-        originalFileName = fileName + "_data_original.pickle"
-        tmp = open(os.path.join(self.homeDir,'data',originalFileName),'rb')
-        originalEvents = cPickle.load(tmp)
-        tmp.close()
+        events = np.fromfile(originalFilePath)
+        fileChannels = self.get_master_channel_list()
+        numCols = len(fileChannels)
+        events = events.reshape(events.shape[0]/numCols,numCols)
 
-        #if subsample != "original":
-        #    subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
-
-        ## handle the subsets and filters
-        #if subsample != "original":
-        #    events = originalEvents[subsetInds,:]
-        #else:
-        #    events = originalEvents
-        # 
-        #return events
+        return events
         
     def get_master_channel_list(self):
         """
@@ -285,14 +285,14 @@ class Model:
             A np.array of file channels associated with a given file. The function returns None if 
             no channel list has yet been made.
         """
-                
-        fileName = fileName + "_channels_" + "original" + ".pickle"
-        if os.path.isfile(os.path.join(self.homeDir,'data',fileName)) == False:
+
+        fileChannelsPath = os.path.join(self.homeDir,'data',fileName + "_channels.pickle")
+        if os.path.isfile(fileChannelsPath) == False:
             print "INPUT ERROR: bad file name specified in model.get_file_channel_list"
-            print "\t" + os.path.join(self.homeDir,'data',fileName)
+            print "\t" + fileChannelsPath
             return None
         
-        tmp = open(os.path.join(self.homeDir,'data',fileName),'r')
+        tmp = open(os.path.join(self.homeDir,'data',fileChannelsPath),'r')
         fileChannels = cPickle.load(tmp)
         tmp.close()
         fileChannels = np.array([re.sub("\s","_",c) for c in fileChannels])
@@ -318,10 +318,10 @@ class Model:
         subsample = int(float(subsample))
 
         ## use pickle file if already created
-        if os.path.isfile(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample)) == True:
-            tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'r')
-            subsampleIndices = cPickle.load(tmp)
-            tmp.close()
+        sampleIndicesFilePath = os.path.join(self.homeDir,'data','subsample_%s.array'%subsample)        
+        if os.path.isfile(sampleIndicesFilePath) == True:
+            subsampleIndices = np.fromfile(sampleIndicesFilePath,dtype=int)
+
             if self.verbose == True:
                 print 'INFO: using pickled subsampled indices'
             return subsampleIndices
@@ -337,7 +337,7 @@ class Model:
 
         ## get minimum number of observations out of all files considered
         for fileName in fileList:
-            fcsData = self.get_events_from_pickle(fileName)
+            fcsData = self.get_events_from_file(fileName)
             n,d = np.shape(fcsData)
         
             if n < minNumEvents:
@@ -356,9 +356,9 @@ class Model:
         else:
             print "WARNING: Model.py get_sumsample_indices -- subsample must be the array or an int -- using original data"
 
-        tmp = open(os.path.join(self.homeDir,'data','subsample_%s.pickle'%subsample),'w')
-        cPickle.dump(randEvents,tmp)
-        tmp.close()
+        ## save rand events for future use
+        randEvents.tofile(sampleIndicesFilePath)
+
         return randEvents
 
     def load_model_results_pickle(self,fileName,modelNum,modelType='modes'):
@@ -378,20 +378,24 @@ class Model:
             return False
 
         tmp1File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.pickle"%modelType)
-        tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.pickle"%modelType)
+        tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.array"%modelType)
         tmp1 = open(tmp1File,'r')
-        tmp2 = open(tmp2File,'r')
-
+        #tmp2 = open(tmp2File,'r')
+        
         if os.path.isfile(tmp1File) == False or os.path.isfile(tmp2File) == False:
             print "ERROR: bad model file specified -- path does not exist"
 
+        ## load the labels
+        classify = np.fromfile(originalFilePath,dtype=int)
+
+        ## load the model
         model = cPickle.load(tmp1)
-        samplesFromPostr = 1.0
-        k = int(model.pis().size / samplesFromPostr)
+        #samplesFromPostr = 1.0
+        #k = int(model.pis().size / samplesFromPostr)
         
-        classify = cPickle.load(tmp2)
+        #classify = cPickle.load(tmp2)
         tmp1.close()
-        tmp2.close()
+        #tmp2.close()
 
         return model,classify
     
