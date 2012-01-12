@@ -56,7 +56,7 @@ class Controller:
         self.baseDir = self.model.baseDir
         self.currentPlotView = None
         self.compensationDict = None
-        self.eventsList = None
+        self.eventsList = []
         self.fileNameList = None
         self.channelDict = None
         self.subsampleDict = {}
@@ -80,7 +80,12 @@ class Controller:
         self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
-        self.eventsList = [self.model.get_events_from_file(fn,subsample='original') for fn in self.fileNameList]
+
+        if len(self.fileNameList) < 25: 
+            self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
+        else:
+            self.eventsList = []
+
         self.labelsList = {}
 
         if len(self.fileNameList) > 0:
@@ -122,7 +127,7 @@ class Controller:
             return None
         
         ## check to see if orig events are in memory otherwise load them from pickle
-        if len(self.eventsList > 0):
+        if len(self.eventsList) > 0:
             origEvents =  self.eventsList[self.fileNameList.index(selectedFileName)]
         else:
             origEvents =  self.model.get_events_from_file(selectedFileName)
@@ -132,7 +137,7 @@ class Controller:
         else:
             self.handle_subsampling(subsample)
             key = str(int(float(subsample)))
-            return events[self.subsampleDict[key],:]
+            return origEvents[self.subsampleDict[key],:]
     
     def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original'):
         modelsRunList = get_models_run_list(self.log.log)
@@ -493,7 +498,12 @@ class Controller:
 
         ## initialize class wide variables 
         self.fileNameList = get_fcs_file_names(self.homeDir)
-        self.eventsList = [self.model.get_events(fn,subsample='original') for fn in self.fileNameList]
+
+        if len(self.fileNameList) < 25:
+            self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
+        else:
+            self.eventsList = []
+
         self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         self.channelDict = self.model.load_channel_dict()
 

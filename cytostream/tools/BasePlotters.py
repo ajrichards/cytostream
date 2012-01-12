@@ -272,9 +272,6 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         drawState = 'heat'
 
     ## handle subsampling by ensuring subsample Inds are present
-    print 'subsample', type(subsample)
-
-
     n,d = events.shape
     if type(np.array([])) == type(subsample):
         randEvents = subsample
