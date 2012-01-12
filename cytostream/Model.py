@@ -204,12 +204,10 @@ class Model:
                 if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
                     print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
-    def get_events(self,fileName,subsample='original'):
+    def get_events_from_pickle(self,fileName):
         """
         about:
             this function handles the fetching of the events associated with a given file.
-            those events may be either all (original) or some specified subset.  A filter is a subset
-            of the original data.
         input:
             fileName - string representing the file without the full path and without a file extension
             subsample - any numeric string, int or float that specifies an already processed subsample 
@@ -218,8 +216,8 @@ class Model:
             a np.array of event data
         """
         
-        if type(subsample) != type('original'):
-            subsample = str(int(float(subsample)))
+        #if type(subsample) != type('original'):
+        #    subsample = str(int(float(subsample)))
 
         ## open the original file name
         originalFileName = fileName + "_data_original.pickle"
@@ -227,16 +225,16 @@ class Model:
         originalEvents = cPickle.load(tmp)
         tmp.close()
 
-        if subsample != "original":
-            subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
+        #if subsample != "original":
+        #    subsetInds = self.get_subsample_indices(subsample,dataType='fcs')
 
         ## handle the subsets and filters
-        if subsample != "original":
-            events = originalEvents[subsetInds,:]
-        else:
-            events = originalEvents
-
-        return events
+        #if subsample != "original":
+        #    events = originalEvents[subsetInds,:]
+        #else:
+        #    events = originalEvents
+        # 
+        #return events
         
     def get_master_channel_list(self):
         """
@@ -339,7 +337,7 @@ class Model:
 
         ## get minimum number of observations out of all files considered
         for fileName in fileList:
-            fcsData = self.get_events(fileName,subsample='original')
+            fcsData = self.get_events_from_pickle(fileName)
             n,d = np.shape(fcsData)
         
             if n < minNumEvents:
