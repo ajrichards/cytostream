@@ -106,7 +106,6 @@ class ControllerTest(unittest.TestCase):
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
-
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

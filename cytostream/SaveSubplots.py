@@ -120,8 +120,8 @@ class SaveSubplots():
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
             dpi = 140
         elif self.numSubplots in [10,11,12]:
-            self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
-            dpi = 150
+            self.fig.subplots_adjust(hspace=0.2,wspace=0.2)
+            dpi = 200
         elif self.numSubplots in [13,14,15,16]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
             dpi = 160
@@ -165,21 +165,33 @@ class SaveSubplots():
                 print "WARNING: unexpected event occured in SaveSubplots.py", self.figMode
 
             ## get original events and labels for draw_plot
+            labels = self.controller.get_labels(subplotFile,subplotRunID)
             events = self.controller.get_events(subplotFile,'original')
-            labels = self.controller.get_labels(subplotFile,subplotRunID,subsample='original')
 
-            ## give draw plot an array for subsample
-            if type(np.array([])) == type(self.subsample):
-                pass
-            elif self.subsample != 'original' and self.subsample != None:
-                key = str(int(float(self.subsample)))
-                self.controller.handle_subsampling(self.subsample)
-                self.subsample = self.controller.subsampleDict[key]
+            ## ensure only maximum num events are shown
+            maxScatter = int(float(self.log.log['setting_max_scatter_display']))
+            if self.subsample == 'original' and events.shape[0] > maxScatter:
+                print 'debug 1'
+                self.subsample = maxScatter
+                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+                labels = labels[subsampleIndices]
+            elif self.subsample == 'original':
+                print 'debug 2'
+                subsampleIndices = np.arange(events.shape[0])
+            ## if labels are smaller than subsample (usually means model was run on a subsample)
+            elif len(labels) < int(self.subsample):
+                print 'debug 3'
+                self.subsample = len(labels)
+                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            elif len(labels) == int(self.subsample):
+                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            else:
+                print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
 
             ## If labels are smaller than events the subsample must match that size
             if labels == None:
                 pass
-            elif events.shape[0] != len(labels) and len(labels) != self.subsample.shape[0]:
+            elif events.shape[0] != len(labels) and len(labels) != subsampleIndices.shape[0]:
                 print "ERROR: SaveSubplots Error Check -- subsample, labels and events don't match", events.shape, len(labels), type(self.subsample)
 
             index1,index2 = subplotChannels
@@ -208,7 +220,7 @@ class SaveSubplots():
             args[3] = self.channelDict
             args[4] = index1
             args[5] = index2
-            args[6] = self.subsample
+            args[6] = subsampleIndices      #          self.subsample
             args[7] = self.log.log['selected_transform']
             args[8] = labels
             args[9] = subplotHighlight
@@ -319,6 +331,7 @@ if __name__ == '__main__':
         print "utest model run was not found.....running"
         filePathList = [os.path.join(".","example_data","3FITC_4PE_004.fcs")]
         nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False,verbose=False)
+        nga.set('subsample_analysis','1000')
         nga.run_model()
     else:
         nga = NoGuiAnalysis(os.path.join(homeDir),channelDict,loadExisting=True)
@@ -329,6 +342,7 @@ if __name__ == '__main__':
     ## different ways to test the class
     # exchange nga.controller for homeDir
     # change draw state ['heat','scatter']
+    # set the subsample analysis to something different
 
     ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True,drawState='scatter')
     print 'plot saved as ', figName

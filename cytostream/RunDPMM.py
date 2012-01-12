@@ -98,6 +98,7 @@ events = model.get_events_from_file(fileName)
 
 if subsample != 'original':
     subsampleIndices = model.get_subsample_indices(subsample)
+    print subsampleIndices[:6]
     events = events[subsampleIndices,:]
 
 ## account for excluded channels
@@ -198,12 +199,9 @@ if verbose == True:
 tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.pickle"),'w')
 componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.array")
 classifyComponents.tofile(componentsFilePath)
-#tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.pickle"),'w')
 
 cPickle.dump(full,tmp1)
-#cPickle.dump(classifyComponents,tmp2)
 tmp1.close()
-#tmp2.close()
 
 ## classify the modes
 modes = full.make_modal()

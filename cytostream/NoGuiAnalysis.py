@@ -183,7 +183,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
             return None
 
-        #events = self.controller.model.get_events(fileName,subsample=subsample)
+        events = self.controller.get_events(fileName,subsample=subsample)
 
         return events
 
@@ -325,7 +325,6 @@ class NoGuiAnalysis():
             undumpedClusters.append(np.unique(fileLabels[filterIndices]).tolist())
 
         return undumpedClusters
-
 
     def handle_filtering_dict(self,fileName,filteringDict):
         fileList = self.get_file_names()
