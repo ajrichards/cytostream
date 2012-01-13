@@ -28,8 +28,8 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 try:
-    from config_cs import configCS
-    pythonPath = configCS['python_path']
+    from config_cs import CONFIGCS
+    pythonPath = CONFIGCS['python_path']
 except:
     pythonPath = None
 
@@ -74,7 +74,7 @@ class Model:
         ## set python path
         if pythonPath != None: 
             if os.path.exists(pythonPath) == False:
-                print "ERROR: bad specified python path in config.py... using default"
+                print "ERROR: bad specified python path in config.py... using default", pythonPath
                 self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
             else:
                 self.pythonPath = pythonPath

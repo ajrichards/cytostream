@@ -23,6 +23,12 @@ from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
 from SaveSubplots import SaveSubplots
 
+try:
+    from config_cs import CONFIGCS
+except:
+    CONFIGCS = {'python_path':'/usr/local/bin/python',
+                'number_gpus': 1}
+
 class Controller:
     def __init__(self,viewType=None,configDict=None,debug=False):
         '''
@@ -540,10 +546,8 @@ class Controller:
             filterLog = csv.writer(open(filterLogFile,'w'))
 
         ## get events
-        ## ici
         events = self.get_events(fileName,subsample='original')
         
-
         if usingIndices == False:
 
             ## check that labels are of right type
@@ -598,17 +602,16 @@ class Controller:
         if len(self.fileNameList) == 0:
             self.fileNameList = get_fcs_file_names(self.homeDir)
 
-        ## determine the data in focus
-        fileInFocus = self.log.log['file_in_focus']
+        ## variables
         numItersMCMC =  int(self.log.log['num_iters_mcmc'])
         selectedModel = self.log.log['model_to_run']
-        numComponents = int(self.log.log['dpmm_k'])
         modelMode = self.log.log['model_mode']
         modelReference = self.log.log['model_reference']
         subsample = self.log.log['subsample_analysis']
         percentDone = 0
         totalIters = float(len(self.fileNameList)) * numItersMCMC
         percentagesReported = []
+        fileList = self.fileNameList
         self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
         self.save()
 
@@ -616,17 +619,13 @@ class Controller:
             subsample = 'original'
 
         ## error check
-        if modelMode == 'onefit' and modelReference == None:
-            print "ERROR: Controller.run_selected_model - cannot use 'onefit' without specifing a model reference"
-            return
+        if modelMode == 'onefit':
+            print "ERROR: Controller one fit is not a valid model mode"
+            sys.exit()
 
-        ## set the data in focus
-        if fileInFocus != 'all' and fileInFocus not in self.fileNameList:
-            print "ERROR: Controller.run_selected_model -- fileInFocus cannot be found"
-        elif fileInFocus != 'all' and fileInFocus in self.fileNameList:
-            fileList = [fileInFocus]
-        else:
-            fileList = self.fileNameList
+        #if modelMode == 'onefit' and modelReference == None:
+        #    print "ERROR: Controller.run_selected_model - cannot use 'onefit' without specifing a model reference"
+        #    return
 
         ## if model mode is 'onefit' ensure the reference file comes first
         if modelMode == 'onefit':
@@ -635,13 +634,82 @@ class Controller:
                 return
             
         ## if using model reference ensure ref comes first
-        if modelReference != None:
-            
+        if modelReference != None:    
             refPosition = fileList.index(modelReference)
             if refPosition != 0:
                 refFile = fileList.pop(refPosition)
                 fileList = [refFile] + fileList
 
+        ## handle GPU identification
+        numGPUs = CONFIGCS['number_gpus']
+
+        ## option to force the use of only a single gpu
+        if self.log.log['force_single_gpu'] == True:
+            numGPUs = 1
+
+        if type(numGPUs) != type(1):
+            print "ERROR: Controller numGPUs is invalid variable type"
+
+        ## split the file list among the total number of gpus        
+        gpuDeviceList = np.arange(numGPUs)
+        fileListByGPU = {}
+        
+        gpuCount = -1
+        for fileInd in range(len(fileList)):
+            gpuCount+=1
+            if gpuCount > max(gpuDeviceList):
+                gpuCount = 0
+
+            if fileListByGPU.has_key(str(gpuCount)) == False:
+                fileListByGPU[str(gpuCount)] = []
+    
+            fileListByGPU[str(gpuCount)].append(fileList[fileInd])
+
+        ## send jobs to appropriate gpu
+        print fileListByGPU
+        for gpu,fList in fileListByGPU.iteritems():
+
+            fListStr = re.sub("\[|\]|\s|\'","",str(fList))
+            fListStr = re.sub(",",";",fListStr)
+            script = os.path.join(self.baseDir,"QueueGPU.py")
+            if os.path.isfile(script) == False:
+                print "ERROR: Invalid model run file path ", script
+                cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
+                                                       self.homeDir,fListStr,gpu)
+                print cmd
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+            while True:
+                try:
+                    next_line = proc.stdout.readline()
+                    if next_line == '' and proc.poll() != None:
+                        break
+                       
+                    ## to debug uncomment the following 2 lines
+                    if not re.search("it =",next_line):
+                        print next_line
+                        
+                    if re.search("Error|error|ERROR",next_line) and view != None:
+                        view.display_error("There was a problem with your cuda device\n%s"%next_line)
+
+                    if re.search("it =",next_line):
+                        progress = 1.0 / totalIters
+                        percentDone+=progress * 100.0
+                        if progressBar != None:
+                            progressBar.move_bar(int(round(percentDone)))
+                        else:
+                            if int(round(percentDone)) not in percentagesReported:
+                                percentagesReported.append(int(round(percentDone)))
+                                if int(round(percentDone)) != 100: 
+                                    print "\r",int(round(percentDone)),"percent complete",
+                                else:
+                                    print "\r",int(round(percentDone)),"percent complete"
+                except:
+                    break
+            
+
+
+
+        '''
         fileCount = 0
         for fileName in fileList:
             fileCount += 1
@@ -649,7 +717,8 @@ class Controller:
                 script = os.path.join(self.baseDir,"RunDPMM.py")
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(self.pythonPath,script,self.homeDir,fileName,numComponents,subsample), 
+                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(self.pythonPath,script,
+                                                                         self.homeDir,fileName,numComponents,subsample), 
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stdin=subprocess.PIPE)
@@ -695,3 +764,5 @@ class Controller:
                         print "\r",int(round(percentDone)),"percent complete",
                     else:
                         print "\r",int(round(percentDone)),"percent complete"
+
+        '''

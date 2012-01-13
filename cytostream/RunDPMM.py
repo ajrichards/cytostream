@@ -25,35 +25,36 @@ import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -k numClusters -h homeDir -s subsample -v"
+    print sys.argv[0] + " -f fileName -p projName -g gpuDevice -h homeDir -s subsample -v"
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:k:s:c:v')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:s:c:v')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
     print "Note: fileName (-f) must be the full" 
     print "      homeDir  (-h) home directory for current project"
-    print "             k (-k) the desired number of components"
     print " longModelName (-l) the long descriptive model name"
     print " subsample     (-s) subsample is t or f"
+    print " gpuDevice     (-g) device id for gpu"
     print " verbose       (-v) verbose flag"
     sys.exit()
 
 k = 16
 name = None
 verbose = False
+gpuDevice = 0
 for o, a in optlist:
     if o == '-f':
         fileName = a
     if o == '-h':
         homeDir = a
-    if o == '-k':
-        k = a
     if o == '-s':
         subsample = a
     if o == '-v':
         verbose = True
+    if o == '-g':
+        gpuDevice = int(a)
 
 ## initial error checking
 if os.path.isdir(homeDir) == False:
@@ -65,22 +66,17 @@ projName = os.path.split(homeDir)[-1]
 projectID = os.path.split(homeDir)[-1]
 loadFile = None
 
-if re.search('\D',str(k)):
-    print "INPUT ERROR: k must be numeric"
-else:
-    k = int(k)
-
 ## initialize a logger and a model to get specified files and channels
 log = Logger()
 log.initialize(homeDir,load=True)
 selectedTransform = log.log['selected_transform']
 
-## check to see if this is a filtering step
 ## determine the model mode
 modelMode = log.log['model_mode']
 modelReference = log.log['model_reference']
 modelReferenceRunID =  log.log['model_reference_run_id']
 dpmmGamma = float(log.log['dpmm_gamma'])
+k = int(log.log['dpmm_k'])
 
 ## prepare model
 model = Model()
@@ -90,8 +86,10 @@ numItersMCMC =  int(log.log['num_iters_mcmc'])
 cleanBorderEvents = log.log['clean_border_events']
 
 ## get events
-if type(subsample) != type('original'):
+try:
     subsample = str(int(float(subsample)))
+except:
+    pass
 
 ## handle getting events
 events = model.get_events_from_file(fileName)
@@ -167,6 +165,9 @@ if loadModel == False:
     if loadParams == False:
         mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
         mod.gamma = dpmmGamma
+
+        ## handle gpu
+        mod.device = gpuDevice
         mod.fit(nonZeroEvents,verbose=True)
         full = mod.get_results()
         tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')

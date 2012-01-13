@@ -1,1 +1,2 @@
-configCS = {'python_path':'/usr/local/bin/python'}
+configCS = {'python_path':'/usr/bin/python',
+	    'number_gpus:1}
