@@ -28,8 +28,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.create_new_project(self.homeDir,channelDict=channelDict,record=False)
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
-    
-    
+        
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
