@@ -38,13 +38,14 @@ class TestCase2(unittest.TestCase):
 
         fileNameList = self.nga.get_file_names()
 
+        
         ## create all pairwise figs for all files
         #for fileName in fileNameList:
         #    self.nga.make_results_figures(fileName,'run1')
 
         ## create a filter that consists of clusters 1 and 2
         parentModelRunID = 'run1'
-        filterID = 'filter1'
+        #filterID = 'filter1'
         modelMode = 'modes'
         clusterIDs = [1,2]
         for fileName in fileNameList:
@@ -59,6 +60,7 @@ class TestCase2(unittest.TestCase):
 
         ## return filter in focus to default
         #self.nga.set('filter_in_focus','None')
+        
 
     def tests(self):
         ## ensure project was created
