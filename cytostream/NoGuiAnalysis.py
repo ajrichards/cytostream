@@ -261,9 +261,9 @@ class NoGuiAnalysis():
         """
 
         ## error checking
-        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.pickle'%(fileName,modelRunID))
+        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.array'%(fileName,modelRunID))
         if os.path.exists(modelPath) == False:
-            print "ERROR: model path does not exist did you run the model?"
+            print "ERROR: NoGuiAnalysis -- model path does not exist did you run the model?"
             return None
 
         fileList = self.get_file_names()

@@ -98,7 +98,6 @@ events = model.get_events_from_file(fileName)
 
 if subsample != 'original':
     subsampleIndices = model.get_subsample_indices(subsample)
-    print subsampleIndices[:6]
     events = events[subsampleIndices,:]
 
 ## account for excluded channels

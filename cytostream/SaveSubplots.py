@@ -167,31 +167,40 @@ class SaveSubplots():
             ## get original events and labels for draw_plot
             labels = self.controller.get_labels(subplotFile,subplotRunID)
             events = self.controller.get_events(subplotFile,'original')
+            
+            ## ensure approproate subsample
+            try:
+                self.subsample = int(float(self.subsample))
+            except:
+                pass
 
             ## ensure only maximum num events are shown
             maxScatter = int(float(self.log.log['setting_max_scatter_display']))
             if self.subsample == 'original' and events.shape[0] > maxScatter:
-                print 'debug 1'
                 self.subsample = maxScatter
                 subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
-                labels = labels[subsampleIndices]
+                if labels != None:
+                    labels = labels[subsampleIndices]
+            ## case where original is smaller than max scatter display
             elif self.subsample == 'original':
-                print 'debug 2'
                 subsampleIndices = np.arange(events.shape[0])
-            ## if labels are smaller than subsample (usually means model was run on a subsample)
-            elif len(labels) < int(self.subsample):
-                print 'debug 3'
+            ## case where we have a subsample but no labels
+            elif labels == None:
+                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            ## case where labels are smaller than subsample (usually means model was run on a subsample)
+            elif len(labels) < self.subsample:
                 self.subsample = len(labels)
                 subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
-            elif len(labels) == int(self.subsample):
+            ## case where labels and subsample match
+            elif len(labels) == self.subsample:
                 subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
             else:
                 print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
 
-            ## If labels are smaller than events the subsample must match that size
+            ## error check that  labels and subsample match
             if labels == None:
                 pass
-            elif events.shape[0] != len(labels) and len(labels) != subsampleIndices.shape[0]:
+            elif len(labels) != subsampleIndices.shape[0]:
                 print "ERROR: SaveSubplots Error Check -- subsample, labels and events don't match", events.shape, len(labels), type(self.subsample)
 
             index1,index2 = subplotChannels
@@ -205,13 +214,6 @@ class SaveSubplots():
             axesLabels = (None,None)
             showNoise = False
 
-            ## labels
-            #if self.figMode == 'analysis':
-            #    self.controller.labels_load(subplotRunID,modelType=self.resultsMode)
-            #    labelsList = self.controller.labelsList[subplotRunID]
-            #else:
-            #    labelsList == None
-
             ## handle args
             args = [None for i in range(18)]
             args[0] = self.get_axes(subplotIndex)
@@ -220,7 +222,7 @@ class SaveSubplots():
             args[3] = self.channelDict
             args[4] = index1
             args[5] = index2
-            args[6] = subsampleIndices      #          self.subsample
+            args[6] = subsampleIndices
             args[7] = self.log.log['selected_transform']
             args[8] = labels
             args[9] = subplotHighlight
