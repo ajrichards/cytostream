@@ -29,7 +29,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
     
-    '''    
+    
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
@@ -71,7 +71,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-    '''
+    
     def testRunModel(self):
         excludedChannelInd = 1
         subsample = '1e3'

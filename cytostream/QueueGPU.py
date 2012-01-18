@@ -5,7 +5,7 @@ over an arbitrary number of GPUs.
 
 '''
 
-import getopt,sys,os,re,subprocess
+import getopt,sys,os,re,subprocess,time,csv
 import numpy as np
 import matplotlib as mpl
 
@@ -56,18 +56,25 @@ selectedModel = 'dpmm'
 fileList = fileListStr.split(",")
 fileCount = 0
 percentagesReported = []
+totalIters = 1100
 
 def sanitize_check(script):
-            if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
-                return False
-            else:
-                return True
+    if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
+        return False
+    else:
+        return True
                 
 for fileName in fileList:
     fileCount += 1
 
     if fileCount == 1:
         print 'queue_%s_%s'%(gpuDevice,0.001)
+
+    ## create log file to write output too
+    writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s_gpu.log"%gpuDevice),'wa'))
+    percentsToPrint = range(100)
+    alreadyReported = []
+    percentDone = 0.0
 
     if selectedModel == 'dpmm':
         script = os.path.join(baseDir,"RunDPMM.py")
@@ -79,61 +86,32 @@ for fileName in fileList:
             print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
             sys.exit()
             
-        #proc = subprocess.Popen(cmd,shell=True,
-        #                        stdout=subprocess.PIPE,
-        #                        stdin=subprocess.PIPE)
-        #proc = subprocess.call(cmd,shell=True)
+        proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
         
-        #print dir(proc)
+        ## wait until job is finished
+        output = proc.communicate()
 
-        while True:
-            try:
-                next_line = proc.stdout.readline()
-                if next_line == '' and proc.poll() != None:
-                    break
-                       
-                ## to debug uncomment the following 2 lines
-                if not re.search("it =",next_line):
-                    print next_line
-                        
-                if re.search("error",next_line,flags=re.IGNORECASE) and view != None:
-                    view.display_error("There is a problem with your cuda device(s)\n%s"%next_line)
+        '''
+        THIS DOES NOT WORK AND BREAKS THINGS
+        while not proc.poll():
+            #try:
+            next_line = proc.stdout.readline()
+            if re.search("it =",next_line):
+                #print "...", next_line
+                progress = 1.0 / totalIters
+                percentDone+=progress * 100.0
+                if int(percentDone) in percentsToPrint and int(percentDone) not in alreadyReported: 
+                    writer.writerow([int(percentDone)])    
+                    alreadyReported.append(int(percentDone))
 
-                if re.search("it =",next_line):
-                    progress = 1.0 / totalIters
-                    #percentDone+=progress * 100.0
-                    
-                    percentComplete = (progress + fileCount) / float(len(fileList)) #float(fileCount)/float(len(fileList))
-                    print 'queue_%s_%s'%(gpuDevice,percentComplete)
+                #if next_line == '' and proc.poll() != None:
+                #    break
 
-                    #report_progress(percent_complete)
-                    #if progressBar != None:
-                    #    progressBar.move_bar(int(round(percentDone)))
-                    #else:
-                    #    if int(round(percentDone)) not in percentagesReported:
-                    #        percentagesReported.append(int(round(percentDone)))
-                    #        if int(round(percentDone)) != 100: 
-                    #            print "\r",int(round(percentDone)),"percent complete",
-                    #        else:
-                    #            print "\r",int(round(percentDone)),"percent complete"
-            except:
-                break
+            #except:
+            #    break
+        '''
     else:
         print "ERROR: invalid selected model", selectedModel
 
     percentComplete = float(fileCount)/float(len(fileList))
     print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
-
-    ## output progress 
-    #if modelMode == 'onefit':
-    #    percentDone = float(fileCount) / float(len(fileList)) * 100.0
-    #            
-    #    if progressBar != None:
-    #        progressBar.move_bar(int(round(percentDone)))
-    #    else:
-    #        if int(round(percentDone)) != 100: 
-    #            print "\r",int(round(percentDone)),"percent complete",
-    #        else:
-    #            print "\r",int(round(percentDone)),"percent complete"
-
-

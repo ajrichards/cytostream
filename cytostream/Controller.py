@@ -599,16 +599,31 @@ class Controller:
 
     def run_selected_model(self,progressBar=None,view=None,useSubsample=True):
 
-        def report_progress(percentDone,percentagesReported,progressBar=None):
+        def report_progress(percentComplete,percentReported,progressBar=None):
             if progressBar != None:
-                progressBar.move_bar(int(round(percentDone)))
+                progressBar.move_bar(int(round(percentComplete)))
             else:
-                if int(round(percentDone)) not in percentagesReported:
-                    percentagesReported.append(int(round(percentDone)))
-                    if int(round(percentDone)) != 100:
-                        print "\r",int(round(percentDone)),"percent complete",
-                    else:
-                        print "\r",int(round(percentDone)),"percent complete"
+                isNew = False
+                for _gpu,_percent in percentComplete.iteritems():
+                    if int(round(_percent)) not in percentReported[_gpu]:
+                        isNew = True
+                
+                if isNew == True:
+                    allComplete = True
+                    for _gpu,_percent in percentComplete.iteritems():
+                        if int(round(_percent)) != 100:
+                            allComplete = False
+                    isFirst = True
+                    for _gpu,_percent in percentComplete.iteritems():
+                        
+                        if isFirst == True:
+                            print "\r GPU:%s"%_gpu,int(round(_percent)),
+                        if isFirst == False:
+                            print "GPU:%s"%_gpu,int(round(_percent)),
+                        isFirst = False
+
+                    if allComplete == True:
+                        print "\nAll models have been run"
 
         def sanitize_check(script):
             if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
@@ -630,6 +645,8 @@ class Controller:
         totalIters = float(len(self.fileNameList)) * numItersMCMC
         percentagesReported = []
         fileList = self.fileNameList
+        
+        modelRunID = 'run%s'%str(int(self.log.log['models_run_count']) + 1)
         self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
         self.save()
 
@@ -693,48 +710,99 @@ class Controller:
             
             cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
                                                    self.homeDir,fListStr,gpu)
-
             ## sanitize shell input
             isClean = sanitize_check(cmd)
             if isClean == False:
                 print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
                 sys.exit()
 
-            proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-            while True:
-                try:
-                    next_line = proc.stdout.readline()
-                    if next_line == '' and proc.poll() != None:
-                        break
-                       
-                    ## to debug uncomment the following 2 lines
-                    #if not re.search("it =",next_line):
-                    print next_line
-                        
-                    if re.search("Error|error|ERROR",next_line) and view != None:
-                        view.display_error("There was a problem with your cuda device\n%s"%next_line)
-
-                    if re.search("queue =",next_line):
-                        
-                        print 'report_progress', next_line
-
-                        #progress = 1.0 / totalIters
-                        #percentDone+=progress * 100.0
-                        #if progressBar != None:
-                        #    progressBar.move_bar(int(round(percentDone)))
-                        #else:
-                        #    if int(round(percentDone)) not in percentagesReported:
-                        #        percentagesReported.append(int(round(percentDone)))
-                        #        if int(round(percentDone)) != 100: 
-                        #            print "\r",int(round(percentDone)),"percent complete",
-                        #        else:
-                        #            print "\r",int(round(percentDone)),"percent complete"
-                except:
-                    break
+            proc = subprocess.Popen(cmd,shell=True)#,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
             
-        print "DEBUG: Controller -- all jobs complete"
+        print "DEBUG: Controller -- all jobs have been sent"
 
-        
+
+        totalCompletedFiles = 0
+        percentComplete = {}
+        percentReported = {}
+        for gpu in fileListByGPU.keys():
+            percentComplete[gpu] = 0.001
+            percentReported[gpu] = []
+
+        while totalCompletedFiles < len(self.fileNameList):
+            time.sleep(2)
+            completedFiles = {}
+            for gpu in fileListByGPU.keys():
+                completedFiles[gpu] = []
+
+            for fName in os.listdir(os.path.join(self.homeDir,'models')):
+                if not re.search("\_%s\.log"%modelRunID,fName):
+                    continue
+                
+                ## count completed files
+                actualFileName = re.sub("\_%s\.log"%modelRunID,"",fName)
+                for gpu,fList in fileListByGPU.iteritems():
+                    if actualFileName in fList:
+                        completedFiles[gpu].append(actualFileName)
+                        totalCompletedFiles += 1        
+
+                ## print out process
+                for gpu,fList in completedFiles.iteritems():
+                    _percentComplete = (float(len(completedFiles[gpu])) / float(len(fileListByGPU[gpu]))) * 100.0
+                    percentComplete[gpu] = _percentComplete
+                    report_progress(percentComplete,percentReported,progressBar=progressBar)
+
+        ## wait until files have been created
+        #re1 = re.compile("\_\d\_gpu\.log")
+        #re2 = re.compile("\d+")
+        #totalCompletedFiles = 0
+        #percentComplete = {}
+        #percentReported = {}
+        #for gpu in fileListByGPU.keys():
+        #    percentComplete[gpu] = 0.001
+        #    percentReported[gpu] = []
+        #
+        #report_progress(percentComplete,percentReported,progressBar=progressBar)
+
+        #time.sleep(3)
+        #while totalCompletedFiles < len(self.fileNameList):
+        #    completedFiles = {}
+        #    for gpu in fileListByGPU.keys():
+        #        completedFiles[gpu] = []
+        #
+        #    for fName in os.listdir(os.path.join(self.homeDir,'models')):
+        #        if not re.search(re1,fName):
+        #            continue
+        #        
+        #        ## get last line of log file
+        #        actualFileName = re.sub(re1,"",fName)
+        #        gpuID = re.findall(re1,fName)[0]
+        #        gpuID = re.findall(re2,gpuID)[0]
+        #
+        #        tmp = open(os.path.join(self.homeDir,'models',fName),'rb')
+        #        #reader = csv.reader(tmp)
+        #        filePercentComplete = None
+        #        allLines = tmp.readlines()
+        #        if len(allLines) == 0:
+        #            tmp.close()
+        #            continue
+        #        filePercentComplete = float(allLines[-1]) / 100.0
+        #        #for linja in reader:
+        #        #    if len(linja) == 1:
+        #        #        filePercentComplete = float(linja[0]) / 100.0
+        #        if filePercentComplete != None:
+        #            percentComplete[gpuID] = int((float(filePercentComplete + len(completedFiles[gpuID])) / float(len(fileListByGPU[gpuID]))) * 100.0)
+        #            
+        #        for gpu,fList in fileListByGPU.iteritems():
+        #            if filePercentComplete == 1.0 and actualFileName in fList:
+        #                completedFiles[gpu].append(actualFileName)
+        #                totalCompletedFiles += 1
+        #                break
+        #    ## print out process
+        #    for gpu,fList in completedFiles.iteritems():
+        #        _percentComplete = int(float(len(fList)) / float(len(fileListByGPU[gpu])) * 100.0)
+        #        percentComplete[gpu] = _percentComplete
+        #        report_progress(percentComplete,percentReported,progressBar=progressBar)
+
         '''
         fileCount = 0
         for fileName in fileList:
