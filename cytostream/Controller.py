@@ -598,6 +598,24 @@ class Controller:
     ##################################################################################################
 
     def run_selected_model(self,progressBar=None,view=None,useSubsample=True):
+
+        def report_progress(percentDone,percentagesReported,progressBar=None):
+            if progressBar != None:
+                progressBar.move_bar(int(round(percentDone)))
+            else:
+                if int(round(percentDone)) not in percentagesReported:
+                    percentagesReported.append(int(round(percentDone)))
+                    if int(round(percentDone)) != 100:
+                        print "\r",int(round(percentDone)),"percent complete",
+                    else:
+                        print "\r",int(round(percentDone)),"percent complete"
+
+        def sanitize_check(script):
+            if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
+                return False
+            else:
+                return True
+
         ## ensure filelist variable is up to date
         if len(self.fileNameList) == 0:
             self.fileNameList = get_fcs_file_names(self.homeDir)
@@ -666,18 +684,23 @@ class Controller:
             fileListByGPU[str(gpuCount)].append(fileList[fileInd])
 
         ## send jobs to appropriate gpu
-        print fileListByGPU
         for gpu,fList in fileListByGPU.iteritems():
-
             fListStr = re.sub("\[|\]|\s|\'","",str(fList))
-            fListStr = re.sub(",",";",fListStr)
+            #fListStr = re.sub(",",";",fListStr)
             script = os.path.join(self.baseDir,"QueueGPU.py")
             if os.path.isfile(script) == False:
                 print "ERROR: Invalid model run file path ", script
-                cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
-                                                       self.homeDir,fListStr,gpu)
-                print cmd
-                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+            
+            cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
+                                                   self.homeDir,fListStr,gpu)
+
+            ## sanitize shell input
+            isClean = sanitize_check(cmd)
+            if isClean == False:
+                print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
+                sys.exit()
+
+            proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
             while True:
                 try:
                     next_line = proc.stdout.readline()
@@ -685,30 +708,33 @@ class Controller:
                         break
                        
                     ## to debug uncomment the following 2 lines
-                    if not re.search("it =",next_line):
-                        print next_line
+                    #if not re.search("it =",next_line):
+                    print next_line
                         
                     if re.search("Error|error|ERROR",next_line) and view != None:
                         view.display_error("There was a problem with your cuda device\n%s"%next_line)
 
-                    if re.search("it =",next_line):
-                        progress = 1.0 / totalIters
-                        percentDone+=progress * 100.0
-                        if progressBar != None:
-                            progressBar.move_bar(int(round(percentDone)))
-                        else:
-                            if int(round(percentDone)) not in percentagesReported:
-                                percentagesReported.append(int(round(percentDone)))
-                                if int(round(percentDone)) != 100: 
-                                    print "\r",int(round(percentDone)),"percent complete",
-                                else:
-                                    print "\r",int(round(percentDone)),"percent complete"
+                    if re.search("queue =",next_line):
+                        
+                        print 'report_progress', next_line
+
+                        #progress = 1.0 / totalIters
+                        #percentDone+=progress * 100.0
+                        #if progressBar != None:
+                        #    progressBar.move_bar(int(round(percentDone)))
+                        #else:
+                        #    if int(round(percentDone)) not in percentagesReported:
+                        #        percentagesReported.append(int(round(percentDone)))
+                        #        if int(round(percentDone)) != 100: 
+                        #            print "\r",int(round(percentDone)),"percent complete",
+                        #        else:
+                        #            print "\r",int(round(percentDone)),"percent complete"
                 except:
                     break
             
+        print "DEBUG: Controller -- all jobs complete"
 
-
-
+        
         '''
         fileCount = 0
         for fileName in fileList:
