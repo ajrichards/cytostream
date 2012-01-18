@@ -29,18 +29,15 @@ if len(sys.argv) < 3:
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:s:c:v')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:g:c:v')
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -p projName"
     print "Note: fileName (-f) must be the full" 
     print "      homeDir  (-h) home directory for current project"
-    print " longModelName (-l) the long descriptive model name"
-    print " subsample     (-s) subsample is t or f"
     print " gpuDevice     (-g) device id for gpu"
     print " verbose       (-v) verbose flag"
     sys.exit()
 
-k = 16
 name = None
 verbose = False
 gpuDevice = 0
@@ -49,8 +46,6 @@ for o, a in optlist:
         fileName = a
     if o == '-h':
         homeDir = a
-    if o == '-s':
-        subsample = a
     if o == '-v':
         verbose = True
     if o == '-g':
@@ -84,6 +79,7 @@ model.initialize(homeDir)
 modelNum = "run%s"%int(log.log['models_run_count'])
 numItersMCMC =  int(log.log['num_iters_mcmc'])
 cleanBorderEvents = log.log['clean_border_events']
+subsample = log.log['subsample_analysis']
 
 ## get events
 try:

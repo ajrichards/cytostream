@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import sys,os,unittest,time,re
+import sys,os,unittest,time,re,time
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
@@ -28,7 +28,8 @@ class ControllerTest(unittest.TestCase):
         self.controller.create_new_project(self.homeDir,channelDict=channelDict,record=False)
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
-        
+    
+    '''    
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
@@ -70,7 +71,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-
+    '''
     def testRunModel(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -83,6 +84,9 @@ class ControllerTest(unittest.TestCase):
         ## run model
         self.controller.handle_subsampling(subsample)
         self.controller.run_selected_model(useSubsample=True)
+        time.sleep(3)
+        print 'model run'
+        print os.listdir(os.path.join(self.homeDir,"models"))
         fileName = "3FITC_4PE_004"
         fileChannels = self.controller.model.get_file_channel_list(fileName)    
         excludedChannel = fileChannels[excludedChannelInd]

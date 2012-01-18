@@ -5,15 +5,13 @@ over an arbitrary number of GPUs.
 
 '''
 
-import getopt,sys,os,re
+import getopt,sys,os,re,subprocess
 import numpy as np
 import matplotlib as mpl
 
 ## important line to fix popup error in mac osx
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
-
-#from cytostream import SaveSubplots
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:],'h:f:g:b:')
@@ -54,19 +52,40 @@ else:
     pythonPath = os.path.join(os.path.sep,"usr","bin","python")
 
 ## transform file list
-fileList = fileListStr.split(";")
+selectedModel = 'dpmm'
+fileList = fileListStr.split(",")
 fileCount = 0
+percentagesReported = []
+
+def sanitize_check(script):
+            if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
+                return False
+            else:
+                return True
+                
 for fileName in fileList:
     fileCount += 1
+
+    if fileCount == 1:
+        print 'queue_%s_%s'%(gpuDevice,0.001)
+
     if selectedModel == 'dpmm':
         script = os.path.join(baseDir,"RunDPMM.py")
         if os.path.isfile(script) == False:
             print "ERROR: Invalid model run file path ", script 
-            proc = subprocess.Popen("%s %s -h %s -g %s -f %s -k %s -s %s"%(pythonPath,script,homeDir,gpuDevice
-                                                                           fileName,numComponents,subsample), 
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                stdin=subprocess.PIPE)
+        cmd = "%s %s -h %s -g %s -f %s"%(pythonPath,script,homeDir,gpuDevice,fileName) 
+        isClean = sanitize_check(cmd)
+        if isClean == False:
+            print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
+            sys.exit()
+            
+        #proc = subprocess.Popen(cmd,shell=True,
+        #                        stdout=subprocess.PIPE,
+        #                        stdin=subprocess.PIPE)
+        #proc = subprocess.call(cmd,shell=True)
+        
+        #print dir(proc)
+
         while True:
             try:
                 next_line = proc.stdout.readline()
@@ -82,20 +101,28 @@ for fileName in fileList:
 
                 if re.search("it =",next_line):
                     progress = 1.0 / totalIters
-                    percentDone+=progress * 100.0
-                    if progressBar != None:
-                        progressBar.move_bar(int(round(percentDone)))
-                    else:
-                        if int(round(percentDone)) not in percentagesReported:
-                            percentagesReported.append(int(round(percentDone)))
-                            if int(round(percentDone)) != 100: 
-                                print "\r",int(round(percentDone)),"percent complete",
-                            else:
-                                print "\r",int(round(percentDone)),"percent complete"
+                    #percentDone+=progress * 100.0
+                    
+                    percentComplete = (progress + fileCount) / float(len(fileList)) #float(fileCount)/float(len(fileList))
+                    print 'queue_%s_%s'%(gpuDevice,percentComplete)
+
+                    #report_progress(percent_complete)
+                    #if progressBar != None:
+                    #    progressBar.move_bar(int(round(percentDone)))
+                    #else:
+                    #    if int(round(percentDone)) not in percentagesReported:
+                    #        percentagesReported.append(int(round(percentDone)))
+                    #        if int(round(percentDone)) != 100: 
+                    #            print "\r",int(round(percentDone)),"percent complete",
+                    #        else:
+                    #            print "\r",int(round(percentDone)),"percent complete"
             except:
                 break
     else:
         print "ERROR: invalid selected model", selectedModel
+
+    percentComplete = float(fileCount)/float(len(fileList))
+    print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
 
     ## output progress 
     #if modelMode == 'onefit':
