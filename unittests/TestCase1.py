@@ -28,30 +28,30 @@ class TestCase1(unittest.TestCase):
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
 
         ## specify variables needed for NoGuiAnalysis
-        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
-        channelDict = {'fsc-h':0,'ssc-h':1}
+        #filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        #channelDict = {'fsc-h':0,'ssc-h':1}
         
-        #selectedFiles = ["J6901HJ1-06_CMV_CD8","J6901HJ1-06_CMV_CD4","J6901HJ1-06_SEB_CD8","J6901HJ1-06_SEB_CD4"]
-        #filePathList = []
-        #for selectedFile in selectedFiles:
-        #    filePath = os.path.join("/","home","clemmys","research","manuscripts","PositivityThresholding","scripts","data","eqapol11C",selectedFile+".fcs")
-        #    filePathList.append(filePath)
-        #hannelDict = {'fsc-a':0, 'fsc-h':1, 'fsc-w':2, 'ssc-a':3, 'ssc-h':4, 'ssc-w':5, 'time':6}
+        selectedFiles = ["J6901HJ1-06_CMV_CD8","J6901HJ1-06_CMV_CD4","J6901HJ1-06_SEB_CD8","J6901HJ1-06_SEB_CD4"]
+        filePathList = []
+        for selectedFile in selectedFiles:
+            filePath = os.path.join("/","home","clemmys","research","manuscripts","PositivityThresholding","scripts","data","eqapol11C",selectedFile+".fcs")
+            filePathList.append(filePath)
+        channelDict = {'fsc-a':0, 'fsc-h':1, 'fsc-w':2, 'ssc-a':3, 'ssc-h':4, 'ssc-w':5, 'time':6}
 
         ## run the initial model for all files
+        self.fileList = selectedFiles
         configDict = configDictDefault.copy()
         configDict['num_iters_mcmc'] = 1100
         configDict['subsample_qa'] = 500
         configDict['subsample_analysis'] = 500
 
-        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=True,record=False)
+        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
         self.nga.run_model()
         fileNameList = self.nga.get_file_names()
     
-        
         ## create all pairwise figs for all files
-        for fileName in fileNameList:
-            self.nga.make_results_figures(fileName,'run1')
+        #for fileName in fileNameList:
+        #    self.nga.make_results_figures(fileName,'run1')
         
         ## run the model again 
         #fileName = "3FITC_4PE_004"
@@ -68,17 +68,13 @@ class TestCase1(unittest.TestCase):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
-        
-        ## get file names 
-        fileNameList = self.nga.get_file_names()
-        self.assertEqual(len(fileNameList),1)
-
+                
         ## get events
         events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
 
         ## check that qa figs were made
-        self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
+        #self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
         
         ## check that model results can be retrieved
         modelRunID = 'run1'
@@ -92,7 +88,7 @@ class TestCase1(unittest.TestCase):
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
-        self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
+        #self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
 
         #modelRunID = 'run2'
         #componentModel, componentClasses = self.nga.get_model_results(fileNameList[0],modelRunID,'components')

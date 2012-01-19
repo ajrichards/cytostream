@@ -61,7 +61,7 @@ class Controller:
         self.fileChannelPath = None
         self.baseDir = self.model.baseDir
         self.currentPlotView = None
-        self.compensationDict = None
+        self.compensationFilePath= None
         self.eventsList = []
         self.fileNameList = None
         self.channelDict = None
@@ -500,7 +500,7 @@ class Controller:
         autoComp = self.log.log['auto_compensation']
 
         self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,
-                              compensationDict=self.compensationDict,transform=transform,autoComp=autoComp)
+                              compensationFilePath=self.compensationFilePath,transform=transform,autoComp=autoComp)
 
         ## initialize class wide variables 
         self.fileNameList = get_fcs_file_names(self.homeDir)

@@ -101,7 +101,7 @@ class Model:
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
             
-    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None,autoComp=True,compensationDict=None):
+    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None,autoComp=True,compensationFilePath=None):
         """
         about: 
             This is a handler function for the script LoadFile.py which loads an fcs
@@ -140,6 +140,13 @@ class Model:
             if progressBar != None:
                 progressBar.progressLabel.setText("loading %s..."%os.path.split(filePath)[-1])
 
+            if compensationFilePath == None:
+                compensationFilePath = "None"
+            else:
+                if os.path.exists(compensationFilePath) == False:
+                    print "ERROR: Model -- bad compensation file path specified"
+                    compensationFilePath = "None"
+
             ## if data is of type array
             if dataType == 'array':
                 fileChannels = fileChannelPath
@@ -157,11 +164,6 @@ class Model:
                 tmp = open(newChanFilePath,'w')
                 cPickle.dump(fileChannels,tmp)
                 tmp.close()
-
-            compensationFilePath = "None"
-            if compensationDict != None:
-                fileName = os.path.split(filePath)[-1]
-                compensationFilePath = compensationDict[re.sub("\.txt|\.csv|\.fcs","",fileName,flags=re.IGNORECASE)]
                
             ## if data is not of type array
             else:
