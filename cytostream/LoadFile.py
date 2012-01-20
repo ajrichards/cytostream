@@ -63,7 +63,7 @@ if dataType not in ['fcs','tab','comma','array']:
     print "INPUT ERROR: bad data type specified", dataType
     sys.exit()
 
-if transform not in ['logicle','log',None]:
+if str(transform) not in ['logicle','log','None']:
     print "INPUT ERROR: bas data transform specified ", transform
     sys.exit()
 
@@ -76,8 +76,12 @@ if dataType == 'fcs':
         fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,transform=None)
     else:
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
-
+    
+    ## handle transform
     isTransformed = False
+    if str(transform) == 'None':
+        isTransformed = True
+    
     if fcsData.notes.header['version'] < 2.0:
         isTransformed = True
 
