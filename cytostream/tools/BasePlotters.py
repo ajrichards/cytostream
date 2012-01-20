@@ -151,7 +151,6 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
 
     ## handle data edge buffers
     def scaled_axis(axis):
-        
         if axis == 'x':
             bufferX = buff * (events[:,index1].max() - events[:,index1].min())
             ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
@@ -188,12 +187,12 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
         set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
     elif yTransformed == False and transform == 'log':
         set_logicle_transformed_ticks(ax,axis='y',fontsize=fontSize,fontname=fontName)
- 
+
     ## check to see if we force scale the axes
     if useScaled == True:
         scaled_axis('x')
         scaled_axis('y')
- 
+        
     ## for an axesless vesion
     if axesOff == True:
         ax.set_yticks([])

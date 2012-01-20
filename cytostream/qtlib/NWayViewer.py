@@ -46,11 +46,38 @@ class NWayViewer(QtGui.QWidget):
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
 
         for i in range(numSubplots):
-            cp = CytostreamPlotter(selectedChannel1=self.channels[i][0],selectedChannel2=self.channels[i][1],enableGating=False,
-                                   homeDir=self.homeDir,isProject=True,compactMode=True)
-            cp.init_labels_events(self.files[i],self.runs[i],modelType=self.modelType)
-            cp.draw()
+            cp = CytostreamPlotter(fileNameList,
+                                   eventsList,
+                                   channelList,
+                                   channelDict,
+                                   drawState='heat',
+                                   parent=None,
+                                   background=True,
+                                   selectedChannel1=self.channels[i][0],
+                                   selectedChannel2=self.channels[i][0],
+                                   mainWindow=None,
+                                   uniqueLabels=None,
+                                   enableGating=False,
+                                   homeDir=None,
+                                   compactMode=False,
+                                   labelList=None,
+                                   minNumEvents=3,
+                                   showNoise=False,
+                                   axesLabels=True,
+                                   useScaled=False,
+                                   plotTitle="default",
+                                   dpi=100,
+                                   subsample = 'original',
+                                   transform='logicle'
+                                   )
+
+            #cp = CytostreamPlotter(selectedChannel1=self.channels[i][0],selectedChannel2=self.channels[i][1],enableGating=False,
+            #                       homeDir=self.homeDir,isProject=True,compactMode=True)
+            #cp.init_labels_events(self.files[i],self.runs[i],modelType=self.modelType)
+            #cp.draw()
     
+            cp.draw(selectedFile=fileNameList[0])
+
             if self.numSubplots in [2]:
                 self.hbl1.addWidget(cp)
             elif self.numSubplots in [3]:
