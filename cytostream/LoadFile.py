@@ -71,21 +71,21 @@ if transform not in ['logicle','log',None]:
 projName = os.path.split(homeDir)[-1]
 
 if dataType == 'fcs':
-    #if compensationFilePath != "None":
-    #    osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
-    #    fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,tranform=None)
-    #else:
-    #    fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
-    #
-    #if transform != None:
-    #    pass
-    #if transform == 'logicle':
-    #    #fcsData.logicle(scale_max=262144)
-    #    fcsData.logicle()
-    #if transform == 'log':
-    #    fcsData.log()
+    if compensationFilePath != "None":
+        osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
+        fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,tranform=None)
+    else:
+        fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
+    
+    if transform != None:
+        pass
+    if transform == 'logicle':
+        fcsData.logicle(scale_max=262144)
+        fcsData.logicle()
+    if transform == 'log':
+        fcsData.log()
 
-    fcsData = fcm.loadFCS(filePath)
+    #fcsData = fcm.loadFCS(filePath)
     fileChannels = fcsData.channels
 
 elif dataType == 'comma':
@@ -108,10 +108,6 @@ newChanFilePath = os.path.join(homeDir,'data',newChanFileName)
 ## save
 data = fcsData[:,:].copy()
 np.save(newDataFilePath,data)
-#data.tofile(newDataFilePath)
-#tmp = open(newDataFilePath,'w')
-#cPickle.dump(data,tmp)
-#tmp.close()
 
 ## save channels
 fileChannels = [chan for chan in fileChannels]
