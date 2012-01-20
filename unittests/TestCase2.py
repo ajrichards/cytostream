@@ -24,7 +24,7 @@ class TestCase2(unittest.TestCase):
         else:
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
-        ## necessary variables   
+        ## necessary variables
         filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
         projectID = 'utest'
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
@@ -51,8 +51,8 @@ class TestCase2(unittest.TestCase):
         for fileName in fileNameList:
             self.nga.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
-        self.nga.set('filter_in_focus',filterID)
-        self.nga.run_model()
+        #self.nga.set('filter_in_focus',filterID)
+        #self.nga.run_model()
 
         ## create all pairwise figs for all files
         #for fileName in fileNameList:
@@ -61,7 +61,6 @@ class TestCase2(unittest.TestCase):
         ## return filter in focus to default
         #self.nga.set('filter_in_focus','None')
         
-
     def tests(self):
         ## ensure project was created
         self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))

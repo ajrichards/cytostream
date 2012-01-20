@@ -14,7 +14,7 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,channelsDict,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
+    def __init__(self,homeDir,channelDict=None,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None):
         """
           class constructor 
@@ -40,7 +40,6 @@ class NoGuiAnalysis():
         self.verbose = verbose
         self.inputChannels = inputChannels
         self.compensationFilePath = compensationFilePath
-        self.channelsDict = channelsDict
 
         ## initialize
         if loadExisting == False:
@@ -48,6 +47,12 @@ class NoGuiAnalysis():
         else:
             self.initialize_existing()
 
+        ## handle channels dict
+        if channelDict == None:
+            self.channelDict = self.controller.model.load_channel_dict()
+        else:
+            self.channelDict = channelDict
+            
         ## file channels
         if self.inputChannels != None:
             self.set('alternate_channel_labels',self.inputChannels)
@@ -78,7 +83,7 @@ class NoGuiAnalysis():
         """
 
         self.controller = Controller(configDict=self.configDict,debug=self.verbose)
-        self.controller.create_new_project(self.homeDir,self.channelsDict,record=self.record)
+        self.controller.create_new_project(self.homeDir,self.channelDict,record=self.record)
     def initialize_existing(self):
         '''
         initialize existing project
@@ -290,7 +295,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        self.controller.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices)
+        self.controller.handle_filtering_by_clusters(fileName,parentModelRunID,modelMode,clusterIDs,usingIndices)
 
     def is_valid_filter(self,filterID,fileName):
         '''
