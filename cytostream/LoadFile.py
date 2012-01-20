@@ -76,13 +76,16 @@ if dataType == 'fcs':
         fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,transform=None)
     else:
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
-    
-    if transform != None:
-        pass
-    if transform == 'logicle':
-        fcsData.logicle(scale_max=262144)
-    if transform == 'log':
-        fcsData.log()
+
+    isTransformed = False
+    if fcsData.notes.header['version'] < 2.0:
+        isTransformed = True
+
+    if isTransformed == False:
+        if transform == 'logicle':
+            fcsData.logicle(scale_max=262144)
+        if transform == 'log':
+            fcsData.log()
 
     fileChannels = fcsData.channels
 
