@@ -71,9 +71,9 @@ if transform not in ['logicle','log',None]:
 projName = os.path.split(homeDir)[-1]
 
 if dataType == 'fcs':
-    if compensationFilePath != "None":
+    if str(compensationFilePath) != "None":
         osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
-        fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,tranform=None)
+        fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,transform=None)
     else:
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
     
@@ -81,11 +81,9 @@ if dataType == 'fcs':
         pass
     if transform == 'logicle':
         fcsData.logicle(scale_max=262144)
-        fcsData.logicle()
     if transform == 'log':
         fcsData.log()
 
-    #fcsData = fcm.loadFCS(filePath)
     fileChannels = fcsData.channels
 
 elif dataType == 'comma':
@@ -95,8 +93,6 @@ elif dataType == 'tab':
     fcsData = read_txt_into_array(filePath,delim='\t')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
     
-#print fcsData
-
 ## prepare to save np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
