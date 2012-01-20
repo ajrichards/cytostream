@@ -510,7 +510,8 @@ class Controller:
         else:
             self.eventsList = []
 
-        self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
+        if len(self.fileNameList) > 0:
+            self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         self.channelDict = self.model.load_channel_dict()
 
     def get_component_states(self):
