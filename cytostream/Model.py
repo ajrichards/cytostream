@@ -199,16 +199,14 @@ class Model:
                 QtCore.QCoreApplication.processEvents()
 
             ## check to see that files were made
-            #if dataType not in ['array']:
             newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
             newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
             newDataFileName = newFileName +"_data.npy"
             newChanFileName = newFileName +"_channels.pickle"
-            #if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-            #    print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-            # 
-            #    if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
-            #    print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
+            if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+                print "ERROR: data file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+            if os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)) == False:
+                print "ERROR: channel file was not successfully created", os.path.join(self.homeDir,'data',newChanFileName)
 
     def get_events_from_file(self,fileName,fileDir=None):
         """
@@ -238,15 +236,6 @@ class Model:
 
         ## load events using pickle
         events = np.load(originalFilePath)
-        #tmp = open(originalFilePath,'r')
-        #events = cPickle.load(tmp)
-        #tmp.close()
-
-        ## load events using array
-        #events = np.fromfile(originalFilePath,dtype=float)
-        #fileChannels = self.get_master_channel_list()
-        #numCols = len(fileChannels)
-        #events = events.reshape(events.shape[0]/numCols,numCols)
 
         return events
         
@@ -334,7 +323,6 @@ class Model:
         ## use pickle file if already created
         sampleIndicesFilePath = os.path.join(self.homeDir,'data','subsample_%s.npy'%subsample)        
         if os.path.isfile(sampleIndicesFilePath) == True:
-            #subsampleIndices = np.fromfile(sampleIndicesFilePath,dtype=int)
             subsampleIndices = np.load(sampleIndicesFilePath)
             if self.verbose == True:
                 print 'INFO: using pickled subsampled indices'
@@ -372,7 +360,6 @@ class Model:
             print "WARNING: Model.py get_sumsample_indices -- subsample must be the array or an int -- using original data"
 
         ## save rand events for future use
-        #randEvents.tofile(sampleIndicesFilePath)
         np.save(sampleIndicesFilePath,randEvents)
 
         return randEvents
@@ -396,7 +383,6 @@ class Model:
         tmp1File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.pickle"%modelType)
         tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.npy"%modelType)
         tmp1 = open(tmp1File,'r')
-        #tmp2 = open(tmp2File,'r')
         
         if os.path.isfile(tmp1File) == False or os.path.isfile(tmp2File) == False:
             print "ERROR: bad model file specified -- path does not exist"
