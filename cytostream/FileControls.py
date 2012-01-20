@@ -47,7 +47,7 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
     for fileName in os.listdir(os.path.join(homeDir,"data")):
         if not re.search("data",fileName):
             continue
-        if not re.search("\.array",fileName):
+        if not re.search("\.npy",fileName):
             continue
         if not re.search("data",fileName):
             continue
@@ -55,7 +55,7 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
         if fileName not in excludedFiles:
             fileList.append(fileName)
 
-    fileList = [re.sub("\_data.array","", fi) for fi in fileList]
+    fileList = [re.sub("\_data.npy","", fi) for fi in fileList]
     fileList.sort()
 
     return fileList

@@ -29,11 +29,12 @@ class ModelTest(unittest.TestCase):
         ## test that events and channels may be retrieved 
         self.model.load_files([self.fcsFilePathName])
         fileName = re.sub('\.fcs|\.txt|\.out','',self.fileName)
-        newDataFileName = fileName +"_data.array"
+        newDataFileName = fileName +"_data.npy"
         newChanFileName = fileName +"_channels.pickle"
 
         self.assertTrue(os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)))
         self.assertTrue(os.path.isfile(os.path.join(self.homeDir,'data',newChanFileName)))
+    
     
     def testGetEventsChannels(self):
         fileName = re.sub('\.fcs|\.txt|\.out','',self.fileName)
@@ -55,7 +56,6 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(type(np.array([])), type(fromIntInput))
         self.assertEqual(len(fromStrInput),1000)
         self.assertEqual(len(fromIntInput),1000)
-    
 
 ### Run the tests 
 if __name__ == '__main__':

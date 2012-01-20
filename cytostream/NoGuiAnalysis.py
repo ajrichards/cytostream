@@ -40,6 +40,7 @@ class NoGuiAnalysis():
         self.verbose = verbose
         self.inputChannels = inputChannels
         self.compensationFilePath = compensationFilePath
+        self.channelDict = None
 
         ## initialize
         if loadExisting == False:

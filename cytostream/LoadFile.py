@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys,getopt,os,re,time,csv,ast,cPickle
+import sys,getopt,os,re,time,csv,ast,cPickle,time
 import numpy as np
 import fcm
 from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
@@ -71,19 +71,22 @@ if transform not in ['logicle','log',None]:
 projName = os.path.split(homeDir)[-1]
 
 if dataType == 'fcs':
-    if compensationFilePath != "None":
-        osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
-        fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp)
-    else:
-        fcsData = fcm.loadFCS(filePath,auto_comp=autoComp)
-    fileChannels = fcsData.channels
+    #if compensationFilePath != "None":
+    #    osidx, ospill = fcm.load_compensate_matrix(compensationFilePath)
+    #    fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,tranform=None)
+    #else:
+    #    fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
+    #
+    #if transform != None:
+    #    pass
+    #if transform == 'logicle':
+    #    #fcsData.logicle(scale_max=262144)
+    #    fcsData.logicle()
+    #if transform == 'log':
+    #    fcsData.log()
 
-    if transform != None:
-        pass
-    if transform == 'logicle':
-        fcsData.logicle(scale_max=262144)
-    if transform == 'log':
-        fcsData.log(fcsData.markers)
+    fcsData = fcm.loadFCS(filePath)
+    fileChannels = fcsData.channels
 
 elif dataType == 'comma':
     fcsData = read_txt_into_array(filePath,delim=',')
@@ -92,17 +95,25 @@ elif dataType == 'tab':
     fcsData = read_txt_into_array(filePath,delim='\t')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
     
+#print fcsData
+
 ## prepare to save np.array of data and the channels
 newFileName = re.sub('\s+','_',os.path.split(filePath)[-1])
 newFileName = re.sub('\.fcs|\.txt|\.out','',newFileName)
-newDataFileName = newFileName + "_data.array"
+newDataFileName = newFileName + "_data.npy"
 newDataFilePath = os.path.join(homeDir,'data',newDataFileName) 
 newChanFileName = newFileName + "_channels.pickle" 
 newChanFilePath = os.path.join(homeDir,'data',newChanFileName)
 
 ## save
 data = fcsData[:,:].copy()
-data.tofile(newDataFilePath)
+np.save(newDataFilePath,data)
+#data.tofile(newDataFilePath)
+#tmp = open(newDataFilePath,'w')
+#cPickle.dump(data,tmp)
+#tmp.close()
+
+## save channels
 fileChannels = [chan for chan in fileChannels]
 tmp = open(newChanFilePath,'w')
 cPickle.dump(fileChannels,tmp)

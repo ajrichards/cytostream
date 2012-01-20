@@ -46,7 +46,7 @@ class TestCase1(unittest.TestCase):
 
         self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,useSubsample=True,makeQaFigs=False,record=False)
         self.nga.run_model()
-        fileNameList = self.nga.get_file_names()
+        self.fileNameList = self.nga.get_file_names()
     
         ## create all pairwise figs for all files
         #for fileName in fileNameList:
@@ -69,7 +69,7 @@ class TestCase1(unittest.TestCase):
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
                 
         ## get events
-        events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
+        events = self.nga.get_events(self.fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
         self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa']))) 
 
         ## check that qa figs were made
@@ -77,13 +77,13 @@ class TestCase1(unittest.TestCase):
         
         ## check that model results can be retrieved
         modelRunID = 'run1'
-        componentModel, componentClasses = self.nga.get_model_results(fileNameList[0],modelRunID,'components')
+        componentModel, componentClasses = self.nga.get_model_results(self.fileNameList[0],modelRunID,'components')
         self.assertEqual(componentClasses.size,500)
-        modesModel, modesClasses = self.nga.get_model_results(fileNameList[0],modelRunID,'modes')
+        modesModel, modesClasses = self.nga.get_model_results(self.fileNameList[0],modelRunID,'modes')
         self.assertEqual(modesClasses.size,500)
         
         ## check that information can be retrieved from model log file
-        modelLog = self.nga.get_model_log(fileNameList[0],modelRunID)
+        modelLog = self.nga.get_model_log(self.fileNameList[0],modelRunID)
         self.assertEqual('utest',modelLog['project id'])
 
         ## check that analysis figs were made
