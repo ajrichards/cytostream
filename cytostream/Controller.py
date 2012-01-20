@@ -519,9 +519,10 @@ class Controller:
         except:
             return None
 
-    def get_indices_for_filter(self,fileName,parentModelRunID,modelMode,clusterIDs,usingIndices=False):
+    def get_filter_indices_by_clusters(self,fileName,parentModelRunID,modelMode,clusterIDs):
         '''
         given a set of cluster ids (list) the respective events indices are found and returned
+
         '''
 
         if len(clusterIDs) == 0:
@@ -531,65 +532,60 @@ class Controller:
         #if usingIndices == False:
         statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
         modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
-        parentFilter = modelLog['filter used']
-        #else:
-        #    parentFilter = None
-
-        #if not re.search('filter', str(parentFilter)):
-        #    parentFilter = None
-
+        #parentFilter = modelLog['filter used']
+        #filterID = 'filter%s'%str(int(self.log.log['filters_run_count']) + 1)
+        #self.log.log['filters_run_count'] = str(int(self.log.log['filters_run_count']) + 1)
+        
         ## check to see if a log file has been created for this project
-        filterLogFile = os.path.join(self.homeDir,"data",'%s.log'%filterID)
-        if os.path.isfile(filterLogFile) == True:
-            filterLog = csv.writer(open(filterLogFile,'a'))
-        else:
-            filterLog = csv.writer(open(filterLogFile,'w'))
+        #filterLogFile = os.path.join(self.homeDir,"data",'%s.log'%filterID)
+        #if os.path.isfile(filterLogFile) == True:
+        #    filterLog = csv.writer(open(filterLogFile,'a'))
+        #else:
+        #    filterLog = csv.writer(open(filterLogFile,'w'))
 
         ## get events
-        events = self.get_events(fileName,subsample='original')
+        #events = self.get_events(fileName,subsample='original')
         
-        if usingIndices == False:
+        ## check that labels are of right type
+        if type(clusterIDs[0]) != type(1):
+            clusterIDs = [int(cid) for cid in clusterIDs]
+        if type(clusterIDs) == type([]):
+            clusterIDs = np.array(clusterIDs)
+            
+        ## get indices
+        filterIndices = None
 
-            ## check that labels are of right type
-            if type(clusterIDs[0]) != type(1):
-                clusterIDs = [int(cid) for cid in clusterIDs]
+        for cid in clusterIDs:
+            inds = np.where(fileLabels == cid)[0]
 
-            ## get indices
-            filterIndices = None
+            if filterIndices == None:
+                filterIndices = inds
+            else:
+                filterIndices = np.hstack([filterIndices,inds])
+       
+        return filterIndices
 
-            for cid in clusterIDs:
-                inds = np.where(fileLabels == cid)[0]
+        #data = events[filterIndices,:]
+        #newDataFileName = fileName + "_data_%s.pickle"%filterID
+        #filterIndicesFile = fileName + "_indices_%s.pickle"%filterID
 
-                if filterIndices == None:
-                    filterIndices = inds
-                else:
-                    filterIndices = np.hstack([filterIndices,inds])
-        else:
-            if type(clusterIDs) == type([]):
-                clusterIDs = np.array(clusterIDs)
-            filterIndices = clusterIDs
+        #logFileName = fileName + "_data_%s.log"%filterID
+        #tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
+        #cPickle.dump(data,tmp1)
+        #tmp1.close()
+        #tmp2 = open(os.path.join(self.homeDir,'data',filterIndicesFile),'w')
+        #cPickle.dump(filterIndices,tmp2)
+        #tmp2.close()
+        #logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
+        #logFile.writerow(['original events',str(events.shape[0])])
+        #logFile.writerow(["timestamp", time.asctime()])
 
-        data = events[filterIndices,:]
-        newDataFileName = fileName + "_data_%s.pickle"%filterID
-        filterIndicesFile = fileName + "_indices_%s.pickle"%filterID
-
-        logFileName = fileName + "_data_%s.log"%filterID
-        tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-        cPickle.dump(data,tmp1)
-        tmp1.close()
-        tmp2 = open(os.path.join(self.homeDir,'data',filterIndicesFile),'w')
-        cPickle.dump(filterIndices,tmp2)
-        tmp2.close()
-        logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
-        logFile.writerow(['original events',str(events.shape[0])])
-        logFile.writerow(["timestamp", time.asctime()])
-
-        if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-            print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-
-            return False
-        else:
-            return True
+        #if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
+        #    print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
+        # 
+        #    return False
+        #else:
+        #    return True
 
     ##################################################################################################
     #

@@ -12,7 +12,6 @@ description - Shows the user how import a custom config file to specify one set 
 A. Richards
 '''
 
-
 class TestCase1(unittest.TestCase):
     def setUp(self):
         cwd = os.getcwd()
