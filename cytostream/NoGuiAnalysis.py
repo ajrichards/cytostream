@@ -49,6 +49,9 @@ class NoGuiAnalysis():
             self.initialize_existing()
 
         ## handle channels dict
+        if channelDict != None:
+            self.controller.model.save_channel_dict(channelDict)
+            self.channelDict = self.controller.model.load_channel_dict()
         if channelDict == None:
             self.channelDict = self.controller.model.load_channel_dict()
         else:
