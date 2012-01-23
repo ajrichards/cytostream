@@ -24,7 +24,7 @@ import Controller
 class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
-                 minNumEvents=3,subplotTitle=False,addLine=None,figSize=None,axesOff=False,subsample='original'):
+                 minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original'):
 
         ## arg variables
         self.controller = controller
@@ -41,7 +41,7 @@ class SaveSubplots():
         self.fontName = fontName
         self.drawState = drawState
         self.minNumEvents = minNumEvents
-        self.subplotTitle = subplotTitle
+        self.subplotTitles = subplotTitles
         self.addLine = addLine
         self.figSize = figSize
         self.axesOff = axesOff
@@ -71,7 +71,6 @@ class SaveSubplots():
 
         self.channelDict = self.controller.model.load_channel_dict()
         print 'channel dict', self.channelDict
-
 
         if inputLabels != None:
             self.inputLabels = []
@@ -121,7 +120,7 @@ class SaveSubplots():
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
             dpi = 140
         elif self.numSubplots in [10,11,12]:
-            self.fig.subplots_adjust(hspace=0.2,wspace=0.2)
+            self.fig.subplots_adjust(hspace=0.4,wspace=0.2)
             dpi = 200
         elif self.numSubplots in [13,14,15,16]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
@@ -207,8 +206,13 @@ class SaveSubplots():
             index1,index2 = subplotChannels
 
             ## labels
-            if self.subplotTitle == True:
-                subplotTitle = subplotFile
+            if self.subplotTitles != None:
+                if type(self.subplotTitles) == type([]):
+                    subplotTitle = self.subplotTitles[subplotIndex]
+                elif self.subplotTitles == True:
+                    subplotTitle = self.subplotFile
+                else:
+                    subplotTitle = self.subplotTitles
             else:
                 subplotTitle = None
             
@@ -231,7 +235,7 @@ class SaveSubplots():
             args[11] = self.drawState
             args[12] = self.numSubplots
             args[13] = axesLabels
-            args[14] = self.subplotTitle
+            args[14] = subplotTitle
             args[15] = showNoise
             args[16] = self.useSimple
             args[17] = self.useScale
@@ -341,11 +345,17 @@ if __name__ == '__main__':
 
     figMode = 'analysis'
     numSubplots = 12
+    subplotTitles = ["subtitle%s"%i for i in range(numSubplots)]
 
     ## different ways to test the class
     # exchange nga.controller for homeDir
     # change draw state ['heat','scatter']
     # set the subsample analysis to something different
 
-    ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True,drawState='scatter')
+    ## to test the highlighting
+    plotsToViewHighlights = [None for c in range(16)]
+    plotsToViewHighlights[1] = [2]
+    nga.set('plots_to_view_highlights',plotsToViewHighlights)
+
+    ss = SaveSubplots(nga.controller,figName,numSubplots,figMode=figMode,figTitle='Example title',useScale=True,drawState='scatter',subplotTitles=subplotTitles)
     print 'plot saved as ', figName

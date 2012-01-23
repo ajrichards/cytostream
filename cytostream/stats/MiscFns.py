@@ -29,12 +29,16 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
     subset = subset.lower()
 
     ## declare variables
-    if subset in ['cd3','cd4']:
-        subsampleSize = 1000    
+    if subset in ['cd3']:
+        subsampleSize = 2000
+    elif subset in ['cd4']:
+        subsampleSize = 3000    
     elif subset in ['cd8']:
-        subsampleSize = 1000
-    elif subset in ['ssc','fsc']:
-        subsampleSize = 1000    
+        subsampleSize = 3000
+    elif subset in ['ssc']:
+        subsampleSize = 2000
+    elif subset in ['fsc']:
+        subsampleSize = 3000
     else:
         print "ERROR in two_component_em -- invalid subset specified"
 
@@ -70,7 +74,8 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
         resultsDict['params'] = tcg.bestEst.copy()
     
     ## get cut point 0.025
-    if resultsDict['params']['pi'] <= 0.5:
+    #if resultsDict['params']['pi'] <= 0.5:
+    if resultsDict['params']['sig1'] < resultsDict['params']['sig2']:
         if subset in ['fsc']:
             cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
             #cutpoint = resultsDict['params']['mu1'] + (2.0 * np.sqrt(resultsDict['params']['sig1']))

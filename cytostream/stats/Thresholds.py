@@ -42,18 +42,21 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0, theta=2.0, fullOutput=True):
 def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
     if len(fileNameList) > 6:
-        print "make_positivity_plot only works with six or less subplots not", len(fileNameList)
-        return None
+        fileListToPlot = fileNameList[:6]
 
     fig = plt.figure()
     fontSize = 8
     pltCount = 0
+
     for fileName in fileNameList:
-        events = nga.get_events(fileName,filterID=filterID)
+        events = nga.get_events(fileName)
+        if filterID != None:
+            filterIndices = nga.get_filter_indices(fileName,filterID)
+            events = events[filterIndices,:] 
+
         cd3Events = events[:,cd3ChanIndex]
         pltCount+=1
         ax = fig.add_subplot(2,3,pltCount)
-        #eventsInHist = cd3Events[np.where(cd3Events < 800)[0]]
         eCDF = EmpiricalCDF(cd3Events)
         thresholdLow = eCDF.get_value(0.05)
         eventsInHist = cd3Events[np.where(cd3Events > thresholdLow)[0]]
@@ -75,9 +78,6 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
         threshY = np.linspace(0,max([max(pdfY1),max(pdfY2)]),100)
         threshX = np.array([emResults[fileName]['cutpoint']]).repeat(100)
         ax.plot(threshX, threshY, 'r-', linewidth=2)
-        #ax.set_ylim([0,max(p2)])
-        #ax.set_ylim([0,max(pdfY2)])
-        #ax.set_xlim(0,10)
         ax.set_title(fileName,fontsize=9)
         xticklabels = plt.getp(plt.gca(),'xticklabels')
         yticklabels = plt.getp(plt.gca(),'yticklabels')
@@ -91,13 +91,10 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
     fig.subplots_adjust(hspace=0.3,wspace=0.3)
     plt.savefig(figName)
 
-    #return threshX, threshY
-
 def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose=False,minNumEvents=3,initialGuesses=None,filterID=None):
     '''
     get xx positive clusters
     initialGuesses = {'n':cd3Events.size, 'mu1':250, 'mu2':600, 'sig1':5000, 'sig2':5000, 'pi':0.5}
-
     '''
     subset = subset.lower()
 
@@ -112,15 +109,16 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
         fileName = fileList[fileInd]
         cd3Results[fileName] = {'indices':None,'clusters':None,'percent':None}
 
-        #print "\n", fileName
-
         fileLabels = allLabels[fileInd]
+        events = nga.get_events(fileName)
+
         if filterID != None and re.search('filter',str(filterID)):
             filterIndices = nga.get_filter_indices(fileName,filterID)
             fileLabels = fileLabels[filterIndices]
+            events = events[filterIndices,:]
             
         uniqueLabels = np.sort(np.unique(fileLabels))
-        events = nga.get_events(fileName,filterID=filterID)
+            
         cd3Events = events[:,cd3ChanIndex]
         cd3Positive = []
 
@@ -131,8 +129,7 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
         cd3Events = events[:,cd3ChanIndex]
 
         for cid in uniqueLabels:
-
-            ## ensure cluster has at least minnumevents
+            ## ensure cluster has at least the minNumEvents
             clusterEvents = cd3Events[np.where(fileLabels==cid)[0]]
             if len(clusterEvents) < minNumEvents:
                 continue
@@ -153,7 +150,7 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
 
         cd3Percent = float(len(cd3Indices)) / float(len(fileLabels))
         rawPercent = float(len(np.where(cd3Events > cutpoint)[0])) / float(len(cd3Events))
-        #print fileName, len(cd3Indices),len(fileLabels), cd3Percent, rawPercent
+        #print 'debug', fileName, len(cd3Indices),len(fileLabels), cd3Percent, rawPercent
 
         cd3Results[fileName]['indices'] = cd3Indices
         cd3Results[fileName]['clusters'] = cd3Positive
@@ -164,29 +161,35 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
     return cd3Results
 
 
-def get_cluster_coeff_var(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
-    events = nga.get_events(fileName,filterID='filter1')
-    filterIndices = nga.get_filter_indices(fileName,'filter1')
+def get_cluster_coeff_var(nga,channelIDs,fileName,clusterID,sscChanInd,modelRunID='run1'):
+    events = nga.get_events(fileName)
+    filterIndices = nga.get_filter_indices(fileName,'filterCD3a')
+    events = events[filterIndices,:]
     statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
     filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
     clusterEventsInds = np.where(filteredLabels==clusterID)[0]
     cd3CoeffVar = events[clusterEventsInds,channelIDs['cd3']].std() / np.abs(events[clusterEventsInds,channelIDs['cd3']].mean())
-    sscCoeffVar = events[clusterEventsInds,channelIDs['ssc']].std() / np.abs(events[clusterEventsInds,channelIDs['ssc']].mean())
+    sscChanKey = None
+    for key,item in channelIDs.iteritems():
+        if item == sscChanInd:
+            sscChanKey = key
+    sscCoeffVar = events[clusterEventsInds,channelIDs[sscChanKey]].std() / np.abs(events[clusterEventsInds,channelIDs[sscChanKey]].mean())
    
     return cd3CoeffVar, sscCoeffVar
 
-def examine_double_positive(nga,channelIDs,fileName,clusterID,figsDir,modelRunID='run1'):
+def examine_double_positive(nga,channelIDs,fscChanInd,sscChanInd,fileName,clusterID,figsDir,modelRunID='run1'):
     create = False
     plotsToViewChannels = [(channelIDs['cd4'],channelIDs['cd8']),
-                           (channelIDs['cd3'],channelIDs['ssc']),
-                           (channelIDs['cd3'],channelIDs['fsc']),
+                           (channelIDs['cd3'],sscChanInd),
+                           (channelIDs['cd3'],fscChanInd),
                            (channelIDs['cd3'],channelIDs['cd4']),
                            (channelIDs['cd3'],channelIDs['cd8']),
-                           (channelIDs['fsc'],channelIDs['ssc']),
-                           (channelIDs['fsc'],channelIDs['ssc'])] + [(0,0)] * 9
+                           (fscChanInd,sscChanInd),
+                           (fscChanInd,sscChanInd)] + [(0,0)] * 9
 
-    events = nga.get_events(fileName,filterID='filter2')
-    filterIndices = nga.get_filter_indices(fileName,'filter2')
+    events = nga.get_events(fileName)
+    filterIndices = nga.get_filter_indices(fileName,'filterCD3')
+    events = events[filterIndices,:]
     statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
     filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
     clusterEventsInds = np.where(filteredLabels==clusterID)[0]
@@ -258,22 +261,32 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
     for fileName in fileList:
         thresholdLines[fileName] = {}
-
+        
     ## save data
     for fileName in fileList:
-        nga.handle_filtering('filter1',fileName,modelRunID,'components',cd3Results[fileName]['clusters'])
+        nga.handle_filtering('filterCD3a',fileName,modelRunID,'components',cd3Results[fileName]['clusters'])
         fileEvents = nga.get_events(fileName)
-        chanMax = fileEvents[:,channelIDs['ssc']].max()
+        chanMax = fileEvents[:,channelIDs['cd3']].max()
         cd3ThreshX = np.array([cd3Results[fileName]['cutpoint']]).repeat(25)
         cd3ThreshY = np.linspace(0,chanMax,25)
         thresholdLines[fileName][0] = (cd3ThreshX,cd3ThreshY)
 
     ########### fsc  ##################
     print 'getting fsc events...'
-    fscChanIndex = channelIDs['fsc']
-    fscResults = find_positivity_threshold("fsc",fscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter1')
+    if channelIDs.has_key('fsca'):
+        fscChanIndex = channelIDs['fsca']
+    elif channelIDs.has_key('fsch'):
+        fscChanIndex = channelIDs['fsch']
+    elif channelIDs.has_key('fscw'):
+        fscChanIndex = channelIDs['fscw']
+    elif channelIDs.has_key('fsc'):
+        fscChanIndex = channelIDs['fsc']
+    else:
+        print "ERROR: perform_automated_gating_basic_subsets cannot find fsc"
+
+    fscResults = find_positivity_threshold("fsc",fscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3a')
     figName = os.path.join(figsDir,'ThresholdsEM_fsc.png')
-    make_positivity_plot(nga,fileList,fscChanIndex,figName,fscResults,filterID='filter1')
+    make_positivity_plot(nga,fileList,fscChanIndex,figName,fscResults,filterID='filterCD3a')
 
     ## save data
     for fileName in fileList:
@@ -285,10 +298,19 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
     ########### ssc  ##################
     print 'getting ssc events...'
-    sscChanIndex = channelIDs['ssc']
-    sscResults = find_positivity_threshold("ssc",sscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter1')
+    if channelIDs.has_key('ssca'):
+        sscChanIndex = channelIDs['ssca']
+    elif channelIDs.has_key('ssch'):
+        sscChanIndex = channelIDs['ssch']
+    elif channelIDs.has_key('sscw'):
+        sscChanIndex = channelIDs['sscw']
+    elif channelIDs.has_key('ssc'):
+        sscChanIndex = channelIDs['ssc']
+    else:
+        print "ERROR: perform_automated_gating_basic_subsets cannot find ssc"
+    sscResults = find_positivity_threshold("ssc",sscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3a')
     figName = os.path.join(figsDir,'ThresholdsEM_ssc.png')
-    make_positivity_plot(nga,fileList,sscChanIndex,figName,sscResults,filterID='filter1')
+    make_positivity_plot(nga,fileList,sscChanIndex,figName,sscResults,filterID='filterCD3a')
 
     ## save data
     for fileName in fileList:
@@ -307,9 +329,8 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         fileInd = fileList.index(fileName)
 
         for cid in np.unique(fileLabels):
-
             ## filter based on coefficient of variation
-            cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,figsDir,modelRunID='run1')
+            cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,sscChanIndex,modelRunID='run1')
 
             if cvCD3 > 0.2:# or cvSSC > 0.25:
                 continue
@@ -332,21 +353,23 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             cd3PosClusters[fileName].append(cid)
 
     for fileName in fileList:
-        nga.handle_filtering('filter2',fileName,modelRunID,'components',cd3PosClusters[fileName])
-        events1 = nga.get_events(fileName,filterID='filter2')
-        events2 = nga.get_events(fileName)
-        fPercent = float(events1.shape[0]) / float(events2.shape[0])
-        writer.writerow([fileName,"CD3",events1.shape[0],fPercent,str(cd3PosClusters[fileName])])
+        nga.handle_filtering('filterCD3',fileName,modelRunID,'components',cd3PosClusters[fileName])
+        indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
+        eventsOrig = nga.get_events(fileName)
+        fPercent = float(indsCD3.size) / float(eventsOrig.shape[0])
+        writer.writerow([fileName,"CD3",indsCD3.size,fPercent,str(cd3PosClusters[fileName])])
 
     ########### CD4 ##################
     cd4ChanIndex = channelIDs['cd4']
     print 'getting cd4 events...'
-    cd4Results = find_positivity_threshold('cd4',cd4ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2')#filter2
+    cd4Results = find_positivity_threshold('cd4',cd4ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3')#filter2
     for fileName in fileList:
         refinedCD3a = [i for i in cd3PosClusters[fileName]]
         refinedCD3b = [i for i in cd3PosClusters[fileName]]
-        fileEvents = nga.get_events(fileName,filterID='filter2')
-        filterIndices = nga.get_filter_indices(fileName,'filter2')
+        fileEvents = nga.get_events(fileName)
+        filterIndices = nga.get_filter_indices(fileName,'filterCD3')
+        fileEvents = fileEvents[filterIndices,:]
+
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
 
@@ -358,49 +381,45 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             else:
                 refinedCD3a.remove(cid)
 
-        nga.handle_filtering('filter2a',fileName,modelRunID,'components',refinedCD3a)
-        nga.handle_filtering('filter2b',fileName,modelRunID,'components',refinedCD3b)
+        nga.handle_filtering('filterCD3b',fileName,modelRunID,'components',refinedCD3a)#filter2a
+        nga.handle_filtering('filterCD3c',fileName,modelRunID,'components',refinedCD3b)#filter2b
    
     figName = os.path.join(figsDir,'ThresholdsEM_cd4.png')
-    make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filter2')
-
+    make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filterCD3')
 
     ########### CD8 ##################
     cd8ChanIndex = channelIDs['cd8']
     print 'getting cd8 events...'
-    cd8ResultsA = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2a')
-    cd8ResultsB = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filter2b')
+    cd8ResultsA = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3b')
+    cd8ResultsB = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3c')
     figName = os.path.join(figsDir,'ThresholdsEM_cd8a.png')
-    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsA,filterID='filter2a')
+    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsA,filterID='filterCD3b')
     figName = os.path.join(figsDir,'ThresholdsEM_cd8b.png')
-    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsB,filterID='filter2b')
+    make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsB,filterID='filterCD3c')
 
+    #print 'complete.'
+    #return None
 
     ########## create the cd4-cd8 positive line ##############
     cd4cd8Thresholds = {}
     for fileName in fileList:
-        #if cd8Results[fileName]['params']['mu2'] > cd8Results[fileName]['params']['mu1']:
-        #    cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
-        #    cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
-        #else:
-        #    cutpointA = stats.norm.ppf(0.95,loc=cd8Results[fileName]['params']['mu2'],scale=np.sqrt(cd8Results[fileName]['params']['sig2']))
-        #    cutpointB = stats.norm.ppf(0.005,loc=cd8Results[fileName]['params']['mu1'],scale=np.sqrt(cd8Results[fileName]['params']['sig1']))
 
-        #cutpoints = [cutpointA,cutpointB]
-        #cutpoints.sort()
-        #cutpointA, cutpointB = cutpoints 
-
+        ## specify cutpoint A
         if cd8ResultsA[fileName]['params']['mu2'] > cd8ResultsA[fileName]['params']['mu1']:
             cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
         else:
             cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
 
+        ## specify cutpoint B
         if cd8ResultsB[fileName]['params']['mu2'] > cd8ResultsB[fileName]['params']['mu1']:
             cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
         else:
             cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
 
-        events1 = nga.get_events(fileName,filterID='filter2')
+        events1 = nga.get_events(fileName)
+        filterIndices = nga.get_filter_indices(fileName,'filterCD3')
+        events1 = events1[filterIndices,:]
+
         chanMax = events1[:,cd4ChanIndex].max()
         threshYA = np.array([cutpointA]).repeat(13)
         threshXA = np.linspace(0,cd4Results[fileName]['cutpoint'],13)
@@ -420,23 +439,23 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         cd8PosClusters[fileName] = []
         dpClusters[fileName] = []
         cd3ToRemove[fileName] = []
-        filterIndices = nga.get_filter_indices(fileName,'filter2')
+        filterIndices = nga.get_filter_indices(fileName,'filterCD3')
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
 
-        cd3Events = nga.get_events(fileName,filterID='filter2')
+        cd3Events = nga.get_events(fileName)
+        cd3Inds = nga.get_filter_indices(fileName,'filterCD3')
+        cd3Events = cd3Events[cd3Inds,:]
         for cid in cd3PosClusters[fileName]:
             clusterEventsInds = np.where(filteredLabels==cid)[0]
             clusterEventsCD8 = cd3Events[clusterEventsInds,cd8ChanIndex]
             clusterEventsCD4 = cd3Events[clusterEventsInds,cd4ChanIndex]
             clusterEventsCD3 = cd3Events[clusterEventsInds,channelIDs['cd3']]
-            #clusterEventsCyto = cd3Events[clusterEventsInds,channelIDs['IFNg-IL2']]
-            #print cid, clusterEventsCD8.mean(), cd4cd8Thresholds[fileName], clusterEventsCD4.mean(), cd4Results[fileName]['cutpoint']
-
+            
             ## find double positives
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 
-                dpFlag = examine_double_positive(nga,channelIDs,fileName,cid,figsDir,modelRunID=modelRunID)
+                dpFlag = examine_double_positive(nga,channelIDs,fscChanIndex,sscChanIndex,fileName,cid,figsDir,modelRunID=modelRunID)
                 #if dpFlag == True:
                 #    dpClusters[fileName].append(cid)
                 #else:
@@ -448,7 +467,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
                 cd8PosClusters[fileName].append(cid)
             elif clusterEventsCD8.mean() < cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
                 cd4PosClusters[fileName].append(cid)
-
 
     ### save the cd3 positive clusters
     #for fileName in fileList:
@@ -466,24 +484,25 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
     ### save cd4 and cd8 clusters ###
     for fileName in fileList:    
-        nga.handle_filtering('filter3',fileName,modelRunID,'components',cd8PosClusters[fileName])
-        eventsCD3 = nga.get_events(fileName,filterID='filter2')
-        eventsCD8 = nga.get_events(fileName,filterID='filter3')
-        if eventsCD8 == None:
+        nga.handle_filtering('filterCD8',fileName,modelRunID,'components',cd8PosClusters[fileName])
+        indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
+        indsCD8 = nga.get_filter_indices(fileName,'filterCD8')
+        if indsCD8 == None or indsCD8.size == 0:
             fPercent = np.nan
         else:
-            fPercent = float(eventsCD8.shape[0]) / float(eventsCD3.shape[0])
-        writer.writerow([fileName,"CD8",eventsCD8.shape[0],fPercent,str(cd8PosClusters[fileName])])
+            fPercent = float(indsCD8.size) / float(indsCD3.size)
+        writer.writerow([fileName,"CD8",indsCD8.size,fPercent,str(cd8PosClusters[fileName])])
 
     for fileName in fileList:
-        nga.handle_filtering('filter4',fileName,modelRunID,'components',cd4PosClusters[fileName])
-        eventsCD3 = nga.get_events(fileName,filterID='filter2')
-        eventsCD4 = nga.get_events(fileName,filterID='filter4')
-        if eventsCD4 == None:
+        nga.handle_filtering('filterCD4',fileName,modelRunID,'components',cd4PosClusters[fileName])
+        indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
+        indsCD4 = nga.get_filter_indices(fileName,'filterCD4')
+
+        if indsCD4 == None or indsCD4.size == 0:
             fPercent = np.nan
         else: 
-            fPercent = float(eventsCD4.shape[0]) / float(eventsCD3.shape[0])
-        writer.writerow([fileName,"CD4",eventsCD4.shape[0],fPercent,str(cd4PosClusters[fileName])])
+            fPercent = float(indsCD4.size) / float(indsCD3.size)
+        writer.writerow([fileName,"CD4",indsCD4.size,fPercent,str(cd4PosClusters[fileName])])
 
     for fileName in fileList:
         if len(cd8PosClusters[fileName]) == 0:
@@ -537,8 +556,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
             figName = os.path.join(figsDir,'autoGatingStrategy_%s.png'%fileName)
             figTitle = "Auto Gating Strategy %s"%(fileName)
-            ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
-                              addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
+            #ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,drawState='heat',
+            #                  addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
+            print fn, 'channelDict', nga.channelDict
+            ss = SaveSubplots(nga.controller,figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=True,drawState='scatter',subplotTitles=subplotTitles)
 
 def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsDir=None):
     

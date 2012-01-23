@@ -54,8 +54,6 @@ class NoGuiAnalysis():
         else:
             self.channelDict = channelDict
             
-        print 'no gui', self.channelDict
-
         ## file channels
         if self.inputChannels != None:
             self.set('alternate_channel_labels',self.inputChannels)
@@ -197,14 +195,11 @@ class NoGuiAnalysis():
         return events
 
     def get_filter_indices(self,fileName,filterID):
-        pickleFile = os.path.join(self.homeDir,'data',fileName + "_indices_%s.pickle"%filterID)
-        if os.path.exists(pickleFile) == False:
-            print "ERROR: NoGuiAnalysis -- filter indices pickle file does not exist", 
-            print "...",pickleFile
-            return None
-
-        tmp = open(pickleFile,'r')
-        filterIndices = cPickle.load(tmp)
+        """
+        returns a set of filter indices relative to original events
+        """
+        
+        filterIndices = self.controller.model.load_filter(fileName,filterID)
         
         return filterIndices
 
