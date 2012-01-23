@@ -45,18 +45,21 @@ class TestCase2(unittest.TestCase):
 
         ## create a filter that consists of clusters 1 and 2
         parentModelRunID = 'run1'
-        #filterID = 'filter1'
+        filterID = 'filter1'
         modelMode = 'modes'
+        
         clusterIDs = [1,2]
         for fileName in fileNameList:
             self.nga.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
+        self.nga.set('subsample_analysis','filter1')
+        self.nga.run_model()
         #self.nga.set('filter_in_focus',filterID)
-        #self.nga.run_model()
-
+        
         ## create all pairwise figs for all files
-        #for fileName in fileNameList:
-        #    self.nga.make_results_figures(fileName,'run2')
+        time.sleep(3)
+        for fileName in fileNameList:
+            self.nga.make_results_figures(fileName,'run2')
 
         ## return filter in focus to default
         #self.nga.set('filter_in_focus','None')

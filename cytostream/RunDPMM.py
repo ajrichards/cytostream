@@ -90,7 +90,10 @@ except:
 ## handle getting events
 events = model.get_events_from_file(fileName)
 
-if subsample != 'original':
+if re.search('filter',subsample):
+    subsampleIndices = model.load_filter(fileName,subsample)
+    events = events[subsampleIndices,:]
+elif subsample != 'original':
     subsampleIndices = model.get_subsample_indices(subsample)
     events = events[subsampleIndices,:]
 

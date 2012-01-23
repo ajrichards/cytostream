@@ -33,7 +33,7 @@ class CytostreamPlotter(QtGui.QWidget):
                  enableGating=False,homeDir=None,compactMode=False,labelList=None,
                  minNumEvents=3,showNoise=False,subsample=70000,numSubplots=1,
                  axesLabels=True,plotTitle=None,useSimple=False,dpi=100,
-                 transform='logicle',useScaled=False):
+                 transform='logicle',useScaled=False,modelRunID=None):
         '''
         constructor
 
@@ -72,34 +72,79 @@ class CytostreamPlotter(QtGui.QWidget):
         self.dpi = dpi
         self.transform = transform
         self.useScaled = useScaled
+        self.modelRunID = modelRunID
 
         ## additional class variables
         self.colors = get_all_colors()
         self.gateInteractor = None
         self.currentGate = 'None'
         self.gateSelector = None
-        self.fileList = None
         self.log = None
         self.model = None
         self.markerSize = 1
         self.fontName = get_fontname()
         self.fontSize = get_fontsize(self.numSubplots) 
         self.currentAxesLabels = None
+        self.resultsMode = 'components'
 
         ## variables to be used when class is called for drawing
         self.events = None
         self.selectedFileName = None
-        self.subsample = None
+        self.subsample = subsample
         self.line = None
         self.labels = None
         self.selectedHighlight = None
         self.vizList = ['heat','scatter','contour']
 
-        ## subsample 
-        if subsample == 'original':
-            self.subsample = 70000
+        ## try to initialize a model
+        if self.homeDir != None:
+            self.model = Model()
+            self.model.initialize(self.homeDir)
         else:
-            self.subsample = int(float(subsample))
+            self.model = None
+            print "Model could not be initialized -- working as a non-cytostream project"
+
+        ## handle labels
+        if self.modelRunID != None and self.model != None:
+            self.labelList = []
+            minNumEvents,maxNumEvents = 0,0
+            for i,fileName in enumerate(self.fileNameList):
+                events = self.eventsList[i]
+                if events.shape[0] > maxNumEvents:
+                    maxNumEvents = events.shape[0]
+                if events.shape[0] < minNumEvents:
+                    minNumEvents = events.shape[0]
+                
+                statModel, labels = self.model.load_model_results_pickle(fileName,self.modelRunID,modelType=self.resultsMode)
+                self.labelList.append(labels)
+                modelLog = self.model.load_model_results_log(fileName,self.modelRunID)
+                self.subsample = modelLog['subsample']
+
+        ## ensure only maximum num events are shown                                                                                                                                                     
+        maxScatter = 70000
+        if self.subsample == 'original' and maxNumEvents > maxScatter:
+            self.subsample = maxScatter
+            self.subsample = self.model.get_subsample_indices(self.subsample)
+            for i in range(len(self.labelList)):
+                self.labelList[i] = self.labelList[i][self.subsample]
+        ## case where original is smaller than max scatter display                                                                                                                                      
+        elif self.subsample == 'original':
+            #self.subsample = self.model.get_subsample_indices(self.subsample)
+            #self.subsample = np.arange(events.shape[0])
+            self.subsample = 'original'
+            print "WARNING: this is the case in Cytostream plotter that has not been tested"
+        ## case where we have a subsample but no labels 
+        elif labels == None:
+            self.subsample = self.model.get_subsample_indices(self.subsample)
+        ## case where labels are smaller than subsample (usually means model was run on a subsample) 
+        elif len(labels) < self.subsample:
+            self.subsample = len(labels)
+            self.subsample = self.model.get_subsample_indices(self.subsample)
+        ## case where labels and subsample match 
+        elif len(labels) == self.subsample:
+            self.subsample = self.model.get_subsample_indices(self.subsample)
+        else:
+            print "WARNING: something unexpected occured in CytostreamPlotter subsample handeling"        
 
         ## error checking
         if type([]) != type(self.fileNameList):
@@ -115,7 +160,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## save an instance of the centroids to speed up plotting
         if self.labelList != None:
-            self.centroids = Centroids()
+            self.savedCentroids = Centroids()
 
         ## prepare figure widget for drawing
         self.create_figure_widget()
@@ -157,6 +202,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args = [None for i in range(18)]
         args[0] = self.ax
         args[1] = self.eventsList[self.fileNameList.index(self.selectedFileName)]
+        self.selectedEvents = self.eventsList[self.fileNameList.index(self.selectedFileName)]
         args[2] = self.channelList
         args[3] = self.channelDict
         args[4] = self.selectedChannel1
@@ -165,6 +211,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args[7] = self.transform
         if self.labelList != None:
             args[8] = self.labelList[self.fileNameList.index(self.selectedFileName)]
+            self.selectedLabels = self.labelList[self.fileNameList.index(self.selectedFileName)]
         args[9] = self.selectedHighlight
         args[10] = self.log
         args[11] = self.drawState
@@ -209,20 +256,20 @@ class CytostreamPlotter(QtGui.QWidget):
         self.channel2Selector.setCurrentIndex(self.selectedChannel2)
         self.connect(self.channel2Selector, QtCore.SIGNAL('activated(int)'),self.channel2_selector_callback)
 
-        if self.fileList != None or self.uniqueLabels != None:
+        if self.fileNameList != None or self.uniqueLabels != None:
             additionalSelectorLabel = QtGui.QLabel('Additional Selectors')
 
-        if self.fileList != None: 
+        if self.fileNameList != None: 
             self.fileSelector = QtGui.QComboBox(self)
-            for f in self.fileList:
+            for f in self.fileNameList:
                 self.fileSelector.addItem(f)
                 
             self.fileSelector.setMaximumWidth(maxWidth)
             self.fileSelector.setMinimumWidth(maxWidth)
             if self.selectedFileName == None:
-                self.selectedFileName = self.fileList[0]
+                self.selectedFileName = self.fileNameList[0]
 
-            self.fileSelector.setCurrentIndex(self.fileList.index(self.selectedFileName))
+            self.fileSelector.setCurrentIndex(self.fileNameList.index(self.selectedFileName))
             self.connect(self.fileSelector, QtCore.SIGNAL('activated(int)'),self.file_selector_callback)
 
         if self.uniqueLabels != None:                                                                         
@@ -370,7 +417,7 @@ class CytostreamPlotter(QtGui.QWidget):
         if self.uniqueLabels != None:
             dcBox1.addWidget(QtGui.QLabel("clust"))
             dcBox2.addWidget(self.highlightSelector)
-        if self.fileList != None:
+        if self.fileNameList != None:
             dcBox1.addWidget(QtGui.QLabel("file"))
             dcBox2.addWidget(self.fileSelector)
 
@@ -497,7 +544,6 @@ class CytostreamPlotter(QtGui.QWidget):
     def file_selector_callback(self,selectedInd):
         selectedTxt = str(self.fileSelector.currentText())
         self.selectedFileName=selectedTxt
-        self.init_labels_events(self.selectedFileName,self.modelRunID)
         self.draw()
 
         if self.mainWindow != None:

@@ -289,7 +289,6 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
         randEvents = np.arange(ssSize)
         np.random.shuffle(randEvents)
-        print 'draw_plot -- creating new rand inds'
     elif subsample == 'original':
         pass
     else:
@@ -342,9 +341,10 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     eventsToPlot = events[subsampleInds,:]
 
     ## get centroids
-    #if parent != None and str(labels) != "None":
-    #    plotID, channelsID = parent.centroid.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
-    #    centroids = parent.centroid.get_centroids(parent.events,parent.labels,plotID,channelsID)
+    if parent != None and str(labels) != "None":
+        #plotID, channelsID = parent.savedCentroids.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
+        #centroids = parent.savedCentroids.get_centroids(parent.selectedEvents,parent.selectedLabels,plotID,channelsID)
+        centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
     if parent == None and str(labels) != "None":
         centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
 

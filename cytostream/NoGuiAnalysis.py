@@ -40,7 +40,7 @@ class NoGuiAnalysis():
         self.verbose = verbose
         self.inputChannels = inputChannels
         self.compensationFilePath = compensationFilePath
-        self.channelDict = None
+        self.channelDict = channelDict
 
         ## initialize
         if loadExisting == False:
@@ -54,6 +54,8 @@ class NoGuiAnalysis():
         else:
             self.channelDict = channelDict
             
+        print 'no gui', self.channelDict
+
         ## file channels
         if self.inputChannels != None:
             self.set('alternate_channel_labels',self.inputChannels)
@@ -268,7 +270,7 @@ class NoGuiAnalysis():
         """
 
         ## error checking
-        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.array'%(fileName,modelRunID))
+        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.npy'%(fileName,modelRunID))
         if os.path.exists(modelPath) == False:
             print "ERROR: NoGuiAnalysis -- model path does not exist did you run the model?"
             return None
@@ -287,9 +289,6 @@ class NoGuiAnalysis():
         modelsRunList = self.get_models_run()
 
         ## error checkings
-        if type(filterID) != type('abc'):
-            print "ERROR: NoGuiAnalysis -- Invalid filter id  - skipping filtering"
-            return None
         if fileName not in fileList:
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
             return None
@@ -297,7 +296,7 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        self.controller.handle_filtering_by_clusters(fileName,parentModelRunID,modelMode,clusterIDs,usingIndices)
+        self.controller.handle_filtering_by_clusters(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
     def is_valid_filter(self,filterID,fileName):
         '''
