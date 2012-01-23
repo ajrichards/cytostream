@@ -37,7 +37,6 @@ class TestCase2(unittest.TestCase):
         self.nga.run_model()
 
         fileNameList = self.nga.get_file_names()
-
         
         ## create all pairwise figs for all files
         #for fileName in fileNameList:

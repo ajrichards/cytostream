@@ -48,18 +48,18 @@ class TwoComponentGaussEM():
         yMed = np.median(y)
 
         if self.subset in ['cd3','cd4','ssc','fsc']:
-            mu1 = np.random.uniform(0.1 * yMed,0.9*yMed) ## 200, 500
-            mu2 = np.random.uniform(1.5 * yMed,3.9 *yMed) ## 550,750
-            sig1 = np.random.uniform(1.0*yMed,1.0*yMed)  ## 
-            sig2 = np.random.uniform(1.0*yMed,1.0*yMed)
+            mu1 = np.random.uniform(0.1 * yMed,0.9*yMed)
+            mu2 = np.random.uniform(0.7 * yMed,3.9 *yMed)
+            sig1 = np.random.uniform(1.0*yMed,1000*yMed)
+            sig2 = np.random.uniform(1.0*yMed,1000*yMed)
             pi   = np.random.uniform(0.1,0.9)
         if self.subset in ['cd8']:
-            mu1 = np.random.uniform(0.1*yMed,0.9*yMed)   ## 200, 500
-            mu2 = np.random.uniform(1.5 * yMed,3.9*yMed) ## 550,750
-            sig1 = np.random.uniform(0.1*yMed,1.0*yMed)  ## 
-            sig2 = np.random.uniform(0.1*yMed,1.0*yMed)
+            mu1 = np.random.uniform(0.1*yMed,0.9*yMed) 
+            mu2 = np.random.uniform(0.7*yMed,3.9*yMed)
+            sig1 = np.random.uniform(1.0*yMed,1000*yMed)
+            sig2 = np.random.uniform(1.0*yMed,1000*yMed)
             pi   = np.random.uniform(0.1,0.9)
-      
+
         return {'n':n, 'mu1':mu1, 'mu2':mu2, 'sig1':sig1, 'sig2':sig2, 'pi':pi}
 
     def perform_expectation(self, y, parms):

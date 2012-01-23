@@ -381,7 +381,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
 
         indicesFG = [int(i) for i in indicesFG]
-        indicesBG = list(set(np.array(eventsToPlot.shape[0])).difference(set(indicesFG)))
+        indicesBG = list(set(subsampleInds).difference(set(indicesFG)))#list(set(np.array(eventsToPlot.shape[0])).difference(set(indicesFG)))
     else:
         indicesFG = subsampleInds#np.array(eventsToPlot.shape[0])#[:,:]#subsampleInds
         indicesBG = []
