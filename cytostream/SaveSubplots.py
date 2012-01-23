@@ -22,7 +22,7 @@ from cytostream.tools import get_all_colors, get_file_sample_stats, get_file_dat
 import Controller
 
 class SaveSubplots():
-    def __init__(self, controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
+    def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
                  minNumEvents=3,subplotTitle=False,addLine=None,figSize=None,axesOff=False,subsample='original'):
 
@@ -57,10 +57,9 @@ class SaveSubplots():
         run = True
         if os.path.isdir(self.controller.homeDir) == False:
             print "ERROR: SaveSubplots.py -- homedir does not exist -- bad project name", projectID, homeDir
-            run = False
-        if run == True:
-            self.log = self.controller.log
-            self.model = self.controller.model
+            
+        self.log = self.controller.log
+        self.model = self.controller.model
 
         ## other variables
         self.fileNameList = self.controller.fileNameList 
@@ -71,6 +70,8 @@ class SaveSubplots():
             self.channelList = self.log.log['alternate_channel_labels']
 
         self.channelDict = self.controller.model.load_channel_dict()
+        print 'channel dict', self.channelDict
+
 
         if inputLabels != None:
             self.inputLabels = []

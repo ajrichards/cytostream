@@ -21,7 +21,7 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
-from SaveSubplots import SaveSubplots
+#from SaveSubplots import SaveSubplots
 
 try:
     from config_cs import CONFIGCS
@@ -355,14 +355,16 @@ class Controller:
             print "ERROR: Controller.handle_subsampling invalid input with isFilter flag on"
             
         ## if subsample is set to some filter
-        if type(subsample) == type('abc') and subsample == 'original':
+        if subsample == 'original':
+            return True
+        if re.search('filter',str(subsample)):
             return True
 
-        ## handle non filtering subsampling 
+        ## handle non filtering subsampling
         elif subsample != 'original':
             subsample = int(float(subsample))
             
-            key = str(int(float(subsample)))
+            key = str(subsample)
             if self.subsampleDict.has_key(key) == False:
                 subsampleIndices = self.model.get_subsample_indices(subsample)
                 if type(subsampleIndices) == type(np.array([])):
@@ -520,73 +522,19 @@ class Controller:
         except:
             return None
 
-    def get_filter_indices_by_clusters(self,fileName,parentModelRunID,modelMode,clusterIDs):
-        '''
-        given a set of cluster ids (list) the respective events indices are found and returned
+    def handle_filtering_by_clusters(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+        modelsRunList = get_models_run_list(self.log.log)
 
-        '''
+        ## error checkings 
+        if fileName not in self.fileNameList:
+            print "ERROR: Controller.handle_filtering_by_clusters -- fileName is not in fileList - skipping filtering"
+            return None
+        if parentModelRunID not in modelsRunList:
+            print "ERROR: Controller.handle_filtering_by_clusters -- parentModelRun is not in modelsRunList - skipping filtering"
+            return None
 
-        if len(clusterIDs) == 0:
-            print "WARNING: Controller.get_indices_for_filter -- clusterIDs was empty"
-            return False
-
-        #if usingIndices == False:
-        statModel, fileLabels = self.model.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
-        modelLog = self.model.load_model_results_log(fileName,parentModelRunID)
-        #parentFilter = modelLog['filter used']
-        #filterID = 'filter%s'%str(int(self.log.log['filters_run_count']) + 1)
-        #self.log.log['filters_run_count'] = str(int(self.log.log['filters_run_count']) + 1)
-        
-        ## check to see if a log file has been created for this project
-        #filterLogFile = os.path.join(self.homeDir,"data",'%s.log'%filterID)
-        #if os.path.isfile(filterLogFile) == True:
-        #    filterLog = csv.writer(open(filterLogFile,'a'))
-        #else:
-        #    filterLog = csv.writer(open(filterLogFile,'w'))
-
-        ## get events
-        #events = self.get_events(fileName,subsample='original')
-        
-        ## check that labels are of right type
-        if type(clusterIDs[0]) != type(1):
-            clusterIDs = [int(cid) for cid in clusterIDs]
-        if type(clusterIDs) == type([]):
-            clusterIDs = np.array(clusterIDs)
-            
-        ## get indices
-        filterIndices = None
-
-        for cid in clusterIDs:
-            inds = np.where(fileLabels == cid)[0]
-
-            if filterIndices == None:
-                filterIndices = inds
-            else:
-                filterIndices = np.hstack([filterIndices,inds])
-       
-        return filterIndices
-
-        #data = events[filterIndices,:]
-        #newDataFileName = fileName + "_data_%s.pickle"%filterID
-        #filterIndicesFile = fileName + "_indices_%s.pickle"%filterID
-
-        #logFileName = fileName + "_data_%s.log"%filterID
-        #tmp1 = open(os.path.join(self.homeDir,'data',newDataFileName),'w')
-        #cPickle.dump(data,tmp1)
-        #tmp1.close()
-        #tmp2 = open(os.path.join(self.homeDir,'data',filterIndicesFile),'w')
-        #cPickle.dump(filterIndices,tmp2)
-        #tmp2.close()
-        #logFile = csv.writer(open(os.path.join(self.homeDir,'data',logFileName),'w'))
-        #logFile.writerow(['original events',str(events.shape[0])])
-        #logFile.writerow(["timestamp", time.asctime()])
-
-        #if os.path.isfile(os.path.join(self.homeDir,'data',newDataFileName)) == False:
-        #    print "ERROR: subsampling file was not successfully created", os.path.join(self.homeDir,'data',newDataFileName)
-        # 
-        #    return False
-        #else:
-        #    return True
+        filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRunID,modelMode,clusterIDs)
+        self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
 
     ##################################################################################################
     #
