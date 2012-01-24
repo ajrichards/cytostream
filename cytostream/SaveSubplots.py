@@ -115,16 +115,16 @@ class SaveSubplots():
             dpi = 120
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
-            dpi = 130
+            dpi = 200
         elif self.numSubplots in [7,8,9]:
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
-            dpi = 140
+            dpi = 2200
         elif self.numSubplots in [10,11,12]:
             self.fig.subplots_adjust(hspace=0.4,wspace=0.2)
-            dpi = 200
+            dpi = 240
         elif self.numSubplots in [13,14,15,16]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
-            dpi = 160
+            dpi = 260
 
         self.fig.savefig(self.figName,transparent=False,dpi=dpi)
                              
@@ -177,8 +177,8 @@ class SaveSubplots():
             ## ensure only maximum num events are shown
             maxScatter = int(float(self.log.log['setting_max_scatter_display']))
             if self.subsample == 'original' and events.shape[0] > maxScatter:
-                self.subsample = maxScatter
-                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+                subsampleToUse = maxScatter
+                subsampleIndices = self.controller.model.get_subsample_indices(subsampleToUse)
                 if labels != None:
                     labels = labels[subsampleIndices]
             ## case where original is smaller than max scatter display
@@ -241,49 +241,11 @@ class SaveSubplots():
             args[17] = self.useScale
 
             ## add a line if specified {subplot:(lineX,lineY)}
-            if self.addLine != None and subplotIndex in self.addLine.keys():
-                draw_plot(args,addLine=self.addLine[subplotIndex],axesOff=self.axesOff)
-            else:
-                draw_plot(args,axesOff=self.axesOff)
+            draw_plot(args,axesOff=self.axesOff)
 
-    #def handle_axes_limits(self):
-    #
-    #    ## fetch plot variables
-    #    fileChannels = self.log.log['alternate_channel_labels']
-    #    fileList = get_fcs_file_names(self.homeDir)
-    #    plotsToViewChannels       = self.log.log['plots_to_view_channels']
-    #    plotsToViewFiles          = self.log.log['plots_to_view_files']
-    #    plotsToViewRuns           = self.log.log['plots_to_view_runs']
-    #    plotsToViewHighlights     = self.log.log['plots_to_view_highlights']
-    #    subsample = self.log.log['subsample_qa'] 
-    #    labels = None##
-    #
-    #    xMaxList, yMaxList, xMinList, yMinList = [],[],[],[]
-    #    for subplotIndex in range(self.numSubplots):
-    #        subplotFile = fileList[int(plotsToViewFiles[int(subplotIndex)])]
-    #        subplotChannels = plotsToViewChannels[int(subplotIndex)]
-    #        subplotRun = plotsToViewRuns[int(subplotIndex)]
-    #        subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
-    #    
-    #        if self.figMode != 'qa' and self.inputLabels == None:
-    #            statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRun,modelType=self.resultsMode)
-    #            labels = statModelClasses
-    #            modelLog = self.model.load_model_results_log(subplotFile,subplotRun)
-    #            subsample = modelLog['subsample']
-    #        elif self.inputLabels != None:
-    #            subsample = self.log.log['subsample_analysis']
-    #
-    #        ## determine min and max numbers
-    #        events,labels = fetch_plotting_events(subplotFile,self.model,self.log,subsample,labels=labels)
-    #        xMaxList.append(events[:,subplotChannels[0]].max())
-    #        yMaxList.append(events[:,subplotChannels[1]].max())
-    #
-    #        ## use only non negative numbers for min
-    #        xMinList.append(events[:,subplotChannels[0]][np.where(events[:,subplotChannels[0]] >= 0)[0]].min())
-    #        yMinList.append(events[:,subplotChannels[1]][np.where(events[:,subplotChannels[1]] >= 0)[0]].min())
-    #
-    #    self.xAxLimit = (np.array(xMinList).min() - 0.05 * np.array(xMinList).min(), np.array(xMaxList).max() + 0.01 * np.array(xMaxList).max())
-    #    self.yAxLimit = (np.array(yMinList).min() - 0.05 * np.array(yMinList).min(), np.array(yMaxList).max() + 0.01 * np.array(yMaxList).max())
+            if self.addLine != None and subplotIndex in self.addLine.keys():
+                ax = self.get_axes(subplotIndex)
+                linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
 
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:

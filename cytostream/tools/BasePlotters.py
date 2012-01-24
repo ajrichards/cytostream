@@ -37,7 +37,7 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
     ## plot the background events
     if len(indicesBG) > 0:
         dataX,dataY = (events[indicesBG,index1],events[indicesBG,index2])
-        ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.8)
+        ax.scatter([dataX],[dataY],c='gray',s=ms,edgecolor='none',alpha=0.2)
         ms = markerSize
 
     ## plot the foreground events
@@ -289,6 +289,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
         randEvents = np.arange(ssSize)
         np.random.shuffle(randEvents)
+        print 'BasePlotters DBG -- creating random events'
     elif subsample == 'original':
         pass
     else:
@@ -336,7 +337,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     if parent != None:
         channel1Ind = int(parent.selectedChannel1)
         channel2Ind = int(parent.selectedChannel2)
-        
+    
     # determine of the events those to plot
     eventsToPlot = events[subsampleInds,:]
 
@@ -368,6 +369,8 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     
     if str(highlight) != "None" and type(highlight) == type([]) and str(labels) != "None":
         
+        print "labels", labels.shape
+
         indicesFG = np.array([])
         if type(highlight) != type([]):
             highlight = [highlight]
@@ -377,20 +380,21 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         for clustID in highlight:
             if int(clustID) not in labels:
                 continue
-
+                
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
-
-        indicesFG = [int(i) for i in indicesFG]
-        indicesBG = list(set(subsampleInds).difference(set(indicesFG)))#list(set(np.array(eventsToPlot.shape[0])).difference(set(indicesFG)))
+        _indices = np.array([int(i) for i in indicesFG])
+        colorList = masterColorList[labels[_indices]]
+        indicesFG = subsampleInds[_indices]
+        indicesBG = list(set(subsampleInds).difference(set(indicesFG)))
     else:
-        indicesFG = subsampleInds#np.array(eventsToPlot.shape[0])#[:,:]#subsampleInds
+        indicesFG = subsampleInds
         indicesBG = []
+        colorList = masterColorList[labels]
 
     ## draw the points
     if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
             print "WARNING: BasePlotters.draw_plot not enough colors in master color list"
-        colorList = masterColorList[labels]
     elif drawState == 'heat':
         if totalPts >= 9e04:
             bins = 120.0
@@ -419,7 +423,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
     if type(colorList) == type([]):
         colorList = np.array(colorList)
-   
+
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
                      drawState=drawState)
@@ -491,7 +495,7 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
 
     fileChannels = nga.get_file_channels()
     if xLabel == 'default':
-        ax.set_xlabel(fileChannels[index1],fontname=fontName,fontsize=fontSize) # index1
+        ax.set_xlabel(fileChannels[index1],fontname=fontName,fontsize=fontSize)
     elif xLabel != None:
         ax.set_xlabel(xLabel,fontname=fontName,fontsize=fontSize)
     if yLabel == 'default':
