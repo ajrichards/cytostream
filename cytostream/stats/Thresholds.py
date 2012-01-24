@@ -556,10 +556,9 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
             figName = os.path.join(figsDir,'autoGatingStrategy_%s.png'%fileName)
             figTitle = "Auto Gating Strategy %s"%(fileName)
-            #ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,drawState='heat',
-            #                  addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
-            print fn, 'channelDict', nga.channelDict
-            ss = SaveSubplots(nga.controller,figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=True,drawState='scatter',subplotTitles=subplotTitles)
+
+            ss = SaveSubplots(nga.controller,figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=True,drawState='scatter',
+                              subplotTitles=subplotTitles,addLine=thresholdLines[fileName])
 
 def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsDir=None):
     
@@ -651,3 +650,51 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
             figTitle = "Auto Gating Strategy %s"%(fileName)
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
+
+
+def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150):
+    '''
+    returns a dict of results for cytokine threshold analysis
+    '''
+
+    fileList = nga.get_file_names()
+
+    try:
+        posFileIdx = fileList.index(posControlFile)
+        negFileIdx = fileList.index(negControlFile)
+    except:
+        print "ERROR file list does not contain either the positive or negative control -- get_cytokine_threshold"
+        return None
+
+    _posEvents = nga.get_events(fileList[posFileIdx],filterID=filterID)
+    posEvents = _posEvents[:,cytoIndex]
+    _negEvents = nga.get_events(fileList[negFileIdx],filterID=filterID)
+    negEvents = _negEvents[:,cytoIndex]
+    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput)
+
+    return fResults
+
+
+def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None):
+    '''
+    function works for both pregated and automated data
+    '''
+
+    if fileList == None:
+        fileList = nga.get_file_names()
+
+    percentages = {}
+    counts = {}
+    idx = {}
+    for fileName in fileList:
+        events = nga.get_events(fileName,filterID=filterID)
+        data = events[:,cytoIndex]
+        positiveEventInds = np.where(data > fThreshold)[0]
+        if events.shape[0] == 0:
+            percentages[fileName] = 0
+        else:
+            percentages[fileName] = (float(positiveEventInds.size)/float(events.shape[0])) * 100.0
+        counts[fileName] = positiveEventInds.size
+        idx[fileName] = positiveEventInds
+
+    return percentages, counts, idx

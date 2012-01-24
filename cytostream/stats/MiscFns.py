@@ -77,20 +77,18 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
     #if resultsDict['params']['pi'] <= 0.5:
     if resultsDict['params']['sig1'] < resultsDict['params']['sig2']:
         if subset in ['fsc']:
-            cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
-            #cutpoint = resultsDict['params']['mu1'] + (2.0 * np.sqrt(resultsDict['params']['sig1']))
+            #cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
+            cutpoint = resultsDict['params']['mu1'] + (6.0 * np.sqrt(resultsDict['params']['sig1']))
         elif subset in ['ssc']:
-            cutpoint = resultsDict['params']['mu1'] + (6 * np.sqrt(resultsDict['params']['sig1']))
+            cutpoint = resultsDict['params']['mu1'] + (6,0 * np.sqrt(resultsDict['params']['sig1']))
             #cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
-            #cutpoint = resultsDict['params']['mu1'] + (2.0 * np.sqrt(resultsDict['params']['sig1']))
     else:
         if subset in ['fsc']:
-            cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            #cutpoint = resultsDict['params']['mu2'] + (2.0 * np.sqrt(resultsDict['params']['sig2']))
+            #cutpoint = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
+            cutpoint = resultsDict['params']['mu2'] + (6.0 * np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['ssc']:
-            cutpoint = resultsDict['params']['mu2'] + (6 * np.sqrt(resultsDict['params']['sig2']))
+            cutpoint = resultsDict['params']['mu2'] + (6.0 * np.sqrt(resultsDict['params']['sig2']))
             #cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            #cutpoint = resultsDict['params']['mu2'] + (2.0 * np.sqrt(resultsDict['params']['sig2']))
         
     if resultsDict['params']['mu2'] > resultsDict['params']['mu1']:
         if subset in ['cd8']:
@@ -98,25 +96,14 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
         elif subset in ['cd3']:
             cutpoint = stats.norm.ppf(0.001,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['cd4']:
-            #cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            #cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1'])) 
-            #cutpoint = 0.8*(cutpointA + cutpointB)
-            #cutpoint = np.array([cutpointA,cutpointB]).mean()  
-            ###cutpoint = stats.norm.ppf(0.99999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1'])
             cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1'])) - (0.0001 * np.sqrt(resultsDict['params']['sig1'])) 
-            #print "...", (0.001 * np.sqrt(resultsDict['params']['sig1'])), stats.norm.ppf(0.99,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
     else:
         if subset in ['cd8']:
             cutpoint = stats.norm.ppf(0.975,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
         elif subset in ['cd3']:
             cutpoint = stats.norm.ppf(0.001,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
         elif subset in ['cd4']:
-            #cutpointA = stats.norm.ppf(0.001,loc=resultsDict['params']['mu1'],scale=np.sqrt(resultsDict['params']['sig1']))
-            #cutpointB = stats.norm.ppf(0.999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
-            #cutpoint = 0.8*(cutpointA + cutpointB)
-            #cutpoint = stats.norm.ppf(0.99999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
             cutpoint = stats.norm.ppf(0.9999,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2'])) - (0.0001 * np.sqrt(resultsDict['params']['sig2'])) 
-            #print "...", (0.001 * np.sqrt(resultsDict['params']['sig2'])), stats.norm.ppf(0.99,loc=resultsDict['params']['mu2'],scale=np.sqrt(resultsDict['params']['sig2']))
 
     return resultsDict,cutpoint
 
