@@ -42,13 +42,14 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0, theta=2.0, fullOutput=True):
 def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
     if len(fileNameList) > 6:
-        fileListToPlot = fileNameList[:6]
+        filesToPlot = fileNameList[:6]
 
     fig = plt.figure()
     fontSize = 8
     pltCount = 0
 
-    for fileName in fileNameList:
+    for fileName in filesToPlot:
+
         events = nga.get_events(fileName)
         if filterID != None:
             filterIndices = nga.get_filter_indices(fileName,filterID)
@@ -56,6 +57,9 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
 
         cd3Events = events[:,cd3ChanIndex]
         pltCount+=1
+        if pltCount > 6:
+            continue
+
         ax = fig.add_subplot(2,3,pltCount)
         eCDF = EmpiricalCDF(cd3Events)
         thresholdLow = eCDF.get_value(0.05)
