@@ -70,7 +70,6 @@ class SaveSubplots():
             self.channelList = self.log.log['alternate_channel_labels']
 
         self.channelDict = self.controller.model.load_channel_dict()
-        print 'channel dict', self.channelDict
 
         if inputLabels != None:
             self.inputLabels = []

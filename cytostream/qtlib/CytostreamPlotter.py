@@ -104,30 +104,33 @@ class CytostreamPlotter(QtGui.QWidget):
             self.model = None
             print "Model could not be initialized -- working as a non-cytostream project"
 
+        ## get max and min number of events
+        minNumEvents,maxNumEvents = 0,0
+        for i,fileName in enumerate(self.fileNameList):
+            events = self.eventsList[i]
+            if events.shape[0] > maxNumEvents:
+                maxNumEvents = events.shape[0]
+            if events.shape[0] < minNumEvents:
+                minNumEvents = events.shape[0]
+            
         ## handle labels
         if self.modelRunID != None and self.model != None:
             self.labelList = []
             minNumEvents,maxNumEvents = 0,0
-            for i,fileName in enumerate(self.fileNameList):
-                events = self.eventsList[i]
-                if events.shape[0] > maxNumEvents:
-                    maxNumEvents = events.shape[0]
-                if events.shape[0] < minNumEvents:
-                    minNumEvents = events.shape[0]
-                
+            for i,fileName in enumerate(self.fileNameList):                
                 statModel, labels = self.model.load_model_results_pickle(fileName,self.modelRunID,modelType=self.resultsMode)
                 self.labelList.append(labels)
                 modelLog = self.model.load_model_results_log(fileName,self.modelRunID)
                 self.subsample = modelLog['subsample']
 
-        ## ensure only maximum num events are shown                                                                                                                                                     
+        ## ensure only maximum num events are shown                  
         maxScatter = 70000
         if self.subsample == 'original' and maxNumEvents > maxScatter:
             self.subsample = maxScatter
             self.subsample = self.model.get_subsample_indices(self.subsample)
             for i in range(len(self.labelList)):
                 self.labelList[i] = self.labelList[i][self.subsample]
-        ## case where original is smaller than max scatter display                                                                                                                                      
+        ## case where original is smaller than max scatter display
         elif self.subsample == 'original':
             #self.subsample = self.model.get_subsample_indices(self.subsample)
             #self.subsample = np.arange(events.shape[0])

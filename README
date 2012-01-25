@@ -48,7 +48,7 @@ hgrc file
 
 *****************************
 [paths]
-default = https://<username>%%40gmail.com:<generated.passkey@cytostream.googlecode.com/hg/
+default = https://adamricha@code.google.com/p/cytostream/
 
 [ui]
 username = <username>@gmail.com
@@ -62,4 +62,16 @@ If you would like to specify your python path
 
 Then edit the file and change the following variable to something like
     
-    configCS = {'python_path':'/usr/local/bin/python'}
+    CONFIGCS = {'python_path':'/usr/local/bin/python'}
+
+****************************
+
+GPU cards
+
+****************************
+
+to check the number of and type of GPU cards installed on your system
+
+  ~$ lspci | grep VGA
+
+then edit the key value for 'number_gpus' in CONFIGCS (config_cs.py)

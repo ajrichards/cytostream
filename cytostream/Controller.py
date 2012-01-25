@@ -500,9 +500,11 @@ class Controller:
         ## used the selected transform
         transform = self.log.log['selected_transform']
         autoComp = self.log.log['auto_compensation']
+        logicleScaleMax = self.log.log['logicle_scale_max']
 
         self.model.load_files(fileList,progressBar=progressBar,dataType=dataType,fileChannelPath=self.fileChannelPath,
-                              compensationFilePath=self.compensationFilePath,transform=transform,autoComp=autoComp)
+                              compensationFilePath=self.compensationFilePath,transform=transform,autoComp=autoComp,
+                              logicleScaleMax=logicleScaleMax)
 
         ## initialize class wide variables 
         self.fileNameList = get_fcs_file_names(self.homeDir)

@@ -10,17 +10,18 @@ if len(sys.argv) < 3:
     sys.exit()
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:m:a:')
+    optlist, args = getopt.getopt(sys.argv[1:], 'f:h:d:t:c:m:a:l:')
 except getopt.GetoptError:
     print sys.argv[0] + "-f filePath -h homeDir -d dataType"
-    print "Note: fileName (-f) full file path" 
-    print "      homeDir  (-h) home directory for current project"
-    print "             k (-d) data type ('fcs','comma','tab')"
-    print " fileChansPath (-c) file channels path"
-    print " autoComp      (-a) auto compensation flag"
+    print "Note: fileName   (-f) full file path" 
+    print "      homeDir    (-h) home directory for current project"
+    print "             k   (-d) data type ('fcs','comma','tab')"
+    print " fileChansPath   (-c) file channels path"
+    print " autoComp        (-a) auto compensation flag"
+    print " logicleScaleMax (-l) logicle scale maximum"
     sys.exit()
 
-transform = 'log'
+transform = 'logicle'
 filePath = None
 homeDir = None
 dataType = 'fcs'
@@ -40,6 +41,8 @@ for o, a in optlist:
         fileChannelsPath = a
     if o == '-m':
         compensationFilePath = a
+    if o == '-l':
+        logicleScaleMax = int(a)
 
 ## initial error checking
 if os.path.isdir(homeDir) == False:
@@ -87,7 +90,7 @@ if dataType == 'fcs':
 
     if isTransformed == False:
         if transform == 'logicle':
-            fcsData.logicle(scale_max=262144)
+            fcsData.logicle(scale_max=logicleScaleMax)
         if transform == 'log':
             fcsData.log()
 
