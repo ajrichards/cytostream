@@ -15,7 +15,8 @@ BASEDIR = os.path.dirname(__file__)
 ## test class for the main window function
 class NoGuiAnalysis():
     def __init__(self,homeDir,channelDict=None,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
-                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle'):
+                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
+                 logicleScaleMax=262144):
         """
           class constructor 
 
@@ -72,6 +73,7 @@ class NoGuiAnalysis():
 
             ## load files
             self.set('selected_transform',str(transform))
+            self.set('logicle_scale_max',logicleScaleMax)
             self.load_files()
             self.set('current_state', 'Model')
             self.set('highest_state', '3')
