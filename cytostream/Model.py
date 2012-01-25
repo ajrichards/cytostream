@@ -484,13 +484,16 @@ class Model:
         filterLog.writerow([fileName,"timestamp", time.asctime()])
         filterLog.writerow([fileName,"parent model run",parentModelRunID])
         filterLog.writerow([fileName,"model mode",modelMode])
-        filterLog.writerow([fileName,'filter size',str(filterIndices.shape[0])])
+        if type(filterIndices) == type(np.array([])):
+            filterLog.writerow([fileName,'filter size',str(filterIndices.shape[0])])
+        else:
+            filterLog.writerow([fileName,'filter size','0'])
 
     def load_filter(self,fileName,filterID):
         indicesFilePath = os.path.join(self.homeDir,"data",'%s_%s.npy'%(fileName,filterID))
         if os.path.exists(indicesFilePath) == False:
             print "WARNING: Model.load_filter -- cannot load filter path does not exist" 
-            return False
+            return []
         
         filterIndices = np.load(indicesFilePath)
         return filterIndices

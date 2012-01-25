@@ -41,6 +41,7 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0, theta=2.0, fullOutput=True):
 
 def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset='CD3',filterID=None):
 
+    filesToPlot = fileNameList
     if len(fileNameList) > 6:
         filesToPlot = fileNameList[:6]
 
@@ -49,7 +50,6 @@ def make_positivity_plot(nga,fileNameList,cd3ChanIndex,figName,emResults,subset=
     pltCount = 0
 
     for fileName in filesToPlot:
-
         events = nga.get_events(fileName)
         if filterID != None:
             filterIndices = nga.get_filter_indices(fileName,filterID)
@@ -142,7 +142,7 @@ def find_positivity_threshold(subset,cd3ChanIndex,fileList,nga,allLabels,verbose
             eCDF = EmpiricalCDF(clusterEvents)
             percentileCut = eCDF.get_value(0.5)
 
-            ## determine if a cluster falls above the cutoff 
+            ## determine if a cluster falls above the cutoff
             if percentileCut > cutpoint:
                 cd3Positive.append(cid)
          
@@ -387,7 +387,9 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
         nga.handle_filtering('filterCD3b',fileName,modelRunID,'components',refinedCD3a)#filter2a
         nga.handle_filtering('filterCD3c',fileName,modelRunID,'components',refinedCD3b)#filter2b
-   
+        print 'refined a', fileName,refinedCD3a
+        print 'refined b', fileName,refinedCD3b
+ 
     figName = os.path.join(figsDir,'ThresholdsEM_cd4.png')
     make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filterCD3')
 
@@ -410,15 +412,19 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
         ## specify cutpoint A
         if cd8ResultsA[fileName]['params']['mu2'] > cd8ResultsA[fileName]['params']['mu1']:
-            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
+            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu2'],
+                                       scale=np.sqrt(cd8ResultsA[fileName]['params']['sig2']))
         else:
-            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
+            cutpointA = stats.norm.ppf(0.00001,loc=cd8ResultsA[fileName]['params']['mu1'],
+                                       scale=np.sqrt(cd8ResultsA[fileName]['params']['sig1']))
 
         ## specify cutpoint B
         if cd8ResultsB[fileName]['params']['mu2'] > cd8ResultsB[fileName]['params']['mu1']:
-            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu1'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
+            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu1'],
+                                       scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
         else:
-            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu2'],scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
+            cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu2'],
+                                       scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
 
         events1 = nga.get_events(fileName)
         filterIndices = nga.get_filter_indices(fileName,'filterCD3')
