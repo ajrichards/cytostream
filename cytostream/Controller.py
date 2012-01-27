@@ -538,6 +538,19 @@ class Controller:
         filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRunID,modelMode,clusterIDs)
         self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
 
+    def handle_filtering_by_indices(self,filterID,fileName,parentModelRunID,modelMode,filterIndices):
+        modelsRunList = get_models_run_list(self.log.log)
+
+        ## error checkings 
+        if fileName not in self.fileNameList:
+            print "ERROR: Controller.handle_filtering_by_clusters -- fileName is not in fileList - skipping filtering"
+            return None
+        if parentModelRunID not in modelsRunList:
+            print "ERROR: Controller.handle_filtering_by_clusters -- parentModelRun is not in modelsRunList - skipping filtering"
+            return None
+
+        self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
+
     ##################################################################################################
     #
     # model related

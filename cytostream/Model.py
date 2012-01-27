@@ -492,7 +492,8 @@ class Model:
     def load_filter(self,fileName,filterID):
         indicesFilePath = os.path.join(self.homeDir,"data",'%s_%s.npy'%(fileName,filterID))
         if os.path.exists(indicesFilePath) == False:
-            print "WARNING: Model.load_filter -- cannot load filter path does not exist" 
+            print "WARNING: Model.load_filter -- cannot load filter path does not exist"
+            print "...", indicesFilePath
             return []
         
         filterIndices = np.load(indicesFilePath)
