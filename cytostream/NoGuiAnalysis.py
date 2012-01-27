@@ -284,7 +284,7 @@ class NoGuiAnalysis():
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
 
-    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,asIndices=False):
         fileList = self.get_file_names()
         modelsRunList = self.get_models_run()
 
@@ -296,7 +296,10 @@ class NoGuiAnalysis():
             print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        self.controller.handle_filtering_by_clusters(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+        if asIndices == False: 
+            self.controller.handle_filtering_by_clusters(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+        else:
+            self.controller.handle_filtering_by_indices(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
     def is_valid_filter(self,filterID,fileName):
         '''
@@ -356,17 +359,19 @@ class NoGuiAnalysis():
         tmp.close()
         return alignedLabels
 
-    def get_basic_subset_info(self,modelRunID):
+    def get_subset_info(self,modelRunID,ssFilePath=None):
         '''        
         get basic subset information
         '''
 
-        bsFilePath = os.path.join(self.controller.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID)
-        if os.path.exists(bsFilePath) == False:
+        if ssFilePath == None:
+            ssFilePath = os.path.join(self.controller.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID)
+    
+        if os.path.exists(ssFilePath) == False:
             print "ERROR: NoGuiAnalysis: cannot find basic subsets -- rerun appropriate funciton"
             return None
 
-        reader = csv.reader(open(bsFilePath,'r'))
+        reader = csv.reader(open(ssFilePath,'r'))
         header = reader.next()
         fileList = []
         subsetList = []

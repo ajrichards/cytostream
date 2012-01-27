@@ -690,10 +690,18 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
         print "ERROR file list does not contain either the positive or negative control -- get_cytokine_threshold"
         return None
 
-    _posEvents = nga.get_events(fileList[posFileIdx],filterID=filterID)
+    _posEvents = nga.get_events(fileList[posFileIdx])
+    if filterID != None:
+        filterInds = nga.get_filter_indices(posControlFile,filterID)
+        _posEvents = _posEvents[filterInds,:]
     posEvents = _posEvents[:,cytoIndex]
-    _negEvents = nga.get_events(fileList[negFileIdx],filterID=filterID)
+
+    _negEvents = nga.get_events(fileList[negFileIdx])
+    if filterID != None:
+        filterInds = nga.get_filter_indices(negControlFile,filterID)
+        _negEvents = _negEvents[filterInds,:]
     negEvents = _negEvents[:,cytoIndex]
+
     fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput)
 
     return fResults
@@ -711,7 +719,11 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
     counts = {}
     idx = {}
     for fileName in fileList:
-        events = nga.get_events(fileName,filterID=filterID)
+        events = nga.get_events(fileName)
+        if filterID != None:
+            filterInds = nga.get_filter_indices(fileName,filterID)
+            events = events[filterInds,:]
+        
         data = events[:,cytoIndex]
         positiveEventInds = np.where(data > fThreshold)[0]
         if events.shape[0] == 0:
