@@ -11,8 +11,10 @@ from cytostream.tools import get_file_sample_stats
 from DistanceCalculator import DistanceCalculator
 from Kmeans import run_kmeans_with_sv
 from cytostream.tools import get_all_colors
-from SpectralMix import SpectralCluster
-
+try:
+    from SpectralMix import SpectralCluster
+except:
+    pass
 
 ## functions
 def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2.0):
@@ -278,11 +280,22 @@ def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRun
             includedChannels = [channelDict['cd3'],channelDict['ssca'],channelDict['fsca']]
             sc1 = SpectralCluster(meanMat[:,includedChannels],k=6,labels=None,sigma=0.05)
             modeLabels = sc1.clustResults['labels']
-            break
+            newLabels = get_mode_labels(events,modeLabels,runLabels)
+            sizeCD3 = []
+            for v in np.sort(np.unique(newLabels)):
+                clusterIndices = np.where(newLabels==v)[0]
+                sizeCD3.append(events[clusterIndices,channelDict['cd3']].size)
+            ranks = np.argsort(np.array(sizeCD3))
+            lymphocyteID = np.sort(np.unique(newLabels))[ranks[-1]]
+            indicesToRetain = np.where(newLabels==lymphocyteID)[0]
+            if float(indicesToRetain.size) / float(events.shape[0]) > 0.8:
+                continue
+            else:
+                break
         except:
             "\tspectral clustering being rerun..."
             modeLabels = None
-    newLabels = get_mode_labels(events,modeLabels,runLabels)
+
     masterColorList = get_all_colors()
     fig = plt.figure()
     ax = fig.add_subplot(131)
@@ -293,34 +306,73 @@ def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRun
     ax.set_yticks([])
     ax.set_xticks([])
 
-    meansCD3 = []
-    for v in np.unique(newLabels):
-        clusterIndices = np.where(newLabels==v)[0]
-        cd3Mean = events[clusterIndices,channelDict['cd3']].mean()
-        meansCD3.append(cd3Mean)
-        #print v,masterColorList[v],clusterIndices.size,cd3Mean
-        
-    cd3MeanRanks = np.argsort(np.array(meansCD3))
-    indicesToRemove = np.where(newLabels==cd3MeanRanks[0])[0] #[cd3MeanRanks[0]]
-    indicesToRetain = np.array(list(set(range(events.shape[0])).difference(set(indicesToRemove.tolist()))))
+    ranks = np.argsort(np.array(sizeCD3))
+    lymphocyteID = np.sort(np.unique(newLabels))[ranks[-1]]
+    indicesToRetain = np.where(newLabels==lymphocyteID)[0]
+    #if float(indicesToRetain.size) / float(events.shape[0]) > 0.8:
+    #    print "WARNING: spectral clustering needs to be rerun"
+
+    #cd3MeanRanks = np.argsort(np.array(sizeCD3))#np.argsort(np.array(meansCD3))
+    #indicesToRemove = np.where(newLabels==cd3MeanRanks[0])[0] #[cd3MeanRanks[0]]
+    #indicesToRetain = np.array(list(set(range(events.shape[0])).difference(set(indicesToRemove.tolist()))))
+    
     newEvents = events[indicesToRetain,:]
     newLabels = runLabels[indicesToRetain]
     filteredMeanMat = get_mean_matrix(newEvents,newLabels)
 
     print "...getting cd3 subset -- kmeans clustering"
-    kmeansResults = run_kmeans_with_sv(newEvents[:,[channelDict['cd3'],channelDict['ssca'],channelDict['fsca']]],kRange=[3],subsample=5000)
+    ####################################################
+    numRepeats = 5
+    failed = False
+    for i in range(numRepeats):
+        #try:
+        includedChannels = [channelDict['cd3'],channelDict['ssca']]
+        sc2 = SpectralCluster(filteredMeanMat[:,includedChannels],k=5,labels=None,sigma=500.0)
+        modeLabels2 = sc2.clustResults['labels']
+        newLabels2 = get_mode_labels(newEvents,modeLabels2,newLabels)
+        sizeCD3 = []
+        for v in np.sort(np.unique(newLabels)):
+            clusterIndices = np.where(newLabels2==v)[0]
+            sizeCD3.append(events[clusterIndices,channelDict['cd3']].size)
+        ranks = np.argsort(np.array(sizeCD3))
+        lymphocyteID = np.sort(np.unique(newLabels2))[ranks[-1]]
+        indicesToRetain2 = np.where(newLabels2==lymphocyteID)[0]
+        if float(indicesToRetain2.size) / float(newEvents.shape[0]) > 0.9:
+            failed = True
+            continue
+        else:
+            break           
+        #except:
+        #    "\tspectral clustering being rerun..."
+        #    modeLabels = None
+    newLabels = get_mode_labels(newEvents,modeLabels,newLabels)
+    ####################################################
+    #sizeCD3 = []
+    #for v in np.sort(np.unique(newLabels)):
+    #    clusterIndices = np.where(newLabels==v)[0]
+    #    sizeCD3.append(events[clusterIndices,channelDict['cd3']].size)
+    #    print v,masterColorList[v],clusterIndices.size,cd3Mean    
+    ranks = np.argsort(np.array(sizeCD3))
+    #lymphocyteID = np.sort(np.unique(newLabels))[ranks[-1]]
+    #print 'lymphocyte id', lymphocyteID
+    #indicesToRetain = np.where(newLabels==lymphocyteID)[0]
 
-    meansCD3 = []
-    for v in np.sort(np.unique(kmeansResults['labels'])):
-        clusterIndices = np.where(kmeansResults['labels']==v)[0]
-        cd3Mean = newEvents[clusterIndices,channelDict['cd3']].mean()
-        meansCD3.append(cd3Mean)
-        #print v,masterColorList[v],clusterIndices.size,cd3Mean
-    cd3MeanRanks = np.argsort(np.array(meansCD3))
+    #kmeansResults = run_kmeans_with_sv(newEvents[:,[channelDict['cd3'],channelDict['ssca']]],kRange=[3],subsample=5000) #channelDict['fsca']
+    #meansCD3 = []
+    #sizeCD3 = []
+    #for v in np.sort(np.unique(kmeansResults['labels'])):
+    #    clusterIndices = np.where(kmeansResults['labels']==v)[0]
+    #    cd3Mean = newEvents[clusterIndices,channelDict['cd3']].mean()
+    #    meansCD3.append(cd3Mean)
+    #    sizeCD3.append(newEvents[clusterIndices,channelDict['cd3']].size)
+    #    #print v,masterColorList[v],clusterIndices.size,cd3Mean
+    #cd3MeanRanks = np.argsort(np.array(sizeCD3))#np.argsort(np.array(meansCD3))
 
     ax = fig.add_subplot(132)
     dataX,dataY = (newEvents[:,channelDict['cd3']],newEvents[:,channelDict['ssca']])
-    colorList = masterColorList[kmeansResults['labels']]
+    #colorList = masterColorList[kmeansResults['labels']]
+    colorList = masterColorList[newLabels]
+    ax.scatter([events[:,channelDict['cd3']]],[events[:,channelDict['ssca']]],c='gray',s=1,edgecolor='none',alpha=0.3)
     ax.scatter([dataX],[dataY],c=colorList,s=1,edgecolor='none')
     ax.set_aspect(1./ax.get_data_ratio())
     ax.set_yticks([])
@@ -331,9 +383,15 @@ def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRun
     if os.path.isdir(figsDir) == False:
         os.mkdir(figsDir)
 
+    '''
     ## save data
-    normalizedIndices = np.where(kmeansResults['labels']==cd3MeanRanks[-1])[0]
-    normalizedIndices = indicesToRetain[normalizedIndices]
+    #normalizedIndices = np.where(kmeansResults['labels']==cd3MeanRanks[-1])[0]
+    #normalizedIndices = indicesToRetain[normalizedIndices]
+    lymphocyteID2 = np.sort(np.unique(newLabels))[ranks[-1]]
+    #print 'lymphocyte id', lymphocyteID
+    indicesToRetain2 = np.where(newLabels==lymphocyteID2)[0]
+    normalizedIndices = indicesToRetain[indicesToRetain2]
+
     nga.handle_filtering('filterCD3',fileName,modelRunID,'components',normalizedIndices,asIndices=True)
     fPercent = float(normalizedIndices.size) / float(events.shape[0]) * 100
     writer.writerow([fileName,"CD3",normalizedIndices.size,fPercent,"[]"])
@@ -343,11 +401,12 @@ def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRun
     ax = fig.add_subplot(133)
     dataX,dataY = (events[normalizedIndices,channelDict['cd3']],events[normalizedIndices,channelDict['ssca']])
     #colorList = masterColorList[newLabels]
+    ax.scatter([events[:,channelDict['cd3']]],[events[:,channelDict['ssca']]],c='gray',s=1,edgecolor='none',alpha=0.3)
     ax.scatter([dataX],[dataY],c='b',s=1,edgecolor='none')
     ax.set_aspect(1./ax.get_data_ratio())
     ax.set_yticks([])
     ax.set_xticks([])
-
+    '''
     figName = os.path.join(figsDir,'Thresholding_cd3_%s.png'%fileName)
     plt.savefig(os.path.join(figName))
 
@@ -384,20 +443,26 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     
     for fileName in fileList:
         cd3PosClusters[fileName] = []
-        statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
+        #statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         fileEvents = nga.get_events(fileName)
         ##fileInd = fileList.index(fileName)
         indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
-        meanCD3 = fileEvents[indsCD3,:].mean(axis=0)
-        meanMat = get_mean_matrix(fileEvents,fileLabels)
-        dc = DistanceCalculator()
-        iChannels = [channelIDs['cd3']] 
-        dc.calculate(meanMat[:,iChannels],matrixMeans=meanCD3[iChannels])
-        distances = dc.get_distances()
+        cd3Events = fileEvents[indsCD3,:]
+        eCDF = EmpiricalCDF(cd3Events[:,channelIDs['cd3']])
+        cd3Low,cd3High = eCDF.get_value(0.02),eCDF.get_value(0.98)
+
+        print cd3Low, cd3High
+
+        #meanCD3 = fileEvents[indsCD3,:].mean(axis=0)
+        #meanMat = get_mean_matrix(fileEvents,fileLabels)
+        #dc = DistanceCalculator()
+        #iChannels = [channelIDs['cd3']] 
+        #dc.calculate(meanMat[:,iChannels],matrixMeans=meanCD3[iChannels])
+        #distances = dc.get_distances()
         
-        uniqueLabels = np.sort(np.unique(fileLabels))
-        for i,centroid in enumerate(uniqueLabels):
-            print i,distances[i]
+        #uniqueLabels = np.sort(np.unique(fileLabels))
+        #for i,centroid in enumerate(uniqueLabels):
+        #    print i,distances[i]
 
         #allDistances = None
         #uniqueLabels = np.sort(np.unique(fileLabels))
@@ -586,8 +651,8 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         filterIndices = nga.get_filter_indices(fileName,'filterCD4p')
         eventsCD4p = eventsCD4p[filterIndices,:]
         eCDF = EmpiricalCDF(eventsCD4p[:,cd8ChanIndex])
-        print type(eventsCD4p)
-        print eventsCD4p
+        #print type(eventsCD4p)
+        #print eventsCD4p
         cutpointB = eCDF.get_value(0.98)
         
         events1 = nga.get_events(fileName)
