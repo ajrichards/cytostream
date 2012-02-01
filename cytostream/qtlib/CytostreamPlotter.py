@@ -68,6 +68,9 @@ class CytostreamPlotter(QtGui.QWidget):
         self.showNoise = showNoise
         self.numSubplots = numSubplots
         self.plotTitle = plotTitle
+        self.plotTitle = re.sub("_","-",self.plotTitle)
+
+
         self.useSimple = useSimple
         self.dpi = dpi
         self.transform = transform

@@ -8,6 +8,12 @@ from cytostream import SaveSubplots
 from cytostream.stats import two_component_em, EmpiricalCDF,scale
 from cytostream.tools import get_file_sample_stats
 
+from DistanceCalculator import DistanceCalculator
+from Kmeans import run_kmeans_with_sv
+from cytostream.tools import get_all_colors
+from SpectralMix import SpectralCluster
+
+
 ## functions
 def _calculate_fscores(neg_pdf, pos_pdf, beta=1, theta=2.0):
     n = len(neg_pdf)
@@ -233,6 +239,119 @@ def examine_double_positive(nga,channelIDs,fscChanInd,sscChanInd,fileName,cluste
         ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                           axesOff=True,subplotTitles=subplotTitles)
 
+def get_mean_matrix(events,labels):
+    meanMat = None
+    uniqueLabels = np.sort(np.unique(labels))
+    for clusterIdx in uniqueLabels:
+        clusterIndices = np.where(labels == clusterIdx)[0]
+        clusterEvents = events[clusterIndices,:]
+        if meanMat == None:
+            meanMat = np.array([clusterEvents.mean(axis=0)])
+        else:
+            meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+
+    return meanMat
+
+def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRunID='run1'):
+    ## functions
+    
+    def get_mode_labels(evts,modeLabels,parentLabels):
+        newLabels = np.zeros(evts.shape[0])
+        for i, modeLab in enumerate(modeLabels):
+            clusterLab = parentLabels[i]
+            clusterIndices = np.where(parentLabels == clusterLab)[0]
+            newLabels[clusterIndices] = modeLab
+        newLabels = np.array([int(l) for l in newLabels])
+
+        return newLabels
+
+    ## create an array where each row corresponds to the cluster means
+    events = nga.get_events(fileName)
+    uniqueLabels = np.sort(np.unique(runLabels))
+    clusterMeanList = []
+
+    meanMat = get_mean_matrix(events,runLabels)
+    print "...getting cd3 subset -- spectral clustering"
+    numRepeats = 5
+    for i in range(numRepeats):
+        try:
+            includedChannels = [channelDict['cd3'],channelDict['ssca'],channelDict['fsca']]
+            sc1 = SpectralCluster(meanMat[:,includedChannels],k=6,labels=None,sigma=0.05)
+            modeLabels = sc1.clustResults['labels']
+            break
+        except:
+            "\tspectral clustering being rerun..."
+            modeLabels = None
+    newLabels = get_mode_labels(events,modeLabels,runLabels)
+    masterColorList = get_all_colors()
+    fig = plt.figure()
+    ax = fig.add_subplot(131)
+    dataX,dataY = (events[:,channelDict['cd3']],events[:,channelDict['ssca']])
+    colorList = masterColorList[newLabels]
+    ax.scatter([dataX],[dataY],c=colorList,s=1,edgecolor='none')
+    ax.set_aspect(1./ax.get_data_ratio())
+    ax.set_yticks([])
+    ax.set_xticks([])
+
+    meansCD3 = []
+    for v in np.unique(newLabels):
+        clusterIndices = np.where(newLabels==v)[0]
+        cd3Mean = events[clusterIndices,channelDict['cd3']].mean()
+        meansCD3.append(cd3Mean)
+        #print v,masterColorList[v],clusterIndices.size,cd3Mean
+        
+    cd3MeanRanks = np.argsort(np.array(meansCD3))
+    indicesToRemove = np.where(newLabels==cd3MeanRanks[0])[0] #[cd3MeanRanks[0]]
+    indicesToRetain = np.array(list(set(range(events.shape[0])).difference(set(indicesToRemove.tolist()))))
+    newEvents = events[indicesToRetain,:]
+    newLabels = runLabels[indicesToRetain]
+    filteredMeanMat = get_mean_matrix(newEvents,newLabels)
+
+    print "...getting cd3 subset -- kmeans clustering"
+    kmeansResults = run_kmeans_with_sv(newEvents[:,[channelDict['cd3'],channelDict['ssca'],channelDict['fsca']]],kRange=[3],subsample=5000)
+
+    meansCD3 = []
+    for v in np.sort(np.unique(kmeansResults['labels'])):
+        clusterIndices = np.where(kmeansResults['labels']==v)[0]
+        cd3Mean = newEvents[clusterIndices,channelDict['cd3']].mean()
+        meansCD3.append(cd3Mean)
+        #print v,masterColorList[v],clusterIndices.size,cd3Mean
+    cd3MeanRanks = np.argsort(np.array(meansCD3))
+
+    ax = fig.add_subplot(132)
+    dataX,dataY = (newEvents[:,channelDict['cd3']],newEvents[:,channelDict['ssca']])
+    colorList = masterColorList[kmeansResults['labels']]
+    ax.scatter([dataX],[dataY],c=colorList,s=1,edgecolor='none')
+    ax.set_aspect(1./ax.get_data_ratio())
+    ax.set_yticks([])
+    ax.set_xticks([])
+    figsDir = os.path.join(nga.homeDir,'results',modelRunID,'thresholding')
+    if os.path.isdir(os.path.join(nga.homeDir,'results',modelRunID)) == False:
+        os.mkdir(os.path.join(nga.homeDir,'results',modelRunID))
+    if os.path.isdir(figsDir) == False:
+        os.mkdir(figsDir)
+
+    ## save data
+    normalizedIndices = np.where(kmeansResults['labels']==cd3MeanRanks[-1])[0]
+    normalizedIndices = indicesToRetain[normalizedIndices]
+    nga.handle_filtering('filterCD3',fileName,modelRunID,'components',normalizedIndices,asIndices=True)
+    fPercent = float(normalizedIndices.size) / float(events.shape[0]) * 100
+    writer.writerow([fileName,"CD3",normalizedIndices.size,fPercent,"[]"])
+    print indicesToRetain.shape
+    print normalizedIndices.shape
+
+    ax = fig.add_subplot(133)
+    dataX,dataY = (events[normalizedIndices,channelDict['cd3']],events[normalizedIndices,channelDict['ssca']])
+    #colorList = masterColorList[newLabels]
+    ax.scatter([dataX],[dataY],c='b',s=1,edgecolor='none')
+    ax.set_aspect(1./ax.get_data_ratio())
+    ax.set_yticks([])
+    ax.set_xticks([])
+
+    figName = os.path.join(figsDir,'Thresholding_cd3_%s.png'%fileName)
+    plt.savefig(os.path.join(figName))
+
+
 def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',fileList=None,figsDir=None,undumpedClusters=None):
 
     ## variables
@@ -244,7 +363,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         figsDir = os.path.join(nga.homeDir,'results',modelRunID,'thresholding')
         if os.path.isdir(figsDir) == False:
             os.mkdir(figsDir)
-        
+
     thresholdLines = {}
 
     ## prepare output
@@ -256,6 +375,56 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         allLabels.append(fileLabels)
  
+    #########################################
+    for i,fileName in enumerate(fileList):
+        runLabels = allLabels[i]
+        alternative_cd3_filtering(nga,fileName,runLabels,channelIDs,writer)
+
+    cd3PosClusters = {}
+    
+    for fileName in fileList:
+        cd3PosClusters[fileName] = []
+        statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
+        fileEvents = nga.get_events(fileName)
+        ##fileInd = fileList.index(fileName)
+        indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
+        meanCD3 = fileEvents[indsCD3,:].mean(axis=0)
+        meanMat = get_mean_matrix(fileEvents,fileLabels)
+        dc = DistanceCalculator()
+        iChannels = [channelIDs['cd3']] 
+        dc.calculate(meanMat[:,iChannels],matrixMeans=meanCD3[iChannels])
+        distances = dc.get_distances()
+        
+        uniqueLabels = np.sort(np.unique(fileLabels))
+        for i,centroid in enumerate(uniqueLabels):
+            print i,distances[i]
+
+        #allDistances = None
+        #uniqueLabels = np.sort(np.unique(fileLabels))
+        #for centroid in uniqueLabels:
+        #    centroidIndices = np.where(fileLabels == centroid)[0]
+        #    centroidMean = fileEvents[centroidIndices,:].mean(axis=0)
+        #    dc = DistanceCalculator()
+        #    dc.calculate(events,matrixMeans=centroidMean)
+        #    distances = dc.get_distances()
+        #    #distances = whiten(distances)                                                                          
+        #    distances = np.array([distances]).T
+        #    if allDistances == None:
+        #        allDistances =  distances
+        #    else:
+        #        allDistances = np.hstack([allDistances,distances])
+        # 
+        #newLabels = np.zeros(mat.shape[0])
+
+        #for i in range(allDistances.shape[0]):
+        #    newLabels[i] = uniqueLabels[np.argmin(allDistances[i,:])]
+
+    sys.exit()
+
+
+
+    #########################################
+    '''
     ########### CD3 ##################
     print 'getting cd3 events...'
     cd3ChanIndex = channelIDs['cd3']
@@ -334,10 +503,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
         for cid in np.unique(fileLabels):
             ## filter based on coefficient of variation
-            cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,sscChanIndex,modelRunID='run1')
-
-            if cvCD3 > 0.2:# or cvSSC > 0.25:
-                continue
+            #cvCD3,cvSSC = get_cluster_coeff_var(nga,channelIDs,fileName,cid,sscChanIndex,modelRunID='run1')
+            #
+            #if cvCD3 > 0.2:# or cvSSC > 0.25:
+            #    continue
 
             clusterEventsInds = np.where(fileLabels==cid)[0]
             clusterEventsCD3 = events[clusterEventsInds,cd3ChanIndex]
@@ -360,9 +529,10 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         nga.handle_filtering('filterCD3',fileName,modelRunID,'components',cd3PosClusters[fileName])
         indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
         eventsOrig = nga.get_events(fileName)
-        fPercent = float(indsCD3.size) / float(eventsOrig.shape[0])
+        fPercent = float(indsCD3.size) / float(eventsOrig.shape[0]) * 100.0
         writer.writerow([fileName,"CD3",indsCD3.size,fPercent,str(cd3PosClusters[fileName])])
 
+    '''
     ########### CD4 ##################
     # split CD4 into CD4 Pos and CD4 Neg
 
@@ -393,18 +563,11 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
     figName = os.path.join(figsDir,'ThresholdsEM_cd4.png')
     make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filterCD3')
 
+
     ########### CD8 ##################
     cd8ChanIndex = channelIDs['cd8']
     print 'getting cd8 events...' 
     cd8ResultsA = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD4n')
-    #cd8ResultsB = find_positivity_threshold('cd8',cd8ChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3c')
-    #figName = os.path.join(figsDir,'ThresholdsEM_cd8a.png')
-    #make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsA,filterID='filterCD3b')
-    #figName = os.path.join(figsDir,'ThresholdsEM_cd8b.png')
-    #make_positivity_plot(nga,fileList,cd8ChanIndex,figName,cd8ResultsB,filterID='filterCD3c')
-
-    #print 'complete.'
-    #return None
 
     ########## create the cd4-cd8 positive line ##############
     cd4cd8Thresholds = {}
@@ -427,13 +590,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         print eventsCD4p
         cutpointB = eCDF.get_value(0.98)
         
-        #if cd8ResultsB[fileName]['params']['mu2'] > cd8ResultsB[fileName]['params']['mu1']:
-        #    cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu1'],
-        #                               scale=np.sqrt(cd8ResultsB[fileName]['params']['sig1']))
-        #else:
-        #    cutpointB = stats.norm.ppf(0.99,loc=cd8ResultsB[fileName]['params']['mu2'],
-        #                               scale=np.sqrt(cd8ResultsB[fileName]['params']['sig2']))
-
         events1 = nga.get_events(fileName)
         filterIndices = nga.get_filter_indices(fileName,'filterCD3')
         events1 = events1[filterIndices,:]
@@ -514,7 +670,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         if indsCD8 == None or indsCD8.size == 0:
             fPercent = np.nan
         else:
-            fPercent = float(indsCD8.size) / float(indsCD3.size)
+            fPercent = float(indsCD8.size) / float(indsCD3.size) * 100.0
         writer.writerow([fileName,"CD8",indsCD8.size,fPercent,str(cd8PosClusters[fileName])])
 
     for fileName in fileList:
@@ -525,7 +681,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         if indsCD4 == None or indsCD4.size == 0:
             fPercent = np.nan
         else: 
-            fPercent = float(indsCD4.size) / float(indsCD3.size)
+            fPercent = float(indsCD4.size) / float(indsCD3.size) * 100.0
         writer.writerow([fileName,"CD4",indsCD4.size,fPercent,str(cd4PosClusters[fileName])])
 
     for fileName in fileList:

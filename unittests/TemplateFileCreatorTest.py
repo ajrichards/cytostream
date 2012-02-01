@@ -35,7 +35,6 @@ class TemplateFileCreatorTest(unittest.TestCase):
         print 'mode sizes', tfc.modeSizes
         print 'best mode sizes  by sv', tfc.modeSizes[np.argsort(tfc.modeSilValues)[::-1]]#tfc.modeSizes[np.argsort(tfc.modeSilValues)]
 
-
         ## ensure best labeling is 3 clusters
         firstBest = tfc.bestModeLabels[0]
         self.assertEqual(len(np.unique(firstBest)),3)
