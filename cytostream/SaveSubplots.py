@@ -17,7 +17,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 from matplotlib import rc
-rc('text', usetex = True)
+rc('text', usetex = False)
 
 import matplotlib.pyplot as plt
 from cytostream import Model, Logger, get_fcs_file_names

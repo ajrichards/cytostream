@@ -368,7 +368,8 @@ class NoGuiAnalysis():
             ssFilePath = os.path.join(self.controller.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID)
     
         if os.path.exists(ssFilePath) == False:
-            print "ERROR: NoGuiAnalysis: cannot find basic subsets -- rerun appropriate funciton"
+            print "ERROR: NoGuiAnalysis: cannot find subset file -- rerun appropriate funciton"
+            print "...", ssFilePath
             return None
 
         reader = csv.reader(open(ssFilePath,'r'))
