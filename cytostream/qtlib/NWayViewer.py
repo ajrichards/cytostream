@@ -7,14 +7,15 @@ from cytostream.qtlib import CytostreamPlotter
 
 class NWayViewer(QtGui.QWidget):
 
-    def __init__(self,homeDir,channels,files,runs,highlights,subsample,numSubplots,figMode='qa',parent=None,
+    def __init__(self,nga,channels,files,runs,highlights,subsample,numSubplots,figMode='qa',parent=None,
                  background=False,modelType=None,mainWindow=None):
 
         QtGui.QWidget.__init__(self,parent)
 
         ## input variables
         self.setWindowTitle('N Way Plotter')
-        self.homeDir = homeDir
+        self.nga = nga
+        self.homeDir = self.nga.homeDir
         self.channels = channels
         self.files = files
         self.runs = runs
@@ -35,6 +36,10 @@ class NWayViewer(QtGui.QWidget):
             self.runs = [None for i in self.runs]
             self.modelType = None
 
+        print len(self.nga.eventsList)
+        sys.exit()
+
+
         ## setup layouts
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.setAlignment(QtCore.Qt.AlignCenter)
@@ -46,12 +51,12 @@ class NWayViewer(QtGui.QWidget):
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
 
         for i in range(numSubplots):
-            cp = CytostreamPlotter(fileNameList,
-                                   eventsList,
+            cp = CytostreamPlotter(self.files,
+                                   self.nga.eventsList,
                                    channelList,
                                    channelDict,
                                    drawState='heat',
-                                   parent=None,
+                                   parent=self.parent,
                                    background=True,
                                    selectedChannel1=self.channels[i][0],
                                    selectedChannel2=self.channels[i][0],
@@ -116,6 +121,8 @@ class NWayViewer(QtGui.QWidget):
 ### Run the tests 
 if __name__ == '__main__':
 
+    from cytostream import NoGuiAnalysis
+
     ## check that unittests were run and necessary data is present
     baseDir = os.path.dirname(__file__)
     mode = 'results'
@@ -131,20 +138,26 @@ if __name__ == '__main__':
     ## check that model is present
     modelChk = os.path.join(baseDir,'..','projects','utest','models','%s_%s.log'%(selectedFile,modelName))
     if os.path.isfile(modelChk) == False:
-        print "ERROR: Model not present - (Re)run unit tests"
-        sys.exit()
-
-    app = QtGui.QApplication(sys.argv)
-
+        channelDict = {'fsc-h':0,'ssc-h':1}
+        filePathList = [os.path.join(os.getcwd(),"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        print "WARNING: Model not present - (Re)running unit test"
+        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
+        self.nga.set('subsample_qa', 1000)
+        self.nga.set('subsample_analysis', 1000)
+        self.nga.run_model()
+    else:
+        ## connect to a cytostream project
+        nga = NoGuiAnalysis(homeDir,loadExisting=True)
+        app = QtGui.QApplication(sys.argv)
     
     figMode = 'qa'
     plotsToViewChannels =   [(0,1),(0,2),(0,3),(1,1),(1,2),(1,3),(2,0),(2,1),(2,3),(0,0),(2,2),(3,3)]
     plotsToViewFiles =      [0,0,0,0,0,0,0,0,0,0,0,0]
     plotsToViewRuns =       ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
     plotsToViewHighlights = [None,None,None,None,None,None,None,None,None,None,None,None]
-    numSubplots = 6
+    numSubplots = 2
 
-    nwv = NWayViewer(homeDir,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
+    nwv = NWayViewer(nga,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
                      subsample,numSubplots,figMode=figMode,background=True,modelType=modelType)
 
     nwv.show()

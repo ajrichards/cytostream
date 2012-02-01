@@ -2,9 +2,11 @@
 
 import os,sys
 import numpy as np
-from scipy.cluster.vq import kmeans2,kmeans
-from cytostream.stats import SilValueGenerator
-
+from scipy.cluster.vq import kmeans2,kmeans,whiten
+import scipy.stats as stats
+from scipy.spatial.distance import pdist, squareform
+from DistanceCalculator import DistanceCalculator
+from SilValueGenerator import SilValueGenerator
 
 def get_silhouette_values(matList,matLabelList,subsample=None,minNumEvents=4,resultsType='clusterMeans'):
     '''
@@ -143,7 +145,7 @@ def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
         #maxRepeatSilValue = np.array([0])
         for repeat in range(repeats):
             #try:
-            kmeanResults, kmeanLabels = kmeans2(mat,k,minit='points')
+            kmeanResults, kmeanLabels = kmeans2(toClusterMat,k,minit='points')
             svg = SilValueGenerator(toClusterMat,kmeanLabels)
             avgSilVal = svg.silValues.mean()
             #except:
@@ -161,6 +163,32 @@ def run_kmeans_with_sv(mat,kRange=[2,3,4,5,6,7,8],subsample=None):
 
         if bestRepeat[2] > bestK['avgSilVal']:
             bestK = {'centroids':bestRepeat[0],'labels':bestRepeat[1],'k':k,'avgSilVal':bestRepeat[2]}
+
+    ## if using subsample get centroids and reclassify the events
+    if subsample != None:
+
+        allDistances = None
+        uniqueLabels = np.sort(np.unique(bestK['labels']))
+        for centroid in uniqueLabels:
+             centroidIndices = np.where(bestK['labels'] == centroid)[0]
+             centroidMean = toClusterMat[centroidIndices,:].mean(axis=0)
+             dc = DistanceCalculator()
+             dc.calculate(mat,matrixMeans=centroidMean)
+             distances = dc.get_distances()
+             #distances = whiten(distances)
+             distances = np.array([distances]).T
+             if allDistances == None:
+                 allDistances =  distances
+             else:
+                 allDistances = np.hstack([allDistances,distances])
+
+        newLabels = np.zeros(mat.shape[0])
+        
+        for i in range(allDistances.shape[0]):
+            newLabels[i] = uniqueLabels[np.argmin(allDistances[i,:])]
+
+        ## adjust the centroids and labels
+        bestK['labels'] = np.array([int(i) for i in newLabels])
 
     if bestK['centroids'] == None:
         print "WARNING: run_kmeans_with_sv did not return a result"
