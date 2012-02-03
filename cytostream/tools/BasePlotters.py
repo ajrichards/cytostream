@@ -433,6 +433,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         
         ## handle title and labels
         if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
+            plotTitle = re.sub("_","\_",plotTitle)
             parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
         if parent != None and parent.axLab_cb.isChecked == False:
@@ -443,11 +444,11 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             if len(channelList) < channel1Ind + 1:
                 print "WARNING: draw_plot -- bad channel index specified max(%s)"%len(channelList), channel1Ind 
             else:
-                ax.set_xlabel(channelList[channel1Ind],fontname=fontName,fontsize=fontSize)
+                ax.set_xlabel(re.sub("_","\_",channelList[channel1Ind]),fontname=fontName,fontsize=fontSize)
             if len(channelList) < channel2Ind + 1:
                 print "WARNING: draw_plot -- bad channel index specified max(%s)"%len(channelList), channel2Ind 
             else:
-                ax.set_ylabel(channelList[channel2Ind],fontname=fontName,fontsize=fontSize)
+                ax.set_ylabel(re.sub("_","\_",channelList[channel2Ind]),fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None and plotTitle != False:
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)

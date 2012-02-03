@@ -3,7 +3,7 @@
 import sys,getopt,os,re,time,csv,ast,cPickle,time
 import numpy as np
 import fcm
-from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
+
 
 if len(sys.argv) < 3:
     print sys.argv[0] + " -f filePath -h homeDir -d dataType -t transform"
@@ -20,6 +20,7 @@ except getopt.GetoptError:
     print " autoComp        (-a) auto compensation flag"
     print " logicleScaleMax (-l) logicle scale maximum"
     sys.exit()
+
 
 transform = 'logicle'
 filePath = None
@@ -43,6 +44,14 @@ for o, a in optlist:
         compensationFilePath = a
     if o == '-l':
         logicleScaleMax = int(a)
+
+if dataType != 'fcs':
+    from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
+
+#fcsData = fcm.loadFCS(filePath)
+#print 'hello'
+#data = fcm.loadFCS('/home/clemmys/research/eqapol/sendout1/analysis1/EQAPOL_4C_Pregated/CD8+Cyto+/101_08Jul11_C05_013_CD8_Cyto.fcs')
+
 
 ## initial error checking
 if os.path.isdir(homeDir) == False:
@@ -94,8 +103,12 @@ if dataType == 'fcs':
         if transform == 'log':
             fcsData.log()
 
+    ## for debugging
+    #fcsData = fcm.loadFCS(filePath)
+    
+    ## get channels
     fileChannels = fcsData.channels
-
+    
 elif dataType == 'comma':
     fcsData = read_txt_into_array(filePath,delim=',')
     fileChannels = read_txt_to_file_channels(fileChannelsPath)
