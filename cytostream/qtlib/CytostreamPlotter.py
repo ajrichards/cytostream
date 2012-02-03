@@ -7,6 +7,9 @@ import matplotlib as mpl
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
+from matplotlib import rc
+rc('text', usetex=False)
+
 from matplotlib.figure import Figure  
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar

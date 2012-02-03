@@ -173,9 +173,9 @@ class Model:
                 cmd = "%s %s -f %s -h %s -d %s -t %s -c %s -m %s -a %s -l %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
                                                                                transform,fileChannelPath,compensationFilePath,autoComp,
                                                                                logicleScaleMax)
-
-                #proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-                proc = subprocess.Popen(cmd,shell=True)
+                proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                
+                #proc = subprocess.Popen(cmd,shell=True)
                 
                 while True:
                     try:
