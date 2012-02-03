@@ -36,7 +36,7 @@ class CytostreamPlotter(QtGui.QWidget):
                  enableGating=False,homeDir=None,compactMode=False,labelList=None,
                  minNumEvents=3,showNoise=False,subsample=70000,numSubplots=1,
                  axesLabels=True,plotTitle=None,useSimple=False,dpi=100,
-                 transform='logicle',useScaled=False,modelRunID=None):
+                 transform='logicle',useScaled=False,modelRunID='run1'):
         '''
         constructor
 
@@ -94,7 +94,6 @@ class CytostreamPlotter(QtGui.QWidget):
         self.resultsMode = 'components'
 
         ## variables to be used when class is called for drawing
-        self.events = None
         self.selectedFileName = None
         self.subsample = subsample
         self.line = None
@@ -141,7 +140,6 @@ class CytostreamPlotter(QtGui.QWidget):
             #self.subsample = self.model.get_subsample_indices(self.subsample)
             #self.subsample = np.arange(events.shape[0])
             self.subsample = 'original'
-            print "WARNING: this is the case in Cytostream plotter that has not been tested"
         ## case where we have a subsample but no labels 
         elif labels == None:
             self.subsample = self.model.get_subsample_indices(self.subsample)
@@ -579,8 +577,9 @@ class CytostreamPlotter(QtGui.QWidget):
         self.currentGate= str(self.gateSelector.currentText())
         self.gate_clear_callback()
 
-        mid1 = 0.5 * self.events[:,self.selectedChannel1].max()
-        mid2 = 0.5 * self.events[:,self.selectedChannel2].max()
+        fileInd = self.fileNameList.index(self.selectedFileName)
+        mid1 = 0.5 * self.eventsList[fileInd][:,self.selectedChannel1].max()
+        mid2 = 0.5 * self.eventsList[fileInd][:,self.selectedChannel2].max()
         a = mid1 - (mid1 * 0.5)
         b = mid1 + (mid1 * 0.5)
         c = mid2 - (mid2 * 0.5)
@@ -601,7 +600,7 @@ class CytostreamPlotter(QtGui.QWidget):
             self.gate_clear.setEnabled(True)
 
         if self.currentGate == 'Draw':
-            self.gateInteractor = DrawGateInteractor(self.ax, self.canvas, self.events, self.selectedChannel1, self.selectedChannel2)
+            self.gateInteractor = DrawGateInteractor(self.ax, self.canvas, self.eventsList[fileInd], self.selectedChannel1, self.selectedChannel2)
         elif self.currentGate == 'Polygon':
             self.vertSlider.setEnabled(True)
             self.gate_save.setEnabled(True)
@@ -645,6 +644,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
         self.ax.add_line(self.line)
         self.canvas.draw()
+        #self.draw()
 
     def title_set_callback(self,cb):
         if self.title_cb.isChecked() == True and self.plotTitle != None:
@@ -703,6 +703,7 @@ class CytostreamPlotter(QtGui.QWidget):
             return 
         tmp1 = open(gateFilePath,'w')
         cPickle.dump(gateToSave,tmp1)
+        tmp1.close()
 
     def figure_save(self,figName=None):
         if figName == None:
@@ -728,25 +729,42 @@ class CytostreamPlotter(QtGui.QWidget):
 if __name__ == '__main__':
 
     # how to use CytostreamPlotter with fcm
-    import fcm
+    #import fcm
+    from cytostream import NoGuiAnalysis
 
     ## check that unittests were run and necessary data is present
     baseDir = os.getcwd()
     #selectedFile = "3FITC_4PE_004"
     #filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
     #channelDict = {'fsc-h':0,'ssc-h':1}
-    selectedFile = "J6901HJ1-06_CMV_CD8"
-    filePath = os.path.join("/","home","clemmys","research","manuscripts","PositivityThresholding","scripts","data","eqapol11C",selectedFile+".fcs")
-    channelDict = {'fsc-a':0, 'fsc-h':1, 'fsc-w':2, 'ssc-a':3, 'ssc-h':4, 'ssc-w':5, 'time':6}
+    #selectedFile = "J6901HJ1-06_CMV_CD8"
+    selectedFile = "J6901HJ1-06_Costim"
+    filePath = os.path.join(os.getenv("HOME"),"research","eqapol","EQAPOL_11C_Normal","data",selectedFile+".fcs")
+    channelDict = {'fsca':0, 'fsch':1, 'fscw':2, 'ssca':3, 'ssch':4, 'sscw':5,'cd57':6,'cd4':7,'cd14+cd19+amine':8,'cd3':9,'cd27':10,'tnfa':11,'cd8':12,'il2':13,'cd45ro':14,'cd107':15,'ifng':16,'time':17}
 
-    fcsData = fcm.loadFCS(filePath,auto_comp=False)
-    fcsData.logicle(scale_max=262144)
-    events = fcsData[:,:].copy()
+    excludedChannels = [1,2,4,5,6]
+    transform = 'logicle'
+    subsample = 100000
+
+    ## setup class to run model
+    homeDir = os.path.join(baseDir,"..","projects","cptest")
+    if os.path.isdir(homeDir) == False:
+        nga = NoGuiAnalysis(homeDir,channelDict,[filePath],useSubsample=True,makeQaFigs=False,record=False,transform='logicle')
+        nga.set('num_iters_mcmc', 1200)
+        nga.set('subsample_qa', 2000)
+        nga.set('subsample_analysis', subsample)
+        nga.set('dpmm_k',96)
+        nga.set('selected_transform',transform)
+        nga.set('excluded_channels_analysis', excludedChannels)
+        nga.set('thumbnail_results_default','components')
+        nga.run_model()
+    else:
+        nga = NoGuiAnalysis(homeDir,loadExisting=True)
 
     ## declare the necessary variables
     fileNameList = [selectedFile]
-    eventsList = [events]
-    channelList = fcsData.channels
+    channelList = nga.get_file_channels()
+    eventsList = [nga.get_events(fn) for fn in fileNameList]
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
@@ -755,14 +773,15 @@ if __name__ == '__main__':
                            channelList,
                            channelDict,
                            drawState='heat',
+                           modelRunID='run1',
                            parent=None,
                            background=True,
-                           selectedChannel1=0,
-                           selectedChannel2=3,
+                           selectedChannel1=channelDict['cd3'],
+                           selectedChannel2=channelDict['ssca'],
                            mainWindow=None,
                            uniqueLabels=None,
-                           enableGating=False,
-                           homeDir=None,
+                           enableGating=True,
+                           homeDir=homeDir,
                            compactMode=False,
                            labelList=None,
                            minNumEvents=3,
@@ -771,8 +790,8 @@ if __name__ == '__main__':
                            useScaled=False,
                            plotTitle="default",
                            dpi=100,
-                           subsample = 'original',
-                           transform='logicle'
+                           subsample = subsample,
+                           transform=transform
                            )
 
     cp.draw(selectedFile=selectedFile)

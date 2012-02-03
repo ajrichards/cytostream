@@ -17,6 +17,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names
 from cytostream.tools import get_all_colors, get_file_sample_stats, get_file_data, draw_plot
 import Controller
@@ -24,7 +25,8 @@ import Controller
 class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
-                 minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original'):
+                 minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
+                 gatesToShow=None):
 
         ## arg variables
         self.controller = controller
@@ -47,6 +49,7 @@ class SaveSubplots():
         self.axesOff = axesOff
         self.subsample = subsample
         self.resultsMode = 'components'
+        self.gatesToShow = gatesToShow
 
         ## if given a homeDir initialize a controller
         if type(self.controller) == type('a') and os.path.exists(self.controller):
@@ -245,6 +248,15 @@ class SaveSubplots():
             if self.addLine != None and subplotIndex in self.addLine.keys():
                 ax = self.get_axes(subplotIndex)
                 linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
+
+            ## add gate if specified
+            if self.gatesToShow != None and self.gatesToShow[subplotIndex] != None:
+                gate = self.gatesToShow[subplotIndex]
+                gx = np.array([g[0] for g in gate])
+                gy = np.array([g[1] for g in gate])
+                line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
+                ax = self.get_axes(subplotIndex)
+                ax.add_line(line)
 
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:

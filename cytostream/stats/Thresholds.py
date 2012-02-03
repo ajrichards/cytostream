@@ -411,7 +411,7 @@ def alternative_cd3_filtering(nga,fileName,runLabels,channelDict,writer,modelRun
     plt.savefig(os.path.join(figName))
 
 
-def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',fileList=None,figsDir=None,undumpedClusters=None):
+def perform_automated_gating_basic_subsets(nga,channelIDs,cd3PosClusters,writer,modelRunID='run1',fileList=None,figsDir=None,undumpedClusters=None):
 
     ## variables
     if fileList == None:
@@ -424,71 +424,49 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
             os.mkdir(figsDir)
 
     thresholdLines = {}
+    for fileName in fileList:
+        thresholdLines[fileName] = {}  
 
     ## prepare output
-    writer = csv.writer(open(os.path.join(nga.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID),'w'))
-    writer.writerow(["fileName","subset","totalEvents","percentage","clusterIDs"])
+    #if os.path.exists(os.path.join(nga.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID)) == True:
+    #    writer = csv.writer(open(os.path.join(nga.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID),'a'))
+    #else:
+    #    writer = csv.writer(open(os.path.join(nga.homeDir,'results','%s_basic_cell_subsets.csv'%modelRunID),'w'))
+    #    writer.writerow(["fileName","subset","totalEvents","percentage","clusterIDs"])
 
     allLabels = []
     for fileName in fileList:
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         allLabels.append(fileLabels)
  
-    #########################################
-    for i,fileName in enumerate(fileList):
-        runLabels = allLabels[i]
-        alternative_cd3_filtering(nga,fileName,runLabels,channelIDs,writer)
+    if channelIDs.has_key('fsca'):
+        fscChanIndex = channelIDs['fsca']
+    elif channelIDs.has_key('fsch'):
+        fscChanIndex = channelIDs['fsch']
+    elif channelIDs.has_key('fscw'):
+        fscChanIndex = channelIDs['fscw']
+    elif channelIDs.has_key('fsc'):
+        fscChanIndex = channelIDs['fsc']
+    else:
+        print "ERROR: perform_automated_gating_basic_subsets cannot find fsc"
 
-    cd3PosClusters = {}
+    if channelIDs.has_key('ssca'):
+        sscChanIndex = channelIDs['ssca']
+    elif channelIDs.has_key('ssch'):
+        sscChanIndex = channelIDs['ssch']
+    elif channelIDs.has_key('sscw'):
+        sscChanIndex = channelIDs['sscw']
+    elif channelIDs.has_key('ssc'):
+        sscChanIndex = channelIDs['ssc']
+    else:
+        print "ERROR: perform_automated_gating_basic_subsets cannot find ssc"
+   
+    #########################################
+    #for i,fileName in enumerate(fileList):
+    #    runLabels = allLabels[i]
+    #    alternative_cd3_filtering(nga,fileName,runLabels,channelIDs,writer)
+    #    need to get cd3 pos clusters from events
     
-    for fileName in fileList:
-        cd3PosClusters[fileName] = []
-        #statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
-        fileEvents = nga.get_events(fileName)
-        ##fileInd = fileList.index(fileName)
-        indsCD3 = nga.get_filter_indices(fileName,'filterCD3')
-        cd3Events = fileEvents[indsCD3,:]
-        eCDF = EmpiricalCDF(cd3Events[:,channelIDs['cd3']])
-        cd3Low,cd3High = eCDF.get_value(0.02),eCDF.get_value(0.98)
-
-        print cd3Low, cd3High
-
-        #meanCD3 = fileEvents[indsCD3,:].mean(axis=0)
-        #meanMat = get_mean_matrix(fileEvents,fileLabels)
-        #dc = DistanceCalculator()
-        #iChannels = [channelIDs['cd3']] 
-        #dc.calculate(meanMat[:,iChannels],matrixMeans=meanCD3[iChannels])
-        #distances = dc.get_distances()
-        
-        #uniqueLabels = np.sort(np.unique(fileLabels))
-        #for i,centroid in enumerate(uniqueLabels):
-        #    print i,distances[i]
-
-        #allDistances = None
-        #uniqueLabels = np.sort(np.unique(fileLabels))
-        #for centroid in uniqueLabels:
-        #    centroidIndices = np.where(fileLabels == centroid)[0]
-        #    centroidMean = fileEvents[centroidIndices,:].mean(axis=0)
-        #    dc = DistanceCalculator()
-        #    dc.calculate(events,matrixMeans=centroidMean)
-        #    distances = dc.get_distances()
-        #    #distances = whiten(distances)                                                                          
-        #    distances = np.array([distances]).T
-        #    if allDistances == None:
-        #        allDistances =  distances
-        #    else:
-        #        allDistances = np.hstack([allDistances,distances])
-        # 
-        #newLabels = np.zeros(mat.shape[0])
-
-        #for i in range(allDistances.shape[0]):
-        #    newLabels[i] = uniqueLabels[np.argmin(allDistances[i,:])]
-
-    sys.exit()
-
-
-
-    #########################################
     '''
     ########### CD3 ##################
     print 'getting cd3 events...'
@@ -511,17 +489,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
 
     ########### fsc  ##################
     print 'getting fsc events...'
-    if channelIDs.has_key('fsca'):
-        fscChanIndex = channelIDs['fsca']
-    elif channelIDs.has_key('fsch'):
-        fscChanIndex = channelIDs['fsch']
-    elif channelIDs.has_key('fscw'):
-        fscChanIndex = channelIDs['fscw']
-    elif channelIDs.has_key('fsc'):
-        fscChanIndex = channelIDs['fsc']
-    else:
-        print "ERROR: perform_automated_gating_basic_subsets cannot find fsc"
-
     fscResults = find_positivity_threshold("fsc",fscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3a')
     figName = os.path.join(figsDir,'ThresholdsEM_fsc.png')
     make_positivity_plot(nga,fileList,fscChanIndex,figName,fscResults,filterID='filterCD3a')
@@ -535,17 +502,6 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         thresholdLines[fileName][1] = (fscThreshY,fscThreshX)
 
     ########### ssc  ##################
-    print 'getting ssc events...'
-    if channelIDs.has_key('ssca'):
-        sscChanIndex = channelIDs['ssca']
-    elif channelIDs.has_key('ssch'):
-        sscChanIndex = channelIDs['ssch']
-    elif channelIDs.has_key('sscw'):
-        sscChanIndex = channelIDs['sscw']
-    elif channelIDs.has_key('ssc'):
-        sscChanIndex = channelIDs['ssc']
-    else:
-        print "ERROR: perform_automated_gating_basic_subsets cannot find ssc"
     sscResults = find_positivity_threshold("ssc",sscChanIndex,fileList,nga,allLabels,verbose=True,filterID='filterCD3a')
     figName = os.path.join(figsDir,'ThresholdsEM_ssc.png')
     make_positivity_plot(nga,fileList,sscChanIndex,figName,sscResults,filterID='filterCD3a')
@@ -626,7 +582,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         nga.handle_filtering('filterCD4n',fileName,modelRunID,'components',negativeCD4)#filter2b
         
     figName = os.path.join(figsDir,'ThresholdsEM_cd4.png')
-    make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filterCD3')
+    #make_positivity_plot(nga,fileList,cd4ChanIndex,figName,cd4Results,filterID='filterCD3')
 
 
     ########### CD8 ##################
@@ -667,12 +623,13 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         threshX = np.hstack([threshXA,threshXB])
         threshY = np.hstack([threshYA,threshYB])
         cd4cd8Thresholds[fileName] = (cutpointA, cutpointB)
-        thresholdLines[fileName][3] = (threshX,threshY)
+        thresholdLines[fileName][2] = (threshX,threshY)
 
     cd4PosClusters = {}
     cd8PosClusters = {}
     dpClusters = {}
     cd3ToRemove = {}
+
     for fileName in fileList:
         cd4PosClusters[fileName] = []
         cd8PosClusters[fileName] = []
@@ -681,7 +638,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         filterIndices = nga.get_filter_indices(fileName,'filterCD3')
         statModel, fileLabels = nga.get_model_results(fileName,modelRunID,'components')
         filteredLabels = np.array([int(i) for i in fileLabels[filterIndices]])
-
+    
         cd3Events = nga.get_events(fileName)
         cd3Inds = nga.get_filter_indices(fileName,'filterCD3')
         cd3Events = cd3Events[cd3Inds,:]
@@ -701,7 +658,7 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
                 #    cd3ToRemove[fileName].append(cid)
         
                 cd8PosClusters[fileName].append(cid)
-
+    
             if clusterEventsCD8.mean() > cd4cd8Thresholds[fileName][0] and clusterEventsCD4.mean() < cd4Results[fileName]['cutpoint']:
                 cd8PosClusters[fileName].append(cid)
             elif clusterEventsCD8.mean() < cd4cd8Thresholds[fileName][1] and clusterEventsCD4.mean() > cd4Results[fileName]['cutpoint']:
@@ -756,10 +713,12 @@ def perform_automated_gating_basic_subsets(nga,channelIDs,modelRunID='run1',file
         if len(cd4PosClusters[fileName]) == 0:
             cd4PosClusters[fileName] = None
 
+    return thresholdLines
+
     ###################################################
     ## plot the gating strategy
     ###################################################
-    create = True
+    create = False
     if create == True:
         print 'creating gating strategy figures...'
         ## set channels to view

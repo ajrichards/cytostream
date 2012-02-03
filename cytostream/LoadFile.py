@@ -21,7 +21,6 @@ except getopt.GetoptError:
     print " logicleScaleMax (-l) logicle scale maximum"
     sys.exit()
 
-
 transform = 'logicle'
 filePath = None
 homeDir = None
@@ -51,7 +50,6 @@ if dataType != 'fcs':
 #fcsData = fcm.loadFCS(filePath)
 #print 'hello'
 #data = fcm.loadFCS('/home/clemmys/research/eqapol/sendout1/analysis1/EQAPOL_4C_Pregated/CD8+Cyto+/101_08Jul11_C05_013_CD8_Cyto.fcs')
-
 
 ## initial error checking
 if os.path.isdir(homeDir) == False:
@@ -102,9 +100,11 @@ if dataType == 'fcs':
             fcsData.logicle(scale_max=logicleScaleMax)
         if transform == 'log':
             fcsData.log()
-
+    
     ## for debugging
-    #fcsData = fcm.loadFCS(filePath)
+    #print transform
+    #print autoComp
+    #fcsData = fcm.loadFCS(filePath,auto_comp=True,trasform=None)
     
     ## get channels
     fileChannels = fcsData.channels
