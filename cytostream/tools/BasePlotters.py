@@ -142,7 +142,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False,useScaled=False):
 
     ## variables
-    scatterList = ['fsc','fsc-a','fsc-w','fsc-h','ssc','ssc-a','ssc-w','ssc-h']
+    scatterList = ['fsc','fsca','fscw','fsch','ssc','ssca','sscw','ssch']
     xTransformed, yTransformed = False, False
     buff = 0.02
     formatter = ScalarFormatter(useMathText=True)
@@ -368,8 +368,6 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         print "ERROR: in BasePlotters highlight call must be of type list"
     
     if str(highlight) != "None" and type(highlight) == type([]) and str(labels) != "None":
-        
-        print "labels", labels.shape
 
         indicesFG = np.array([])
         if type(highlight) != type([]):
