@@ -26,7 +26,7 @@ class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
-                 gatesToShow=None):
+                 gatesToShow=None,dpi=None):
 
         ## arg variables
         self.controller = controller
@@ -50,6 +50,7 @@ class SaveSubplots():
         self.subsample = subsample
         self.resultsMode = 'components'
         self.gatesToShow = gatesToShow
+        inputDPI = dpi
 
         ## if given a homeDir initialize a controller
         if type(self.controller) == type('a') and os.path.exists(self.controller):
@@ -113,20 +114,23 @@ class SaveSubplots():
             self.fig.subplots_adjust(wspace=0.32)
             dpi = 110
         elif self.numSubplots in [4]:
-            self.fig.subplots_adjust(hspace=0.25,wspace=0.005)
-            dpi = 120
+            self.fig.subplots_adjust(hspace=0.23,wspace=0.00005)
+            dpi = 150
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
             dpi = 200
         elif self.numSubplots in [7,8,9]:
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
-            dpi = 2200
+            dpi = 220
         elif self.numSubplots in [10,11,12]:
             self.fig.subplots_adjust(hspace=0.4,wspace=0.2)
             dpi = 240
         elif self.numSubplots in [13,14,15,16]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
             dpi = 260
+
+        if inputDPI != None:
+            dpi = inputDPI
 
         self.fig.savefig(self.figName,transparent=False,dpi=dpi)
                              
