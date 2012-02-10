@@ -19,14 +19,14 @@ if mpl.get_backend() != 'agg':
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names
-from cytostream.tools import get_all_colors, get_file_sample_stats, get_file_data, draw_plot
+from cytostream.tools import get_all_colors, get_file_sample_stats, get_file_data, draw_plot,finalize_draw
 import Controller
 
 class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
-                 gatesToShow=None,dpi=None):
+                 gatesToShow=None,positiveToShow=None,dpi=None):
 
         ## arg variables
         self.controller = controller
@@ -50,6 +50,7 @@ class SaveSubplots():
         self.subsample = subsample
         self.resultsMode = 'components'
         self.gatesToShow = gatesToShow
+        self.positiveToShow= positiveToShow
         inputDPI = dpi
 
         ## if given a homeDir initialize a controller
@@ -84,10 +85,12 @@ class SaveSubplots():
             print "ERROR: SaveSubplots.py -- figMode  must be 'qa' or 'analysis' not '%s'"%self.figMode
 
         ## prepare figure
-        if self.figSize == None:
-            self.fig = plt.figure()
-        else:
+        if self.figSize != None:
             self.fig = plt.figure(figsize=self.figSize)
+        elif self.numSubplots in [7,8]:
+            self.fig = plt.figure(figsize=(10,5))
+        else:
+            self.fig = plt.figure()
 
         self.colors = get_all_colors()
 
@@ -119,7 +122,10 @@ class SaveSubplots():
         elif self.numSubplots in [5,6]:
             self.fig.subplots_adjust(hspace=0.05,wspace=0.3)
             dpi = 200
-        elif self.numSubplots in [7,8,9]:
+        elif self.numSubplots in [7,8]:
+            self.fig.subplots_adjust(hspace=0.0,wspace=0.5)
+            dpi = 220
+        elif self.numSubplots in [9]:
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
             dpi = 220
         elif self.numSubplots in [10,11,12]:
@@ -247,7 +253,7 @@ class SaveSubplots():
             args[17] = self.useScale
 
             ## add a line if specified {subplot:(lineX,lineY)}
-            draw_plot(args,axesOff=self.axesOff)
+            indicesFG = draw_plot(args,axesOff=self.axesOff)
 
             if self.addLine != None and subplotIndex in self.addLine.keys():
                 ax = self.get_axes(subplotIndex)
@@ -261,6 +267,25 @@ class SaveSubplots():
                 line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
                 ax = self.get_axes(subplotIndex)
                 ax.add_line(line)
+
+            ## add positivity events if specified
+            if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
+                ax = self.get_axes(subplotIndex)
+                posDimIndex = self.positiveToShow[subplotIndex][0]
+                fThreshold = self.positiveToShow[subplotIndex][1]
+                dataX,dataY = (events[:,index1],events[:,index2])
+                dataPosDim = events[:,posDimIndex]
+                if index1 == posDimIndex:
+                    ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
+                
+                _positiveEventInds = np.where(dataPosDim > fThreshold)[0]
+                if _positiveEventInds.size > 0:
+                    positiveEventInds = np.array(list(set(indicesFG.tolist()).intersection(set(_positiveEventInds.tolist()))))
+                    if positiveEventInds.size > 0:
+                        ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
+        
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['selected_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=False)
+                
 
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:
@@ -276,9 +301,9 @@ class SaveSubplots():
         elif self.numSubplots == 6:
             ax = self.fig.add_subplot(2,3,subplotIndex+1)
         elif self.numSubplots == 7:
-            ax = self.fig.add_subplot(3,3,subplotIndex+1)
+            ax = self.fig.add_subplot(2,4,subplotIndex+1)
         elif self.numSubplots == 8:
-            ax = self.fig.add_subplot(3,3,subplotIndex+1)
+            ax = self.fig.add_subplot(2,4,subplotIndex+1)
         elif self.numSubplots == 9:
             ax = self.fig.add_subplot(3,3,subplotIndex+1)
         elif self.numSubplots == 10:
