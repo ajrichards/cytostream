@@ -4,5 +4,5 @@ from PlottingFns import get_all_colors, Centroids, rgb_to_hex, get_cmap_blues
 from PlottingFns import set_logicle_transformed_ticks,set_scatter_ticks,set_log_transformed_ticks
 from PlottingFns import get_fontsize,get_fontname
 from Gating import DrawGateInteractor, PolyGateInteractor,get_indices_from_gate,get_clusters_from_gate
-from BasePlotters import draw_plot,create_cytokine_subplot
+from BasePlotters import draw_plot,create_cytokine_subplot,finalize_draw
 from LatexLib import LatexReportCreator

@@ -449,6 +449,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
                 ax.set_ylabel(re.sub("_","\_",channelList[channel2Ind]),fontname=fontName,fontsize=fontSize)
 
         if plotTitle != None and plotTitle != False:
+            plotTitle = re.sub("_","\_",plotTitle)
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
         ## check for forced scaling
@@ -460,6 +461,9 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
+
+    return indicesFG
+
 
 def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
                             yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,

@@ -856,7 +856,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
 
-def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150):
+def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150,theta=2.0):
     '''
     returns a dict of results for cytokine threshold analysis
     '''
@@ -882,7 +882,7 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
         _negEvents = _negEvents[filterInds,:]
     negEvents = _negEvents[:,cytoIndex]
 
-    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput)
+    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput,theta=2.0)
 
     return fResults
 
