@@ -882,7 +882,7 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
         _negEvents = _negEvents[filterInds,:]
     negEvents = _negEvents[:,cytoIndex]
 
-    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput,theta=2.0)
+    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput,theta=theta)
 
     return fResults
 
