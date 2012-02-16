@@ -260,13 +260,14 @@ class SaveSubplots():
                 linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
 
             ## add gate if specified
-            if self.gatesToShow != None and self.gatesToShow[subplotIndex] != None:
-                gate = self.gatesToShow[subplotIndex]
-                gx = np.array([g[0] for g in gate])
-                gy = np.array([g[1] for g in gate])
-                line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
-                ax = self.get_axes(subplotIndex)
-                ax.add_line(line)
+            if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:
+                for i in range(len(self.gatesToShow[subplotIndex])):
+                    gate = self.gatesToShow[subplotIndex][i]
+                    gx = np.array([g[0] for g in gate])
+                    gy = np.array([g[1] for g in gate])
+                    line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
+                    ax = self.get_axes(subplotIndex)
+                    ax.add_line(line)
 
             ## add positivity events if specified
             if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
@@ -281,6 +282,7 @@ class SaveSubplots():
                 _positiveEventInds = np.where(dataPosDim > fThreshold)[0]
                 if _positiveEventInds.size > 0:
                     positiveEventInds = np.array(list(set(indicesFG.tolist()).intersection(set(_positiveEventInds.tolist()))))
+                    positiveEventInds = _positiveEventInds
                     if positiveEventInds.size > 0:
                         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
         
