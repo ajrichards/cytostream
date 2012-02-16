@@ -1,4 +1,4 @@
-import sys,os,re,cPickle
+import sys,os,re,cPickle,time
 from PyQt4 import QtCore, QtGui
 
 import numpy as np
@@ -71,8 +71,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.showNoise = showNoise
         self.numSubplots = numSubplots
         self.plotTitle = plotTitle
-        self.plotTitle = re.sub("_","-",self.plotTitle)
-
+        self.plotTitle = re.sub("_"," ",self.plotTitle)
 
         self.useSimple = useSimple
         self.dpi = dpi
@@ -521,6 +520,8 @@ class CytostreamPlotter(QtGui.QWidget):
             self.force_cb.setChecked(False)
 
     def channel1_selector_callback(self,selectedInd):
+        print '......'
+        timeStart = time.time()
         if self.enableGating == True:
             self.gate_clear_callback()
 
@@ -533,6 +534,9 @@ class CytostreamPlotter(QtGui.QWidget):
             newTuple = (self.channelList.index(selectedTxt),int(origTuple[1]))
             self.mainWindow.log.log['plots_to_view_channels'][self.subplotIndex] = newTuple
             self.mainWindow.controller.save()
+        
+        timeStop = time.time()
+        print "\t", timeStop - timeStart
 
     def channel2_selector_callback(self,selectedInd):
         if self.enableGating == True:
