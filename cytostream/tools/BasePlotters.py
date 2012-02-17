@@ -372,17 +372,24 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         indicesFG = np.array([])
         if type(highlight) != type([]):
             highlight = [highlight]
-        if type(highlight[0]) == type([]):
+        elif type(highlight) == type([]) and len(highlight) == 0:
+            highlight = []
+        elif type(highlight[0]) == type([]):
             highlight = highlight[0]
 
         for clustID in highlight:
             if int(clustID) not in labels:
-                continue
-                
+                continue                
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])
+        
         _indices = np.array([int(i) for i in indicesFG])
-        colorList = masterColorList[labels[_indices]]
-        indicesFG = subsampleInds[_indices]
+        if len(_indices) > 0:
+            indicesFG = subsampleInds[_indices]
+            colorList = masterColorList[labels[_indices]]
+        else:
+            colorList = None
+            indicesFG = []
+
         indicesBG = list(set(subsampleInds).difference(set(indicesFG)))
     else:
         indicesFG = subsampleInds
