@@ -40,6 +40,7 @@ class PolyGateInteractor:
         self.ax = ax
         self.poly = poly
         self.canvas = canvas
+        self.line = None
 
         ## fixes error of extra point 
         self.poly.xy = self.poly.xy[:-1]
@@ -161,6 +162,7 @@ class DrawGateInteractor:
         self.gate = None
         self.action1 = self.canvas.mpl_connect('button_press_event', self.press_callback)
         self.ind = None
+        self.line = None
 
     def callback(self, verts):
         self.gate = [v for v in verts]
@@ -195,7 +197,8 @@ class DrawGateInteractor:
         self.canvas.widgetlock(self.lasso)
 
     def clean(self):
-        self.line.set_visible(False)
+        if self.line != None:
+            self.line.set_visible(False)
         self.canvas.mpl_disconnect(self.action1)
 
 

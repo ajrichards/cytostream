@@ -282,11 +282,11 @@ class SaveSubplots():
                 _positiveEventInds = np.where(dataPosDim > fThreshold)[0]
                 if _positiveEventInds.size > 0:
                     positiveEventInds = np.array(list(set(indicesFG.tolist()).intersection(set(_positiveEventInds.tolist()))))
-                    positiveEventInds = _positiveEventInds
+                    #positiveEventInds = _positiveEventInds
                     if positiveEventInds.size > 0:
                         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
         
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['selected_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=False)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['selected_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=True)
                 
 
     def get_axes(self,subplotIndex):
