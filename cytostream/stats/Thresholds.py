@@ -902,10 +902,16 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
         events = nga.get_events(fileName)
         if filterID != None:
             filterInds = nga.get_filter_indices(fileName,filterID)
-            events = events[filterInds,:]
+            if filterInds.size > 1:
+                events = events[filterInds,:]
         
         data = events[:,cytoIndex]
-        positiveEventInds = np.where(data > fThreshold)[0]
+        if filterInds.size > 1:
+            positiveEventInds = np.where(data > fThreshold)[0]
+        else:
+            positiveEventInds = np.array([])
+            events = np.array([])
+
         if events.shape[0] == 0:
             percentages[fileName] = 0
         else:

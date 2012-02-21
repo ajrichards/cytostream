@@ -51,12 +51,12 @@ def draw_scatter(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,h
             borderEventsX = np.hstack([borderEventsX1,borderEventsX2])
             borderEventsY = np.hstack([borderEventsY1,borderEventsY2])
             borderEvents = np.hstack([borderEventsX,borderEventsY])
-            
-            nonBorderEvents = np.array(list(set(range(len(indicesFG))).difference(set(borderEvents))))
-            colorList = bilinear_interpolate(dataX[nonBorderEvents],dataY[nonBorderEvents],bins=colorList)
 
-            ## plot events
-            ax.scatter([dataX[nonBorderEvents]],[dataY[nonBorderEvents]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
+            ## plot events            
+            nonBorderEvents = np.array(list(set(range(len(indicesFG))).difference(set(borderEvents))))
+            if nonBorderEvents.size > 0:       
+                colorList = bilinear_interpolate(dataX[nonBorderEvents],dataY[nonBorderEvents],bins=colorList)
+                ax.scatter([dataX[nonBorderEvents]],[dataY[nonBorderEvents]],c=colorList,s=1,edgecolor='none',cmap=myCmap)
             if borderEvents.size > 0:
                 ax.scatter([dataX[borderEvents]],[dataY[borderEvents]],c='k',s=1,edgecolor='none')
         elif drawState == 'scatter':
@@ -76,6 +76,9 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 
     if centroids == None:
         print "WARNING: BasePlotters: cannot specify highlight without centroids"
+        return
+    
+    if not len(indicesFG) > 0:
         return
 
     def draw_centroid(l,index1,index2,labelSize):
