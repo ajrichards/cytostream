@@ -17,7 +17,7 @@ from scipy.spatial.distance import pdist, squareform
 from cytostream.stats import DistanceCalculator
 from cytostream.stats import Bootstrapper, EmpiricalCDF,BootstrapHypoTest,GaussianDistn, kullback_leibler
 from cytostream.tools import get_all_colors,get_master_label_list
-from fcm.statistics.distributions import mvnormpdf
+#from fcm.statistics.distributions import mvnormpdf
 import matplotlib.pyplot as plt
 from cytostream.stats import _calculate_within_thresholds, event_count_compare, get_modes, get_alignment_labels
 from cytostream.stats import calculate_intercluster_score, pool_compare_scan, pool_compare_self

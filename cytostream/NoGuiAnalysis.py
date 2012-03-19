@@ -30,6 +30,14 @@ class NoGuiAnalysis():
             print "INPUT ERROR: homedir in NoGuiAnalysis input must be of type str", homeDir
             return None
 
+        ## ensure basic variables are present
+        if loadExisting == False and channelDict == None:
+            print "ERROR: NoGuiAnalysis--channel dict must be specified for a new project"
+            return None
+        if loadExisting == False and len(filePathList) == 0:
+            print "ERROR: NoGuiAnalysis--filePathList must contain filePaths for a new project"
+            return None
+
         ## declare variables
         self.homeDir = homeDir
         self.projectID = os.path.split(self.homeDir)[-1]
@@ -63,6 +71,7 @@ class NoGuiAnalysis():
             self.set('alternate_channel_labels',self.inputChannels)
 
         ## set the data type
+        goFlag = True
         if loadExisting == False:
             print 'NoGuiAnalysis: Initializing %s files of data type %s'%(len(filePathList),dType)
             if dType not in ['fcs','comma','tab','array']:
@@ -74,15 +83,22 @@ class NoGuiAnalysis():
             ## load files
             self.set('selected_transform',str(transform))
             self.set('logicle_scale_max',logicleScaleMax)
-            self.load_files()
+            goFlag = self.load_files()
             self.set('current_state', 'Model')
             self.set('highest_state', '3')
         else:
             print 'loading existing project'
+
+        ## eusure minimum information present in channel dict 
+        fileChannels = self.controller.model.get_master_channel_list()
+        self.controller.validate_channel_dict(fileChannels,self.channelDict)
         
         ## quality assurance figures
         if self.makeQaFigs == True:
-            self.make_qa_figures()
+            if goFlag  == False:
+                print "...skipping figure error in file list loading"
+            else:
+                self.qmake_qa_figures()
 
     def initialize(self):
         """
@@ -113,6 +129,11 @@ class NoGuiAnalysis():
         fileChannels = self.controller.model.get_master_channel_list()
         self.set('alternate_channel_labels',fileChannels)
         fileList = self.get_file_names()
+        
+        if len(fileList) == 0:
+            print "WARNING: No files were loaded"
+            return False
+        
         self.set('model_reference', fileList[0])
 
     def get_file_specific_channels(self,fileName):

@@ -553,6 +553,40 @@ class Controller:
 
     ##################################################################################################
     #
+    # misc tools
+    #
+    ##################################################################################################
+    def validate_channel_dict(self,fileChannels,channelDict):
+        if fileChannels == None or len(fileChannels) == 0:
+            print "WARNING: Controller.validate_channel_dict invalid file channels specified"
+            return False
+
+
+        mismatchFound = False
+        for key,chanInd in channelDict.iteritems():
+            keyParts = key.split("+")
+            for k in keyParts:
+                if k == 'ifng':
+                    k = 'ifng|ifn'
+                if k == 'dump':
+                    k = "dump|cd14|cd19|vamine"
+
+            if chanInd >= len(fileChannels):
+                print "WARNING: Controller.validate_channel_dict -- chan indx is invalid %s is larger than %s"%(chanInd,len(fileChannels))
+                return False
+
+            strippedChannelName = re.sub("\s|\-|\_","",fileChannels[chanInd])
+            if not re.search(k,strippedChannelName,flags=re.IGNORECASE):
+                print "WARNING: Controller.validate_channel_dict file channel to channel dict mismatch?", key, fileChannels[chanInd]
+                mismatchFound = True
+
+        if mismatchFound == True:
+            return False
+        else:
+            return True
+
+    ##################################################################################################
+    #
     # model related
     #
     ##################################################################################################

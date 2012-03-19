@@ -9,7 +9,7 @@ from scipy.cluster.vq import whiten
 from scipy.spatial.distance import pdist
 from cytostream.stats import DistanceCalculator, EmpiricalCDF, BootstrapHypoTest, GaussianDistn, kullback_leibler,  run_kmeans_with_sv
 import matplotlib.pyplot as plt
-from fcm.statistics import mixnormpdf
+#from fcm.statistics import mixnormpdf
 
 def _calculate_within_thresholds(fa,allLabels=None):
 
