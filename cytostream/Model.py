@@ -174,7 +174,7 @@ class Model:
                                                                                transform,fileChannelPath,compensationFilePath,autoComp,
                                                                                logicleScaleMax)
                 proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-                
+                ## for debugging
                 #proc = subprocess.Popen(cmd,shell=True)
                 
                 while True:
