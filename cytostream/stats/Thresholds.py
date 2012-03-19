@@ -898,6 +898,7 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
     percentages = {}
     counts = {}
     idx = {}
+    filterInds = np.array([])
     for fileName in fileList:
         events = nga.get_events(fileName)
         if filterID != None:

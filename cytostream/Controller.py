@@ -545,9 +545,6 @@ class Controller:
         if fileName not in self.fileNameList:
             print "ERROR: Controller.handle_filtering_by_clusters -- fileName is not in fileList - skipping filtering"
             return None
-        if parentModelRunID not in modelsRunList:
-            print "ERROR: Controller.handle_filtering_by_clusters -- parentModelRun is not in modelsRunList - skipping filtering"
-            return None
 
         self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
 
