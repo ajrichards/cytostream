@@ -139,8 +139,15 @@ class NoGuiAnalysis():
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)
         return fileChannels
-
+                 
     def get_file_channels(self):
+        """
+        returns file channels
+        """
+
+        return self.controller.log.log['alternate_channel_labels']
+
+    def get_channel_names(self):
         """
         returns file channels
         """
@@ -150,7 +157,6 @@ class NoGuiAnalysis():
     def get_file_names(self):
         """
         returns all file names associated with a project
-
         """
 
         fileList = get_fcs_file_names(self.controller.homeDir)
@@ -160,7 +166,6 @@ class NoGuiAnalysis():
     def get_models_run(self):
         """
         returns a list of the models run
-        
         """
 
         modelsRun = get_models_run_list(self.controller.log.log)
@@ -171,7 +176,6 @@ class NoGuiAnalysis():
     def get(self,key):
         """
         get a value in the log file
-        
         """
     
         if self.controller.log.log.has_key(key) == False:
@@ -183,7 +187,6 @@ class NoGuiAnalysis():
     def set(self,key,value):
         """
         set a value in the log file
-        
         """
         
         if self.controller.log.log.has_key(key) == False:
@@ -199,7 +202,6 @@ class NoGuiAnalysis():
     def update(self):
         """
         update log file status
-
         """
 
         self.controller.save()
