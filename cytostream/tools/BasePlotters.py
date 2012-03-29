@@ -488,7 +488,12 @@ def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bi
         thresholdColor = 'k'
 
     ## load events
-    events = nga.get_events(fileName,filterID=filterID)
+    events = nga.get_events(fileName)
+    if filterID != None:
+        filterInds = nga.get_filter_indices(fileName,filterID)
+        if filterInds.size > 1:
+            events = events[filterInds,:]
+
     dataX,dataY = (events[:,index1],events[:,index2])
 
     ## get border events
