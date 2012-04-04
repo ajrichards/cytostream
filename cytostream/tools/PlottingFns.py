@@ -66,45 +66,6 @@ def get_all_colors():
 
     return np.array(colors * 3)
 
-
-#def fetch_plotting_events(selectedFile,model,log,subsample,labels=None,modelRunID=None):
-#    
-#    ## declare variables
-#    fontName = log.log['font_name']
-#    markerSize = int(log.log['scatter_marker_size'])
-#    fontSize = log.log['font_size']
-#    plotType = log.log['plot_type']
-#    modelType = log.log['results_mode']
-#
-#    if modelRunID != None:
-#        modelLog = model.load_model_results_log(selectedFile,modelRunID)
-#        filterUsed = modelLog['filter used']
-#    else:
-#        filterUsed = None
-#
-#    if not re.search('filter', str(filterUsed)):
-#        filterUsed = None
-#
-#    ## get events
-#    if subsample != 'original':
-#        subsample = str(int(float(subsample)))
-#
-#    ## ensure the proper events are being loaded
-#    events = model.get_events(selectedFile,subsample=subsample,filterID=filterUsed)
-#
-#    if log == None:
-#        maxScatterSize =  7e04
-#    else:
-#        maxScatterSize = float(log.log['setting_max_scatter_display'])
-#
-#    if events.shape[0] > subsample:
-#        subsampleIndices = model.get_subsample_indices(maxScatterSize)
-#        events = events[subsampleIndices,:]
-#        if labels != None:
-#            labels = labels[subsampleIndices,:]
-#   
-#    return events,labels
-
 class Centroids:
     ''' 
     the finding of centroids is time consuming and to get around this values are stored in a dictionary
@@ -171,9 +132,9 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         return None
     
     ## setup scales
-    scale = 262144*logicle(np.array([0, 100, 10**3, 10**4, 10**5]), 262144, 4.5, None, 0.5)
+    scale = (10**5)*logicle(np.array([0, 100, 10**3, 10**4, 10**5]), 262144, 4.5, None, 0.5)
     tickPairs = [(1,9),(10,90),(100,900),(1000,9000),(10000,90000)]
-    minorScale = [262144*logicle(np.linspace(ab[0],ab[1],9),262144,4.5,None,0.5) for ab in tickPairs]
+    minorScale = [(10**5)*logicle(np.linspace(ab[0],ab[1],9),262144,4.5,None,0.5) for ab in tickPairs]
     labels = ['$0$', '$10^2$', '$10^3$', '$10^4$', '$10^5$']
     minorTicks = np.array([])
 
@@ -186,7 +147,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.set_xticks(minorTicks,minor=True)
         ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
-        ax.set_xlim([0, 262144])
+        ax.set_xlim([0, 1e05])
 
     ## format the y axis
     if axis in ['y','both']:
@@ -194,7 +155,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.set_yticks(minorTicks, minor=True)
         ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
-        ax.set_ylim([0, 262144])
+        ax.set_ylim([0, 1e05])
 
 
 def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
@@ -231,7 +192,6 @@ def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, np.log10(262144)])
-
 
 def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     '''

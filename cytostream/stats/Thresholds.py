@@ -735,6 +735,7 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
     function works for both pregated and automated data
     '''
 
+    ## check for valid file list
     if fileList == None:
         fileList = nga.get_file_names()
     else:
@@ -743,10 +744,13 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
             if fn not in _fileList:
                 print "WARNING: Cytostream.stats.thresholds -- %s not found in project"%(fn)
 
+    ## declare variables
     percentages = {}
     counts = {}
     idx = {}
     filterInds = np.array([])
+
+    ## determine and save percentages, counts and indices
     for fileName in fileList:
         events = nga.get_events(fileName)
         if filterID != None:
