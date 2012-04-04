@@ -65,6 +65,6 @@ configDictDefault = {
     'fa_min_merge_sil_value'                : '0.3',                # min silhouette value for merge    
     'fa_distance_metric'                    : 'mahalanobis',        # mahalanobis or euclidean
     'auto_compensation'                     : 'True',               # True or False
-    'logicle_scale_max'                     : '262144'
+    'logicle_scale_max'                     : '1e05'
 
 }

@@ -16,7 +16,7 @@ BASEDIR = os.path.dirname(__file__)
 class NoGuiAnalysis():
     def __init__(self,homeDir,channelDict=None,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
-                 logicleScaleMax=262144):
+                 logicleScaleMax=10**5):
         """
           class constructor 
 
