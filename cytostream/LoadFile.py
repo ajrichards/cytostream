@@ -42,7 +42,7 @@ for o, a in optlist:
     if o == '-m':
         compensationFilePath = a
     if o == '-l':
-        logicleScaleMax = int(a)
+        logicleScaleMax = int(float(a))
 
 if dataType != 'fcs':
     from cytostream.tools import read_txt_to_file_channels, read_txt_into_array
