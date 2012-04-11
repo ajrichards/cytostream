@@ -18,6 +18,30 @@ from cytostream.qtlib import ProgressBar
 from cytostream.qtlib import move_transition
 
 
+class ComboBoxDelegate(QtGui.QItemDelegate):
+    def __init__(self, parent = None):
+
+        QtGui.QItemDelegate.__init__(self, parent)
+
+    def createEditor(self, parent, option, index):
+        editor = QtGui.QComboBox( parent )
+        editor.insertItem(0, unicode('A'), QtCore.QVariant(QtCore.QString('A')))
+        editor.insertItem(1, unicode('B'), QtCore.QVariant(QtCore.QString('B')))
+        editor.insertItem(2, unicode('C'), QtCore.QVariant(QtCore.QString('C')))
+        return editor
+
+    def setEditorData( self, comboBox, index ):
+        value = index.model().data(index, QtCore.Qt.DisplayRole).toInt()
+        comboBox.setCurrentIndex(value[0])
+
+    def setModelData(self, editor, model, index):
+        value = editor.currentIndex()
+        model.setData( index, editor.itemData( value, QtCore.Qt.DisplayRole ) )
+
+    def updateEditorGeometry( self, editor, option, index ):
+        editor.setGeometry(option.rect)
+
+
 class DataProcessingCenter(QtGui.QWidget):
     def __init__(self, fileList, masterChannelList, alternateChannelList=None, alternateFileList=None,mainWindow=None, loadFileFn=None, 
                  editBtnFn=None, parent=None,fontSize=11,showProgressBar=False,excludedChannels=[]):
@@ -300,6 +324,15 @@ class DataProcessingCenter(QtGui.QWidget):
             item0 = QtGui.QStandardItem(str(row+1))
             item1 = QtGui.QStandardItem('%s' % channel)
             item2 = QtGui.QStandardItem('%s' % altChannel)
+            item3 = QtGui.QStandardItem('%s' % 'foo')
+            item4 = QtGui.QStandardItem('%s' % ' ')
+            #item4.setBackgroundColor(QtGui.QColor("#111111"))
+            #print dir(item4)
+            #palette = item4.palette()
+            #role = self.backgroundRole()
+            #palette.setColor(role, QtGui.QColor(appColor))
+            #self.setPalette(palette)
+            #self.setAutoFillBackground(True)
 
             ## set which ones are checked
             check = QtCore.Qt.Unchecked if row in self.excludedChannels else QtCore.Qt.Checked
@@ -308,26 +341,45 @@ class DataProcessingCenter(QtGui.QWidget):
             item0.setEditable(False)
             item1.setEditable(False)
             item2.setEditable(True)
-            self.modelChannels.appendRow([item0,item1,item2])
-            
-        viewChannels = QtGui.QTreeView()
-        viewChannels.setModel(self.modelChannels)
-        self.modelChannels.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant('channel'))
-        self.modelChannels.setHeaderData(0, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelChannels.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant('original'))
-        self.modelChannels.setHeaderData(1, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
-        self.modelChannels.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant('alternate '))
-        self.modelChannels.setHeaderData(2, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+            item3.setEditable(True)
+
+            self.modelChannels.appendRow([item0,item1,item2,item3])
+
+
+        #self.viewChannels = QtGui.QTableWidget()
+        self.viewChannels = QtGui.QTableView()#QtGui.QTreeView()
+        self.viewChannels.setModel(self.modelChannels)
+        self.modelChannels.setHeaderData(0,QtCore.Qt.Horizontal,QtCore.QVariant('channel'))
+        self.modelChannels.setHeaderData(0,QtCore.Qt.Horizontal,QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+        self.modelChannels.setHeaderData(1,QtCore.Qt.Horizontal,QtCore.QVariant('original'))
+        self.modelChannels.setHeaderData(1,QtCore.Qt.Horizontal,QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+        self.modelChannels.setHeaderData(2,QtCore.Qt.Horizontal,QtCore.QVariant('alternate'))
+        self.modelChannels.setHeaderData(2,QtCore.Qt.Horizontal,QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+        self.modelChannels.setHeaderData(3,QtCore.Qt.Horizontal,QtCore.QVariant('official'))
+        self.modelChannels.setHeaderData(3,QtCore.Qt.Horizontal,QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
+
+        delegate = ComboBoxDelegate()
+        #self.viewChannels.setItemDelegate(delegate)
+        #self.connect(self.viewChannels,QtCore.SIGNAL("clicked()"), self._onClick) 
+        self.connect(self.viewChannels,QtCore.SIGNAL("doubleClicked(const QModelIndex&)"),self._onClick)
+        #combobox = QtGui.QComboBox()
+        #combobox.addItem('one')
+        #combobox.addItem('two')        
+        #self.viewChannels.setCellWidget(0,3,combobox)
+        self.viewChannels.setItemDelegateForColumn(3,delegate)
 
         ## setup save btn
         self.saveBtn = QtGui.QPushButton("Save changes")
         self.saveBtn.setMaximumWidth(120)
         self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.channels_save_callback)
 
+        ## format table
+        self.viewChannels.resizeColumnToContents(1)
+
         ## finalize layouts
         ssLayout1.addWidget(self.chksSummaryLabel)
         ssLayout3.addWidget(self.saveBtn)
-        ssLayout2.addWidget(viewChannels)
+        ssLayout2.addWidget(self.viewChannels)
         ssLayout.addLayout(ssLayout1)
         ssLayout.addLayout(ssLayout2)
         ssLayout.addLayout(ssLayout3)
@@ -335,6 +387,10 @@ class DataProcessingCenter(QtGui.QWidget):
             self.hbox.addLayout(ssLayout)
         else:
             self.mainWindow.vboxCenter.addLayout(ssLayout)
+
+    def _onClick(self):
+        print 'clicked'
+
 
     def make_files_sheet(self,firstRun=True):
         ## setup layouts
@@ -386,8 +442,8 @@ class DataProcessingCenter(QtGui.QWidget):
         self.modelFiles.setHeaderData(4, QtCore.Qt.Horizontal, QtCore.QVariant('events'))
         self.modelFiles.setHeaderData(4, QtCore.Qt.Horizontal, QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
 
-        viewFiles = QtGui.QTreeView()
-        viewFiles.setModel(self.modelFiles)
+        self.viewFiles = QtGui.QTableView()#QtGui.QTreeView()
+        self.viewFiles.setModel(self.modelFiles)
 
         ## setup save btn
         if firstRun == True:
@@ -403,10 +459,14 @@ class DataProcessingCenter(QtGui.QWidget):
             self.removeFileBtn.setMaximumWidth(100)
             self.connect(self.removeFileBtn, QtCore.SIGNAL('clicked()'),self.files_remove_callback)
 
+        ## formatting view
+        self.viewFiles.resizeColumnToContents(1)
+        self.viewFiles.resizeColumnToContents(2)
+
         ## finalize layout
         if firstRun == True:
             ssLayout1.addWidget(self.fileSummaryLabel)
-            ssLayout2.addWidget(viewFiles)
+            ssLayout2.addWidget(self.viewFiles)
             ssLayout3.addWidget(self.saveFilesBtn)
             ssLayout3.addWidget(self.addFileBtn)
             ssLayout3.addWidget(self.removeFileBtn)
@@ -537,7 +597,7 @@ class DataProcessingCenter(QtGui.QWidget):
         '''
 
         if self.log != None:
-            events = self.controller.model.get_events(fileName,subsample='original')
+            events = self.controller.get_events(fileName,subsample='original')
             return len(events)
         else:
             return 'na'

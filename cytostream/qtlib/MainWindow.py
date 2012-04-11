@@ -45,7 +45,7 @@ __version__ = "0.9"
 
 class MainWindow(QtGui.QMainWindow):
 
-    def __init__(self,debug=False):
+    def __init__(self,debug=False,projectID=None):
         '''
         constructor
 
@@ -53,7 +53,8 @@ class MainWindow(QtGui.QMainWindow):
 
         ## construct and set main variables
         QtGui.QMainWindow.__init__(self)
-        
+        print 'projectID', projectID
+
         ## variables
         self.buff = 2.0
         self.controller = Controller(debug=debug)
@@ -63,14 +64,11 @@ class MainWindow(QtGui.QMainWindow):
                           'File Alignment','Summary and Reports']
         self.possibleModels = ['dpmm']
         self.resultsModeList = ['modes','components']
+
+        ## if a project was specified
         
         move_to_initial(self)
-        self.printer = None
-        self.sizeLabel = QtGui.QLabel()
-        self.sizeLabel.setFrameStyle(QtGui.QFrame.StyledPanel|QtGui.QFrame.Sunken)
-        self.create_statusbar()
-        create_menubar_toolbar(self)
-
+        
         ## settings
         self.showMaximized()
         self.setWindowTitle(self.controller.appName)
@@ -78,7 +76,20 @@ class MainWindow(QtGui.QMainWindow):
         self.screenWidth = screen.width()
         self.screenHeight = screen.height()
         self.eSize = 0.04 * self.screenWidth
-            
+
+        self.printer = None
+        self.sizeLabel = QtGui.QLabel()
+        self.sizeLabel.setFrameStyle(QtGui.QFrame.StyledPanel|QtGui.QFrame.Sunken)
+        self.create_statusbar()
+        create_menubar_toolbar(self)
+
+        if projectID != None:
+            homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
+            if os.path.isdir(homeDir) == False:
+                print "Controller: Bad home dir specified fatal error"
+                sys.exit()
+            self.open_existing_project_handler(homeDir)
+       
     def reset_view_workspace(self):
         self.log = self.controller.log
         self.model = self.controller.model
