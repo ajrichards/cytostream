@@ -33,16 +33,6 @@ class Transitions():
     def __init__(self,mainWindow):
         self.mainWindow = mainWindow
 
-
-    def clean_up():
-        self.mainWindow.reset_layout()
-        self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
-
-        if self.mainWindow.pDock != None:
-            self.mainWindow.pDock.unset_all_highlights()
-        if self.mainWindow.dockWidget != None:
-            remove_left_dock(self.mainWindow)
-
     def move_to_initial(self):
 
         ## handle docks
@@ -159,7 +149,7 @@ class Transitions():
         ## create center widget
         masterChannelList = self.mainWindow.get_master_channel_list()
         self.mainWindow.rnc = ResultsNavigationCenter(fileList,masterChannelList,parent=self.mainWindow.mainWidget,mode=mode,
-                                                      self.mainWindow=self.mainWindow)
+                                                      mainWindow=self.mainWindow)
         ## handle docks
         self.mainWindow.restore_docks()
         ##self.mainWindow.connect(self.mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),self.mainWindow.recreate_figures)
@@ -172,12 +162,11 @@ class Transitions():
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
         self.mainWindow.status.showMessage("Results Navigation", 5000)
-
-    return True
+        return True
 
     def move_to_model_run(self,modelMode='progressbar'):
         if self.mainWindow.controller.verbose == True:
-            print "INFO: moving to model", modelMode
+            print "INFO: moving to model run", modelMode
 
         ## error checking
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
@@ -198,7 +187,7 @@ class Transitions():
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
         channelList = self.mainWindow.get_master_channel_list()
         self.mainWindow.mc = ModelCenter(fileList,channelList,mode=modelMode,parent=self.mainWindow.mainWidget,
-                                         runModelFn=self.mainWindow.run_progress_bar,self.mainWindow=self.mainWindow)
+                                         runModelFn=self.mainWindow.run_progress_bar,mainWindow=self.mainWindow)
         ## handle docks
         self.mainWindow.restore_docks()
 
@@ -258,7 +247,7 @@ class Transitions():
 
         ## create center widget
         self.mainWindow.qac = QualityAssuranceCenter(fileList,masterChannelList,parent=self.mainWindow.mainWidget,
-                                                     self.mainWindow=self.mainWindow)
+                                                     mainWindow=self.mainWindow)
     
         self.mainWindow.qac.progressBar.set_callback(self.mainWindow.run_progress_bar)
 
@@ -276,6 +265,10 @@ class Transitions():
         return True
 
     def move_to_data_processing(self,withProgressBar=False):
+        '''
+        function to transition view to 'Data Processing'
+        '''
+
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to data processing"
     
@@ -288,28 +281,22 @@ class Transitions():
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
         masterChannelList = self.mainWindow.get_master_channel_list()
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
-
-        ## if already been to data_processing
-        #if self.mainWindow.pDock != None and self.mainWindow.log.log['highest_state'] > 1:
-            #self.mainWindow.pDock.enable_continue_btn(lambda a=self.mainWindow: move_to_quality_assurance(a))
-
+        
         ## create a edit menu function
         def move_to_edit_menu(self):
-
             ## clean the layout
             self.mainWindow.reset_layout()
             self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
-
+        
             if self.mainWindow.pDock != None:
                 self.mainWindow.pDock.unset_all_highlights()
             if self.mainWindow.dockWidget != None:
                 remove_left_dock(self.mainWindow)
 
-            closeBtnFn = lambda a=self.mainWindow: move_to_data_processing(a)
+            closeBtnFn = lambda a=self.mainWindow:self.move_to_data_processing(a)
             defaultTransform = self.mainWindow.log.log['selected_transform']
             self.mainWindow.editMenu = EditMenu(parent=self.mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
-                                                self.mainWindow=self.mainWindow)
-
+                                                mainWindow=self.mainWindow)
             ## handle dock widgets
             self.mainWindow.restore_docks()
 
@@ -320,7 +307,7 @@ class Transitions():
             self.mainWindow.vboxCenter.addLayout(hbl)
             self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
             self.mainWindow.refresh_main_widget()
-
+            
         ## ready a DataProcessingCenter class
         def load_files():
             allFiles = QtGui.QFileDialog.getOpenFileNames(self.mainWindow, 'Open file(s)')
@@ -344,8 +331,7 @@ class Transitions():
 
         ## create center widget
         self.mainWindow.dpc = DataProcessingCenter(fileList,masterChannelList,loadFileFn=load_files,parent=self.mainWindow.mainWidget,
-                                                   self.mainWindow=self.mainWindow,showProgressBar=showProgressBar,editBtnFn=lambda a=self.mainWindow: move_to_edit_menu(a))
-
+                                                   mainWindow=self.mainWindow,showProgressBar=showProgressBar,editBtnFn=lambda a=self:move_to_edit_menu(a))
         ## handle docks
         self.mainWindow.restore_docks()
 
@@ -441,7 +427,7 @@ class Transitions():
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
         channelList = self.mainWindow.get_master_channel_list()
         self.mainWindow.fac = FileAlignerCenter(fileList,channelList,mode=faMode,parent=self.mainWindow.mainWidget,
-                                                runFileAlignerFn=self.mainWindow.run_file_aligner,self.mainWindow=self.mainWindow)
+                                                runFileAlignerFn=self.mainWindow.run_file_aligner,mainWindow=self.mainWindow)
         ## handle docks
         self.mainWindow.restore_docks()
 

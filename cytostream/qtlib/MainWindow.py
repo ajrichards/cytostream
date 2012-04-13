@@ -35,7 +35,7 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 
 from cytostream import Controller,SaveSubplots
 from cytostream import get_project_names, get_fcs_file_names
-from cytostream.qtlib import create_menubar_toolbar #, move_to_initial, move_to_data_processing, move_to_open
+from cytostream.qtlib import create_menubar_toolbar,move_transition
 #from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
 #from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
 from cytostream.qtlib import Transitions
@@ -150,12 +150,12 @@ class MainWindow(QtGui.QMainWindow):
             appColor = '#999999'
 
         self.pipelineDockWidget = QtGui.QWidget(self)
-        btnCallBacks = [self.transitions.move_to_data_processing(), 
-                        self.transitions.move_to_quality_assurance(), 
-                        self.transitions.move_to_model_run(), 
-                        self.transitions.move_to_model_results(),
-                        self.transitions.move_to_analysis(),
-                        self.transitions.move_to_reports()]
+        btnCallBacks = [lambda a=self:self.transitions.move_to_initial(a),
+                        lambda a=self:self.transitions.move_to_quality_assurance(a), 
+                        lambda a=self:self.transitions.move_to_model_run(a), 
+                        lambda a=self:self.transitions.move_to_model_results(a),
+                        lambda a=self:self.transitions.move_to_analysis(a),
+                        lambda a=self:self.transitions.move_to_reports(a)]
        
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
                                   appColor=appColor,noBtns=noBtns)
@@ -278,7 +278,7 @@ class MainWindow(QtGui.QMainWindow):
             return
     
         ## prepare variables and move        
-        selt.transitions.move_transition()
+        move_transition(self)
         self.reset_view_workspace()
         self.controller.initialize_project(homeDir,loadExisting=True)
         self.controller.masterChannelList = self.model.get_master_channel_list()
@@ -298,7 +298,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar,view=self)
         self.allFilePaths = []
-        self.transitions.move_transition()
+        move_transition(self)
         self.refresh_state()
 
     def fileSave(self):
@@ -450,8 +450,9 @@ class MainWindow(QtGui.QMainWindow):
         if item == 'histogram':
             move_to_one_dim_viewer(self)
         elif item == 'thumbnails' and  currentState == 'Quality Assurance':
-            move_to_quality_assurance(self,mode='thumbnails')
-        elif item == 'thumbnails' and currentState == 'Results Navigation':
+            self.transitions.move_to_quality_assurance(mode='thumbnails')
+        elif item == 'thumbnails' and currentState == 'Model Results':
+            #self.thumbnailTransitions(self.log.log['selected_model'])
             self.display_thumbnails()
         elif item == 'thumbnails':
             print "ERROR: MainWindow.handle_visualization_modes -- thumbnails with bad state", currentState
