@@ -225,7 +225,7 @@ def add_left_dock(mainWindow):
         miLayout.setAlignment(QtCore.Qt.AlignCenter)
         miLayout.addWidget(mainWindow.moreInfoBtn)
         vboxBottom.addLayout(miLayout)
-        moreInfoBtnFn = mainWindow.show_more_info_info
+        moreInfoBtnFn = mainWindow.show_more_info
         mainWindow.connect(mainWindow.moreInfoBtn,QtCore.SIGNAL('clicked()'),moreInfoBtnFn)
 
     ## finalize alignments

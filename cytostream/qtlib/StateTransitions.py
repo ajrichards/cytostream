@@ -204,7 +204,6 @@ def move_to_model(mainWindow,modelMode='progressbar'):
     return True  
 
 
-
 def move_to_quality_assurance(mainWindow,mode='thumbnails'):
     if mainWindow.controller.verbose == True:
         print "INFO: moving to quality assurance", mode
@@ -282,6 +281,10 @@ def move_to_data_processing(mainWindow,withProgressBar=False):
     mainWindow.mainWidget = QtGui.QWidget(mainWindow)
     masterChannelList = mainWindow.get_master_channel_list()
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
+
+    ## if already been to data_processing
+    if mainWindow.pDock != None and mainWindow.log.log['highest_state'] > 1:
+        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
 
     ## create a edit menu function
     def move_to_edit_menu(mainWindow):

@@ -35,11 +35,13 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 
 from cytostream import Controller,SaveSubplots
 from cytostream import get_project_names, get_fcs_file_names
-from cytostream.qtlib import create_menubar_toolbar, move_to_initial, move_to_data_processing, move_to_open
-from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
-from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
+from cytostream.qtlib import create_menubar_toolbar #, move_to_initial, move_to_data_processing, move_to_open
+#from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
+#from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
+from cytostream.qtlib import Transitions
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
 from cytostream.qtlib import ThumbnailViewer, NWayViewer, CytostreamPlotter
+from cytostream.qtlib import moreInfoDict
 
 __version__ = "0.9"
 
@@ -48,26 +50,26 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self,debug=False,projectID=None):
         '''
         constructor
-
         '''
 
         ## construct and set main variables
         QtGui.QMainWindow.__init__(self)
-        print 'projectID', projectID
 
         ## variables
         self.buff = 2.0
         self.controller = Controller(debug=debug)
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Initial','Data Processing', 'Quality Assurance', 'Model', 'Results Navigation',
-                          'File Alignment','Summary and Reports']
-        self.possibleModels = ['dpmm']
+        self.stateList = ['Initial','Data Processing','Quality Assurance','Model Run','Model Results',
+                          'Analysis','Results Navigation','Reports']
         self.resultsModeList = ['modes','components']
 
+        ## enable the transition class
+        self.transitions = Transitions(self)
+        self.transitions.move_to_initial()
+
         ## if a project was specified
-        
-        move_to_initial(self)
+        #move_to_initial(self)
         
         ## settings
         self.showMaximized()
@@ -123,29 +125,16 @@ class MainWindow(QtGui.QMainWindow):
         self.vbl.addLayout(self.vboxBottom)
         self.vbl.addLayout(self.vboxCenter)
 
-    #################################################
-    #
-    # Statusbar
-    #
-    #################################################
-    
     def create_statusbar(self):
         self.status = self.statusBar()
         self.status.setSizeGripEnabled(False)
         self.status.addPermanentWidget(self.sizeLabel)
         self.status.showMessage("Ready", 5000)
 
-    #################################################
-    #
-    # menubar and toolbar
-    #
-    #################################################
-    
     def restore_docks(self,override=False):
         '''
         a dummy function to restore the application docks
         '''
-
         restore_docks(self,override=override)
 
     def add_pipeline_dock(self,noBtns=False):
@@ -161,12 +150,13 @@ class MainWindow(QtGui.QMainWindow):
             appColor = '#999999'
 
         self.pipelineDockWidget = QtGui.QWidget(self)
-        btnCallBacks = [lambda a=self:move_to_data_processing(a), 
-                        lambda a=self:move_to_quality_assurance(a), 
-                        lambda a=self:move_to_model(a), 
-                        lambda a=self:move_to_results_navigation(a), 
-                        lambda a=self:move_to_file_aligner(a), 
-                        lambda a=self:move_to_results_summary(a)]
+        btnCallBacks = [self.transitions.move_to_data_processing(), 
+                        self.transitions.move_to_quality_assurance(), 
+                        self.transitions.move_to_model_run(), 
+                        self.transitions.move_to_model_results(),
+                        self.transitions.move_to_analysis(),
+                        self.transitions.move_to_reports()]
+       
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
                                   appColor=appColor,noBtns=noBtns)
         palette = self.pipelineDockWidget.palette()
@@ -194,7 +184,7 @@ class MainWindow(QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
             self.controller.remove_project(homeDir)
-            move_to_open(self)
+            self.transitions.move_to_open()
         else:
             pass
 
@@ -251,7 +241,7 @@ class MainWindow(QtGui.QMainWindow):
         ## initialize and load project
         goFlag = self.controller.create_new_project(homeDir)
         if goFlag == True:
-            move_to_data_processing(self)
+            self.transitions.move_to_data_processing()
             self.status.showMessage("New project successfully created", 5000)
         else:
             print "ERROR: create new project did not succeed"
@@ -262,7 +252,7 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        move_to_open(self)
+        self.transitions.move_to_open()
         self.status.showMessage("Existing project successfully loaded", 5000)
 
     def open_existing_project_handler(self,homeDir):
@@ -288,7 +278,7 @@ class MainWindow(QtGui.QMainWindow):
             return
     
         ## prepare variables and move        
-        move_transition(self)
+        selt.transitions.move_transition()
         self.reset_view_workspace()
         self.controller.initialize_project(homeDir,loadExisting=True)
         self.controller.masterChannelList = self.model.get_master_channel_list()
@@ -308,13 +298,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar,view=self)
         self.allFilePaths = []
-        move_transition(self)
+        self.transitions.move_transition()
         self.refresh_state()
 
     def fileSave(self):
         '''
         saves current state of software
-
         '''
 
         if self.controller.homeDir != None:
@@ -361,24 +350,25 @@ class MainWindow(QtGui.QMainWindow):
 
         selectedModel, selectedModelIndex = self.fileSelector.get_selected_model()
         fullModelName = re.sub("\.fcs|\.pickle","",self.log.log['selected_file']) + "_" + selectedModel
+        QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
+                         """<br><b>Project ID</b> - %s
+                             <br><b>Model name</b> - %s
+                             <br><b>Date time</b>  - %s
+                             <br><b>Full  name</b> - %s
+                             <br><b>File name</b>  - %s 
+                             <br><b>Components</b> - %s
+                             <br><b>Modes</b>      - %s
+                             <br><b>Run time</b>   - %s"""%(modelLogFile['project id'],selectedModel,modelLogFile['timestamp'],
+                                                     modelLogFile['full model name'],modelLogFile['file name'],
+                                                     modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
+                          )
 
-        print "suppose to show model log file.................."
-        #QtGui.QMessageBox.about(self, "%s - Model Information"%self.controller.appName,
-        #                  """<br><b>Project ID</b> - %s
-        #                     <br><b>Model name</b> - %s
-        #                     <br><b>Date time</b>  - %s
-        #                     <br><b>Full  name</b> - %s
-        #                     <br><b>File name</b>  - %s 
-        #                     <br><b>Components</b> - %s
-        #                     <br><b>Modes</b>      - %s
-        #                     <br><b>Run time</b>   - %s"""%(modelLogFile['project id'],selectedModel,modelLogFile['timestamp'],
-        #                                             modelLogFile['full model name'],modelLogFile['file name'],
-        #                                             modelLogFile['number components'], modelLogFile['number modes'],modelLogFile['model runtime'])
-        #                  )
-
-    def show_more_info_info(self):
+    def show_more_info(self):
         currentState = self.log.log['current_state']
-        msg = """<br>Helpful information not yet present... %s"""%currentState
+        if moreInfoDict.has_key(currentState):
+            msg = moreInfoDict[currentState]
+        else:
+            msg = """<br>Helpful information not yet present... %s"""%currentState   
 
         QtGui.QMessageBox.about(self, "%s - Information"%self.controller.appName,msg)
         
@@ -390,12 +380,6 @@ class MainWindow(QtGui.QMainWindow):
     ################################################################################################3
     def generic_callback(self):
         print "this button/widget does not do anything yet"
-
-    #################################################
-    #
-    # setters and handlers
-    #
-    #################################################
 
     def set_num_components(self,value):
         diff = value % 16
@@ -437,25 +421,21 @@ class MainWindow(QtGui.QMainWindow):
     def handle_edit_settings_callback(self):
         '''
         handles the model edit callback
-
         '''
-        if self.log.log['current_state'] == 'Model':
-            move_to_model(self,modelMode='edit')
+        if self.log.log['current_state'] == 'Model Run':
+            self.transitions.move_to_model_run(self,modelMode='edit')
         elif self.log.log['current_state'] == 'File Alignment':
             move_to_file_aligner(self,faMode='edit')
 
     def handle_model_edit_return(self):
         '''
         handles the model edit return
-
         '''
-        move_to_model(self,modelMode='progressbar')
-
+        self.move_to_model_run(self,modelMode='progressbar')
 
     def handle_visualization_modes(self,item=None):
         '''
         handles the switching between visualization modes for qa and results
-
         '''
 
         modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
@@ -570,11 +550,11 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
-        if mode == 'Model':
+        if mode == 'Model Run':
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
             self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
-            move_to_model(self,modelMode='progressbar')
+            self.transitions.move_to_model_run(modelMode='progressbar')
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
             self.mc.widgetSubtitle.setText("Creating figures...")
@@ -583,27 +563,27 @@ class MainWindow(QtGui.QMainWindow):
             modelRunID = 'run' + str(self.log.log['models_run_count'])
             self.controller.handle_subsampling(subsample)
             self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
-            move_to_results_navigation(self,mode='menu')
+            self.transitions.move_to_model_results(self,mode='menu')
 
     def recreate_figures(self):
         '''
         call back from state transtions to enable thumbnail figure recreation
-
         '''
         
         print 'should be recreating figures'
 
         if self.log.log['current_state'] == 'Quality Assurance':
-            move_to_quality_assurance(self,mode='progressbar')
+            self.transitions.move_to_quality_assurance(mode='progressbar')
         elif self.log.log['current_state'] == 'Results Navigation':
-            move_to_model(self,modelMode='progressbar')
-            print 'should be moving to results navigation progress bar'
+            self.transitions.move_to_model(modelMode='progressbar')
 
     def plots_enable_disable(self,mode='thumbnails'):
         '''
         enables and disables widgets for thumbnail view mode
 
         '''
+
+        print 'inside plots enable_disable'
 
         ## error check
         if self.log.log['current_state'] not in ['Quality Assurance', 'Results Navigation']:
@@ -624,21 +604,26 @@ class MainWindow(QtGui.QMainWindow):
 
         if self.log.log['current_state'] == 'Results Navigation':
             self.pDock.contBtn.setEnabled(False)
-
-        self.fileSelector.setEnabled(True)
-        self.modeSelector.setEnabled(True)
-        self.modeSelector.set_checked(mode)
+    
+        if self.fileSelector:
+            self.fileSelector.setEnabled(True)
+        if self.modeSelector:
+            self.modeSelector.setEnabled(True)
+            self.modeSelector.set_checked(mode)
         self.pDock.contBtn.setEnabled(True)
         self.pDock.enable_disable_states()
 
         if self.log.log['current_state'] == 'Quality Assurance':
-            self.pDock.enable_continue_btn(lambda a=self: move_to_model(a))
+            self.pDock.enable_continue_btn(self.transitions.move_to_model_run())
         
     def display_thumbnails(self,runNew=False):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
-
         '''
+
+        ## fix bug with rerunning of pipeline
+        #if self.log.log['current_state'] == "Data Processing":
+        #    self.log.log['current_state'] = 'Quality Assurance'
 
         ## enable/disable
         mode = self.log.log['current_state']
@@ -679,7 +664,8 @@ class MainWindow(QtGui.QMainWindow):
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_scatter)
         else:
-            print "ERROR: bad mode specified in display thumbnails"
+            print "ERROR: bad mode specified in display thumbnails", mode
+            return
 
         ## ensure docks are present
         if self.dockWidget != None:
@@ -705,7 +691,7 @@ class MainWindow(QtGui.QMainWindow):
         Left dock button callback to return to Results Nav. menu
         '''
 
-        move_to_results_navigation(self)
+        self.transitions.move_to_results_navigation()
 
     def file_selector_callback(self,item=None):
         self.set_selected_file()
@@ -759,17 +745,23 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         if self.log.log['current_state'] == "Data Processing":
-            move_to_data_processing(self,withProgressBar=withProgressBar)
+            self.transitions.move_to_data_processing(withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
-            move_to_quality_assurance(self,mode=qaMode)
-        elif self.log.log['current_state'] == "Model":
-            move_to_model(self)
-        elif self.log.log['current_state'] == "Results Navigation":
-            move_to_results_navigation(self)
-        elif self.log.log['current_state'] == "File Alignment":
-            move_to_file_aligner(self)
-        elif self.log.log['current_state'] == "Results Summary":
-            move_to_results_summary(self)
+            self.transitions.move_to_quality_assurance(mode=qaMode)
+        elif self.log.log['current_state'] == "Model Run":
+            self.transitions.move_to_model_run()
+        elif self.log.log['current_state'] == "Model Results":
+            self.transitions.move_to_model_results()
+        elif self.log.log['current_state'] == "Analysis":
+            self.transitions.move_to_analysis(self)
+        elif self.log.log['current_state'] == "File Aligner":
+            self.transitions.move_to_file_aligner(self)
+        elif self.log.log['current_state'] == "Supervised Learning":
+            self.transitions.move_to_supervised_learning(self)
+        elif self.log.log['current_state'] == "Positivity Thresholding":
+            self.transitions.move_to_positivity_thresholding(self)
+        elif self.log.log['current_state'] == "Reports":
+            self.transitions.move_to_reports(self)
 
         QtCore.QCoreApplication.processEvents()
 

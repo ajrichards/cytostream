@@ -1,3 +1,4 @@
+from GlobalVariables import *
 from MiscFns import get_file_data,read_txt_to_file_channels,read_txt_into_array
 from MiscFns import get_sample_statistics, get_file_sample_stats, get_master_label_list
 from PlottingFns import get_all_colors, Centroids, rgb_to_hex, get_cmap_blues

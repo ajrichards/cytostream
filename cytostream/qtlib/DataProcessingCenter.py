@@ -16,31 +16,32 @@ import numpy as np
 from cytostream import Logger, Model, get_fcs_file_names
 from cytostream.qtlib import ProgressBar
 from cytostream.qtlib import move_transition
-
+from cytostream.tools import officialNames,get_official_name_match
 
 class ComboBoxDelegate(QtGui.QItemDelegate):
-    def __init__(self, parent = None):
+    def __init__(self,comboItems,parent=None):
 
         QtGui.QItemDelegate.__init__(self, parent)
+        self.comboItems = comboItems
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self,parent,option,index):
         editor = QtGui.QComboBox( parent )
-        editor.insertItem(0, unicode('A'), QtCore.QVariant(QtCore.QString('A')))
-        editor.insertItem(1, unicode('B'), QtCore.QVariant(QtCore.QString('B')))
-        editor.insertItem(2, unicode('C'), QtCore.QVariant(QtCore.QString('C')))
+        for i,item in enumerate(self.comboItems):
+            editor.insertItem(i, unicode(item), QtCore.QVariant(QtCore.QString(item)))
+            #editor.insertItem(1, unicode('B'), QtCore.QVariant(QtCore.QString('B')))
+            #editor.insertItem(2, unicode('C'), QtCore.QVariant(QtCore.QString('C')))
         return editor
 
-    def setEditorData( self, comboBox, index ):
+    def setEditorData(self,comboBox,index ):
         value = index.model().data(index, QtCore.Qt.DisplayRole).toInt()
         comboBox.setCurrentIndex(value[0])
 
-    def setModelData(self, editor, model, index):
+    def setModelData(self,editor,model,index):
         value = editor.currentIndex()
-        model.setData( index, editor.itemData( value, QtCore.Qt.DisplayRole ) )
+        model.setData( index, editor.itemData(value,QtCore.Qt.DisplayRole))
 
-    def updateEditorGeometry( self, editor, option, index ):
+    def updateEditorGeometry( self,editor,option,index):
         editor.setGeometry(option.rect)
-
 
 class DataProcessingCenter(QtGui.QWidget):
     def __init__(self, fileList, masterChannelList, alternateChannelList=None, alternateFileList=None,mainWindow=None, loadFileFn=None, 
@@ -324,8 +325,11 @@ class DataProcessingCenter(QtGui.QWidget):
             item0 = QtGui.QStandardItem(str(row+1))
             item1 = QtGui.QStandardItem('%s' % channel)
             item2 = QtGui.QStandardItem('%s' % altChannel)
-            item3 = QtGui.QStandardItem('%s' % 'foo')
-            item4 = QtGui.QStandardItem('%s' % ' ')
+            nameMatch = get_official_name_match(channel)
+            item3 = QtGui.QStandardItem('%s' % nameMatch)
+
+
+
             #item4.setBackgroundColor(QtGui.QColor("#111111"))
             #print dir(item4)
             #palette = item4.palette()
@@ -358,14 +362,11 @@ class DataProcessingCenter(QtGui.QWidget):
         self.modelChannels.setHeaderData(3,QtCore.Qt.Horizontal,QtCore.QVariant('official'))
         self.modelChannels.setHeaderData(3,QtCore.Qt.Horizontal,QtCore.QVariant(QtCore.Qt.AlignCenter),QtCore.Qt.TextAlignmentRole)
 
-        delegate = ComboBoxDelegate()
-        #self.viewChannels.setItemDelegate(delegate)
+        sortedNames = officialNames.keys()
+        sortedNames.sort()
+        delegate = ComboBoxDelegate(sortedNames)
         #self.connect(self.viewChannels,QtCore.SIGNAL("clicked()"), self._onClick) 
-        self.connect(self.viewChannels,QtCore.SIGNAL("doubleClicked(const QModelIndex&)"),self._onClick)
-        #combobox = QtGui.QComboBox()
-        #combobox.addItem('one')
-        #combobox.addItem('two')        
-        #self.viewChannels.setCellWidget(0,3,combobox)
+        #self.connect(self.viewChannels,QtCore.SIGNAL("doubleClicked(const QModelIndex&)"),self._onClick)
         self.viewChannels.setItemDelegateForColumn(3,delegate)
 
         ## setup save btn
