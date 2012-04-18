@@ -16,7 +16,7 @@ from cytostream import Logger, Model
 
 
 class QualityAssuranceCenter(QtGui.QWidget):
-    def __init__(self, fileList, masterChannelList, alternateChannelList=None, alternateFileList=None,mainWindow=None, 
+    def __init__(self, fileList, masterChannelList,alternateChannelList=None, alternateFileList=None,mainWindow=None, 
                  parent=None,fontSize=11,showProgressBar=True,excludedChannels=[]):
 
         QtGui.QWidget.__init__(self,parent)
@@ -74,7 +74,8 @@ class QualityAssuranceCenter(QtGui.QWidget):
         self.mainWindow.moreInfoBtn.setEnabled(True)
         self.mainWindow.recreateBtn.setEnabled(False)
         self.mainWindow.fileSelector.setEnabled(False)
-        self.mainWindow.modeSelector.setEnabled(False)
+        self.mainWindow.plotSelector.setEnabled(False)
+        self.mainWindow.vizModeSelector.setEnabled(False)
         self.mainWindow.saveImgsBtn.setEnabled(False)
         self.mainWindow.subsampleSelector.setEnabled(True)
         self.mainWindow.saveImgsBtn.setEnabled(False)

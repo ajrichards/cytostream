@@ -18,6 +18,7 @@ configDictDefault = {
     'current_state'                         : 'Initial',            # do not change
     'highest_state'                         : '0',                  # do not change
     'selected_file'                         : 'None',               # do not change
+    'selected_plot'                         : 'None',               # do not change
     'selected_model'                        : 'run1',               # do not change
     'models_run_count'                      : '0',                  # do not change
     'filters_run_count'                     : '0',                  # do not change
@@ -34,17 +35,20 @@ configDictDefault = {
     'font_name'                             : 'arial',              # font name
     'plot_type'                             : 'png',                # png, pdf, jpg
 
-    ########### analysis variables  ########################################################## 
-    'subsample_qa'                          : '1e3',                # any float, int or string
-    'subsample_analysis'                    : '1e3',                # any float, int or string
-    'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
-    'dpmm_k'                                : '16',                 # an int divisible by 16
-    'dpmm_gamma'                            : '1.0',                # gamma value for dpmm
+    ########### plotting variables  ########################################################## 
+    'use_scaled_plots'                      : 'False',              # True | False 
     'results_mode'                          : 'modes',              # modes, components
     'plots_to_view_channels'                : plotsToViewChannels,  # defined above'
     'plots_to_view_files'                   : plotsToViewFiles,     # defined above'
     'plots_to_view_runs'                    : plotsToViewRuns,      # defined above'
     'plots_to_view_highlights'              : plotsToViewHighlights,# defined above'
+
+    ########### analysis variables  ########################################################## 
+    'subsample_qa'                          : '1e4',                # any float, int or string
+    'subsample_analysis'                    : '1e4',                # any float, int or string
+    'model_to_run'                          : 'dpmm',               # dpmm, kmeans    
+    'dpmm_k'                                : '16',                 # an int divisible by 16
+    'dpmm_gamma'                            : '1.0',                # gamma value for dpmm
     'thumbnails_to_view'                    : 'None',               # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                 # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                 # a list of ints (indices)  
@@ -54,7 +58,7 @@ configDictDefault = {
     'alternate_channel_labels'              : '[]',                 # a list of labels
     'alternate_file_labels'                 : '[]',                 # a list of labels
     'file_in_focus'                         : 'all',                # all or file name
-    'clean_border_events'                   : 'True',               # True, False      
+    'clean_border_events'                   : 'True',               # True | False      
     'model_mode'                            : 'normal',             # normal,onefit,pooled,target
     'model_reference'                       : 'None',               # fileName, pooled
     'model_reference_run_id'                : 'None',               # a run id i.e. run1

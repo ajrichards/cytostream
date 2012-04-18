@@ -54,6 +54,11 @@ class NWayViewer(QtGui.QWidget):
         else:
             print "ERROR: NWayViewer invalid results mode"
 
+        if self.numSubplots > 6:
+            compactMode = True
+        else:
+            compactMode = False
+
         for i in range(self.numSubplots):
             cp = CytostreamPlotter(self.controller.fileNameList,
                                    self.controller.eventsList,
@@ -69,7 +74,7 @@ class NWayViewer(QtGui.QWidget):
                                    uniqueLabels=None,
                                    enableGating=False,
                                    homeDir=self.controller.homeDir,
-                                   compactMode=False,
+                                   compactMode=compactMode,
                                    labelList=None,
                                    minNumEvents=3,
                                    showNoise=False,

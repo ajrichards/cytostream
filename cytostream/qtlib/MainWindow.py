@@ -36,8 +36,6 @@ sys.path.append(os.path.join(baseDir,'qtlib'))
 from cytostream import Controller,SaveSubplots
 from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar,move_transition
-#from cytostream.qtlib import move_to_quality_assurance, move_transition, move_to_one_dim_viewer
-#from cytostream.qtlib import move_to_model, move_to_results_navigation, move_to_file_aligner
 from cytostream.qtlib import Transitions
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
 from cytostream.qtlib import ThumbnailViewer, NWayViewer, CytostreamPlotter
@@ -60,16 +58,13 @@ class MainWindow(QtGui.QMainWindow):
         self.controller = Controller(debug=debug)
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Initial','Data Processing','Quality Assurance','Model Run','Model Results',
-                          'Analysis','Results Navigation','Reports']
+        self.stateList = ['Initial','Data Processing','Quality Assurance','Model','Model Results',
+                          'Analysis','Analysis Results','Reports']
         self.resultsModeList = ['modes','components']
 
         ## enable the transition class
         self.transitions = Transitions(self)
         self.transitions.move_to_initial()
-
-        ## if a project was specified
-        #move_to_initial(self)
         
         ## settings
         self.showMaximized()
@@ -100,6 +95,9 @@ class MainWindow(QtGui.QMainWindow):
         self.filename = None
         self.dockWidget = None
         self.fileSelector = None
+        self.plotSelector = None
+        self.vizModeSelector = None
+        self.subsampleSelector = None
         self.pDock = None       
         self.dock = None
         self.tv = None
@@ -445,7 +443,12 @@ class MainWindow(QtGui.QMainWindow):
         handles the switching between visualization modes for qa and results
         '''
 
-        modeList = ['thumbnails','plot']
+        vizModeList = ['thumbnails','plot']
+        
+        if item not in vizModeList:
+            self.log.log['num_subplots'] = self.vizModeSelector.get_num_subplots()
+            item = 'plot'
+
         currentState = self.log.log['current_state']
         self.controller.currentPlotView = item
 
@@ -565,12 +568,44 @@ class MainWindow(QtGui.QMainWindow):
 
     def plots_enable_disable(self,mode='thumbnails'):
         '''
-        enables and disables widgets for thumbnail view mode
+        enables and disables widgets for thumbnail and plot view modes
 
         '''
 
-        print 'inside plots enable_disable'
+        ## docks check
+        if self.dockWidget == None:
+            add_left_dock(self)
+        if self.pDock == None:
+            self.add_pipeline_dock()
 
+        if mode == 'thumbnails':
+            if self.fileSelector:
+                self.fileSelector.setEnabled(False)
+            if self.plotSelector:
+                self.plotSelector.setEnabled(False)
+            if self.vizModeSelector:
+                self.vizModeSelector.setEnabled(True)
+                self.vizModeSelector.set_checked(mode)
+            if self.subsampleSelector:
+                self.subsampleSelector.setEnabled(False)
+        elif mode == 'plot':
+            if self.log.log['current_state'] == 'Quality Assurance':
+                self.pDock.enable_continue_btn(lambda a=self:self.transitions.move_to_model_run(a))
+            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
+
+            if self.fileSelector:
+                self.fileSelector.setEnabled(True)
+            if self.plotSelector:
+                self.plotSelector.setEnabled(True)
+            if self.vizModeSelector:
+                self.vizModeSelector.setEnabled(True)
+                self.vizModeSelector.set_checked(mode)
+            if self.subsampleSelector:
+                self.subsampleSelector.setEnabled(False)
+            self.pDock.contBtn.setEnabled(True)
+            self.pDock.enable_disable_states()
+
+        '''
         ## error check
         if self.log.log['current_state'] not in ['Quality Assurance', 'Results Navigation']:
             print "ERROR: MainWindow: plots_enable_disable -- called from bad state"
@@ -583,25 +618,34 @@ class MainWindow(QtGui.QMainWindow):
             self.add_pipeline_dock()
 
         ## enable/disable
-        if self.log.log['current_state'] == 'Quality Assurance':
+        ast.literal_eval(str(item)if self.log.log['current_state'] == 'Quality Assurance':
             self.subsampleSelector.setEnabled(False)
             self.recreateBtn.setEnabled(True)
-            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
+                        self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)                                                                                        
+            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figursself.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_elf.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
 
         if self.log.log['current_state'] == 'Results Navigation':
             self.pDock.contBtn.setEnabled(False)
-    
+
+        print 'plots enable disable', mode
+
+        
         if self.fileSelector:
-            self.fileSelector.setEnabled(True)
-        if self.modeSelector:
-            self.modeSelector.setEnabled(True)
-            self.modeSelector.set_checked(mode)
+            self.fileSelector.setEnabled(False)
+        if self.plotSelector:
+            self.plotSelector.setEnabled(False)
+        if self.vizModeSelector:
+            self.vizModeSelector.setEnabled(True)
+            self.vizModeSelector.set_checked(mode)
+                        
         self.pDock.contBtn.setEnabled(True)
         self.pDock.enable_disable_states()
 
         if self.log.log['current_state'] == 'Quality Assurance':
             self.pDock.enable_continue_btn(lambda a=self:self.transitions.move_to_model_run(a))
         
+        '''
+
     def display_thumbnails(self,runNew=False):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
@@ -631,8 +675,7 @@ class MainWindow(QtGui.QMainWindow):
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_plot)
-            
-        elif mode == 'Results Navigation':
+        elif mode == 'Model Results':
             excludedChannels = self.log.log['excluded_channels_analysis']
             self.mainWidget = QtGui.QWidget(self)
             fileChannels = self.log.log['alternate_channel_labels']
@@ -642,7 +685,6 @@ class MainWindow(QtGui.QMainWindow):
                 print "ERROR: MainWindow.display_thumbnails -- a bad imgDir has been specified", imgDir
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
-
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_plot)
         else:
@@ -668,6 +710,7 @@ class MainWindow(QtGui.QMainWindow):
 
         QtCore.QCoreApplication.processEvents()
         return True
+
     def models_run_btn_callback(self):
         '''
         Left dock button callback to return to Results Nav. menu
@@ -676,11 +719,19 @@ class MainWindow(QtGui.QMainWindow):
         self.transitions.move_to_results_navigation()
 
     def file_selector_callback(self,item=None):
+        '''
+        callback function for FileSelector movement
+        '''
         self.set_selected_file()
-        
-        ## get vis mode
-        vizMode = str(self.modeSelector.get_selected())
-        
+        vizMode = str(self.vizModeSelector.get_selected())
+        self.handle_visualization_modes(item=vizMode)
+
+    def plot_selector_callback(self,item=None):
+        '''
+        callback function for PlotSelector movement
+        '''
+        self.set_selected_plot()
+        vizMode = str(self.vizModeSelector.get_selected())
         self.handle_visualization_modes(item=vizMode)
 
     def set_selected_file(self):
@@ -690,6 +741,15 @@ class MainWindow(QtGui.QMainWindow):
 
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
+        self.controller.save()
+
+    def set_selected_plot(self):
+        '''
+        set the selecte plot
+        '''
+
+        selectedPlot, selectedPlotInd = self.plotSelector.get_selected_plot() 
+        self.log.log['selected_plot'] = selectedPlot
         self.controller.save()
 
     def set_selected_subsample(self):
@@ -789,43 +849,10 @@ class MainWindow(QtGui.QMainWindow):
         nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
                          self.log.log['plots_to_view_runs'],self.log.log['plots_to_view_highlights'],
                          self.log.log['num_subplots'],figMode=figMode,background=True,modelType='components',
-                         useScaled=False,parent=self)
+                         useScaled=self.log.log['use_scaled_plots'],parent=self)
         
-        '''
-        fileChannels = self.log.log['alternate_channel_labels']
-        ## ensure channelDict is present
-        cp = CytostreamPlotter(self.controller.fileNameList,
-                               self.controller.eventsList,
-                               fileChannels,
-                               self.controller.channelDict,
-                               drawState='heat',
-                               modelRunID=None,
-                               parent=self,
-                               background=True,
-                               selectedChannel1=0,
-                               selectedChannel2=1,
-                               mainWindow=self,
-                               uniqueLabels=None,
-                               enableGating=False,
-                               homeDir=self.controller.homeDir,
-                               compactMode=False,
-                               labelList=None,
-                               minNumEvents=3,
-                               showNoise=False,
-                               axesLabels=True,
-                               useScaled=False,
-                               plotTitle="default",
-                               dpi=100,
-                               subsample = self.log.log['subsample_qa'],
-                               transform=self.log.log['selected_transform'] 
-                               )
-        
-        
-        cp.draw(selectedFile=self.log.log['selected_file'])
-        ''' 
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)
-        #hbl.addWidget(cp)
         hbl.addWidget(nwv)
 
         ## enable/disable
@@ -836,51 +863,6 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
-
-    #def handle_nway_viewer(self,viewMode):
-    #    self.set_selected_file()
-    #    
-    #    ## layout
-    #    hbl = QtGui.QHBoxLayout()
-    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
-    #    move_transition(self,repaint=True)
-    #    self.reset_layout()
-    #
-    #    ## set the model runs to view to be currently selected model
-    #    self.log.log['plots_to_view_runs'] = [self.log.log['selected_model'] for i in self.log.log['plots_to_view_runs']]
-    #    self.controller.save()
-    # 
-    #    plotsToViewChannels = self.log.log['plots_to_view_channels']
-    #    plotsToViewFiles = self.log.log['plots_to_view_files']
-    #    plotsToViewRuns = self.log.log['plots_to_view_runs']
-    #    plotsToViewHighlights = self.log.log['plots_to_view_highlights']
-    #
-    #    
-    #    if self.log.log['current_state'] == "Quality Assurance":
-    #        figMode = 'qa'
-    #        subsample=self.log.log['subsample_qa']
-    #    if self.log.log['current_state'] == "Results Navigation":
-    #        figMode = 'analysis'
-    #        subsample=self.log.log['subsample_analysis']
-    #
-    #    self.mainWidget = QtGui.QWidget(self)
-    #    
-    #    numSubplots = int(re.sub('plot-','',viewMode))
-    #    modelType = self.log.log['results_mode']
-    #
-    #    nwv = NWayViewer(self.controller.homeDir,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
-    #                     subsample,numSubplots,figMode=figMode,background=True,modelType=modelType,mainWindow=self)
-    #
-    #    hbl.addWidget(nwv)
-    #
-    #    ## enable/disable
-    #    self.plots_enable_disable(mode=viewMode) 
-    #
-    #    ## finalize layout
-    #    self.vboxCenter.addLayout(hbl)
-    #    self.mainWidget.setLayout(self.vbl)
-    #    self.refresh_main_widget()
-    #    QtCore.QCoreApplication.processEvents()
 
     def display_info(self,msg):
         '''

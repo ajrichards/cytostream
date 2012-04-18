@@ -21,7 +21,6 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
-#from SaveSubplots import SaveSubplots
 
 try:
     from config_cs import CONFIGCS
@@ -225,8 +224,10 @@ class Controller:
         ## get img dir
         if mode == 'analysis':
             imgDir = os.path.join(self.homeDir,'figs',modelRunID)
+            subsample=self.log.log['subsample_analysis']
         elif mode == 'qa':
             imgDir = os.path.join(self.homeDir,"figs",'qa')
+            subsample=self.log.log['subsample_qa']
 
         if os.path.isdir(imgDir) == False:
             if self.verbose == True:
@@ -270,8 +271,7 @@ class Controller:
                     print 'ERROR: cannot find RunMakeScatterPlot.py'
                     return False
                 else:
-                    pltCmd = "%s %s -h %s -f %s -m %s"%(self.pythonPath,script,self.homeDir,figName,mode)
-
+                    pltCmd = "%s %s -h %s -f %s -m %s -s %s"%(self.pythonPath,script,self.homeDir,figName,mode,subsample)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                     while True:
                         try:
