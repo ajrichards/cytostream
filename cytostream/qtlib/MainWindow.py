@@ -805,12 +805,12 @@ class MainWindow(QtGui.QMainWindow):
         if mode == "Quality Assurance":
             subsample=self.log.log['subsample_qa']
             modelType,modelName=None,None
-            runID = None
-        elif mode == "Results Navigation":     
+            modelRunID = None
+        else:
             subsample=self.log.log['subsample_analysis']
             modelType=self.log.log['results_mode']
-            modelRunID=self.log.log['selected_model']
-            #runID = self.log.log['plots_to_view_runs'][0]
+            #modelRunID=self.log.log['selected_model']
+            modelRunID = self.log.log['plots_to_view_runs'][0]
             
         self.mainWidget = QtGui.QWidget(self)
         fileChannels = self.log.log['alternate_channel_labels']
@@ -825,8 +825,8 @@ class MainWindow(QtGui.QMainWindow):
                                fileChannels,
                                self.controller.channelDict,
                                drawState='heat',
-                               modelRunID=None,
-                               parent=None,
+                               modelRunID=modelRunID,
+                               parent=self,
                                background=True,
                                selectedChannel1=channelI,
                                selectedChannel2=channelJ,

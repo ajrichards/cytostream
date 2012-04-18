@@ -61,6 +61,7 @@ configDictDefault = {
     'channel_view'                          : 'normal',             # normal, custom
     'app_color'                             : '#999999',            # a color
     'visualization_mode'                    : 'thumbnails',         # thumbs, 1D-viewer etc
+    'num_subplots'                          : '1',                  # 1-16 
     'fa_phi_range'                          : '[0.4]',              # a list or np.array of phis
     'fa_min_merge_sil_value'                : '0.3',                # min silhouette value for merge    
     'fa_distance_metric'                    : 'mahalanobis',        # mahalanobis or euclidean
