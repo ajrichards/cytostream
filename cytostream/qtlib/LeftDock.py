@@ -12,7 +12,6 @@ __author__ = "A. Richards"
 
 import sys,os
 from PyQt4 import QtGui,QtCore
-
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector, ModeSelector, ModelToRunSelector
 from cytostream.qtlib import ModelTypeSelector
@@ -122,10 +121,11 @@ def add_left_dock(mainWindow):
     ## visualization mode selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
         visualizationMode = mainWindow.log.log['visualization_mode']
-        btnLabels = ['histogram','thumbnails','plot',]
+        btnLabels = ['thumbnails','plot',]
         modeVizCallback = mainWindow.handle_visualization_modes
         mainWindow.modeSelector = ModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
-                                               modeVizCallback=modeVizCallback)
+                                               modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
+                                               numSubplotsDefault=mainWindow.log.log['num_subplots'])
         rbwLayout = QtGui.QHBoxLayout()
         rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
         rbwLayout.addWidget(mainWindow.modeSelector)

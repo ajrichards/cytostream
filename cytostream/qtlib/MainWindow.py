@@ -103,8 +103,6 @@ class MainWindow(QtGui.QMainWindow):
         self.pDock = None       
         self.dock = None
         self.tv = None
-        self.lastChanI = None
-        self.lastChanJ = None
         self.allFilePaths = []
         self.controller.masterChannelList = None
         self.reset_layout()
@@ -447,11 +445,11 @@ class MainWindow(QtGui.QMainWindow):
         handles the switching between visualization modes for qa and results
         '''
 
-        modeList = ['histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
+        modeList = ['thumbnails','plot']
         currentState = self.log.log['current_state']
         self.controller.currentPlotView = item
 
-        if item in ['plot-1','plot-2','plot-3','plot-4','plot-6']:
+        if int(self.log.log['num_subplots']) > 1:
             self.saveImgsBtn.setEnabled(True)
         else:
             self.saveImgsBtn.setEnabled(False)
@@ -461,32 +459,11 @@ class MainWindow(QtGui.QMainWindow):
         elif item == 'thumbnails' and  currentState == 'Quality Assurance':
             self.transitions.move_to_quality_assurance(mode='thumbnails')
         elif item == 'thumbnails' and currentState == 'Model Results':
-            #self.thumbnailTransitions(self.log.log['selected_model'])
             self.display_thumbnails()
         elif item == 'thumbnails':
             print "ERROR: MainWindow.handle_visualization_modes -- thumbnails with bad state", currentState
-        elif item == 'plot-1':
-            self.handle_show_scatter()
-        elif item == 'plot-2':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-3':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-4':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-6':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-7':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-8':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-9':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-10':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-11':
-            self.handle_nway_viewer(item)
-        elif item == 'plot-12':
-            self.handle_nway_viewer(item)
+        elif item == 'plot':
+            self.handle_show_plot()
         else:
             self.display_info("not available yet")
             print "ERROR: mainWindow.handle_visualization_modes -- bad item", item
@@ -498,8 +475,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             figMode = 'analysis'
 
-        validViews = ['plot-1','plot-2','plot-3','plot-4','plot-5','plot-6','plot-7',
-                      'plot-8','plot-9','plot-10','plot-11','plot-12']
+        validViews = ['plot']
         currentPlotView = str(self.controller.currentPlotView)
 
         if currentPlotView in validViews:
@@ -654,7 +630,7 @@ class MainWindow(QtGui.QMainWindow):
             fileChannels = self.log.log['alternate_channel_labels']
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_scatter)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_plot)
             
         elif mode == 'Results Navigation':
             excludedChannels = self.log.log['excluded_channels_analysis']
@@ -668,7 +644,7 @@ class MainWindow(QtGui.QMainWindow):
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
 
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_scatter)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_plot)
         else:
             print "ERROR: bad mode specified in display thumbnails", mode
             return
@@ -775,61 +751,59 @@ class MainWindow(QtGui.QMainWindow):
 
         QtCore.QCoreApplication.processEvents()
 
-    def handle_show_scatter(self,img=None):
+    def handle_show_plot(self,img=None):
         mode = self.log.log['current_state']
         self.set_selected_file()
         
-        ## layout
-        hbl = QtGui.QHBoxLayout()
-        hbl.setAlignment(QtCore.Qt.AlignCenter)
-        move_transition(self,repaint=True)
-        self.reset_layout()
-        #masterChannelList = self.get_master_channel_list()
-        fileChannels = self.log.log['alternate_channel_labels']
-
+        ## handle transition from thumbnails to plot view
         if img != None:
+            self.log.log['num_subplots'] = 1
+            
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
-            self.lastChanI = re.sub("#","_",chanI)
-            self.lastChanJ = re.sub("#","_",chanJ)
-        elif self.lastChanI == None or self.lastChanJ == None:
-            self.lastChanI = re.sub("#","_",fileChannels[0])
-            self.lastChanJ = re.sub("#","_",fileChannels[1])
+            channelI = self.controller.fileChannels.tolist().index(re.sub("#","_",chanI))
+            channelJ = self.controller.fileChannels.tolist().index(re.sub("#","_",chanJ))
+            self.log.log['plots_to_view_channels'][0] = (channelI, channelJ)
+            self.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
 
-        if self.lastChanI == None or self.lastChanJ == None:
-            print "ERROR: lastChanI or lastChanJ not defined"
-            return False
-
-        if mode == "Quality Assurance":
-            subsample=self.log.log['subsample_qa']
-            modelType,modelName=None,None
-            modelRunID = None
-        else:
-            subsample=self.log.log['subsample_analysis']
-            modelType=self.log.log['results_mode']
-            #modelRunID=self.log.log['selected_model']
-            modelRunID = self.log.log['plots_to_view_runs'][0]
-            
-        self.mainWidget = QtGui.QWidget(self)
+        ## initialize transition
+        move_transition(self,repaint=True)
+        self.reset_layout()
         fileChannels = self.log.log['alternate_channel_labels']
-        channelI = fileChannels.index(self.lastChanI)
-        channelJ = fileChannels.index(self.lastChanJ)
-        #mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
-        #                     modelType=modelType,mode=modelMode,modelName=modelName)
+        self.mainWidget = QtGui.QWidget(self)
+
+        ## set the model runs to view to be currently selected model
+        self.log.log['plots_to_view_runs'] = [self.log.log['selected_model'] for i in self.log.log['plots_to_view_runs']]
+        self.controller.save()
+
+        ## mode specific variables for NWayViewer
+        if self.log.log['current_state'] == "Quality Assurance":
+            figMode = 'qa'
+        elif self.log.log['current_state'] == "Model Results":
+            figMode = 'model results'
+        else:
+            print "ERROR: MainWindow --- unspecified state"
+
+        nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
+                         self.log.log['plots_to_view_runs'],self.log.log['plots_to_view_highlights'],
+                         self.log.log['num_subplots'],figMode=figMode,background=True,modelType='components',
+                         useScaled=False,parent=self)
         
+        '''
+        fileChannels = self.log.log['alternate_channel_labels']
         ## ensure channelDict is present
         cp = CytostreamPlotter(self.controller.fileNameList,
                                self.controller.eventsList,
                                fileChannels,
                                self.controller.channelDict,
                                drawState='heat',
-                               modelRunID=modelRunID,
+                               modelRunID=None,
                                parent=self,
                                background=True,
-                               selectedChannel1=channelI,
-                               selectedChannel2=channelJ,
+                               selectedChannel1=0,
+                               selectedChannel2=1,
                                mainWindow=self,
                                uniqueLabels=None,
                                enableGating=False,
@@ -842,73 +816,71 @@ class MainWindow(QtGui.QMainWindow):
                                useScaled=False,
                                plotTitle="default",
                                dpi=100,
-                               subsample = subsample,
+                               subsample = self.log.log['subsample_qa'],
                                transform=self.log.log['selected_transform'] 
                                )
-
-
-        cp.draw(selectedFile=self.log.log['selected_file'])
-
-
-        #cp = CytostreamPlotter(selectedChannel1=channelI,selectedChannel2=channelJ,enableGating=False,
-        #                       homeDir=self.controller.homeDir,isProject=True,compactMode=False)
-        #cp.init_labels_events(self.log.log['selected_file'],modelRunID,modelType=modelType)
-        #cp.draw()
-        hbl.addWidget(cp)
-
-        ## enable/disable
-        self.plots_enable_disable(mode='plot-1')
-
-        ## finalize layout
-        self.vboxCenter.addLayout(hbl)
-        self.mainWidget.setLayout(self.vbl)
-        self.refresh_main_widget()
-        QtCore.QCoreApplication.processEvents()
-
-    def handle_nway_viewer(self,viewMode):
-        self.set_selected_file()
         
-        ## layout
+        
+        cp.draw(selectedFile=self.log.log['selected_file'])
+        ''' 
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)
-        move_transition(self,repaint=True)
-        self.reset_layout()
-
-        ## set the model runs to view to be currently selected model
-        self.log.log['plots_to_view_runs'] = [self.log.log['selected_model'] for i in self.log.log['plots_to_view_runs']]
-        self.controller.save()
-
-        plotsToViewChannels = self.log.log['plots_to_view_channels']
-        plotsToViewFiles = self.log.log['plots_to_view_files']
-        plotsToViewRuns = self.log.log['plots_to_view_runs']
-        plotsToViewHighlights = self.log.log['plots_to_view_highlights']
-
-        
-        if self.log.log['current_state'] == "Quality Assurance":
-            figMode = 'qa'
-            subsample=self.log.log['subsample_qa']
-        if self.log.log['current_state'] == "Results Navigation":
-            figMode = 'analysis'
-            subsample=self.log.log['subsample_analysis']
-
-        self.mainWidget = QtGui.QWidget(self)
-        
-        numSubplots = int(re.sub('plot-','',viewMode))
-        modelType = self.log.log['results_mode']
-
-        nwv = NWayViewer(self.controller.homeDir,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
-                         subsample,numSubplots,figMode=figMode,background=True,modelType=modelType,mainWindow=self)
-
+        #hbl.addWidget(cp)
         hbl.addWidget(nwv)
 
         ## enable/disable
-        self.plots_enable_disable(mode=viewMode) 
+        self.plots_enable_disable(mode='plot')
 
         ## finalize layout
         self.vboxCenter.addLayout(hbl)
         self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
+
+    #def handle_nway_viewer(self,viewMode):
+    #    self.set_selected_file()
+    #    
+    #    ## layout
+    #    hbl = QtGui.QHBoxLayout()
+    #    hbl.setAlignment(QtCore.Qt.AlignCenter)
+    #    move_transition(self,repaint=True)
+    #    self.reset_layout()
+    #
+    #    ## set the model runs to view to be currently selected model
+    #    self.log.log['plots_to_view_runs'] = [self.log.log['selected_model'] for i in self.log.log['plots_to_view_runs']]
+    #    self.controller.save()
+    # 
+    #    plotsToViewChannels = self.log.log['plots_to_view_channels']
+    #    plotsToViewFiles = self.log.log['plots_to_view_files']
+    #    plotsToViewRuns = self.log.log['plots_to_view_runs']
+    #    plotsToViewHighlights = self.log.log['plots_to_view_highlights']
+    #
+    #    
+    #    if self.log.log['current_state'] == "Quality Assurance":
+    #        figMode = 'qa'
+    #        subsample=self.log.log['subsample_qa']
+    #    if self.log.log['current_state'] == "Results Navigation":
+    #        figMode = 'analysis'
+    #        subsample=self.log.log['subsample_analysis']
+    #
+    #    self.mainWidget = QtGui.QWidget(self)
+    #    
+    #    numSubplots = int(re.sub('plot-','',viewMode))
+    #    modelType = self.log.log['results_mode']
+    #
+    #    nwv = NWayViewer(self.controller.homeDir,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
+    #                     subsample,numSubplots,figMode=figMode,background=True,modelType=modelType,mainWindow=self)
+    #
+    #    hbl.addWidget(nwv)
+    #
+    #    ## enable/disable
+    #    self.plots_enable_disable(mode=viewMode) 
+    #
+    #    ## finalize layout
+    #    self.vboxCenter.addLayout(hbl)
+    #    self.mainWidget.setLayout(self.vbl)
+    #    self.refresh_main_widget()
+    #    QtCore.QCoreApplication.processEvents()
 
     def display_info(self,msg):
         '''

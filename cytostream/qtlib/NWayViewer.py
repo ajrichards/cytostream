@@ -7,10 +7,14 @@ from cytostream.qtlib import CytostreamPlotter
 
 class NWayViewer(QtGui.QWidget):
 
-    def __init__(self,controller,channels,files,runs,highlights,subsample,numSubplots,figMode='qa',parent=None,
+    def __init__(self,controller,channels,files,runs,highlights,numSubplots,figMode='qa',parent=None,
                  background=False,modelType=None,mainWindow=None,useScaled=False):
 
         QtGui.QWidget.__init__(self,parent)
+        if parent == None:
+            self.parent = self
+        else:
+            self.parent = parent
 
         ## input variables
         self.setWindowTitle('N Way Plotter')
@@ -20,10 +24,8 @@ class NWayViewer(QtGui.QWidget):
         self.files = files
         self.runs = runs
         self.highlights = highlights
-        self.subsample = subsample
-        self.numSubplots = numSubplots
+        self.numSubplots = int(numSubplots)
         self.figMode = figMode
-        self.parent = parent
         self.background = background
         self.modelType = modelType
         self.mainWindow = mainWindow
@@ -46,11 +48,13 @@ class NWayViewer(QtGui.QWidget):
         if self.figMode == "qa":
             subsample=self.controller.log.log['subsample_qa']
             modelType,modelName=None,None
-        else:
+        elif self.figMode == 'model results':
             subsample=self.controller.log.log['subsample_analysis']
             modelType=self.controller.log.log['results_mode']
+        else:
+            print "ERROR: NWayViewer invalid results mode"
 
-        for i in range(numSubplots):
+        for i in range(self.numSubplots):
             cp = CytostreamPlotter(self.controller.fileNameList,
                                    self.controller.eventsList,
                                    self.controller.fileChannels,
@@ -78,10 +82,8 @@ class NWayViewer(QtGui.QWidget):
                                    )
 
             cp.draw(selectedFile=self.controller.fileNameList[self.files[i]])
-
-            if self.numSubplots in [2]:
-                self.hbl1.addWidget(cp)
-            elif self.numSubplots in [3]:
+            
+            if self.numSubplots in [1,2,3]:
                 self.hbl1.addWidget(cp)
             elif self.numSubplots in [4]:
                 if i in [0,1]:
@@ -141,10 +143,10 @@ if __name__ == '__main__':
     plotsToViewFiles      = [0,0,0,0,0,0,0,0,0,0,0,0]
     plotsToViewRuns       = ['run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1','run1']
     plotsToViewHighlights = [None,None,None,None,None,None,None,None,None,None,None,None]
-    numSubplots = 2
+    numSubplots = 1
 
     nwv = NWayViewer(nga.controller,plotsToViewChannels,plotsToViewFiles,plotsToViewRuns,plotsToViewHighlights,
-                     subsample,numSubplots,figMode=figMode,background=True,modelType='components',useScaled=True)
+                     numSubplots,figMode=figMode,background=True,modelType='components',useScaled=True)
 
     nwv.show()
     sys.exit(app.exec_())    

@@ -21,7 +21,7 @@ class ModeSelector(QtGui.QWidget):
     '''
 
     def __init__(self, modeList, color='white',parent=None,modeDefault=None,modeVizCallback=None,
-                 numSubplotsDefault=1,numSubplotsFn=None):
+                 numSubplotsDefault='1',numSubplotsCallback=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -60,7 +60,7 @@ class ModeSelector(QtGui.QWidget):
         self.numSubplotsSelector = QtGui.QComboBox(self)             
         for numSubplots in self.numSubplotsList:
             self.numSubplotsSelector.addItem(numSubplots)
-        hbox3.addWidget(QtGui.QLabel('Num. subplots'))
+        hbox3.addWidget(QtGui.QLabel('subplots'))
         hbox3.addWidget(self.numSubplotsSelector)
 
         if self.numSubplotsList.__contains__(numSubplotsDefault):
@@ -68,12 +68,9 @@ class ModeSelector(QtGui.QWidget):
         else:
             print "ERROR: in ModeSelector.numSubplotsSelector - bad specified default", numSubplotsDefault
 
-        if numSubplotsFn == None:
-            numSubplotsFn = self.generic_callback
-        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), numSubplotsFn) 
-
-
-
+        if numSubplotsCallback == None:
+            numSubplotsCallback = self.generic_callback
+        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), numSubplotsCallback) 
 
         ## finalize layout
         vbox.addLayout(hbox1)
