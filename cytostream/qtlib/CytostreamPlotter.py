@@ -48,6 +48,11 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## initialize
         QtGui.QWidget.__init__(self,parent)
+
+        if parent == None:
+            self.parent = self
+        else:
+            self.parent = parent
         
         ## required vaiables
         self.fileNameList = fileNameList
@@ -343,7 +348,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.title_cb.setChecked(True)
         self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.title_set_callback)
 
-        self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback,vertical=True)
+        self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,vertical=True)
         self.vizSelector.btns[self.drawState].setChecked(True)
         self.vizSelector.selectedItem = self.drawState
 
