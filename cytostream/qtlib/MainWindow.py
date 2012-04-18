@@ -251,7 +251,10 @@ class MainWindow(QtGui.QMainWindow):
         a reference function to move to the open screen
 
         '''
-
+        
+        if self.controller.verbose == True:
+            print 'INFO: open existing project'
+           
         self.transitions.move_to_open()
         self.status.showMessage("Existing project successfully loaded", 5000)
 
@@ -277,12 +280,18 @@ class MainWindow(QtGui.QMainWindow):
             self.display_warning("Specified project dir is not a valid cytostream project")
             return
     
-        ## prepare variables and move        
+        ## prepare variables and move
+        print 'open existing project handler'        
         move_transition(self)
+        print '...move transition made'
         self.reset_view_workspace()
+        print '...reset workspace'
         self.controller.initialize_project(homeDir,loadExisting=True)
+        print '...initializing controller'
         self.controller.masterChannelList = self.model.get_master_channel_list()
+        print '...getting master channel list'
         self.refresh_state()
+        
         
     def load_files_with_progressbar(self,progressBar):
         '''
@@ -615,16 +624,12 @@ class MainWindow(QtGui.QMainWindow):
         self.pDock.enable_disable_states()
 
         if self.log.log['current_state'] == 'Quality Assurance':
-            self.pDock.enable_continue_btn(self.transitions.move_to_model_run())
+            self.pDock.enable_continue_btn(lambda a=self:self.transitions.move_to_model_run(a))
         
     def display_thumbnails(self,runNew=False):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
         '''
-
-        ## fix bug with rerunning of pipeline
-        #if self.log.log['current_state'] == "Data Processing":
-        #    self.log.log['current_state'] = 'Quality Assurance'
 
         ## enable/disable
         mode = self.log.log['current_state']
@@ -745,14 +750,16 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
+        print '...refreshing state',self.log.log['current_state']
+
         if self.log.log['current_state'] == "Data Processing":
             self.transitions.move_to_data_processing(withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
             self.transitions.move_to_quality_assurance(mode=qaMode)
-        elif self.log.log['current_state'] == "Model Run":
+        elif self.log.log['current_state'] == "Model":
             self.transitions.move_to_model_run()
-        elif self.log.log['current_state'] == "Model Results":
-            self.transitions.move_to_model_results()
+        #elif self.log.log['current_state'] == "Model Results":
+        #    self.transitions.move_to_model_results()
         elif self.log.log['current_state'] == "Analysis":
             self.transitions.move_to_analysis(self)
         elif self.log.log['current_state'] == "File Aligner":
@@ -763,6 +770,8 @@ class MainWindow(QtGui.QMainWindow):
             self.transitions.move_to_positivity_thresholding(self)
         elif self.log.log['current_state'] == "Reports":
             self.transitions.move_to_reports(self)
+        else:
+            print "ERROR: MainWindow.refresh_state was given invalid state", self.log.log['current_state']
 
         QtCore.QCoreApplication.processEvents()
 
@@ -810,11 +819,41 @@ class MainWindow(QtGui.QMainWindow):
         #mp = MultiplePlotter(self.controller.homeDir,self.log.log['selected_file'],channelI,channelJ,subsample,background=True,
         #                     modelType=modelType,mode=modelMode,modelName=modelName)
         
+        ## ensure channelDict is present
+        cp = CytostreamPlotter(self.controller.fileNameList,
+                               self.controller.eventsList,
+                               fileChannels,
+                               self.controller.channelDict,
+                               drawState='heat',
+                               modelRunID=None,
+                               parent=None,
+                               background=True,
+                               selectedChannel1=channelI,
+                               selectedChannel2=channelJ,
+                               mainWindow=self,
+                               uniqueLabels=None,
+                               enableGating=False,
+                               homeDir=self.controller.homeDir,
+                               compactMode=False,
+                               labelList=None,
+                               minNumEvents=3,
+                               showNoise=False,
+                               axesLabels=True,
+                               useScaled=False,
+                               plotTitle="default",
+                               dpi=100,
+                               subsample = subsample,
+                               transform=self.log.log['selected_transform'] 
+                               )
 
-        cp = CytostreamPlotter(selectedChannel1=channelI,selectedChannel2=channelJ,enableGating=False,
-                               homeDir=self.controller.homeDir,isProject=True,compactMode=False)
-        cp.init_labels_events(self.log.log['selected_file'],modelRunID,modelType=modelType)
-        cp.draw()
+
+        cp.draw(selectedFile=self.log.log['selected_file'])
+
+
+        #cp = CytostreamPlotter(selectedChannel1=channelI,selectedChannel2=channelJ,enableGating=False,
+        #                       homeDir=self.controller.homeDir,isProject=True,compactMode=False)
+        #cp.init_labels_events(self.log.log['selected_file'],modelRunID,modelType=modelType)
+        #cp.draw()
         hbl.addWidget(cp)
 
         ## enable/disable

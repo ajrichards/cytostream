@@ -28,8 +28,6 @@ class ComboBoxDelegate(QtGui.QItemDelegate):
         editor = QtGui.QComboBox( parent )
         for i,item in enumerate(self.comboItems):
             editor.insertItem(i, unicode(item), QtCore.QVariant(QtCore.QString(item)))
-            #editor.insertItem(1, unicode('B'), QtCore.QVariant(QtCore.QString('B')))
-            #editor.insertItem(2, unicode('C'), QtCore.QVariant(QtCore.QString('C')))
         return editor
 
     def setEditorData(self,comboBox,index ):

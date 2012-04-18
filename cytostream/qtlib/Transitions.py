@@ -142,7 +142,7 @@ class Transitions():
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
 
         ## handle state
-        self.mainWindow.controller.log.log['current_state'] = 'Results Navigation'
+        self.mainWindow.controller.log.log['current_state'] = 'Model'
         self.mainWindow.update_highest_state()
         self.mainWindow.controller.save()
 
@@ -199,12 +199,14 @@ class Transitions():
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
 
-        self.mainWindow.status.showMessage("Model Run", 5000)
+        self.mainWindow.status.showMessage("Model", 5000)
         return True
 
     def move_to_quality_assurance(self,mode='thumbnails'):
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to quality assurance", mode
+
+        print 'moving to quality assurance'
 
         ## error checking
         modeList = ['progressbar','histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']

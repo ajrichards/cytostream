@@ -20,7 +20,8 @@ class ModeSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, modeList, color='white', parent=None, modeDefault=None, modeVizCallback=None):
+    def __init__(self, modeList, color='white',parent=None,modeDefault=None,modeVizCallback=None,
+                 numSubplotsDefault=1,numSubplotsFn=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -29,7 +30,7 @@ class ModeSelector(QtGui.QWidget):
 
         ## error checking
         if modeDefault != None and modeList.__contains__(modeDefault) == False:
-            print "ERROR: RadioBtnWidget - bad default specified",modeDefault
+            print "ERROR: ModeSelector - bad default specified",modeDefault
             return None
 
         ## variables
@@ -37,6 +38,7 @@ class ModeSelector(QtGui.QWidget):
         self.color = color
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
+        self.numSubplotsList = [str(i) for i in range(1,13)]
 
         ## setup layout
         vbox = QtGui.QVBoxLayout()
@@ -44,6 +46,8 @@ class ModeSelector(QtGui.QWidget):
         hbox1.setAlignment(QtCore.Qt.AlignLeft)
         hbox2 = QtGui.QHBoxLayout()
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
+        hbox3 = QtGui.QHBoxLayout()
+        hbox3.setAlignment(QtCore.Qt.AlignLeft)
         
         ## mode selector
         hbox1.addWidget(QtGui.QLabel('visualization mode'))
@@ -52,9 +56,29 @@ class ModeSelector(QtGui.QWidget):
         if modeDefault != None:
             self.set_checked(modeDefault)
 
+        ## num subplots selector 
+        self.numSubplotsSelector = QtGui.QComboBox(self)             
+        for numSubplots in self.numSubplotsList:
+            self.numSubplotsSelector.addItem(numSubplots)
+        hbox3.addWidget(QtGui.QLabel('Num. subplots'))
+        hbox3.addWidget(self.numSubplotsSelector)
+
+        if self.numSubplotsList.__contains__(numSubplotsDefault):
+            self.numSubplotsSelector.setCurrentIndex(0)
+        else:
+            print "ERROR: in ModeSelector.numSubplotsSelector - bad specified default", numSubplotsDefault
+
+        if numSubplotsFn == None:
+            numSubplotsFn = self.generic_callback
+        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), numSubplotsFn) 
+
+
+
+
         ## finalize layout
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
+        vbox.addLayout(hbox3) 
         self.setLayout(vbox)
 
         ## color the background

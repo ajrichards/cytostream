@@ -48,9 +48,9 @@ class PipelineDock(QtGui.QWidget):
         if highestStateInd > 2:
             self.modelBtn.setEnabled(True)
         if highestStateInd > 3:
-            self.resultsNavigationBtn.setEnabled(True)
+            self.analysisBtn.setEnabled(True)
         if highestStateInd > 4:        
-            self.resultsSummaryBtn.setEnabled(True)
+            self.reportsBtn.setEnabled(True)
 
         if highestState == 0:
             self.inactivate_all()
@@ -101,24 +101,14 @@ class PipelineDock(QtGui.QWidget):
         self.connect(self.qualityAssuranceBtn, QtCore.SIGNAL('clicked()'),lambda x='Quality Assurance': self.btn_callback(x))
 
         ## model run
-        self.modelRunBtn = QtGui.QPushButton("Model Run")
-        self.modelRunBtn.setMaximumWidth(self.eSize)
-        self.modelRunBtn.setMinimumWidth(self.eSize)
-        self.modelRunBtn.setAutoFillBackground(True)
-        self.modelRunBtn.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.modelRunTip = Tooltip(msg="Run a model on the fcs files",parent=self.modelRunBtn)
-        hboxTop.addWidget(self.modelRunBtn)
-        self.connect(self.modelRunBtn, QtCore.SIGNAL('clicked()'),lambda x='Model Run': self.btn_callback(x))
-
-        ## model run
-        self.modelResultsBtn = QtGui.QPushButton("Model Results")
-        self.modelResultsBtn.setMaximumWidth(self.eSize)
-        self.modelResultsBtn.setMinimumWidth(self.eSize)
-        self.modelResultsBtn.setAutoFillBackground(True)
-        self.modelResultsBtn.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.modelResultsTip = Tooltip(msg="Navigate the results for all models run",parent=self.modelResultsBtn)
-        hboxTop.addWidget(self.modelResultsBtn)
-        self.connect(self.modelResultsBtn, QtCore.SIGNAL('clicked()'),lambda x='Model Results': self.btn_callback(x))
+        self.modelBtn = QtGui.QPushButton("Model")
+        self.modelBtn.setMaximumWidth(self.eSize)
+        self.modelBtn.setMinimumWidth(self.eSize)
+        self.modelBtn.setAutoFillBackground(True)
+        self.modelBtn.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.modelTip = Tooltip(msg="Run a model or navigate results",parent=self.modelBtn)
+        hboxTop.addWidget(self.modelBtn)
+        self.connect(self.modelBtn, QtCore.SIGNAL('clicked()'),lambda x='Model Run': self.btn_callback(x))
 
         ## results navigation
         self.analysisBtn = QtGui.QPushButton("Analysis")
@@ -157,8 +147,7 @@ class PipelineDock(QtGui.QWidget):
     def unset_all_highlights(self):
         self.dataProcessingBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % None)
-        self.modelRunBtn.setStyleSheet("QWidget { background-color: %s }" % None)
-        self.modelResultsBtn.setStyleSheet("QWidget { background-color: %s }" % None)
+        self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.analysisBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         self.reportsBtn.setStyleSheet("QWidget { background-color: %s }" % None)
         QtCore.QCoreApplication.processEvents()
@@ -170,12 +159,9 @@ class PipelineDock(QtGui.QWidget):
         elif btnName == 'Quality Assurance':
             self.unset_all_highlights()
             self.qualityAssuranceBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'Model Run':
+        elif btnName == 'Model':
             self.unset_all_highlights()
-            self.modelRunBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
-        elif btnName == 'Model Results':
-            self.unset_all_highlights()
-            self.modelResultsBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
+            self.modelBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
         elif btnName == 'Analysis':
             self.unset_all_highlights()
             self.analysisBtn.setStyleSheet("QWidget { background-color: %s }" % self.btnColor.name())
@@ -195,18 +181,15 @@ class PipelineDock(QtGui.QWidget):
         elif btnName == 'Quality Assurance':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[1]()
-        elif btnName == 'Model Run':
+        elif btnName == 'Model':
             if self.btnCallBacks != None:
                 goFlag = self.btnCallBacks[2]()
-        elif btnName == 'Model Results':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[3]()
         elif btnName == 'Analysis':
             if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[4]()
+                goFlag = self.btnCallBacks[3]()
         elif btnName == 'Reports':
             if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[5]()
+                goFlag = self.btnCallBacks[4]()
         else:
             print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
 
@@ -218,16 +201,14 @@ class PipelineDock(QtGui.QWidget):
     def inactivate_all(self):
         self.dataProcessingBtn.setEnabled(False)
         self.qualityAssuranceBtn.setEnabled(False)
-        self.modelRunBtn.setEnabled(False)
-        self.modelResultsBtn.setEnabled(False)
+        self.modelBtn.setEnabled(False)
         self.analysisBtn.setEnabled(False)
         self.reportsBtn.setEnabled(False)
 
     def activate_all(self):
         self.dataProcessingBtn.setEnabled(True)
         self.qualityAssuranceBtn.setEnabled(True)
-        self.modelRunBtn.setEnabled(True)
-        self.modelResultsBtn.setEnabled(True)
+        self.modelBtn.setEnabled(True)
         self.analysisBtn.setEnabled(True)
         self.reportsBtn.setEnabled(True)
 
