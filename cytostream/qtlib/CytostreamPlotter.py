@@ -110,6 +110,7 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## get max and min number of events
         minNumEvents,maxNumEvents = 0,0
+
         for i,fileName in enumerate(self.fileNameList):
             events = self.eventsList[i]
             if events.shape[0] > maxNumEvents:
@@ -173,24 +174,24 @@ class CytostreamPlotter(QtGui.QWidget):
 
     def draw(self,cbInt=None,selectedFile=None):
         '''
-        args[0] = ax                       [required]  matplotlib axes
-        args[1] = events                   [required]  np.array (N,D)
-        args[2] = channelList              [required]  ['chan1','chan2']
-        args[3] = channelDict              [required]  {'ssc':0,'fsc':1}
-        args[4] = channel1Index            [required]  int
-        args[5] = channel2Index            [required]  int
-        args[6] = subsample                [required]  float | 'original'
-        args[7] = transform                [required]  'log' | 'logicle'
-        args[8] = labels                   [optional]  np.array (N,1)
-        args[9] = highlight                [optional]  None|clusterID (str(int))
+        args[0]  = ax                       [required]  matplotlib axes
+        args[1]  = events                   [required]  np.array (N,D)
+        args[2]  = channelList              [required]  ['chan1','chan2']
+        args[3]  = channelDict              [required]  {'ssc':0,'fsc':1}
+        args[4]  = channel1Index            [required]  int
+        args[5]  = channel2Index            [required]  int
+        args[6]  = subsample                [required]  float | 'original'
+        args[7]  = transform                [required]  'log' | 'logicle'
+        args[8]  = labels                   [optional]  np.array (N,1)
+        args[9]  = highlight                [optional]  None|clusterID (str(int))
         args[10] = logger                   [optional]  Logger instance
-        args[11] = drawState               [optional]  'scatter' | 'heat' | 'contour'
-        args[12] = numSubplots             [optional]  int 1-16
-        args[13] = axesLabels              [optional]  True | False
-        args[14] = plotTitle               [optional]  None | str
-        args[15] = showNoise               [optional]  True | False
-        args[16] = useSimple               [optional]  False | True
-        args[17] = useScaled               [optional]  False | True
+        args[11] = drawState                [optional]  'scatter' | 'heat' | 'contour'
+        args[12] = numSubplots              [optional]  int 1-16
+        args[13] = axesLabels               [optional]  True | False
+        args[14] = plotTitle                [optional]  None | str
+        args[15] = showNoise                [optional]  True | False
+        args[16] = useSimple                [optional]  False | True
+        args[17] = useScaled                [optional]  False | True
            
         '''
 
@@ -291,7 +292,6 @@ class CytostreamPlotter(QtGui.QWidget):
 
         ## lower controls 
         if self.enableGating == True:
-            #gatingLabel = QtGui.QLabel('Gate Controls')
             self.gateSelector = QtGui.QComboBox(self)
             for gt in ["None","Draw","Polygon", "Rectangle", "Square"]:
                 self.gateSelector.addItem(gt)
@@ -332,27 +332,17 @@ class CytostreamPlotter(QtGui.QWidget):
         self.connect(self.grid_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
 
         self.scale_cb = QtGui.QCheckBox("Scale")
-        self.scale_cb.setChecked(False)
+        self.scale_cb.setChecked(self.useScaled)
         self.connect(self.scale_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
         
         self.axLab_cb = QtGui.QCheckBox("Axes")
-        self.axLab_cb.setChecked(True)
+        self.axLab_cb.setChecked(self.axesLabels)
         self.connect(self.axLab_cb,QtCore.SIGNAL('stateChanged(int)'), self.axes_labels_set_callback)
 
         self.title_cb = QtGui.QCheckBox("Title")
         self.title_cb.setChecked(True)
         self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.title_set_callback)
 
-        #defaultMS = 1
-        #self.markerSliderLabel = QtGui.QLabel(str(defaultMS))
-        #self.markerSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
-        #self.markerSlider.setRange(1,10)
-        #self.markerSlider.setValue(defaultMS)
-        #self.markerSlider.setTracking(True)
-        #self.markerSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
-        #self.connect(self.markerSlider, QtCore.SIGNAL('valueChanged(int)'), self.marker_slider_callback)
-        #self.markerSlider.setEnabled(True)
-    
         self.vizSelector = RadioBtnWidget(self.vizList,parent=self,callbackFn=self.plot_viz_callback,vertical=True)
         self.vizSelector.btns[self.drawState].setChecked(True)
         self.vizSelector.selectedItem = self.drawState
@@ -459,8 +449,6 @@ class CytostreamPlotter(QtGui.QWidget):
         plotOptionBox2.addWidget(self.axLab_cb)
         plotOptionBox2.addWidget(self.title_cb)
 
-        #hbox6.addWidget(self.markerSliderLabel)
-        #hbox6.addWidget(self.markerSlider)
         hbox6a.addLayout(plotOptionBox1)
         hbox6a.addLayout(plotOptionBox2)
  
@@ -633,11 +621,6 @@ class CytostreamPlotter(QtGui.QWidget):
         
         self.currentPolyVerts = int(value)
         self.canvas.draw()
-
-    #def marker_slider_callback(self, value):
-    #    self.markerSliderLabel.setText(str(value))
-    #    self.markerSize = int(value)
-    #    self.draw()
         
     def gate_set_callback(self):
         self.gate_clear_callback()
@@ -648,7 +631,6 @@ class CytostreamPlotter(QtGui.QWidget):
         self.line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
         self.ax.add_line(self.line)
         self.canvas.draw()
-        #self.draw()
 
     def title_set_callback(self,cb):
         if self.title_cb.isChecked() == True and self.plotTitle != None:
@@ -740,24 +722,25 @@ if __name__ == '__main__':
     selectedFile = "3FITC_4PE_004"
     filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
     channelDict = {'FSCH':0,'SSCH':1}
-    transform = 'logicle'
-    subsample = 100000
+    subsample = 10000
 
     ## setup class to run model
     homeDir = os.path.join(baseDir,"..","projects","utest")
-    #if os.path.isdir(homeDir) == False:
     nga = NoGuiAnalysis(homeDir,channelDict,[filePath],useSubsample=True,makeQaFigs=False,record=False,transform='logicle')
     nga.set('num_iters_mcmc', 1200)
     nga.set('subsample_qa', 2000)
     nga.set('subsample_analysis', subsample)
     nga.set('dpmm_k',96)
-    nga.set('selected_transform',transform)
     nga.set('thumbnail_results_default','components')
     
     ## declare the necessary variables
+    transform = nga.get('selected_transform')
     fileNameList = [selectedFile]
     channelList = nga.get_file_channels()
     eventsList = [nga.get_events(fn) for fn in fileNameList]
+
+    ## toggle qa and results mode
+    modelRunID = None
 
     ## create plot
     app = QtGui.QApplication(sys.argv)
@@ -766,7 +749,7 @@ if __name__ == '__main__':
                            channelList,
                            channelDict,
                            drawState='heat',
-                           modelRunID=None,
+                           modelRunID=modelRunID,
                            parent=None,
                            background=True,
                            selectedChannel1=channelDict['FSCH'],
@@ -780,7 +763,7 @@ if __name__ == '__main__':
                            minNumEvents=3,
                            showNoise=False,
                            axesLabels=True,
-                           useScaled=False,
+                           useScaled=True,
                            plotTitle="default",
                            dpi=100,
                            subsample = subsample,
