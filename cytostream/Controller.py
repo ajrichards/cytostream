@@ -99,6 +99,10 @@ class Controller:
         else:
             self.fileChannels = None
 
+        if self.channelDict == None:
+            self.channelDict = self.model.load_channel_dict()
+
+
     def labels_load(self,modelRunID,modelType='components'):
         '''
         load the labels from a given model run

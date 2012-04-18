@@ -140,14 +140,14 @@ class CytostreamPlotter(QtGui.QWidget):
             #self.subsample = np.arange(events.shape[0])
             self.subsample = 'original'
         ## case where we have a subsample but no labels 
-        elif labels == None:
+        elif self.labelList == None:
             self.subsample = self.model.get_subsample_indices(self.subsample)
         ## case where labels are smaller than subsample (usually means model was run on a subsample) 
-        elif len(labels) < self.subsample:
+        elif len(self.labelList[i]) < self.subsample:
             self.subsample = len(labels)
             self.subsample = self.model.get_subsample_indices(self.subsample)
         ## case where labels and subsample match 
-        elif len(labels) == self.subsample:
+        elif len(self.labelList[i]) == self.subsample:
             self.subsample = self.model.get_subsample_indices(self.subsample)
         else:
             print "WARNING: something unexpected occured in CytostreamPlotter subsample handeling"        
@@ -732,39 +732,28 @@ class CytostreamPlotter(QtGui.QWidget):
 
 if __name__ == '__main__':
 
-    # how to use CytostreamPlotter with fcm
-    #import fcm
+    # how to use CytostreamPlotter
     from cytostream import NoGuiAnalysis
 
     ## check that unittests were run and necessary data is present
     baseDir = os.getcwd()
-    #selectedFile = "3FITC_4PE_004"
-    #filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
-    #channelDict = {'fsc-h':0,'ssc-h':1}
-    #selectedFile = "J6901HJ1-06_CMV_CD8"
-    selectedFile = "J6901HJ1-06_Costim"
-    filePath = os.path.join(os.getenv("HOME"),"research","eqapol","EQAPOL_11C_Normal","data",selectedFile+".fcs")
-    channelDict = {'fsca':0, 'fsch':1, 'fscw':2, 'ssca':3, 'ssch':4, 'sscw':5,'cd57':6,'cd4':7,'cd14+cd19+amine':8,'cd3':9,'cd27':10,'tnfa':11,'cd8':12,'il2':13,'cd45ro':14,'cd107':15,'ifng':16,'time':17}
-
-    excludedChannels = [1,2,4,5,6]
+    selectedFile = "3FITC_4PE_004"
+    filePath = os.path.join(baseDir,"..","example_data",selectedFile+".fcs")
+    channelDict = {'FSCH':0,'SSCH':1}
     transform = 'logicle'
     subsample = 100000
 
     ## setup class to run model
-    homeDir = os.path.join(baseDir,"..","projects","cptest")
-    if os.path.isdir(homeDir) == False:
-        nga = NoGuiAnalysis(homeDir,channelDict,[filePath],useSubsample=True,makeQaFigs=False,record=False,transform='logicle')
-        nga.set('num_iters_mcmc', 1200)
-        nga.set('subsample_qa', 2000)
-        nga.set('subsample_analysis', subsample)
-        nga.set('dpmm_k',96)
-        nga.set('selected_transform',transform)
-        nga.set('excluded_channels_analysis', excludedChannels)
-        nga.set('thumbnail_results_default','components')
-        nga.run_model()
-    else:
-        nga = NoGuiAnalysis(homeDir,loadExisting=True)
-
+    homeDir = os.path.join(baseDir,"..","projects","utest")
+    #if os.path.isdir(homeDir) == False:
+    nga = NoGuiAnalysis(homeDir,channelDict,[filePath],useSubsample=True,makeQaFigs=False,record=False,transform='logicle')
+    nga.set('num_iters_mcmc', 1200)
+    nga.set('subsample_qa', 2000)
+    nga.set('subsample_analysis', subsample)
+    nga.set('dpmm_k',96)
+    nga.set('selected_transform',transform)
+    nga.set('thumbnail_results_default','components')
+    
     ## declare the necessary variables
     fileNameList = [selectedFile]
     channelList = nga.get_file_channels()
@@ -777,14 +766,14 @@ if __name__ == '__main__':
                            channelList,
                            channelDict,
                            drawState='heat',
-                           modelRunID='run1',
+                           modelRunID=None,
                            parent=None,
                            background=True,
-                           selectedChannel1=channelDict['cd3'],
-                           selectedChannel2=channelDict['ssca'],
+                           selectedChannel1=channelDict['FSCH'],
+                           selectedChannel2=channelDict['SSCH'],
                            mainWindow=None,
                            uniqueLabels=None,
-                           enableGating=True,
+                           enableGating=False,
                            homeDir=homeDir,
                            compactMode=False,
                            labelList=None,
