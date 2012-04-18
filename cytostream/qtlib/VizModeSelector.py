@@ -13,7 +13,7 @@ import sys,re
 from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import RadioBtnWidget
 
-class ModeSelector(QtGui.QWidget):
+class VizModeSelector(QtGui.QWidget):
     '''
     Class that handles the users selection of the visualization mode. Upon selection appropriate 
     changes are made to enable smooth transitions from one visualization mode to another.
@@ -98,10 +98,13 @@ class ModeSelector(QtGui.QWidget):
     def generic_callback(self):
         print 'callback does not do anything yet'
 
+    def get_num_subplots(self):
+        return str(self.numSubplotsSelector.currentText())
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
     modeList = ['mode1', 'mode2']
-    ms = ModeSelector(modeList)
+    ms = VizModeSelector(modeList)
     ms.show()
     sys.exit(app.exec_())

@@ -13,8 +13,8 @@ __author__ = "A. Richards"
 import sys,os
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
-from cytostream.qtlib import FileSelector,SubsampleSelector, ModeSelector, ModelToRunSelector
-from cytostream.qtlib import ModelTypeSelector
+from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
+from cytostream.qtlib import ModelTypeSelector,PlotSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -26,12 +26,16 @@ def add_left_dock(mainWindow):
     if mainWindow.fileSelector != None and mainWindow.log.log['selected_file'] == None:
         mainWindow.set_selected_file()
 
+    ## get file list and plot list
     fileList = get_fcs_file_names(mainWindow.controller.homeDir)
     if len(fileList) > 0:
         masterChannelList = mainWindow.model.get_master_channel_list()
 
+    numPlots = int(mainWindow.log.log['num_subplots'])
+    plotList = [str(i+1) for i in range(numPlots)]
+
     ## declare variables
-    subsampleList = ["1e03", "1e04","5e04","All Data"]
+    subsampleList = ["1e04", "1e05","5e06","All Data"]
     if mainWindow.controller.projectID == None:
         projectID = "no project loaded"
     else:
@@ -85,8 +89,22 @@ def add_left_dock(mainWindow):
         for f in excludedFiles:
             fileList.remove(f)
 
-    ## file selector
+    ## plot selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+        fsCallback = mainWindow.plot_selector_callback
+        mainWindow.plotSelector = PlotSelector(plotList,parent=mainWindow.dockWidget,
+                                               selectionFn=mainWindow.plot_selector_callback,
+                                               plotDefault=mainWindow.log.log['selected_plot'])
+        psLayout = QtGui.QHBoxLayout()
+        psLayout.setAlignment(QtCore.Qt.AlignLeft)
+        psLayout.addWidget(mainWindow.plotSelector)
+        vboxTop.addLayout(psLayout)
+        mainWindow.plotSelector.setAutoFillBackground(True)
+        mainWindow.plotSelector.setMaximumWidth(alignWidth)
+        mainWindow.plotSelector.setMinimumWidth(alignWidth)
+
+    ## file selector
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
         fsCallback = mainWindow.file_selector_callback
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.file_selector_callback,
@@ -123,16 +141,16 @@ def add_left_dock(mainWindow):
         visualizationMode = mainWindow.log.log['visualization_mode']
         btnLabels = ['thumbnails','plot',]
         modeVizCallback = mainWindow.handle_visualization_modes
-        mainWindow.modeSelector = ModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
-                                               modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
-                                               numSubplotsDefault=mainWindow.log.log['num_subplots'])
+        mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
+                                                     modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
+                                                     numSubplotsDefault=mainWindow.log.log['num_subplots'])
         rbwLayout = QtGui.QHBoxLayout()
         rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
-        rbwLayout.addWidget(mainWindow.modeSelector)
+        rbwLayout.addWidget(mainWindow.vizModeSelector)
         vboxCenter.addLayout(rbwLayout)
-        mainWindow.modeSelector.setAutoFillBackground(True)
-        mainWindow.modeSelector.setMaximumWidth(alignWidth)
-        mainWindow.modeSelector.setMinimumWidth(alignWidth)
+        mainWindow.vizModeSelector.setAutoFillBackground(True)
+        mainWindow.vizModeSelector.setMaximumWidth(alignWidth)
+        mainWindow.vizModeSelector.setMinimumWidth(alignWidth)
 
     ## model mode (type) selector
     if mainWindow.log.log['current_state'] in ['Model']:
@@ -182,7 +200,7 @@ def add_left_dock(mainWindow):
 
     ## more recreate figures
     if mainWindow.log.log['current_state'] in ['Quality Assurance']:
-        mainWindow.recreateBtn = QtGui.QPushButton("Recreate figures")
+        mainWindow.recreateBtn = QtGui.QPushButton("Recreate thumbs")
         mainWindow.recreateBtn.setMaximumWidth(140)
         mainWindow.recreateBtn.setMinimumWidth(140)
         rbLayout = QtGui.QHBoxLayout()

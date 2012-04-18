@@ -7,8 +7,9 @@ from OpenExistingProject import OpenExistingProject
 from EditMenu import EditMenu
 from Preferences import Preferences
 from FileSelector import FileSelector
+from PlotSelector import PlotSelector
 from SubsampleSelector import SubsampleSelector
-from ModeSelector import ModeSelector
+from VizModeSelector import VizModeSelector
 from ModelToRunSelector import ModelToRunSelector
 from ModelTypeSelector import ModelTypeSelector
 from KSelector import KSelector

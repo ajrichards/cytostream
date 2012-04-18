@@ -1,4 +1,4 @@
-import sys,os,re,cPickle,time
+import sys,os,re,cPickle,time,ast
 from PyQt4 import QtCore, QtGui
 
 import numpy as np
@@ -81,7 +81,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.useSimple = useSimple
         self.dpi = dpi
         self.transform = transform
-        self.useScaled = useScaled
+        self.useScaled = ast.literal_eval(str(useScaled))
         self.modelRunID = modelRunID
 
         ## additional class variables
@@ -688,8 +688,6 @@ class CytostreamPlotter(QtGui.QWidget):
                       'channel2':self.selectedChannel2,
                       'fileName':self.selectedFileName}
         
-        print 'saving', gateToSave.keys()
-
         if gateFilePath == None or gateFilePath == '':
             return 
         tmp1 = open(gateFilePath,'w')
