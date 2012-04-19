@@ -14,7 +14,7 @@ import sys,os
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
-from cytostream.qtlib import ModelTypeSelector,PlotSelector
+from cytostream.qtlib import ModelTypeSelector,PlotSelector,PlotTickControls
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -116,7 +116,7 @@ def add_left_dock(mainWindow):
         mainWindow.fileSelector.setMinimumWidth(alignWidth)
        
     ## subsample selector
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
 
         if mainWindow.log.log['current_state'] == 'Data Processing':
             subsampleDefault = mainWindow.log.log['subsample_qa']
@@ -133,19 +133,31 @@ def add_left_dock(mainWindow):
         mainWindow.subsampleSelector.setAutoFillBackground(True)
         mainWindow.subsampleSelector.setMaximumWidth(alignWidth)
         mainWindow.subsampleSelector.setMinimumWidth(alignWidth)
-       
+
+    ## PlotTickControls
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
+        mainWindow.plotTickControls = PlotTickControls(parent=mainWindow.dockWidget,mainWindow=mainWindow)
+
+        ptcLayout = QtGui.QHBoxLayout()
+        ptcLayout.setAlignment(QtCore.Qt.AlignLeft)
+        ptcLayout.addWidget(mainWindow.plotTickControls)
+        vboxTop.addLayout(ptcLayout)
+        mainWindow.plotTickControls.setAutoFillBackground(True)
+        mainWindow.plotTickControls.setMaximumWidth(alignWidth)
+        mainWindow.plotTickControls.setMinimumWidth(alignWidth)
+
     ## visualization mode selector
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
         visualizationMode = mainWindow.log.log['visualization_mode']
         btnLabels = ['thumbnails','plot',]
         modeVizCallback = mainWindow.handle_visualization_modes
         mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
                                                      modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
                                                      numSubplotsDefault=mainWindow.log.log['num_subplots'])
-        rbwLayout = QtGui.QHBoxLayout()
-        rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
-        rbwLayout.addWidget(mainWindow.vizModeSelector)
-        vboxCenter.addLayout(rbwLayout)
+        vmsLayout = QtGui.QHBoxLayout()
+        vmsLayout.setAlignment(QtCore.Qt.AlignLeft)
+        vmsLayout.addWidget(mainWindow.vizModeSelector)
+        vboxTop.addLayout(vmsLayout)
         mainWindow.vizModeSelector.setAutoFillBackground(True)
         mainWindow.vizModeSelector.setMaximumWidth(alignWidth)
         mainWindow.vizModeSelector.setMinimumWidth(alignWidth)
@@ -157,10 +169,10 @@ def add_left_dock(mainWindow):
         mmCallback = mainWindow.handle_model_mode_callback
         mainWindow.modelModeSelector = ModelTypeSelector(btnLabels,parent=mainWindow.dockWidget,modelTypeDefault=mmDefault,
                                                          modelTypeCallback=mmCallback)
-        rbwLayout = QtGui.QHBoxLayout()
-        rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
-        rbwLayout.addWidget(mainWindow.modelModeSelector)
-        vboxCenter.addLayout(rbwLayout)
+        mmsLayout = QtGui.QHBoxLayout()
+        mmsLayout.setAlignment(QtCore.Qt.AlignLeft)
+        mmsLayout.addWidget(mainWindow.modelModeSelector)
+        vboxCenter.addLayout(mmsLayout)
         mainWindow.modelModeSelector.setAutoFillBackground(True)
         mainWindow.modelModeSelector.setMaximumWidth(alignWidth)
         mainWindow.modelModeSelector.setMinimumWidth(alignWidth)
@@ -172,10 +184,10 @@ def add_left_dock(mainWindow):
         mtrCallback = mainWindow.handle_model_to_run_callback
         mainWindow.modelToRunSelector = ModelToRunSelector(btnLabels,parent=mainWindow.dockWidget,mtrDefault=mtrDefault,
                                                            mtrCallback=mtrCallback)
-        rbwLayout = QtGui.QHBoxLayout()
-        rbwLayout.setAlignment(QtCore.Qt.AlignLeft)
-        rbwLayout.addWidget(mainWindow.modelToRunSelector)
-        vboxCenter.addLayout(rbwLayout)
+        mtrLayout = QtGui.QHBoxLayout()
+        mtrLayout.setAlignment(QtCore.Qt.AlignLeft)
+        mtrLayout.addWidget(mainWindow.modelToRunSelector)
+        vboxCenter.addLayout(mtrLayout)
         mainWindow.modelToRunSelector.setAutoFillBackground(True)
         mainWindow.modelToRunSelector.setMaximumWidth(alignWidth)
         mainWindow.modelToRunSelector.setMinimumWidth(alignWidth)

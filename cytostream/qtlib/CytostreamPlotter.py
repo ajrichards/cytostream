@@ -27,7 +27,6 @@ class CytostreamPlotter(QtGui.QWidget):
     '''
     wrapper class that handles nearly all plotting in cytostream
     class is also stand alone -- working outside the cytostream environment
-
     '''
 
     def __init__(self,fileNameList,eventsList,channelList,channelDict,
@@ -322,19 +321,6 @@ class CytostreamPlotter(QtGui.QWidget):
             self.vertSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
             self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.gate_vert_selector_callback)
             self.vertSlider.setEnabled(False)
-
-        #self.grid_cb = QtGui.QCheckBox("Grid")
-        #self.grid_cb.setChecked(False)
-        #self.connect(self.grid_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
-        #self.scale_cb = QtGui.QCheckBox("Scale")
-        #self.scale_cb.setChecked(self.useScaled)
-        #self.connect(self.scale_cb,QtCore.SIGNAL('stateChanged(int)'), self.draw)
-        #self.axLab_cb = QtGui.QCheckBox("Axes")
-        #self.axLab_cb.setChecked(self.axesLabels)
-        #self.connect(self.axLab_cb,QtCore.SIGNAL('stateChanged(int)'), self.axes_labels_set_callback)
-        #self.title_cb = QtGui.QCheckBox("Title")
-        #self.title_cb.setChecked(True)
-        #self.connect(self.title_cb,QtCore.SIGNAL('stateChanged(int)'), self.title_set_callback)
 
         if self.compactMode == False:
             self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,vertical=True)
