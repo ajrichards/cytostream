@@ -63,11 +63,8 @@ class VizModeSelector(QtGui.QWidget):
         hbox3.addWidget(QtGui.QLabel('subplots'))
         hbox3.addWidget(self.numSubplotsSelector)
 
-        if self.numSubplotsList.__contains__(numSubplotsDefault):
-            self.numSubplotsSelector.setCurrentIndex(0)
-        else:
-            print "ERROR: in ModeSelector.numSubplotsSelector - bad specified default", numSubplotsDefault
-
+        self.update_num_subplots(numSubplotsDefault)
+        
         if numSubplotsCallback == None:
             numSubplotsCallback = self.generic_callback
         self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), numSubplotsCallback) 
@@ -83,6 +80,13 @@ class VizModeSelector(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
+
+    def update_num_subplots(self,numSubplotsDefault):
+        numSubplotsDefault = str(numSubplotsDefault)
+        if self.numSubplotsList.__contains__(numSubplotsDefault):
+            self.numSubplotsSelector.setCurrentIndex(self.numSubplotsList.index(numSubplotsDefault))
+        else:
+            print "ERROR: in vizModeSelector - bad specified default", numSubplotsDefault
 
     def get_selected(self):
         return self.modeSelector.selectedItem
@@ -100,6 +104,7 @@ class VizModeSelector(QtGui.QWidget):
 
     def get_num_subplots(self):
         return str(self.numSubplotsSelector.currentText())
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

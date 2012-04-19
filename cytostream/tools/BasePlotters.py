@@ -312,26 +312,26 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     fontName = get_fontname()
     fontSize = get_fontsize(numSubplots)
 
-    if parent != None and channel1Ind != None:
-        parent.selectedChannel1=channel1Ind
-        parent.channel1Selector.setCurrentIndex(parent.selectedChannel1)
-    if parent != None and channel2Ind != None:
-        parent.selectedChannel2=channel2Ind
-        parent.channel2Selector.setCurrentIndex(parent.selectedChannel2)
+    ##if parent != None and channel1Ind != None:
+    ##    parent.selectedChannel1=channel1Ind
+    ##    parent.channel1Selector.setCurrentIndex(parent.selectedChannel1)
+    ##if parent != None and channel2Ind != None:
+    ##    parent.selectedChannel2=channel2Ind
+    ##    parent.channel2Selector.setCurrentIndex(parent.selectedChannel2)
 
     if numSubplots == None:
         numSubplots = 1
 
     ## highlight
-    if parent != None and str(parent.selectedHighlight) == "None":
-        parent.selectedHighlight = None
-    elif parent != None and str(parent.selectedHighlight) != "None":
-        highlight = [parent.selectedHighlight]
+    ####if parent != None and str(parent.selectedHighlight) == "None":
+    ####    parent.selectedHighlight = None
+    ####elif parent != None and str(parent.selectedHighlight) != "None":
+    ####    highlight = [parent.selectedHighlight]
 
     ## clear axis
     ax.clear()
-    if parent != None:
-        parent.ax.grid(parent.grid_cb.isChecked())
+    ##########if parent != None:
+    ###########    parent.ax.grid(parent.grid_cb.isChecked())
     
     if type(labels) == type([]):
         labels = np.array(labels)
@@ -440,13 +440,13 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots,drawState)
         
         ## handle title and labels
-        if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
-            plotTitle = re.sub("_"," ",plotTitle)
-            parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
+        ####if parent != None and parent.title_cb.isChecked() == True and plotTitle != None:
+        ####    plotTitle = re.sub("_"," ",plotTitle)
+        ####    parent.ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
-        if parent != None and parent.axLab_cb.isChecked == False:
-            pass
-        elif axesLabels == False:
+        ####if parent != None and parent.axLab_cb.isChecked == False:
+        ####    pass
+        if axesLabels == False:
             pass
         else:
             if len(channelList) < channel1Ind + 1:
@@ -463,10 +463,10 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
         ## check for forced scaling
-        if parent != None and parent.scale_cb.isChecked() == True:
-            useScaled = True
-        elif parent != None and parent.scale_cb.isChecked() == False:        
-            useScaled = False
+        ####if parent != None and parent.scale_cb.isChecked() == True:
+        ####    useScaled = True
+        ####elif parent != None and parent.scale_cb.isChecked() == False:        
+        ####    useScaled = False
 
         finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:

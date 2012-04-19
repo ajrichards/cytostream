@@ -55,7 +55,7 @@ class PlotSelector(QtGui.QWidget):
 
         if selectionFn == None:
             selectionFn = self.generic_callback
-        self.connect(self.plotSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
+        self.connect(self.plotSelector,QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -67,25 +67,22 @@ class PlotSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
-    def set_refresh_thumbs_fn(self,refreshFn):
-        self.connect(self.plotSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn)
-        if self.modelSelector != None:
-            self.connect(self.modelSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn) 
-        
     def get_selected_plot(self):
         sfInd = self.plotSelector.currentIndex()
         sf = str(self.plotSelector.currentText())
 
-        return sf+".fcs", sfInd
-
-    def get_selected_model(self):
-        smInd = self.modelSelector.currentIndex()
-        sm = str(self.modelSelector.currentText())
-        
-        return sm, smInd
+        return sf,sfInd
 
     def generic_callback(self):
         print 'callback does not do anything yet'
+
+    def ensure_correct_options(self,numPlots):
+        #numPlots = int(str(self.plotSelector.currentText()))
+        self.plotSelector.clear()
+        self.plotList = [str(i+1) for i in range(numPlots)]
+        self.plotList = [str(int(f)) for f in self.plotList]
+        for plotName in self.plotList:
+            self.plotSelector.addItem(plotName)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
