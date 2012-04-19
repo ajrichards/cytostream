@@ -17,6 +17,7 @@ from EditMenu import EditMenu
 from Preferences import Preferences
 from FileSelector import FileSelector
 from PlotSelector import PlotSelector
+from PlotTickControls import PlotTickControls
 from SubsampleSelector import SubsampleSelector
 from VizModeSelector import VizModeSelector
 from ModelToRunSelector import ModelToRunSelector

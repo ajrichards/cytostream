@@ -29,7 +29,8 @@ class NWayViewer(QtGui.QWidget):
         self.background = background
         self.modelType = modelType
         self.mainWindow = mainWindow
-
+        self.plots = {}
+ 
         ## ensure valid input
         if self.figMode == 'qa':
             self.runs = [None for i in self.runs]
@@ -88,7 +89,8 @@ class NWayViewer(QtGui.QWidget):
                                    )
 
             cp.draw(selectedFile=self.controller.fileNameList[self.files[i]])
-            
+            self.plots[str(i+1)] = cp
+
             if self.numSubplots in [1,2,3]:
                 self.hbl1.addWidget(cp)
             elif self.numSubplots in [4]:

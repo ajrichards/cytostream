@@ -96,9 +96,10 @@ class MainWindow(QtGui.QMainWindow):
         self.dockWidget = None
         self.fileSelector = None
         self.plotSelector = None
+        self.plotTickControls = None
         self.vizModeSelector = None
         self.subsampleSelector = None
-        self.pDock = None       
+        self.pDock = None
         self.dock = None
         self.tv = None
         self.allFilePaths = []
@@ -587,6 +588,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.fileSelector.setEnabled(False)
             if self.plotSelector:
                 self.plotSelector.setEnabled(False)
+            if self.plotTickControls:
+                self.plotTickControls.setEnabled(False)
             if self.vizModeSelector:
                 self.vizModeSelector.setEnabled(True)
                 self.vizModeSelector.set_checked(mode)
@@ -601,11 +604,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.fileSelector.setEnabled(True)
             if self.plotSelector:
                 self.plotSelector.setEnabled(True)
+            if self.plotTickControls:
+                self.plotTickControls.setEnabled(True)
             if self.vizModeSelector:
                 self.vizModeSelector.setEnabled(True)
                 self.vizModeSelector.set_checked(mode)
             if self.subsampleSelector:
-                self.subsampleSelector.setEnabled(False)
+                self.subsampleSelector.setEnabled(True)
             self.pDock.contBtn.setEnabled(True)
             self.pDock.enable_disable_states()
 
@@ -712,7 +717,6 @@ class MainWindow(QtGui.QMainWindow):
     def set_selected_subsample(self):
         '''
         set the selected subsample
-
         '''
 
         selectedSubsample, selectedSubsampleInd = self.subsampleSelector.get_selected_subsample() 
@@ -729,7 +733,6 @@ class MainWindow(QtGui.QMainWindow):
     def get_master_channel_list(self):
         ''' 
         returns the master channels list
-
         '''
 
         if self.controller.masterChannelList == None or len(self.controller.masterChannelList) == 0:
