@@ -15,6 +15,7 @@ from BasicFunctions import move_transition
 from OpenExistingProject import OpenExistingProject
 from EditMenu import EditMenu
 from Preferences import Preferences
+from ChannelSelector import ChannelSelector
 from FileSelector import FileSelector
 from PlotSelector import PlotSelector
 from PlotTickControls import PlotTickControls

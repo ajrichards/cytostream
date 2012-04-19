@@ -14,7 +14,7 @@ import sys,os,ast
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
-from cytostream.qtlib import ModelTypeSelector,PlotSelector,PlotTickControls
+from cytostream.qtlib import ModelTypeSelector,PlotSelector,PlotTickControls,ChannelSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -133,6 +133,24 @@ def add_left_dock(mainWindow):
         mainWindow.subsampleSelector.setAutoFillBackground(True)
         mainWindow.subsampleSelector.setMaximumWidth(alignWidth)
         mainWindow.subsampleSelector.setMinimumWidth(alignWidth)
+
+    ## channel selector
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
+
+        #if mainWindow.log.log['current_state'] == 'Data Processing':
+        #    subsampleDefault = mainWindow.log.log['subsample_qa']
+        #else:
+        #    subsampleDefault = mainWindow.log.log['subsample_analysis']
+
+        channelList = mainWindow.controller.fileChannels
+        mainWindow.channelSelector = ChannelSelector(channelList,parent=mainWindow.dockWidget)
+        csLayout = QtGui.QHBoxLayout()
+        csLayout.setAlignment(QtCore.Qt.AlignLeft)
+        csLayout.addWidget(mainWindow.channelSelector)
+        vboxTop.addLayout(csLayout)
+        mainWindow.channelSelector.setAutoFillBackground(True)
+        mainWindow.channelSelector.setMaximumWidth(alignWidth)
+        mainWindow.channelSelector.setMinimumWidth(alignWidth)
 
     ## PlotTickControls
     scaleDefault = ast.literal_eval(str(mainWindow.log.log['use_scaled_plots']))
