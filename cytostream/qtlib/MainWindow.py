@@ -444,9 +444,13 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         vizModeList = ['thumbnails','plot']
-        
         if item not in vizModeList:
             self.log.log['num_subplots'] = self.vizModeSelector.get_num_subplots()
+            print 'got num subplots', self.vizModeSelector.get_num_subplots()
+            if self.plotSelector:
+                self.plotSelector.ensure_correct_options(int(self.vizModeSelector.get_num_subplots()))
+            print 'inside handle vis modes', 
+
             item = 'plot'
 
         currentState = self.log.log['current_state']
@@ -605,47 +609,6 @@ class MainWindow(QtGui.QMainWindow):
             self.pDock.contBtn.setEnabled(True)
             self.pDock.enable_disable_states()
 
-        '''
-        ## error check
-        if self.log.log['current_state'] not in ['Quality Assurance', 'Results Navigation']:
-            print "ERROR: MainWindow: plots_enable_disable -- called from bad state"
-
-        ## docks check
-        if self.dockWidget == None:
-            add_left_dock(self)
-
-        if self.pDock == None:
-            self.add_pipeline_dock()
-
-        ## enable/disable
-        ast.literal_eval(str(item)if self.log.log['current_state'] == 'Quality Assurance':
-            self.subsampleSelector.setEnabled(False)
-            self.recreateBtn.setEnabled(True)
-                        self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)                                                                                        
-            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figursself.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_elf.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
-
-        if self.log.log['current_state'] == 'Results Navigation':
-            self.pDock.contBtn.setEnabled(False)
-
-        print 'plots enable disable', mode
-
-        
-        if self.fileSelector:
-            self.fileSelector.setEnabled(False)
-        if self.plotSelector:
-            self.plotSelector.setEnabled(False)
-        if self.vizModeSelector:
-            self.vizModeSelector.setEnabled(True)
-            self.vizModeSelector.set_checked(mode)
-                        
-        self.pDock.contBtn.setEnabled(True)
-        self.pDock.enable_disable_states()
-
-        if self.log.log['current_state'] == 'Quality Assurance':
-            self.pDock.enable_continue_btn(lambda a=self:self.transitions.move_to_model_run(a))
-        
-        '''
-
     def display_thumbnails(self,runNew=False):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
@@ -730,26 +693,20 @@ class MainWindow(QtGui.QMainWindow):
         '''
         callback function for PlotSelector movement
         '''
-        self.set_selected_plot()
-        vizMode = str(self.vizModeSelector.get_selected())
-        self.handle_visualization_modes(item=vizMode)
+        selectedPlot,selectedPlotInd = self.plotSelector.get_selected_plot() 
+        if selectedPlot == '':
+            return None
+        selectedPlot = int(selectedPlot)
+        if selectedPlot > 0:
+            self.log.log['selected_plot'] = selectedPlot
 
     def set_selected_file(self):
         '''
-        set the selecte file
+        set the selected file
         '''
 
         selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
         self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
-        self.controller.save()
-
-    def set_selected_plot(self):
-        '''
-        set the selecte plot
-        '''
-
-        selectedPlot, selectedPlotInd = self.plotSelector.get_selected_plot() 
-        self.log.log['selected_plot'] = selectedPlot
         self.controller.save()
 
     def set_selected_subsample(self):
@@ -818,7 +775,7 @@ class MainWindow(QtGui.QMainWindow):
         ## handle transition from thumbnails to plot view
         if img != None:
             self.log.log['num_subplots'] = 1
-            
+            self.vizModeSelector.update_num_subplots(1)
             channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
             channels = re.split("\_",channels)
             chanI = channels[-2]

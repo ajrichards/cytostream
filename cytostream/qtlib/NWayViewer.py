@@ -54,7 +54,7 @@ class NWayViewer(QtGui.QWidget):
         else:
             print "ERROR: NWayViewer invalid results mode"
 
-        if self.numSubplots > 6:
+        if self.numSubplots > 1:
             compactMode = True
         else:
             compactMode = False
@@ -83,7 +83,8 @@ class NWayViewer(QtGui.QWidget):
                                    plotTitle="default",
                                    dpi=100,
                                    subsample = subsample,
-                                   transform=self.controller.log.log['selected_transform']
+                                   transform=self.controller.log.log['selected_transform'],
+                                   subplotNum=i+1
                                    )
 
             cp.draw(selectedFile=self.controller.fileNameList[self.files[i]])

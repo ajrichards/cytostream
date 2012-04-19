@@ -90,8 +90,7 @@ def add_left_dock(mainWindow):
             fileList.remove(f)
 
     ## plot selector
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
-        fsCallback = mainWindow.plot_selector_callback
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
         mainWindow.plotSelector = PlotSelector(plotList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.plot_selector_callback,
                                                plotDefault=mainWindow.log.log['selected_plot'])
@@ -105,7 +104,6 @@ def add_left_dock(mainWindow):
 
     ## file selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
-        fsCallback = mainWindow.file_selector_callback
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,
                                                selectionFn=mainWindow.file_selector_callback,
                                                fileDefault=mainWindow.log.log['selected_file'])
