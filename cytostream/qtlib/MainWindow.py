@@ -806,14 +806,14 @@ class MainWindow(QtGui.QMainWindow):
         else:
             print "ERROR: MainWindow --- unspecified state"
 
-        nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
+        self.nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
                          self.log.log['plots_to_view_runs'],self.log.log['plots_to_view_highlights'],
                          self.log.log['num_subplots'],figMode=figMode,background=True,modelType='components',
                          useScaled=self.log.log['use_scaled_plots'],parent=self)
         
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.addWidget(nwv)
+        hbl.addWidget(self.nwv)
 
         ## enable/disable
         self.plots_enable_disable(mode='plot')

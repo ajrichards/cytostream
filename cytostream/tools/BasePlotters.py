@@ -245,6 +245,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     args[15] = showNoise               [optional]  True | False
     args[16] = useSimple               [optional]  False | True
     args[17] = useScaled               [optional]  False | True
+    args[18] = isGui                   [optional]  False | True
 
     '''
 
@@ -267,6 +268,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     showNoise    = args[15]
     useSimple    = args[16]
     useScaled    = args[17]
+    isGui        = args[18]
 
     ## force drawState to heat if necessary
     if labels == None and drawState != 'heat':
@@ -330,8 +332,6 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
 
     ## clear axis
     ax.clear()
-    ##########if parent != None:
-    ###########    parent.ax.grid(parent.grid_cb.isChecked())
     
     if type(labels) == type([]):
         labels = np.array(labels)
@@ -457,16 +457,12 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
                 print "WARNING: draw_plot -- bad channel index specified max(%s)"%len(channelList), channel2Ind 
             else:
                 ax.set_ylabel(re.sub("_"," ",channelList[channel2Ind]),fontname=fontName,fontsize=fontSize)
+                if isGui == True:
+                    ax.yaxis.set_label_position('right')
 
         if plotTitle != None and plotTitle != False:
             plotTitle = re.sub("_"," ",plotTitle)
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
-
-        ## check for forced scaling
-        ####if parent != None and parent.scale_cb.isChecked() == True:
-        ####    useScaled = True
-        ####elif parent != None and parent.scale_cb.isChecked() == False:        
-        ####    useScaled = False
 
         finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:

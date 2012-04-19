@@ -89,8 +89,11 @@ class NWayViewer(QtGui.QWidget):
                                    )
 
             cp.draw(selectedFile=self.controller.fileNameList[self.files[i]])
+
+            ## store widget for editing
             self.plots[str(i+1)] = cp
 
+            ## widget layout
             if self.numSubplots in [1,2,3]:
                 self.hbl1.addWidget(cp)
             elif self.numSubplots in [4]:

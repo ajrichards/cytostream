@@ -232,7 +232,7 @@ class SaveSubplots():
             showNoise = False
 
             ## handle args
-            args = [None for i in range(18)]
+            args = [None for i in range(19)]
             args[0] = self.get_axes(subplotIndex)
             args[1] = events
             args[2] = self.channelList
@@ -251,6 +251,7 @@ class SaveSubplots():
             args[15] = showNoise
             args[16] = self.useSimple
             args[17] = self.useScale
+            args[18] = False
 
             ## add a line if specified {subplot:(lineX,lineY)}
             indicesFG = draw_plot(args,axesOff=self.axesOff)

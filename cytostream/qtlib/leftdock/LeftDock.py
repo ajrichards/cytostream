@@ -10,7 +10,7 @@ based on the state these functions control which widget appear in the left dock
 
 __author__ = "A. Richards"
 
-import sys,os
+import sys,os,ast
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
@@ -135,9 +135,10 @@ def add_left_dock(mainWindow):
         mainWindow.subsampleSelector.setMinimumWidth(alignWidth)
 
     ## PlotTickControls
+    scaleDefault = ast.literal_eval(str(mainWindow.log.log['use_scaled_plots']))
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
-        mainWindow.plotTickControls = PlotTickControls(parent=mainWindow.dockWidget,mainWindow=mainWindow)
-
+        mainWindow.plotTickControls = PlotTickControls(parent=mainWindow.dockWidget,mainWindow=mainWindow,
+                                                       scaleDefault=scaleDefault)
         ptcLayout = QtGui.QHBoxLayout()
         ptcLayout.setAlignment(QtCore.Qt.AlignLeft)
         ptcLayout.addWidget(mainWindow.plotTickControls)
