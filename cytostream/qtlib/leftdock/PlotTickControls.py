@@ -77,26 +77,74 @@ class PlotTickControls(QtGui.QWidget):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
-            print 'main window does something'
+            showGrid = self.gridCB.isChecked()
+            numPlots     = self.mainWindow.log.log['num_subplots']
 
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    self.mainWindow.nwv.plots[selectedPlot].grid_toggle_callback(showGrid)
+            else:
+                self.mainWindow.nwv.plots[selectedPlot].grid_toggle_callback(showGrid)
+            
     def title_callback(self):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
-            print 'main window does something'
+            showTitle = self.titleCB.isChecked()
+            numPlots     = self.mainWindow.log.log['num_subplots']
+
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    self.mainWindow.nwv.plots[selectedPlot].title_toggle_callback(showTitle)
+            else:
+                self.mainWindow.nwv.plots[selectedPlot].title_toggle_callback(showTitle)
 
     def scale_callback(self):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
-            print 'main window does something'
+            useScaled = self.scaleCB.isChecked()
+            #selectedFile = self.mainWindow.log.log['selected_file']
+            numPlots     = self.mainWindow.log.log['num_subplots']
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    self.mainWindow.nwv.plots[selectedPlot].useScaled = useScaled
+                    self.mainWindow.nwv.plots[selectedPlot].draw()
+            else:
+                self.mainWindow.nwv.plots[selectedPlot].useScaled = useScaled
+                self.mainWindow.nwv.plots[selectedPlot].draw()
 
     def axes_callback(self):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
-            print 'main window does something'
+            axesLabels = self.axesCB.isChecked()
+            numPlots     = self.mainWindow.log.log['num_subplots']
 
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    self.mainWindow.nwv.plots[selectedPlot].axesLabels = axesLabels
+                    self.mainWindow.nwv.plots[selectedPlot].axes_labels_toggle_callback(axesLabels)
+            else:
+                self.mainWindow.nwv.plots[selectedPlot].axesLabels = axesLabels
+                self.mainWindow.nwv.plots[selectedPlot].axes_labels_toggle_callback(axesLabels)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -197,6 +197,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args[15] = showNoise                [optional]  True | False
         args[16] = useSimple                [optional]  False | True
         args[17] = useScaled                [optional]  False | True
+        args[18] = isGui                    [optional]  False | True
            
         '''
 
@@ -211,7 +212,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.gate_clear_callback()
 
         ## handle args
-        args = [None for i in range(18)]
+        args = [None for i in range(19)]
         args[0] = self.ax
         args[1] = self.eventsList[self.fileNameList.index(self.selectedFileName)]
         self.selectedEvents = self.eventsList[self.fileNameList.index(self.selectedFileName)]
@@ -236,10 +237,12 @@ class CytostreamPlotter(QtGui.QWidget):
         args[15] = self.showNoise
         args[16] = self.useSimple
         args[17] = self.useScaled
+        args[18] = True
 
         ## draw on canvas
         draw_plot(args,parent=self)
         self.fig.canvas.draw()
+        print 'figure drawn'
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()
@@ -395,13 +398,6 @@ class CytostreamPlotter(QtGui.QWidget):
         masterBox.addLayout(plotBox)
         self.setLayout(masterBox)
 
-    def force_scale_callback(self,index=None):
-        if self.forceScale == False and self.xAxLimit == None:
-            msg = 'Function not available for single plots'
-            QtGui.QMessageBox.information(self, "Info", msg)
-            self.forceScale == False
-            self.force_cb.setChecked(False)
-
     def channel1_selector_callback(self,selectedInd):
         print '......'
         timeStart = time.time()
@@ -457,6 +453,34 @@ class CytostreamPlotter(QtGui.QWidget):
             else:
                 self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
             self.mainWindow.controller.save()
+
+    def grid_toggle_callback(self,showGrid):
+        '''
+        function called from left dock to toggle grid
+        '''
+        self.ax.grid(showGrid) 
+        self.canvas.draw()
+
+    def title_toggle_callback(self,showTitle):
+        '''
+        function called from left dock to toggle title without replot
+        '''
+
+        if self.plotTitle != None:
+            if self.plotTitle != 'default':
+                self.ax.set_title(re.sub("_"," ",self.plotTitle),fontname=self.fontName,fontsize=self.fontSize,visible=showTitle)
+            else:
+                self.ax.set_title(re.sub("_"," ",self.selectedFileName),fontname=self.fontName,fontsize=self.fontSize,visible=showTitle)
+        self.canvas.draw()
+
+    def axes_labels_toggle_callback(self,showAxisLabels):
+        '''
+        function called from left dock to toggle axis without replot
+        '''
+
+        self.ax.set_xlabel(self.channelList[self.selectedChannel1],fontname=self.fontName,fontsize=self.fontSize,visible=showAxisLabels)
+        self.ax.set_ylabel(self.channelList[self.selectedChannel2],fontname=self.fontName,fontsize=self.fontSize,visible=showAxisLabels)
+        self.canvas.draw()
 
     def gate_select_callback(self,ind):
 
@@ -525,23 +549,6 @@ class CytostreamPlotter(QtGui.QWidget):
         gy = np.array([g[1] for g in gate])
         self.line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
         self.ax.add_line(self.line)
-        self.canvas.draw()
-
-    def title_set_callback(self,cb):
-        if self.title_cb.isChecked() == True and self.plotTitle != None:
-            self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=True)
-        else:
-            self.ax.set_title(self.plotTitle,fontname=self.fontName,fontsize=self.fontSize,visible=False)
-        self.canvas.draw()
-
-    def axes_labels_set_callback(self,cb):
-        if self.axLab_cb.isChecked() == True:
-            self.ax.set_xlabel(self.channelList[self.selectedChannel1],fontname=self.fontName,fontsize=self.fontSize,visible=True)
-            self.ax.set_ylabel(self.channelList[self.selectedChannel2],fontname=self.fontName,fontsize=self.fontSize,visible=True)
-        else:
-            self.ax.set_xlabel(self.channelList[self.selectedChannel1],fontname=self.fontName,fontsize=self.fontSize,visible=False)
-            self.ax.set_ylabel(self.channelList[self.selectedChannel2],fontname=self.fontName,fontsize=self.fontSize,visible=False)
-
         self.canvas.draw()
 
     def gate_clear_callback(self):

@@ -145,7 +145,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(scale)
         ax.set_xticks(minorTicks,minor=True)
-        ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_xticklabels(labels,fontsize=fontsize-2,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
         ax.set_xlim([0, 1e05])
 
@@ -153,7 +153,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     if axis in ['y','both']:
         ax.set_yticks(scale)
         ax.set_yticks(minorTicks, minor=True)
-        ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_yticklabels(labels,fontsize=fontsize-2,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, 1e05])
 
@@ -181,7 +181,7 @@ def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     if axis in ['x','both']:
         ax.set_xticks(scale)
         ax.set_xticks(minorTicks,minor=True)
-        ax.set_xticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_xticklabels(labels,fontsize=fontsize-2,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
         ax.set_xlim([0, np.log10(262144)])
 
@@ -189,7 +189,7 @@ def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
     if axis in ['y','both']:
         ax.set_yticks(scale)
         ax.set_yticks(minorTicks, minor=True)
-        ax.set_yticklabels(labels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_yticklabels(labels,fontsize=fontsize-2,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, np.log10(262144)])
 
@@ -211,35 +211,34 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
     ## format the x axix
     if axis in ['x','both']:
         ax.set_xticks(tickVals)
-        ax.set_xticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_xticklabels(tickLabels,fontsize=fontsize-2,fontname=fontname)
         ax.xaxis.set_ticks_position('bottom')
         ax.set_xlim([0, 262144])
 
     ## format the y axis
     if axis in ['y','both']:
         ax.set_yticks(tickVals)
-        ax.set_yticklabels(tickLabels,fontsize=fontsize-1,fontname=fontname)
+        ax.set_yticklabels(tickLabels,fontsize=fontsize-2,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
-        ax.set_ylim([0, 262144])
+        ax.set_ylim([0,262144])
 
 def get_fontsize(numSubplots):
-
     if numSubplots in [1]:
         fontSize = 11
     elif numSubplots in [2]:
         fontSize = 10
     elif numSubplots in [3]:
-        fontSize = 8
-    elif numSubplots in [4]:
-        fontSize = 8
-    elif numSubplots in [5,6]:
         fontSize = 7
-    elif numSubplots in [7,8,9]:
+    elif numSubplots in [4]:
         fontSize = 6
-    elif numSubplots in [10,11,12]:
+    elif numSubplots in [5,6]:
         fontSize = 5
-    elif numSubplots in [13,14,15,16]:
+    elif numSubplots in [7,8,9]:
         fontSize = 4
+    elif numSubplots in [10,11,12]:
+        fontSize = 3
+    elif numSubplots in [13,14,15,16]:
+        fontSize = 3
 
     return fontSize
 
