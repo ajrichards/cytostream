@@ -75,6 +75,7 @@ class QualityAssuranceCenter(QtGui.QWidget):
         self.mainWindow.recreateBtn.setEnabled(False)
         self.mainWindow.fileSelector.setEnabled(False)
         self.mainWindow.plotSelector.setEnabled(False)
+        self.mainWindow.plotTickControls.setEnabled(False)
         self.mainWindow.vizModeSelector.setEnabled(False)
         self.mainWindow.saveImgsBtn.setEnabled(False)
         self.mainWindow.subsampleSelector.setEnabled(True)
