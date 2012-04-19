@@ -1,3 +1,12 @@
+import sys,os
+
+## add the leftdock files
+if hasattr(sys, 'frozen'):
+    baseDir = os.path.dirname(sys.executable)
+    baseDir = re.sub("MacOS","Resources",self.baseDir)
+else:
+    baseDir = os.path.dirname(__file__)
+sys.path.append(os.path.join(baseDir,'leftdock'))
 
 ## files requiring no cytostream deps
 from MoreInfo import *

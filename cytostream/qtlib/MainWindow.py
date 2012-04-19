@@ -679,7 +679,7 @@ class MainWindow(QtGui.QMainWindow):
         Left dock button callback to return to Results Nav. menu
         '''
 
-        self.transitions.move_to_results_navigation()
+        self.transitions.move_to_model_results()
 
     def file_selector_callback(self,item=None):
         '''
@@ -696,7 +696,7 @@ class MainWindow(QtGui.QMainWindow):
         selectedPlot,selectedPlotInd = self.plotSelector.get_selected_plot() 
         if selectedPlot == '':
             return None
-        selectedPlot = int(selectedPlot)
+        selectedPlot = str(selectedPlot)
         if selectedPlot > 0:
             self.log.log['selected_plot'] = selectedPlot
 
@@ -743,24 +743,24 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        print '...refreshing state',self.log.log['current_state']
-
         if self.log.log['current_state'] == "Data Processing":
             self.transitions.move_to_data_processing(withProgressBar=withProgressBar)
         elif self.log.log['current_state'] == "Quality Assurance":
             self.transitions.move_to_quality_assurance(mode=qaMode)
         elif self.log.log['current_state'] == "Model":
             self.transitions.move_to_model_run()
-        #elif self.log.log['current_state'] == "Model Results":
-        #    self.transitions.move_to_model_results()
+        elif self.log.log['current_state'] == "Model Results":
+            self.transitions.move_to_model_results()
         elif self.log.log['current_state'] == "Analysis":
             self.transitions.move_to_analysis(self)
-        elif self.log.log['current_state'] == "File Aligner":
-            self.transitions.move_to_file_aligner(self)
-        elif self.log.log['current_state'] == "Supervised Learning":
-            self.transitions.move_to_supervised_learning(self)
-        elif self.log.log['current_state'] == "Positivity Thresholding":
-            self.transitions.move_to_positivity_thresholding(self)
+        elif self.log.log['current_state'] == "Sample Aligner":
+            self.transitions.move_to_sample_aligner(self)
+        elif self.log.log['current_state'] == "Basic Subsets":
+            self.transitions.move_to_basic_subsets(self)
+        elif self.log.log['current_state'] == "Positivity":
+            self.transitions.move_to_positivity(self)
+        elif self.log.log['current_state'] == "Analysis Results":
+            self.transitions.move_to_analysis_results(self)
         elif self.log.log['current_state'] == "Reports":
             self.transitions.move_to_reports(self)
         else:

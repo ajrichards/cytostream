@@ -19,7 +19,7 @@ class PlotSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, plotList, color='white', parent=None, modelsRun=None, plotDefault='1', selectionFn=None):
+    def __init__(self,plotList,color='white',parent=None,modelsRun=None,plotDefault='1',selectionFn=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -40,14 +40,17 @@ class PlotSelector(QtGui.QWidget):
         hbox1.addWidget(QtGui.QLabel('selected plot'))
         self.plotSelector = QtGui.QComboBox(self)
         
-        self.plotList = [str(int(f)) for f in self.plotList]
+        if len(self.plotList) > 1:
+            self.plotList = ['*']+[str(int(f)) for f in self.plotList]
+        else:
+            self.plotList = [str(int(f)) for f in self.plotList]
         for plotName in self.plotList:
             self.plotSelector.addItem(plotName)
 
         hbox1.addWidget(self.plotSelector)
      
         if plotDefault != None:
-            plotDefault = str(int(plotDefault))
+            plotDefault = str(plotDefault)
             if self.plotList.__contains__(plotDefault):
                 self.plotSelector.setCurrentIndex(self.plotList.index(plotDefault))
             else:
@@ -77,10 +80,13 @@ class PlotSelector(QtGui.QWidget):
         print 'callback does not do anything yet'
 
     def ensure_correct_options(self,numPlots):
-        #numPlots = int(str(self.plotSelector.currentText()))
         self.plotSelector.clear()
         self.plotList = [str(i+1) for i in range(numPlots)]
-        self.plotList = [str(int(f)) for f in self.plotList]
+        if len(self.plotList) > 1:
+            self.plotList = ['*']+[str(int(f)) for f in self.plotList]
+        else:
+            self.plotList = [str(int(f)) for f in self.plotList]
+      
         for plotName in self.plotList:
             self.plotSelector.addItem(plotName)
 
