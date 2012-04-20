@@ -199,12 +199,14 @@ class Controller:
             maxViewSubsample = self.log.log['setting_max_scatter_display']
             self.handle_subsampling(maxViewSubsample)
         
-        ## specify which images to create NOTE: assumption that all channel indices are always the same 
-        ## this function is still under development and turned OFF by default
+        ## use the variable 'default_thumb_channels' to set thumbnails to view        
         comparisons = self.log.log['thumbnails_to_view']
 
+        print self.channelDict
+        
+        maxNumComparisons = 5
         if comparisons == None:
-            channelIndices = range(len(self.fileChannels))
+            channelIndices = range(len(self.fileChannels)[:maxNumComparisons])
             comparisons = []
             for i in channelIndices:
                 for j in channelIndices:

@@ -3,9 +3,6 @@
 import sys,re,os
 from PyQt4 import QtGui,QtCore
 from cytostream.qtlib import remove_left_dock, add_left_dock
-from cytostream.qtlib import move_to_preferences
-from cytostream.qtlib import move_to_quality_assurance
-from cytostream.qtlib import move_to_file_aligner
 
 def restore_docks(mainWindow,override=False,mode=None):
     '''
@@ -33,19 +30,19 @@ def restore_docks(mainWindow,override=False,mode=None):
     
     if currentState == 'Data Processing':
         mainWindow.dpc.set_enable_disable()
-        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_quality_assurance(a))
+        mainWindow.pDock.enable_continue_btn(lambda a='thumbnails': mainWindow.transitions.move_to_quality_assurance(a))
     elif currentState == 'Quality Assurance':
         mainWindow.qac.set_enable_disable()
         mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
     elif currentState == 'Model':
         mainWindow.mc.set_enable_disable()
         mainWindow.pDock.inactivate_all()
-    elif currentState == 'Results Navigation':
+    elif currentState == 'Model Results':
         mainWindow.rnc.set_enable_disable()
-        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: move_to_file_aligner(a))
-    elif currentState == 'Results Summary':
+        mainWindow.pDock.enable_continue_btn(lambda a=mainWindow: mainWindow.transitions.move_to_analysis(a))
+    elif currentState == 'Analysis':
         pass
-    elif currentState == 'File Aligner':
+    elif currentState == 'Reports':
         mainWindow.fac.set_enable_disable()
     else:
         mainWindow.pDock.inactivate_all()
@@ -113,14 +110,10 @@ def create_menubar_toolbar(mainWindow):
     fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
                                    "Ctrl+Q", "filequit", "Close the application")
     ## edit menu actions
-    editPreferences = create_action(mainWindow,"&Preferences", lambda a=mainWindow: move_to_preferences(a),
+    editPreferences = create_action(mainWindow,"&Preferences", lambda a=mainWindow: mainWindow.transitions.move_to_preferences(a),
                                     "Ctrl+P", None, "Application preferences")
     editRestoreDocks = create_action(mainWindow,"&Restore docks", lambda a=mainWindow: restore_docks(a),
                                      "Ctrl+R", None, "Restore Docks")
-
-    ## tool menu actions
-    OneDimViewerAction = create_action(mainWindow,"One Dimenstional Viewer ", lambda a=mainWindow: move_to_one_dim_viewer(a))
-    ResultsHeatmapSummary = create_action(mainWindow,"Results Heatmap Summary ", lambda a=mainWindow: move_to_results_heatmap_summary(a))
 
     ## help menu actions
     helpAboutAction = create_action(mainWindow,"&About %s"%mainWindow.controller.appName,
@@ -142,8 +135,8 @@ def create_menubar_toolbar(mainWindow):
 
     ## define tool menu
     mainWindow.toolMenu = mainWindow.menuBar().addMenu("&Tools")
-    mainWindow.toolMenuActions = (None,OneDimViewerAction, ResultsHeatmapSummary)
-    add_actions(mainWindow,mainWindow.toolMenu,mainWindow.toolMenuActions)
+    #mainWindow.toolMenuActions = (None)
+    #add_actions(mainWindow,mainWindow.toolMenu,mainWindow.toolMenuActions)
 
     ## define help menu
     helpMenu = mainWindow.menuBar().addMenu("&Help")

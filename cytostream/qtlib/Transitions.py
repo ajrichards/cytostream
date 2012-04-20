@@ -204,14 +204,18 @@ class Transitions():
 
     def move_to_quality_assurance(self,mode='thumbnails'):
         if self.mainWindow.controller.verbose == True:
-            print "INFO: moving to quality assurance", mode
+            print "INFO: moving to quality assurance -- ", mode
 
         ## save channel dict
-        if self.mainWindow.controller.log.log['current_state'] == 'Data Processing':
-            print 'saving channelDict...'
+        if self.mainWindow.dpc:
+            channelDict = {}
             n = len(self.mainWindow.controller.masterChannelList)
-            chanLabels = [str(self.mainWindow.dpc.modelChannels.data(self.modelChannels.index(i,3)).toString()) for i in range(n)]
-            print chanLabels
+            chanLabels = [str(self.mainWindow.dpc.modelChannels.data(self.mainWindow.dpc.modelChannels.index(i,3)).toString()) for i in range(n)]
+            for i,cl in enumerate(chanLabels):
+                if cl != 'Unmatched':
+                    channelDict[cl] = i
+            self.mainWindow.model.save_channel_dict(channelDict)
+            self.mainWindow.channelDict = self.mainWindow.model.load_channel_dict()
 
         ## error checking
         modeList = ['progressbar','thumbnails','plot']
