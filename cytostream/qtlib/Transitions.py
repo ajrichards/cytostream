@@ -206,11 +206,15 @@ class Transitions():
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to quality assurance", mode
 
-        print 'moving to quality assurance'
+        ## save channel dict
+        if self.mainWindow.controller.log.log['current_state'] == 'Data Processing':
+            print 'saving channelDict...'
+            n = len(self.mainWindow.controller.masterChannelList)
+            chanLabels = [str(self.mainWindow.dpc.modelChannels.data(self.modelChannels.index(i,3)).toString()) for i in range(n)]
+            print chanLabels
 
         ## error checking
-        modeList = ['progressbar','histogram','thumbnails','plot-1','plot-2','plot-3','plot-4','plot-6']
-
+        modeList = ['progressbar','thumbnails','plot']
         if mode not in modeList:
             print "ERROR: move_to_quality_assurance - bad mode", mode
 

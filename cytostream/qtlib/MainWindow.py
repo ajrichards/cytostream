@@ -97,6 +97,7 @@ class MainWindow(QtGui.QMainWindow):
         self.fileSelector = None
         self.plotSelector = None
         self.plotTickControls = None
+        self.channelSelector = None
         self.vizModeSelector = None
         self.subsampleSelector = None
         self.pDock = None
@@ -447,11 +448,8 @@ class MainWindow(QtGui.QMainWindow):
         vizModeList = ['thumbnails','plot']
         if item not in vizModeList:
             self.log.log['num_subplots'] = self.vizModeSelector.get_num_subplots()
-            print 'got num subplots', self.vizModeSelector.get_num_subplots()
             if self.plotSelector:
                 self.plotSelector.ensure_correct_options(int(self.vizModeSelector.get_num_subplots()))
-            print 'inside handle vis modes', 
-
             item = 'plot'
 
         currentState = self.log.log['current_state']
@@ -540,6 +538,7 @@ class MainWindow(QtGui.QMainWindow):
             self.qac.progressBar.button.setText('Please wait...')
             self.qac.progressBar.button.setEnabled(False)
             self.subsampleSelector.setEnabled(False)
+            self.channelSelector.setEnabled(False)
             self.moreInfoBtn.setEnabled(False)
             QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
@@ -588,6 +587,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.fileSelector.setEnabled(False)
             if self.plotSelector:
                 self.plotSelector.setEnabled(False)
+            if self.channelSelector:
+                self.channelSelector.setEnabled(False)
             if self.plotTickControls:
                 self.plotTickControls.setEnabled(False)
             if self.vizModeSelector:
@@ -604,6 +605,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.fileSelector.setEnabled(True)
             if self.plotSelector:
                 self.plotSelector.setEnabled(True)
+            if self.channelSelector:
+                self.channelSelector.setEnabled(True)
             if self.plotTickControls:
                 self.plotTickControls.setEnabled(True)
             if self.vizModeSelector:
@@ -686,14 +689,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.transitions.move_to_model_results()
 
-    def file_selector_callback(self,item=None):
-        '''
-        callback function for FileSelector movement
-        '''
-        self.set_selected_file()
-        vizMode = str(self.vizModeSelector.get_selected())
-        self.handle_visualization_modes(item=vizMode)
-
     def plot_selector_callback(self,item=None):
         '''
         callback function for PlotSelector movement
@@ -710,7 +705,7 @@ class MainWindow(QtGui.QMainWindow):
         set the selected file
         '''
 
-        selectedFile, selectedFileInd = self.fileSelector.get_selected_file() 
+        selectedFile = self.fileSelector.get_selected_file() 
         self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
         self.controller.save()
 

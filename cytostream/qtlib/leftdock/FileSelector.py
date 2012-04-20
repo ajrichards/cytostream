@@ -19,7 +19,7 @@ class FileSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, fileList, color='white', parent=None, modelsRun=None, fileDefault=None, selectionFn=None):
+    def __init__(self, fileList, color='white', mainWindow=None, parent=None, modelsRun=None, fileDefault=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -30,6 +30,7 @@ class FileSelector(QtGui.QWidget):
         self.color = color
         self.fileList = fileList
         self.parent = parent
+        self.mainWindow = mainWindow
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
@@ -55,9 +56,7 @@ class FileSelector(QtGui.QWidget):
             else:
                 print "ERROR: in file selector - bad specified fileDefault", fileDefault
 
-        if selectionFn == None:
-            selectionFn = self.generic_callback
-        self.connect(self.fileSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
+        self.connect(self.fileSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.file_selector_callback)
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -75,12 +74,41 @@ class FileSelector(QtGui.QWidget):
         if self.modelSelector != None:
             self.connect(self.modelSelector, QtCore.SIGNAL("currentIndexChanged(int)"), refreshFn) 
         
-
     def get_selected_file(self):
-        sfInd = self.fileSelector.currentIndex()
         sf = str(self.fileSelector.currentText())
+        return sf
 
-        return sf+".fcs", sfInd
+    def file_selector_callback(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+            selectedFile = self.get_selected_file()
+            if selectedFile == '':
+                return
+            self.mainWindow.log.log['selected_file'] = selectedFile
+            numPlots     = self.mainWindow.log.log['num_subplots']
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+            vizMode = self.mainWindow.vizModeSelector.get_selected()
+
+            if vizMode == 'plot':
+                if selectedPlot == '*':
+                    for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                        self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                        self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+                else:
+                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            elif vizMode == 'thumbnails':
+                if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
+                    self.mainWindow.transitions.move_to_quality_assurance(mode='thumbnails')
+                else:
+                    print "Check FileSelector callback for appropriate move"
+            else:
+                print "ERROR: invalid visMode detected"
+
 
     def get_selected_model(self):
         smInd = self.modelSelector.currentIndex()
