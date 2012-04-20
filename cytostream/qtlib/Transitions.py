@@ -216,6 +216,9 @@ class Transitions():
                     channelDict[cl] = i
             self.mainWindow.model.save_channel_dict(channelDict)
             self.mainWindow.channelDict = self.mainWindow.model.load_channel_dict()
+            print '...saving channel dict'
+            print channelDict
+            print self.mainWindow.channelDict
 
         ## error checking
         modeList = ['progressbar','thumbnails','plot']

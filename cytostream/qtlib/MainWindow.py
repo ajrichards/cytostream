@@ -100,6 +100,7 @@ class MainWindow(QtGui.QMainWindow):
         self.channelSelector = None
         self.vizModeSelector = None
         self.subsampleSelector = None
+        self.dpc = None
         self.pDock = None
         self.dock = None
         self.tv = None

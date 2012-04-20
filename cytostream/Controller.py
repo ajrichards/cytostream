@@ -200,20 +200,43 @@ class Controller:
             self.handle_subsampling(maxViewSubsample)
         
         ## use the variable 'default_thumb_channels' to set thumbnails to view        
-        comparisons = self.log.log['thumbnails_to_view']
+        #comparisons = self.log.log['thumbnails_to_view']
+        print '....carring out thumbs comparisons'
+        if self.channelDict == None or len(self.channelDict) == 0:
+            self.channelDict = self.model.load_channel_dict()
 
         print self.channelDict
-        
+        newDefaultThumbs = []
+        channelIndices = []
+        defaultThumbChannels = self.log.log['default_thumb_channels']
+        for channel in defaultThumbChannels:
+            if channel == 'FSC':
+                for channel in ['FCSA','FSCH','FSCW']:
+                    if self.channelDict.has_key(channel):
+                        channelIndices.append(self.channelDict[channel])
+                        break
+            elif channel == 'SSC':
+                for channel in ['SCSA','SSCH','SSCW']:
+                    if self.channelDict.has_key(channel):
+                        channelIndices.append(self.channelDict[channel])
+                        break
+            else:
+                if self.channelDict.has_key(channel):
+                    channelIndices.append(self.channelDict[channel])
+                else:
+                    print "ERROR: Controller -- when making thumbs channelDict does not have", channel
+
         maxNumComparisons = 5
-        if comparisons == None:
+        if len(channelIndices) < 3:
             channelIndices = range(len(self.fileChannels)[:maxNumComparisons])
-            comparisons = []
-            for i in channelIndices:
-                for j in channelIndices:
-                    if j >= i or i in excludedChannels or j in excludedChannels:
-                        continue
-                    comparisons.append((i,j))
-            self.log.log['thumbnails_to_view'] = comparisons
+
+        comparisons = []
+        for i in channelIndices:
+            for j in channelIndices:
+                if j >= i or i in excludedChannels or j in excludedChannels:
+                    continue
+                comparisons.append((i,j))
+        self.log.log['thumbnails_to_view'] = comparisons
 
         ## get num images to create
         for fileName in self.fileNameList:
@@ -716,7 +739,6 @@ class Controller:
             proc = subprocess.Popen(cmd,shell=True)#,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
             
         print "DEBUG: Controller -- all jobs have been sent"
-
 
         totalCompletedFiles = 0
         percentComplete = {}
