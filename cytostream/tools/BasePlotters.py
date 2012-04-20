@@ -172,12 +172,7 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
         yTransformed = True
 
     ## handle scatter axes
-    print '....inside base plotters'
-    print '....',channelDict
-
     for key,val in channelDict.iteritems():
-        print 'checking...'
-        print '\t', key,val,index1,index2
         if xTransformed == False and key in scatterList and index1 == val:
             set_scatter_ticks(ax,'x',fontsize=fontSize,fontname=fontName)
             xTransformed = True
