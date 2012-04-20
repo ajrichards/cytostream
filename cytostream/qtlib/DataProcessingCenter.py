@@ -326,16 +326,6 @@ class DataProcessingCenter(QtGui.QWidget):
             nameMatch = get_official_name_match(channel)
             item3 = QtGui.QStandardItem('%s' % nameMatch)
 
-
-
-            #item4.setBackgroundColor(QtGui.QColor("#111111"))
-            #print dir(item4)
-            #palette = item4.palette()
-            #role = self.backgroundRole()
-            #palette.setColor(role, QtGui.QColor(appColor))
-            #self.setPalette(palette)
-            #self.setAutoFillBackground(True)
-
             ## set which ones are checked
             check = QtCore.Qt.Unchecked if row in self.excludedChannels else QtCore.Qt.Checked
             item0.setCheckState(check)
@@ -389,7 +379,6 @@ class DataProcessingCenter(QtGui.QWidget):
 
     def _onClick(self):
         print 'clicked'
-
 
     def make_files_sheet(self,firstRun=True):
         ## setup layouts

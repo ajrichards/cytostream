@@ -145,7 +145,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False,useScaled=False):
 
     ## variables
-    scatterList = ['fsc','fsca','fscw','fsch','ssc','ssca','sscw','ssch']
+    scatterList = ['FSC','FSCA','FSCW','FSCH','SSC','SSCA','SSCW','SSCH']
     xTransformed, yTransformed = False, False
     buff = 0.02
     formatter = ScalarFormatter(useMathText=True)
@@ -172,7 +172,12 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
         yTransformed = True
 
     ## handle scatter axes
+    print '....inside base plotters'
+    print '....',channelDict
+
     for key,val in channelDict.iteritems():
+        print 'checking...'
+        print '\t', key,val,index1,index2
         if xTransformed == False and key in scatterList and index1 == val:
             set_scatter_ticks(ax,'x',fontsize=fontSize,fontname=fontName)
             xTransformed = True

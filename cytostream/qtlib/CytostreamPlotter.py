@@ -242,7 +242,6 @@ class CytostreamPlotter(QtGui.QWidget):
         ## draw on canvas
         draw_plot(args,parent=self)
         self.fig.canvas.draw()
-        print 'figure drawn'
 
     def create_figure_widget(self):
         self.figureWidget = QtGui.QWidget()
