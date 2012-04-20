@@ -35,6 +35,23 @@ def get_official_name_match(channel):
     strippedChannel = re.sub("\s|\-|\_","",channel)
     strippedChannel = strippedChannel.upper()
     
+    if strippedChannel == 'FSCHEIGHT':
+        return 'FSCH'
+    if strippedChannel == 'FSCWIDTH':
+        return 'FSCW'
+    if strippedChannel == 'FSCAREA':
+        return 'FSCA'
+
+    if strippedChannel == 'SSCHEIGHT':
+        return 'SSCH'
+    if strippedChannel == 'SSCWIDTH':
+        return 'SSCW'
+    if strippedChannel == 'SSCAREA':
+        return 'SSCA'
+
+    if strippedChannel == 'IFN+IL2' or strippedChannel == "IFN+IL2PE":
+        return 'IFNG+IL2'
+
     ## check for exact match 
     for key in officialNames.keys():    
         if strippedChannel == key.upper():
