@@ -81,7 +81,7 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## verify or create alternate channel list
         if self.alternateChannelList == None:
-            self.alternateChannelList = [chan for chan in self.masterChannelList]
+            self.alternateChannelList = [re.sub("_","-",chan) for chan in self.masterChannelList]
          
         if self.alternateFileList == None:
             self.alternateFileList = [fileName for fileName in self.fileList]
@@ -319,7 +319,15 @@ class DataProcessingCenter(QtGui.QWidget):
 
         for row in range(len(self.masterChannelList)):
             channel = self.masterChannelList[row]
-            altChannel = self.alternateChannelList[row]
+            altChannel = re.sub("_","-",self.alternateChannelList[row])
+            if altChannel[-1] == '-':
+                altChannel = altChannel[:-1]
+            if altChannel[-1] == '-':
+                altChannel = altChannel[:-1]
+            if re.search('Time|time',altChannel):
+                altChannel = 'Time'
+            altChannel = re.sub("\-\+\-","+",altChannel)
+
             item0 = QtGui.QStandardItem(str(row+1))
             item1 = QtGui.QStandardItem('%s' % channel)
             item2 = QtGui.QStandardItem('%s' % altChannel)
@@ -328,7 +336,10 @@ class DataProcessingCenter(QtGui.QWidget):
 
             ## set which ones are checked
             check = QtCore.Qt.Unchecked if row in self.excludedChannels else QtCore.Qt.Checked
-            item0.setCheckState(check)
+            if nameMatch in ['Time','FL1A']:
+                item0.setCheckState(QtCore.Qt.Unchecked)
+            else:
+                item0.setCheckState(check)
             item0.setCheckable(True)
             item0.setEditable(False)
             item1.setEditable(False)
