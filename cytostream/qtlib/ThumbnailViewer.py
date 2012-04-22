@@ -1,45 +1,53 @@
 import sys,os,time,re
 from PyQt4 import QtGui, QtCore
-
+import numpy as np
 
 class ThumbnailViewer(QtGui.QWidget):
-    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None):
+    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None,mainWindow=None):
         QtGui.QWidget.__init__(self,parent)
 
         ## declare variabels 
         self.thumbDir = thumbDir
-
-        if len(fileChannels) <= 4:
-            self.thumbSize = 210
-        elif len(fileChannels) == 5:
-            self.thumbSize = 160
-        elif len(fileChannels) == 6:
-            self.thumbSize = 120
-        elif len(fileChannels) == 7:
-            self.thumbSize = 90
-        elif len(fileChannels) == 8:
-            self.thumbSize = 70
-        elif len(fileChannels) == 9:
-            self.thumbSize = 60
-        elif len(fileChannels) == 10:
-            self.thumbSize = 50
-        elif len(fileChannels) > 10:
-            self.thumbSize = 40
-        
-        #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
-        #print self.thumbSize
-
         self.fileChannels = fileChannels
         self.btns = {}
         
         thumbs = os.listdir(self.thumbDir)
         hbox = QtGui.QVBoxLayout()
         grid = QtGui.QGridLayout()
+
+        if mainWindow == None:
+            channels = self.fileChannels
+        else:
+            thumbnailsToView = mainWindow.log.log['thumbnails_to_view']
+            channelInds = set([])
+            for comp in thumbnailsToView:
+                channelInds.update(comp)
+            channels = np.array(self.fileChannels)[list(channelInds)]
+
+        if len(channels) <= 4:
+            self.thumbSize = 210
+        elif len(channels) == 5:
+            self.thumbSize = 160
+        elif len(channels) == 6:
+            self.thumbSize = 120
+        elif len(channels) == 7:
+            self.thumbSize = 90
+        elif len(channels) == 8:
+            self.thumbSize = 70
+        elif len(channels) == 9:
+            self.thumbSize = 60
+        elif len(channels) == 10:
+            self.thumbSize = 50
+        elif len(channels) > 10:
+            self.thumbSize = 40
         
-        for k in range(len(self.fileChannels)):
-            chan = self.fileChannels[k]
+        #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
+        #print self.thumbSize
+        
+        for k in range(len(channels)):
+            chan = channels[k]
             
-            if k != len(self.fileChannels)-1:
+            if k != len(channels)-1:
                 labelCol = QtGui.QLabel(chan)
                 labelCol.setMaximumWidth(self.thumbSize)
                 labelCol.setMinimumWidth(self.thumbSize)
@@ -55,10 +63,13 @@ class ThumbnailViewer(QtGui.QWidget):
                 grid.addWidget(labelRow,k+1,0)
 
         i,j = 0,0
-        for i in range(len(self.fileChannels)):
-            chanI = self.fileChannels[i]
-            for j in range(len(self.fileChannels)):
-                chanJ = self.fileChannels[j]
+        #for i in range(len(self.fileChannels)):
+        #    chanI = self.fileChannels[i]
+        #    for j in range(len(self.fileChannels)):
+        #        chanJ = self.fileChannels[j]
+        
+        for i,chanI in enumerate(channels):
+            for j,chanJ in enumerate(channels):
                 if j >= i:
                     continue
                 img = None

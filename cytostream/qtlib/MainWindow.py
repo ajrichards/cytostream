@@ -646,7 +646,7 @@ class MainWindow(QtGui.QMainWindow):
             fileChannels = self.log.log['alternate_channel_labels']
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_plot)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_plot,mainWindow=self)
         elif mode == 'Model Results':
             excludedChannels = self.log.log['excluded_channels_analysis']
             self.mainWidget = QtGui.QWidget(self)
@@ -658,7 +658,7 @@ class MainWindow(QtGui.QMainWindow):
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_plot)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_plot,mainWindow=self)
         else:
             print "ERROR: bad mode specified in display thumbnails", mode
             return

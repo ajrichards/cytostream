@@ -233,14 +233,20 @@ class Controller:
         comparisons = []
         for i in channelIndices:
             for j in channelIndices:
-                if j >= i or i in excludedChannels or j in excludedChannels:
+                if j >= i:# or i in excludedChannels or j in excludedChannels:
                     continue
                 comparisons.append((i,j))
         self.log.log['thumbnails_to_view'] = comparisons
 
+        ## get channels to be viewed
+        channelInds = set([])
+        for comp in comparisons:
+            channelInds.update(comp)
+        channels = np.array(self.fileChannels)[list(channelInds)]
+
         ## get num images to create
         for fileName in self.fileNameList:
-            n = float(len(self.fileChannels) - len(excludedChannels))
+            n = float(len(channels))  #float(len(self.fileChannels) - len(excludedChannels))
             numImagesToCreate += (n * (n - 1.0)) / 2.0
         
         percentDone = 0
@@ -319,9 +325,9 @@ class Controller:
                     #print 'moving', percentDone
             
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
-            self.create_thumbs(imgDir,thumbDir,fileName)
+            self.create_thumbs(imgDir,thumbDir,fileName,channels)
 
-    def create_thumbs(self,imgDir,thumbDir,fileName,thumbsClean=True):
+    def create_thumbs(self,imgDir,thumbDir,fileName,channels,thumbsClean=True):
         # test to see if thumbs dir needs to be made
         if os.path.isdir(thumbDir) == False:
             os.mkdir(thumbDir)
@@ -335,27 +341,27 @@ class Controller:
         for img in os.listdir(imgDir):
             if os.path.isfile(os.path.join(imgDir,img)) == True:
                 imgFile = os.path.join(imgDir,img)
-                self.make_thumb(imgFile,thumbDir,fileName)
+                self.make_thumb(imgFile,thumbDir,fileName,channels)
                 os.remove(imgFile)
 
-    def make_thumb(self,imgFile,thumbDir,fileName):
+    def make_thumb(self,imgFile,thumbDir,fileName,channels):
         if os.path.isfile(imgFile) == True:
 
-            if len(self.fileChannels) <= 4:
+            if len(channels) <= 4:
                 thumbSize = 210
-            elif len(self.fileChannels) == 5:
+            elif len(channels) == 5:
                 thumbSize = 160
-            elif len(self.fileChannels) == 6:
+            elif len(channels) == 6:
                 thumbSize = 120
-            elif len(self.fileChannels) == 7:
+            elif len(channels) == 7:
                 thumbSize = 90
-            elif len(self.fileChannels) == 8:
+            elif len(channels) == 8:
                 thumbSize = 70
-            elif len(self.fileChannels) == 9:
+            elif len(channels) == 9:
                 thumbSize = 60
-            elif len(self.fileChannels) == 10:
+            elif len(channels) == 10:
                 thumbSize = 50
-            elif len(self.fileChannels) > 10:
+            elif len(channels) > 10:
                 thumbSize = 40
           
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
