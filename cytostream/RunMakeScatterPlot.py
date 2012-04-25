@@ -31,5 +31,5 @@ for o, a in optlist:
 if subsample != 'original':
     subsample = int(float(subsample))
 
-ss = SaveSubplots(homeDir,figName,1,figMode=mode,useScale=True,drawState='heat',
-                  useSimple=True,figSize=(2,2),subsample=subsample)
+ss = SaveSubplots(homeDir,figName,1,figMode=mode,useScale=True,drawState='heat',hasFrame=False,
+                  useSimple=True,figSize=(3,3),subsample=subsample,trimmed=True,dpi=50)

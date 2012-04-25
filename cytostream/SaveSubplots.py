@@ -26,7 +26,7 @@ class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
-                 gatesToShow=None,positiveToShow=None,dpi=None):
+                 gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True):
 
         ## arg variables
         self.controller = controller
@@ -51,6 +51,8 @@ class SaveSubplots():
         self.resultsMode = 'components'
         self.gatesToShow = gatesToShow
         self.positiveToShow= positiveToShow
+        self.trimmed = trimmed
+        self.hasFrame = hasFrame
         inputDPI = dpi
 
         ## if given a homeDir initialize a controller
@@ -138,8 +140,10 @@ class SaveSubplots():
         if inputDPI != None:
             dpi = inputDPI
 
-        self.fig.savefig(self.figName,transparent=False,dpi=dpi)
-                             
+        if self.trimmed == True:
+            self.fig.savefig(self.figName,transparent=False,dpi=dpi,bbox_inches='tight')
+        else:
+            self.fig.savefig(self.figName,transparent=False,dpi=dpi)
     def generic_callback():
         print "generic callback"
 
@@ -230,6 +234,11 @@ class SaveSubplots():
             
             axesLabels = (None,None)
             showNoise = False
+
+            ## remove frame if specified
+            if self.hasFrame == False:
+                ax = self.get_axes(subplotIndex)
+                ax.set_frame_on(False)
 
             ## handle args
             args = [None for i in range(19)]

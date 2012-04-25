@@ -21,6 +21,7 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
+from cytostream.tools import get_official_name_match
 
 try:
     from config_cs import CONFIGCS
@@ -201,12 +202,10 @@ class Controller:
         
         ## use the variable 'default_thumb_channels' to set thumbnails to view        
         #comparisons = self.log.log['thumbnails_to_view']
-        print '....carring out thumbs comparisons'
         if self.channelDict == None or len(self.channelDict) == 0:
             self.channelDict = self.model.load_channel_dict()
 
-        print self.channelDict
-        newDefaultThumbs = []
+        channelThumbs = []
         channelIndices = []
         defaultThumbChannels = self.log.log['default_thumb_channels']
         for channel in defaultThumbChannels:
@@ -214,26 +213,32 @@ class Controller:
                 for channel in ['FCSA','FSCH','FSCW']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
+                        channelThumbs.append(channel)
                         break
             elif channel == 'SSC':
                 for channel in ['SCSA','SSCH','SSCW']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
+                        channelThumbs.append(channel)
                         break
             else:
                 if self.channelDict.has_key(channel):
                     channelIndices.append(self.channelDict[channel])
+                    channelThumbs.append(channel)
                 else:
                     print "ERROR: Controller -- when making thumbs channelDict does not have", channel
 
         maxNumComparisons = 5
         if len(channelIndices) < 3:
             channelIndices = range(len(self.fileChannels)[:maxNumComparisons])
+            channelThumbs = get_official_name_match(self.fileChannels[:maxNumComparisons])
+            self.log.log['default_thumb_channels'] = channelThumbs
+            self.save()
 
         comparisons = []
-        for i in channelIndices:
-            for j in channelIndices:
-                if j >= i:# or i in excludedChannels or j in excludedChannels:
+        for i in range(len(channelIndices)):
+            for j in range(len(channelIndices)):
+                if j == i:
                     continue
                 comparisons.append((i,j))
         self.log.log['thumbnails_to_view'] = comparisons
@@ -246,9 +251,8 @@ class Controller:
 
         ## get num images to create
         for fileName in self.fileNameList:
-            n = float(len(channels))  #float(len(self.fileChannels) - len(excludedChannels))
-            numImagesToCreate += (n * (n - 1.0)) / 2.0
-        
+            numImagesToCreate += len(comparisons)
+ 
         percentDone = 0
         imageCount = 0
         
@@ -291,11 +295,7 @@ class Controller:
                 self.log.log["plots_to_view_channels"] = plotsToViewChannels
                 self.save()
 
-                figName = os.path.join(imgDir,"%s_%s_%s.%s"%(fileName,
-                                                             self.fileChannels[comp[0]],
-                                                             self.fileChannels[comp[1]],
-                                                             self.log.log['plot_type']))
-
+                figName = os.path.join(imgDir,"%s_%s_%s.%s"%(fileName,comp[0],comp[1],self.log.log['plot_type']))
                 script = os.path.join(self.baseDir,"RunMakeScatterPlot.py")
                 
                 if os.path.isfile(script) == False:
@@ -348,15 +348,15 @@ class Controller:
         if os.path.isfile(imgFile) == True:
 
             if len(channels) <= 4:
-                thumbSize = 210
+                thumbSize = 250
             elif len(channels) == 5:
-                thumbSize = 160
+                thumbSize = 220
             elif len(channels) == 6:
-                thumbSize = 120
+                thumbSize = 150
             elif len(channels) == 7:
-                thumbSize = 90
+                thumbSize = 120
             elif len(channels) == 8:
-                thumbSize = 70
+                thumbSize = 90
             elif len(channels) == 9:
                 thumbSize = 60
             elif len(channels) == 10:

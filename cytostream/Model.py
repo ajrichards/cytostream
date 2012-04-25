@@ -464,7 +464,12 @@ class Model:
         load the channel dict
         '''
 
-        tmp = open(os.path.join(self.homeDir,'data','channelDict.pickle'),'rb')
+        filePath = os.path.join(self.homeDir,'data','channelDict.pickle')
+
+        if os.path.exists(filePath) == False:
+            return None
+
+        tmp = open(filePath,'rb')
         channelDict = cPickle.load(tmp)
         tmp.close()
 
