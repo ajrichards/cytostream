@@ -1,100 +1,97 @@
 import sys,os,time,re
+import Image
 from PyQt4 import QtGui, QtCore
 import numpy as np
+from cytostream.tools import get_official_name_match
+
+
+class Thumbnail(QtGui.QWidget):
+    def __init__(self, imgPath, thumbSize,xLabel=None,yLabel=None,parent=None,isDiagonal=False):
+        QtGui.QWidget.__init__(self,parent)
+
+        imgBtn = QtGui.QPushButton()
+        grid = QtGui.QGridLayout()
+        #iconSize = int(round(thumbSize - (0.05 * float(thumbSize))))
+        iconSize = thumbSize
+        if isDiagonal == True:
+            imgBtn.setIcon(QtGui.QIcon.fromTheme("face-monkey"))
+        elif os.path.isfile(imgPath) == True:
+            imgBtn.setIcon(QtGui.QIcon(imgPath)) 
+            #if viewScatterFn != None and img != None:
+            #    self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: viewScatterFn(img=x))
+        else:
+            imgBtn.setIcon(QtGui.QIcon.fromTheme("image-missing"))
+
+        imgBtn.setIconSize(QtCore.QSize(iconSize,iconSize))
+        imgBtn.setMinimumSize(QtCore.QSize(iconSize,iconSize))
+        imgBtn.setMaximumSize(QtCore.QSize(iconSize,iconSize))
+       
+        if yLabel != None and xLabel != None:
+            grid.addWidget(QtGui.QLabel(yLabel),1,0)
+            grid.addWidget(QtGui.QLabel(xLabel),0,1,QtCore.Qt.AlignCenter)
+            grid.addWidget(imgBtn,1,1,QtCore.Qt.AlignCenter)
+        elif yLabel != None:
+            grid.addWidget(QtGui.QLabel(yLabel),0,0,QtCore.Qt.AlignCenter)
+            grid.addWidget(imgBtn,1,0,QtCore.Qt.AlignCenter)
+        elif xLabel != None:
+            grid.addWidget(QtGui.QLabel(xLabel),0,0,QtCore.Qt.AlignCenter)
+            grid.addWidget(imgBtn,0,1,QtCore.Qt.AlignCenter)
+        else:
+            grid.addWidget(imgBtn,0,0,QtCore.Qt.AlignCenter)
+
+        ## finalize layout
+        self.setLayout(grid)
+
 
 class ThumbnailViewer(QtGui.QWidget):
     def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None,mainWindow=None):
         QtGui.QWidget.__init__(self,parent)
 
+        if parent == None:
+            self.parent = self
+        else:
+            self.parent = parent
+
         ## declare variabels 
         self.thumbDir = thumbDir
         self.fileChannels = fileChannels
+        self.mainWindow = mainWindow
         self.btns = {}
         
         thumbs = os.listdir(self.thumbDir)
-        hbox = QtGui.QVBoxLayout()
         grid = QtGui.QGridLayout()
 
         if mainWindow == None:
             channels = self.fileChannels
         else:
-            thumbnailsToView = mainWindow.log.log['thumbnails_to_view']
-            channelInds = set([])
-            for comp in thumbnailsToView:
-                channelInds.update(comp)
-            channels = np.array(self.fileChannels)[list(channelInds)]
+            channels = self.mainWindow.log.log['default_thumb_channels']
 
-        if len(channels) <= 4:
-            self.thumbSize = 210
-        elif len(channels) == 5:
-            self.thumbSize = 160
-        elif len(channels) == 6:
-            self.thumbSize = 120
-        elif len(channels) == 7:
-            self.thumbSize = 90
-        elif len(channels) == 8:
-            self.thumbSize = 70
-        elif len(channels) == 9:
-            self.thumbSize = 60
-        elif len(channels) == 10:
-            self.thumbSize = 50
-        elif len(channels) > 10:
-            self.thumbSize = 40
-        
-        #self.thumbSize = int(round(self.thumbSize + (0.5 * float(self.thumbSize))))
-        #print self.thumbSize
-        
-        for k in range(len(channels)):
-            chan = channels[k]
-            
-            if k != len(channels)-1:
-                labelCol = QtGui.QLabel(chan)
-                labelCol.setMaximumWidth(self.thumbSize)
-                labelCol.setMinimumWidth(self.thumbSize)
-                labelCol.setAlignment(QtCore.Qt.AlignCenter)
-                grid.addWidget(labelCol,0,k+1)
-            if k != 0:
-                labelRow = QtGui.QLabel(chan)
-                labelRow.setMaximumHeight(self.thumbSize)
-                labelRow.setMinimumHeight(self.thumbSize) 
-                labelRow.setMaximumWidth(100)
-                labelRow.setMinimumWidth(100) 
-                labelRow.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignRight)
-                grid.addWidget(labelRow,k+1,0)
+        ## get thumbsize
+        im = Image.open(os.path.join(self.thumbDir,thumbs[0]))
+        self.thumbSize = max(im.size)
 
-        i,j = 0,0
-        #for i in range(len(self.fileChannels)):
-        #    chanI = self.fileChannels[i]
-        #    for j in range(len(self.fileChannels)):
-        #        chanJ = self.fileChannels[j]
-        
-        for i,chanI in enumerate(channels):
-            for j,chanJ in enumerate(channels):
-                if j >= i:
-                    continue
-                img = None
+        for i in range(len(channels)):
+            for j in range(len(channels)):
+                img = "."
                 for t in thumbs:
-                    normalThumb = re.sub("#","_",t)
-                    if re.search(chanI,normalThumb) and re.search(chanJ,normalThumb):
+                    if re.search("%s\_%s\_thumb"%(i,j),t):
                         img = t
-                
-                imgBtn = QtGui.QPushButton()
-                imgBtn.setMinimumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
-                imgBtn.setMaximumSize(QtCore.QSize(self.thumbSize, self.thumbSize))
-                
-                #if os.path.isfile(imgPath) == True:
-                if img != None:
-                    imgPath = os.path.join(self.thumbDir,img)
-                    imgBtn.setIcon(QtGui.QIcon(imgPath))
-                
-                ## use icon size to add a small border around the button
-                iconSize = int(round(self.thumbSize - (0.05 * float(self.thumbSize))))
-                
-                imgBtn.setIconSize(QtCore.QSize(iconSize, iconSize))
-                if viewScatterFn != None and img != None:
-                    self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: viewScatterFn(img=x))
-        
-                grid.addWidget(imgBtn,i+1,j+1)
+                        break
+            
+                xLabel,yLabel = None,None
+                if j == 0:
+                    xLabel = channels[i]
+                if i == 0:
+                    yLabel = channels[j]
+            
+                isDiagonal = False
+                if i == j:
+                    isDiagonal = True
+
+                imgPath = os.path.join(self.thumbDir,img)
+                thumbWidget = Thumbnail(imgPath,self.thumbSize,parent=None,xLabel=xLabel,yLabel=yLabel,isDiagonal=isDiagonal)
+            
+                grid.addWidget(thumbWidget,i,j)
         
         self.setLayout(grid)
 

@@ -671,7 +671,12 @@ class MainWindow(QtGui.QMainWindow):
 
         ## for either mode
         self.plots_enable_disable(mode='thumbnails')
-        hbl.addWidget(self.tv)
+        scrollarea = QtGui.QScrollArea()
+        scrollarea.setWidget(self.tv)
+        scrollarea.setAlignment(QtCore.Qt.AlignCenter)
+
+        #hbl.addWidget(self.tv)
+        hbl.addWidget(scrollarea)
         self.vboxCenter.addLayout(hbl)
         self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
@@ -779,6 +784,7 @@ class MainWindow(QtGui.QMainWindow):
             channels = re.split("\_",channels)
             chanI = channels[-2]
             chanJ = channels[-1]
+            print chanI,chanJ
             channelI = self.controller.fileChannels.tolist().index(re.sub("#","_",chanI))
             channelJ = self.controller.fileChannels.tolist().index(re.sub("#","_",chanJ))
             self.log.log['plots_to_view_channels'][0] = (channelI, channelJ)
