@@ -20,7 +20,7 @@ from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
-from cytostream.qtlib import FileAlignerCenter
+from cytostream.qtlib import FileAlignerCenter, Waiting
 from cytostream.qtlib import OneDimViewer, Preferences
 
 
@@ -32,6 +32,26 @@ class Transitions():
 
     def __init__(self,mainWindow):
         self.mainWindow = mainWindow
+
+    def setup_waiting(self):
+        '''
+        experimental
+        '''
+        self.waiting = Waiting(self.mainWindow.mainWidget)
+        self.waiting.hide()
+
+    def start_waiting(self):
+        '''
+        experimental
+        '''
+        self.waiting.show()
+
+    def resizeEvent(self, event):
+        '''
+        experimental
+        '''
+        self.waiting.resize(event.size())
+        event.accept()
 
     def move_to_initial(self):
 
@@ -216,9 +236,6 @@ class Transitions():
                     channelDict[cl] = i
             self.mainWindow.model.save_channel_dict(channelDict)
             self.mainWindow.channelDict = self.mainWindow.model.load_channel_dict()
-            print '...saving channel dict'
-            print channelDict
-            print self.mainWindow.channelDict
 
         ## error checking
         modeList = ['progressbar','thumbnails','plot']

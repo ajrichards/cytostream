@@ -86,10 +86,12 @@ class FileSelector(QtGui.QWidget):
             if selectedFile == '':
                 return
             self.mainWindow.log.log['selected_file'] = selectedFile
-            numPlots     = self.mainWindow.log.log['num_subplots']
+            self.mainWindow.controller.save()
+            numPlots = self.mainWindow.log.log['num_subplots']
             
             if self.mainWindow.log.log['selected_plot'] == None:
                 self.mainWindow.log.log['selected_plot'] = '1'
+                self.mainWindow.controller.save()
             selectedPlot = self.mainWindow.log.log['selected_plot']
             vizMode = self.mainWindow.vizModeSelector.get_selected()
 
@@ -103,18 +105,11 @@ class FileSelector(QtGui.QWidget):
                     self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
             elif vizMode == 'thumbnails':
                 if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
-                    self.mainWindow.transitions.move_to_quality_assurance(mode='thumbnails')
+                    self.mainWindow.display_thumbnails()
                 else:
                     print "Check FileSelector callback for appropriate move"
             else:
                 print "ERROR: invalid visMode detected"
-
-
-    def get_selected_model(self):
-        smInd = self.modelSelector.currentIndex()
-        sm = str(self.modelSelector.currentText())
-        
-        return sm, smInd
 
     def generic_callback(self):
         print 'callback does not do anything yet'

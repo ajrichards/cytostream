@@ -200,23 +200,23 @@ class Controller:
             maxViewSubsample = self.log.log['setting_max_scatter_display']
             self.handle_subsampling(maxViewSubsample)
         
-        ## use the variable 'default_thumb_channels' to set thumbnails to view        
-        #comparisons = self.log.log['thumbnails_to_view']
+        ## use the variable 'default_thumb_channels' to set thumbnails to view
         if self.channelDict == None or len(self.channelDict) == 0:
             self.channelDict = self.model.load_channel_dict()
 
         channelThumbs = []
         channelIndices = []
+        channelMap = []
         defaultThumbChannels = self.log.log['default_thumb_channels']
         for channel in defaultThumbChannels:
             if channel == 'FSC':
-                for channel in ['FCSA','FSCH','FSCW']:
+                for channel in ['FCSA','FSCH','FSCW','FSC']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
                         channelThumbs.append(channel)
                         break
             elif channel == 'SSC':
-                for channel in ['SCSA','SSCH','SSCW']:
+                for channel in ['SCSA','SSCH','SSCW','SSC']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
                         channelThumbs.append(channel)
@@ -228,6 +228,8 @@ class Controller:
                 else:
                     print "ERROR: Controller -- when making thumbs channelDict does not have", channel
 
+        self.log.log['official_channel_map'] = channelThumbs
+        self.save()
         maxNumComparisons = 5
         if len(channelIndices) < 3:
             channelIndices = range(len(self.fileChannels)[:maxNumComparisons])

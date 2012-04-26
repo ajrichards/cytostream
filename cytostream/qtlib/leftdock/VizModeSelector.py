@@ -20,8 +20,7 @@ class VizModeSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, modeList, color='white',parent=None,modeDefault=None,modeVizCallback=None,
-                 numSubplotsDefault='1',numSubplotsCallback=None):
+    def __init__(self, modeList, color='white',parent=None,modeDefault=None,mainWindow=None,numSubplotsDefault='1'):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -35,6 +34,7 @@ class VizModeSelector(QtGui.QWidget):
 
         ## variables
         self.modeList = modeList
+        self.mainWindow = mainWindow
         self.color = color
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
@@ -51,7 +51,7 @@ class VizModeSelector(QtGui.QWidget):
         
         ## mode selector
         hbox1.addWidget(QtGui.QLabel('visualization mode'))
-        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=modeVizCallback)
+        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=self.viz_mode_selector_callback)
         hbox2.addWidget(self.modeSelector)
         if modeDefault != None:
             self.set_checked(modeDefault)
@@ -64,10 +64,7 @@ class VizModeSelector(QtGui.QWidget):
         hbox3.addWidget(self.numSubplotsSelector)
 
         self.update_num_subplots(numSubplotsDefault)
-        
-        if numSubplotsCallback == None:
-            numSubplotsCallback = self.generic_callback
-        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), numSubplotsCallback) 
+        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.viz_mode_selector_callback) 
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -81,7 +78,53 @@ class VizModeSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
+    def viz_mode_selector_callback(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+
+            ## ensure num subplots are saved when changed
+            numPlots = self.get_num_subplots()
+            self.mainWindow.log.log['num_subplots'] = str(numPlots)
+            self.mainWindow.controller.save()
+
+            selectedFile = self.mainWindow.log.log['selected_file']
+            if selectedFile == '':
+                return
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+            vizMode = self.get_selected()
+
+            ## make sure plotSelector displays correct options
+            self.mainWindow.plotSelector.ensure_correct_options(int(numPlots)) 
+
+            if vizMode == 'plot':
+                if self.mainWindow.nwv == None:
+                    self.mainWindow.handle_show_plot()
+                return None
+
+                if selectedPlot == '*':
+                    for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                        self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                        self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+                else:
+                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            elif vizMode == 'thumbnails':
+                if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
+                    self.mainWindow.display_thumbnails()
+                else:
+                    print "Check VizModeSelector callback for appropriate move"
+            else:
+                print "ERROR: invalid visMode detected"
+
     def update_num_subplots(self,numSubplotsDefault):
+        '''
+        force the number of subplots to a value
+        '''
+
         numSubplotsDefault = str(numSubplotsDefault)
         if self.numSubplotsList.__contains__(numSubplotsDefault):
             self.numSubplotsSelector.setCurrentIndex(self.numSubplotsList.index(numSubplotsDefault))
