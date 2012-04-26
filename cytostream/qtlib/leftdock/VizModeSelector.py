@@ -101,17 +101,7 @@ class VizModeSelector(QtGui.QWidget):
             self.mainWindow.plotSelector.ensure_correct_options(int(numPlots)) 
 
             if vizMode == 'plot':
-                if self.mainWindow.nwv == None:
-                    self.mainWindow.handle_show_plot()
-                return None
-
-                if selectedPlot == '*':
-                    for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
-                        self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
-                        self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-                else:
-                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
-                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+                self.mainWindow.handle_show_plot()
             elif vizMode == 'thumbnails':
                 if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
                     self.mainWindow.display_thumbnails()

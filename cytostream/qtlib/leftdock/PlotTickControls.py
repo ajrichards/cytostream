@@ -112,7 +112,8 @@ class PlotTickControls(QtGui.QWidget):
             print 'callback does not do anything without main widget present'
         else:
             useScaled = self.scaleCB.isChecked()
-            #selectedFile = self.mainWindow.log.log['selected_file']
+            self.mainWindow.controller.log.log['use_scaled_plots'] = useScaled
+            self.mainWindow.controller.save()
             numPlots     = self.mainWindow.log.log['num_subplots']
             
             if self.mainWindow.log.log['selected_plot'] == None:

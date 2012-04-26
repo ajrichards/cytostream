@@ -135,14 +135,21 @@ def add_left_dock(mainWindow):
 
     ## channel selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
-
-        #if mainWindow.log.log['current_state'] == 'Data Processing':
-        #    subsampleDefault = mainWindow.log.log['subsample_qa']
-        #else:
-        #    subsampleDefault = mainWindow.log.log['subsample_analysis']
-
         channelList = mainWindow.controller.fileChannels
-        mainWindow.channelSelector = ChannelSelector(channelList,parent=mainWindow.dockWidget)
+
+        if self.mainWindow.log.log['selected_plot'] == None:
+            self.mainWindow.log.log['selected_plot'] = '1'
+        if self.mainWindow.log.log['selected_plot'] == '*':
+            selectedPlot = '1'
+        else:
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+        selectedPlot = int(selectedPlot)
+
+        channel1Default = mainWindow.controller.log['plots_to_view_channels'][selectedPlot - 1][0]
+        channel2Default = mainWindow.controller.log['plots_to_view_channels'][selectedPlot - 1][1]
+        mainWindow.channelSelector = ChannelSelector(channelList,parent=mainWindow.dockWidget,
+                                                     channel1Default=channel1Default,channel2Default=channel2Default)
         csLayout = QtGui.QHBoxLayout()
         csLayout.setAlignment(QtCore.Qt.AlignLeft)
         csLayout.addWidget(mainWindow.channelSelector)
@@ -168,12 +175,8 @@ def add_left_dock(mainWindow):
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
         visualizationMode = mainWindow.log.log['visualization_mode']
         btnLabels = ['thumbnails','plot',]
-        #modeVizCallback = mainWindow.handle_visualization_modes
         mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,mainWindow=mainWindow,
                                                      modeDefault=visualizationMode,numSubplotsDefault=mainWindow.log.log['num_subplots'])
-
-        #modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
-
         vmsLayout = QtGui.QHBoxLayout()
         vmsLayout.setAlignment(QtCore.Qt.AlignLeft)
         vmsLayout.addWidget(mainWindow.vizModeSelector)

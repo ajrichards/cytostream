@@ -65,9 +65,7 @@ class ChannelSelector(QtGui.QWidget):
                 print "ERROR: in channel 2 selector - bad specified channelDefault", channel2Default
 
         ## callbacks
-        #if channel1selectionFn == None:
-        #    selectionFn = self.generic_callback
-        #self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
+        self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_selector_callback)    
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -79,6 +77,11 @@ class ChannelSelector(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
+
+    def channel_selector_callback(self):
+        
+
+
 
     def get_selected_channel(self):
         sfInd = self.channelSelector.currentIndex()
