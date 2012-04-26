@@ -30,6 +30,7 @@ class ChannelSelector(QtGui.QWidget):
         self.color = color
         self.channelList = channelList
         self.parent = parent
+        self.mainWindow = mainWindow
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
@@ -45,11 +46,12 @@ class ChannelSelector(QtGui.QWidget):
             self.channel1Selector.addItem(channelName)
         hbox1.addWidget(self.channel1Selector)
      
+        ## handle defaults
         if channel1Default != None:
-            if self.channelList.__contains__(channel1Default):
-                self.channel1Selector.setCurrentIndex(self.channelList.index(channel1Default))
+            if type(channel1Default) == type(1):
+                self.channel1Selector.setCurrentIndex(channel1Default)
             else:
-                print "ERROR: in channel 1 selector - bad specified channelDefault", channel1Default
+                print "ERROR: in channel 1 selector - bad specified channelDefault", channel1Default,type(channel1Default)
 
         ## y -ax channel selector
         hbox2.addWidget(QtGui.QLabel('y-ax'))
@@ -59,13 +61,14 @@ class ChannelSelector(QtGui.QWidget):
         hbox2.addWidget(self.channel2Selector)
      
         if channel2Default != None:
-            if self.channelList.__contains__(channel2Default):
-                self.channel2Selector.setCurrentIndex(self.channelList.index(channel2Default))
+            if type(channel2Default) == type(1):
+                self.channel2Selector.setCurrentIndex(channel2Default)
             else:
-                print "ERROR: in channel 2 selector - bad specified channelDefault", channel2Default
+                print "ERROR: in channel 2 selector - bad specified channelDefault", channel2Default,type(channel1Default)
 
         ## callbacks
-        self.connect(self.channelSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel_selector_callback)    
+        self.connect(self.channel1Selector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel1_selector_callback)
+        self.connect(self.channel2Selector,QtCore.SIGNAL("currentIndexChanged(int)"), self.channel2_selector_callback)
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -78,16 +81,88 @@ class ChannelSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
-    def channel_selector_callback(self):
-        
+    def channel1_selector_callback(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+            selectedFile = self.mainWindow.controller.log.log['selected_file']
+            if selectedFile == '':
+                return
+
+            numPlots = self.mainWindow.log.log['num_subplots']
+
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+                self.mainWindow.controller.save()
+
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+            vizMode = self.mainWindow.vizModeSelector.get_selected()
+
+            if vizMode != 'plot':
+                return
+
+            channel1,channel2 = self.get_selected_channels()
+            
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    channel2 = self.mainWindow.nwv.plots[selectedPlot].selectedChannel2
+                    self.mainWindow.controller.log.log['plots_to_view_channels'][int(selectedPlot)-1] = (channel1,channel2)
+                    self.mainWindow.controller.save()
+                    self.mainWindow.nwv.plots[selectedPlot].selectedChannel1 = channel1
+                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            else:
+                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                channel2 = self.mainWindow.nwv.plots[selectedPlot].selectedChannel2
+                self.mainWindow.controller.log.log['plots_to_view_channels'][int(selectedPlot)-1] = (channel1,channel2)
+                self.mainWindow.controller.save()
+                self.mainWindow.nwv.plots[selectedPlot].selectedChannel1 = channel1
+                self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
 
 
+    def channel2_selector_callback(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+            selectedFile = self.mainWindow.controller.log.log['selected_file']
+            if selectedFile == '':
+                return
 
-    def get_selected_channel(self):
-        sfInd = self.channelSelector.currentIndex()
-        sf = str(self.channelSelector.currentText())
+            numPlots = self.mainWindow.log.log['num_subplots']
 
-        return sf,sfInd
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+                self.mainWindow.controller.save()
+
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+            vizMode = self.mainWindow.vizModeSelector.get_selected()
+
+            if vizMode != 'plot':
+                return
+
+            channel1,channel2 = self.get_selected_channels()
+            
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    channel1 = self.mainWindow.nwv.plots[selectedPlot].selectedChannel1
+                    self.mainWindow.controller.log.log['plots_to_view_channels'][int(selectedPlot)-1] = (channel1,channel2)
+                    self.mainWindow.controller.save()
+                    self.mainWindow.nwv.plots[selectedPlot].selectedChannel2 = channel2
+                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            else:
+                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                channel1 = self.mainWindow.nwv.plots[selectedPlot].selectedChannel1
+                self.mainWindow.controller.log.log['plots_to_view_channels'][int(selectedPlot)-1] = (channel1,channel2)
+                self.mainWindow.controller.save()
+                self.mainWindow.nwv.plots[selectedPlot].selectedChannel2 = channel2
+                self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+
+    def get_selected_channels(self):
+        channel1 = self.channel1Selector.currentIndex()
+        channel2 = self.channel2Selector.currentIndex()
+
+        return channel1,channel2
 
     def generic_callback(self):
         print 'callback does not do anything yet'
