@@ -51,7 +51,7 @@ class VizModeSelector(QtGui.QWidget):
         
         ## mode selector
         hbox1.addWidget(QtGui.QLabel('visualization mode'))
-        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=self.viz_mode_selector_callback)
+        self.modeSelector = RadioBtnWidget(self.modeList,parent=self,callbackFn=self.viz_mode_selector_callback_1)
         hbox2.addWidget(self.modeSelector)
         if modeDefault != None:
             self.set_checked(modeDefault)
@@ -64,7 +64,7 @@ class VizModeSelector(QtGui.QWidget):
         hbox3.addWidget(self.numSubplotsSelector)
 
         self.update_num_subplots(numSubplotsDefault)
-        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.viz_mode_selector_callback) 
+        self.connect(self.numSubplotsSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.viz_mode_selector_callback_2) 
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -78,7 +78,7 @@ class VizModeSelector(QtGui.QWidget):
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
 
-    def viz_mode_selector_callback(self):
+    def viz_mode_selector_callback_1(self):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
@@ -109,6 +109,31 @@ class VizModeSelector(QtGui.QWidget):
                     print "Check VizModeSelector callback for appropriate move"
             else:
                 print "ERROR: invalid visMode detected"
+
+    def viz_mode_selector_callback_2(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+
+            ## ensure num subplots are saved when changed
+            numPlots = self.get_num_subplots()
+            self.mainWindow.log.log['num_subplots'] = str(numPlots)
+            self.mainWindow.controller.save()
+
+            selectedFile = self.mainWindow.log.log['selected_file']
+            if selectedFile == '':
+                return
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+            vizMode = self.get_selected()
+
+            ## make sure plotSelector displays correct options
+            self.mainWindow.plotSelector.ensure_correct_options(int(numPlots)) 
+
+            if vizMode == 'plot':
+                self.mainWindow.handle_show_plot()
 
     def update_num_subplots(self,numSubplotsDefault):
         '''

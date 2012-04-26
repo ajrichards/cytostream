@@ -137,18 +137,19 @@ def add_left_dock(mainWindow):
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
         channelList = mainWindow.controller.fileChannels
 
-        if self.mainWindow.log.log['selected_plot'] == None:
-            self.mainWindow.log.log['selected_plot'] = '1'
-        if self.mainWindow.log.log['selected_plot'] == '*':
+        if mainWindow.controller.log.log['selected_plot'] == None:
+            mainWindow.controller.log.log['selected_plot'] = '1'
+            mainWindow.controller.save()
+        if mainWindow.controller.log.log['selected_plot'] == '*':
             selectedPlot = '1'
         else:
-            selectedPlot = self.mainWindow.log.log['selected_plot']
+            selectedPlot = mainWindow.controller.log.log['selected_plot']
 
         selectedPlot = int(selectedPlot)
 
-        channel1Default = mainWindow.controller.log['plots_to_view_channels'][selectedPlot - 1][0]
-        channel2Default = mainWindow.controller.log['plots_to_view_channels'][selectedPlot - 1][1]
-        mainWindow.channelSelector = ChannelSelector(channelList,parent=mainWindow.dockWidget,
+        channel1Default = mainWindow.controller.log.log['plots_to_view_channels'][selectedPlot - 1][0]
+        channel2Default = mainWindow.controller.log.log['plots_to_view_channels'][selectedPlot - 1][1]
+        mainWindow.channelSelector = ChannelSelector(channelList,parent=mainWindow.dockWidget,mainWindow=mainWindow,
                                                      channel1Default=channel1Default,channel2Default=channel2Default)
         csLayout = QtGui.QHBoxLayout()
         csLayout.setAlignment(QtCore.Qt.AlignLeft)
@@ -159,7 +160,7 @@ def add_left_dock(mainWindow):
         mainWindow.channelSelector.setMinimumWidth(alignWidth)
 
     ## PlotTickControls
-    scaleDefault = ast.literal_eval(str(mainWindow.log.log['use_scaled_plots']))
+    scaleDefault = ast.literal_eval(str(mainWindow.controller.log.log['use_scaled_plots']))
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
         mainWindow.plotTickControls = PlotTickControls(parent=mainWindow.dockWidget,mainWindow=mainWindow,
                                                        scaleDefault=scaleDefault)
@@ -173,7 +174,7 @@ def add_left_dock(mainWindow):
 
     ## visualization mode selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
-        visualizationMode = mainWindow.log.log['visualization_mode']
+        visualizationMode = mainWindow.controller.log.log['visualization_mode']
         btnLabels = ['thumbnails','plot',]
         mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,mainWindow=mainWindow,
                                                      modeDefault=visualizationMode,numSubplotsDefault=mainWindow.log.log['num_subplots'])

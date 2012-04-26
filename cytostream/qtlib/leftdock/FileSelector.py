@@ -98,9 +98,15 @@ class FileSelector(QtGui.QWidget):
             if vizMode == 'plot':
                 if selectedPlot == '*':
                     for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                        fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                        self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
+                        self.mainWindow.controller.save()
                         self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
                         self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
                 else:
+                    fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                    self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
+                    self.mainWindow.controller.save()
                     self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
                     self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
             elif vizMode == 'thumbnails':
