@@ -6,19 +6,19 @@ from cytostream.tools import get_official_name_match
 
 
 class Thumbnail(QtGui.QWidget):
-    def __init__(self, imgPath, thumbSize,xLabel=None,yLabel=None,parent=None,isDiagonal=False):
+    def __init__(self, imgPath, thumbSize,xLabel=None,yLabel=None,parent=None,isDiagonal=False,callbackFn=None):
         QtGui.QWidget.__init__(self,parent)
 
         imgBtn = QtGui.QPushButton()
         grid = QtGui.QGridLayout()
-        #iconSize = int(round(thumbSize - (0.05 * float(thumbSize))))
         iconSize = thumbSize
         if isDiagonal == True:
             imgBtn.setIcon(QtGui.QIcon.fromTheme("face-monkey"))
         elif os.path.isfile(imgPath) == True:
-            imgBtn.setIcon(QtGui.QIcon(imgPath)) 
-            #if viewScatterFn != None and img != None:
-            #    self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: viewScatterFn(img=x))
+            imgBtn.setIcon(QtGui.QIcon(imgPath))
+            img = os.path.split(imgPath)[-1]
+            if callbackFn != None:
+                self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: callbackFn(img=x))
         else:
             imgBtn.setIcon(QtGui.QIcon.fromTheme("image-missing"))
 
@@ -42,9 +42,8 @@ class Thumbnail(QtGui.QWidget):
         ## finalize layout
         self.setLayout(grid)
 
-
 class ThumbnailViewer(QtGui.QWidget):
-    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,viewScatterFn=None,mainWindow=None):
+    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,mainWindow=None):
         QtGui.QWidget.__init__(self,parent)
 
         if parent == None:
@@ -63,13 +62,15 @@ class ThumbnailViewer(QtGui.QWidget):
 
         if mainWindow == None:
             channels = self.fileChannels
+            callbackFn = None
+            self.thumbSize = 100
         else:
             channels = self.mainWindow.log.log['default_thumb_channels']
+            im = Image.open(os.path.join(self.thumbDir,thumbs[0]))
+            self.thumbSize = max(im.size)
+            callbackFn =  self.mainWindow.handle_show_plot
 
         ## get thumbsize
-        im = Image.open(os.path.join(self.thumbDir,thumbs[0]))
-        self.thumbSize = max(im.size)
-
         for i in range(len(channels)):
             for j in range(len(channels)):
                 img = "."
@@ -89,8 +90,8 @@ class ThumbnailViewer(QtGui.QWidget):
                     isDiagonal = True
 
                 imgPath = os.path.join(self.thumbDir,img)
-                thumbWidget = Thumbnail(imgPath,self.thumbSize,parent=None,xLabel=xLabel,yLabel=yLabel,isDiagonal=isDiagonal)
-            
+                thumbWidget = Thumbnail(imgPath,self.thumbSize,parent=None,xLabel=xLabel,yLabel=yLabel,
+                                        isDiagonal=isDiagonal,callbackFn=callbackFn) 
                 grid.addWidget(thumbWidget,i,j)
         
         self.setLayout(grid)

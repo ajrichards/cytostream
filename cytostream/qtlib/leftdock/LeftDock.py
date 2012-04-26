@@ -168,10 +168,12 @@ def add_left_dock(mainWindow):
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
         visualizationMode = mainWindow.log.log['visualization_mode']
         btnLabels = ['thumbnails','plot',]
-        modeVizCallback = mainWindow.handle_visualization_modes
-        mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,modeDefault=visualizationMode,
-                                                     modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
-                                                     numSubplotsDefault=mainWindow.log.log['num_subplots'])
+        #modeVizCallback = mainWindow.handle_visualization_modes
+        mainWindow.vizModeSelector = VizModeSelector(btnLabels,parent=mainWindow.dockWidget,mainWindow=mainWindow,
+                                                     modeDefault=visualizationMode,numSubplotsDefault=mainWindow.log.log['num_subplots'])
+
+        #modeVizCallback=modeVizCallback,numSubplotsCallback=modeVizCallback,
+
         vmsLayout = QtGui.QHBoxLayout()
         vmsLayout.setAlignment(QtCore.Qt.AlignLeft)
         vmsLayout.addWidget(mainWindow.vizModeSelector)

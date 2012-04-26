@@ -1,7 +1,45 @@
-import sys,os
+import sys,os,math
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+class Waiting(QtGui.QWidget):
+    def __init__(self, parent = None):
+
+        QtGui.QWidget.__init__(self, parent)
+        palette = QtGui.QPalette(self.palette())
+        palette.setColor(palette.Background, QtCore.Qt.transparent)
+        self.setPalette(palette)
+
+    def paintEvent(self, event):
+
+        painter = QtGui.QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.fillRect(event.rect(), QtGui.QBrush(QtGui.QColor(255, 255, 255, 127)))
+        painter.setPen(QtGui.QPen(QtCore.Qt.NoPen))
+
+        for i in range(6):
+            if (self.counter / 5) % 6 == i:
+                painter.setBrush(QtGui.QBrush(QtGui.QColor(127 + (self.counter % 5)*32, 127, 127)))
+            else:
+                painter.setBrush(QtGui.QBrush(QtGui.QColor(127, 127, 127)))
+            painter.drawEllipse(
+                self.width()/2 + 30 * math.cos(2 * math.pi * i / 6.0) - 10,
+                self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) - 10,
+                20, 20)
+
+            painter.end()
+
+    def showEvent(self, event):
+        self.timer = self.startTimer(50)
+        self.counter = 0
+
+    def timerEvent(self, event):
+        self.counter += 1
+        self.update()
+        if self.counter == 60:
+            self.killTimer(self.timer)
+            self.hide()
 
 class RadioBtnWidget(QtGui.QWidget):
 
@@ -36,7 +74,8 @@ class RadioBtnWidget(QtGui.QWidget):
             btnBox.addWidget(self.btns[bLabel])
 
             if callbackFn != None:
-                self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callbackFn(item=item))
+                #self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:callbackFn(item=item))
+                self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),callbackFn)
 
             if default != None and bLabel == default:
                 self.btns[bLabel].setChecked(True)
@@ -51,7 +90,6 @@ class RadioBtnWidget(QtGui.QWidget):
         if item !=None:
             self.selectedItem = item
 
-
 class Slider(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -61,7 +99,6 @@ class Slider(QtGui.QWidget):
         self.slider.setFocusPolicy(QtCore.Qt.NoFocus)
         #self.slider.setGeometry(30, 40, 100, 30)
        
-
 class Imager(QtGui.QWidget):
     def __init__(self, imgPath, parent=None):
         QtGui.QWidget.__init__(self, parent)

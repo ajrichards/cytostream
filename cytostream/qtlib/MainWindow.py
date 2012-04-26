@@ -104,6 +104,7 @@ class MainWindow(QtGui.QMainWindow):
         self.pDock = None
         self.dock = None
         self.tv = None
+        self.nwv = None
         self.allFilePaths = []
         self.controller.masterChannelList = None
         self.reset_layout()
@@ -441,39 +442,47 @@ class MainWindow(QtGui.QMainWindow):
         '''
         self.move_to_model_run(self,modelMode='progressbar')
 
-    def handle_visualization_modes(self,item=None):
-        '''
-        handles the switching between visualization modes for qa and results
-        '''
-
-        vizModeList = ['thumbnails','plot']
-        if item not in vizModeList:
-            self.log.log['num_subplots'] = self.vizModeSelector.get_num_subplots()
-            if self.plotSelector:
-                self.plotSelector.ensure_correct_options(int(self.vizModeSelector.get_num_subplots()))
-            item = 'plot'
-
-        currentState = self.log.log['current_state']
-        self.controller.currentPlotView = item
-
-        if int(self.log.log['num_subplots']) > 1:
-            self.saveImgsBtn.setEnabled(True)
-        else:
-            self.saveImgsBtn.setEnabled(False)
-
-        if item == 'histogram':
-            move_to_one_dim_viewer(self)
-        elif item == 'thumbnails' and  currentState == 'Quality Assurance':
-            self.transitions.move_to_quality_assurance(mode='thumbnails')
-        elif item == 'thumbnails' and currentState == 'Model Results':
-            self.display_thumbnails()
-        elif item == 'thumbnails':
-            print "ERROR: MainWindow.handle_visualization_modes -- thumbnails with bad state", currentState
-        elif item == 'plot':
-            self.handle_show_plot()
-        else:
-            self.display_info("not available yet")
-            print "ERROR: mainWindow.handle_visualization_modes -- bad item", item
+   # def handle_visualization_modes(self,item=None):
+   #     '''
+   #     handles the switching between visualization modes for qa and results
+   #     '''#
+   #
+   #     vizModeList = ['thumbnails','plot']
+   #     if item not in vizModeList:
+   #         self.log.log['num_subplots'] = self.vizModeSelector.get_num_subplots()
+   #         if self.plotSelector:
+   #             self.plotSelector.ensure_correct_options(int(self.vizModeSelector.get_num_subplots()))
+   #         item = 'plot'
+   #
+   #     if item == 'thumbnails':
+   #         print dir(self.tvScrollarea)
+   #         #self.tvScrollarea.destroy()
+   #         #move_transition(self,repaint=True)
+   #         #self.reset_layout()
+   #         #self.mainWidget = QtGui.QWidget(self)
+   #         #move_transition(self)
+   #
+   #     currentState = self.log.log['current_state']
+   #     self.controller.currentPlotView = item
+   #
+   #     if int(self.log.log['num_subplots']) > 1:
+   #         self.saveImgsBtn.setEnabled(True)
+   #     else:
+   #         self.saveImgsBtn.setEnabled(False)
+   #
+   #     if item == 'histogram':
+   #         move_to_one_dim_viewer(self)
+   #     elif item == 'thumbnails' and  currentState == 'Quality Assurance':
+   #         self.transitions.move_to_quality_assurance(mode='thumbnails')
+   #     elif item == 'thumbnails' and currentState == 'Model Results':
+   #         self.display_thumbnails()
+   #     elif item == 'thumbnails':
+   #         print "ERROR: MainWindow.handle_visualization_modes -- thumbnails with bad state", currentState
+   #     elif item == 'plot':
+   #         self.handle_show_plot()
+   #     else:
+   #         self.display_info("not available yet")
+   #         print "ERROR: mainWindow.handle_visualization_modes -- bad item", item
 
     def handle_save_images_callback(self):
 
@@ -538,6 +547,7 @@ class MainWindow(QtGui.QMainWindow):
         if mode == 'Quality Assurance':
             self.qac.progressBar.button.setText('Please wait...')
             self.qac.progressBar.button.setEnabled(False)
+            self.fileSelector.setEnabled(False)
             self.subsampleSelector.setEnabled(False)
             self.channelSelector.setEnabled(False)
             self.moreInfoBtn.setEnabled(False)
@@ -585,7 +595,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if mode == 'thumbnails':
             if self.fileSelector:
-                self.fileSelector.setEnabled(False)
+                self.fileSelector.setEnabled(True)
             if self.plotSelector:
                 self.plotSelector.setEnabled(False)
             if self.channelSelector:
@@ -646,7 +656,7 @@ class MainWindow(QtGui.QMainWindow):
             fileChannels = self.log.log['alternate_channel_labels']
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,viewScatterFn=self.handle_show_plot,mainWindow=self)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,mainWindow=self)
         elif mode == 'Model Results':
             excludedChannels = self.log.log['excluded_channels_analysis']
             self.mainWidget = QtGui.QWidget(self)
@@ -658,25 +668,25 @@ class MainWindow(QtGui.QMainWindow):
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,viewScatterFn=self.handle_show_plot,mainWindow=self)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,mainWindow=self)
         else:
             print "ERROR: bad mode specified in display thumbnails", mode
             return
 
         ## ensure docks are present
-        if self.dockWidget != None:
-            add_left_dock(self)
-        if self.pDock == None:
-            self.add_pipeline_dock()
+        #if self.dockWidget != None:
+        #    add_left_dock(self)
+        #if self.pDock == None:
+        #    self.add_pipeline_dock()
 
         ## for either mode
         self.plots_enable_disable(mode='thumbnails')
-        scrollarea = QtGui.QScrollArea()
-        scrollarea.setWidget(self.tv)
-        scrollarea.setAlignment(QtCore.Qt.AlignCenter)
+        self.tvScrollarea = QtGui.QScrollArea()
+        self.tvScrollarea.setWidget(self.tv)
+        self.tvScrollarea.setAlignment(QtCore.Qt.AlignCenter)
 
         #hbl.addWidget(self.tv)
-        hbl.addWidget(scrollarea)
+        hbl.addWidget(self.tvScrollarea)
         self.vboxCenter.addLayout(hbl)
         self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
@@ -780,20 +790,18 @@ class MainWindow(QtGui.QMainWindow):
         if img != None:
             self.log.log['num_subplots'] = 1
             self.vizModeSelector.update_num_subplots(1)
-            channels = re.sub("%s\_|\_thumb.png"%re.sub("\.fcs|\.txt","",self.log.log['selected_file']),"",img)
-            channels = re.split("\_",channels)
-            chanI = channels[-2]
-            chanJ = channels[-1]
-            print chanI,chanJ
-            channelI = self.controller.fileChannels.tolist().index(re.sub("#","_",chanI))
-            channelJ = self.controller.fileChannels.tolist().index(re.sub("#","_",chanJ))
+            chanInds = re.findall("\d+\_\d+\_thumb",img)
+            i,j,k = chanInds[0].split("_")
+            i,j = int(i),int(j)
+            channelI = self.controller.channelDict[self.controller.log.log['official_channel_map'][i]]
+            channelJ = self.controller.channelDict[self.controller.log.log['official_channel_map'][j]]
             self.log.log['plots_to_view_channels'][0] = (channelI, channelJ)
             self.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
 
         ## initialize transition
-        move_transition(self,repaint=True)
-        self.reset_layout()
+        #move_transition(self,repaint=True)
         fileChannels = self.log.log['alternate_channel_labels']
+        self.reset_layout()
         self.mainWidget = QtGui.QWidget(self)
 
         ## set the model runs to view to be currently selected model
