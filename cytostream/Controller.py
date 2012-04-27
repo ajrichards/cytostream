@@ -225,15 +225,13 @@ class Controller:
                 if self.channelDict.has_key(channel):
                     channelIndices.append(self.channelDict[channel])
                     channelThumbs.append(channel)
-                else:
-                    print "ERROR: Controller -- when making thumbs channelDict does not have", channel
 
         self.log.log['official_channel_map'] = channelThumbs
         self.save()
         maxNumComparisons = 5
         if len(channelIndices) < 3:
-            channelIndices = range(len(self.fileChannels)[:maxNumComparisons])
-            channelThumbs = get_official_name_match(self.fileChannels[:maxNumComparisons])
+            channelIndices = range(len(self.fileChannels))[:maxNumComparisons]
+            channelThumbs = [get_official_name_match(i) for i in self.fileChannels[:maxNumComparisons]]
             self.log.log['default_thumb_channels'] = channelThumbs
             self.save()
 
@@ -535,7 +533,7 @@ class Controller:
                 self.fileChannelPath = str(allFiles[0])
 
         ## used the selected transform
-        transform = self.log.log['selected_transform']
+        transform = self.log.log['load_transform']
         autoComp = self.log.log['auto_compensation']
         logicleScaleMax = self.log.log['logicle_scale_max']
 

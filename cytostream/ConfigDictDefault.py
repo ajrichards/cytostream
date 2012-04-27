@@ -28,7 +28,8 @@ configDictDefault = {
     ########### immutable variables ##########################################################
     'input_data_type'                       : 'fcs',                              # fcs, comma, tab, array
     'setting_max_scatter_display'           : '7e4',                              # any float, int or string
-    'selected_transform'                    : 'logicle',                          # log, logicle
+    'load_transform'                        : 'logicle',                          # log, logicle, none
+    'plots_transform'                       : 'logicle',                          # log, logicle
     'num_iters_mcmc'                        : '1100',                             # an int
     'thumbnail_results_default'             : 'modes',                            # modes, components
     'scatter_marker_size'                   : '2',                                # mpl scatter marker size
@@ -47,7 +48,7 @@ configDictDefault = {
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string
     'subsample_analysis'                    : '1e4',                              # any float, int or string
-    'model_to_run'                          : 'dpmm',                             # dpmm, kmeans    
+    'model_to_run'                          : 'kmeans',                           # dpmm-mcmc, dpmm-bem, kmeans etc    
     'dpmm_k'                                : '16',                               # an int divisible by 16
     'dpmm_gamma'                            : '1.0',                              # gamma value for dpmm
     'thumbnails_to_view'                    : 'None',                             # None or '[(0,1),(0,3)]'

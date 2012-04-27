@@ -36,6 +36,7 @@ except:
 sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
+from ModelsInfo import modelsInfo
 from matplotlib import rc
 import matplotlib.cm as cm
 from PyQt4 import QtCore, QtGui
@@ -84,6 +85,9 @@ class Model:
             self.pythonPath = os.path.join("/","usr","local","bin","python")
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
+
+        ## add global variables
+        self.modelsInfo = modelsInfo
 
     def initialize(self,homeDir):
         """

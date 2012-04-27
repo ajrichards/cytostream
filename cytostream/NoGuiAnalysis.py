@@ -81,7 +81,7 @@ class NoGuiAnalysis():
                 self.set('input_data_type',dType)
 
             ## load files
-            self.set('selected_transform',str(transform))
+            self.set('load_transform',str(transform))
             self.set('logicle_scale_max',logicleScaleMax)
             goFlag = self.load_files()
             self.set('current_state', 'Model')

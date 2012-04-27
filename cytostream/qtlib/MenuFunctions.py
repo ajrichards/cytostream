@@ -68,7 +68,6 @@ def create_action(mainWindow, text, slot=None, shortcut=None, icon=None,
     '''
 
     action = QtGui.QAction(text, mainWindow)
-
     if icon is not None:
         iconPath = os.path.join(mainWindow.controller.baseDir,"qtlib","images",icon+".png") 
         if os.path.isfile(iconPath) == True:
@@ -95,8 +94,9 @@ def create_menubar_toolbar(mainWindow):
     '''
 
     ## file menu actions
-    fileNewAction = create_action(mainWindow,"New...", slot=mainWindow.create_new_project,
-                                  shortcut=QtGui.QKeySequence.New,icon="filenew", tip="Create a new project")
+    #icon = QtGui.QIcon.fromTheme("document-new")
+    fileNewAction = create_action(mainWindow,"New...",slot=mainWindow.create_new_project,
+                                  shortcut=QtGui.QKeySequence.New,icon='filenew', tip="Create a new project")
     fileOpenAction = create_action(mainWindow,"&Open...", mainWindow.open_existing_project,
                                    QtGui.QKeySequence.Open, "fileopen",
                                    "Open an existing project")
@@ -110,7 +110,7 @@ def create_menubar_toolbar(mainWindow):
     fileQuitAction = create_action(mainWindow,"&Quit", mainWindow.close,
                                    "Ctrl+Q", "filequit", "Close the application")
     ## edit menu actions
-    editPreferences = create_action(mainWindow,"&Preferences", lambda a=mainWindow: mainWindow.transitions.move_to_preferences(a),
+    editPreferences = create_action(mainWindow,"&Preferences", mainWindow.transitions.move_to_preferences,
                                     "Ctrl+P", None, "Application preferences")
     editRestoreDocks = create_action(mainWindow,"&Restore docks", lambda a=mainWindow: restore_docks(a),
                                      "Ctrl+R", None, "Restore Docks")

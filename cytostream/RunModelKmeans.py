@@ -1,40 +1,33 @@
 #!/usr/bin/python
 '''
-
-output:
-    a fcm.statistics.dp_cluster.ModalDPMixture object for modes
-    a np.array object of the cluster assignments for modes
-
-    a fcm.statistics.dp_cluster.DPMixture object for components
-    a np.array object of the cluster assignments for components
-
-    a run specific logfile
-
-A. Richards
+run the kmeans model on a given file
 '''
+
+__author__ = 'A. Richards'
 
 import sys,getopt,os,re,cPickle,time,csv
 import numpy as np
+from cytostream import ModelRunBase
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
-import fcm
-import fcm.statistics
+#import fcm
+#import fcm.statistics
 from cytostream import Logger,Model
 
 if len(sys.argv) < 3:
-    print sys.argv[0] + " -f fileName -p projName -g gpuDevice -h homeDir -s subsample -v"
+    print sys.argv[0] + " -f fileName -h homeDir -v -g gpuDevice"
     sys.exit()
 
 try:
     optlist, args = getopt.getopt(sys.argv[1:], 'f:h:g:c:v')
 except getopt.GetoptError:
-    print sys.argv[0] + "-f fileName -p projName"
-    print "Note: fileName (-f) must be the full" 
-    print "      homeDir  (-h) home directory for current project"
-    print " gpuDevice     (-g) device id for gpu"
+    print sys.argv[0] + "-f fileName -h homeDir -g gpuDevice[optional]"
+    print " Note: fileName (-f) must be the full" 
+    print " homeDir  (-h) home directory for current project"
+    print " gpuDevice     (-k) device id for gpu"
     print " verbose       (-v) verbose flag"
     sys.exit()
 
@@ -51,7 +44,7 @@ for o, a in optlist:
     if o == '-g':
         gpuDevice = int(a)
 
-class ModelRunBase():
+class RunModelKmeans(ModelRunBase):
 
     ## initial error checking
     if os.path.isdir(homeDir) == False:

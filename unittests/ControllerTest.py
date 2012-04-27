@@ -24,14 +24,22 @@ class ControllerTest(unittest.TestCase):
         self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
         self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")    
         self.controller = Controller(debug=False)
-        channelDict = {'FSCH':0,'SSCH':1}
+        channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
+
         self.controller.create_new_project(self.homeDir,channelDict=channelDict,record=False)
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
+
+        ## ensure we can open project with cytostream
+        self.controller.log.log['current_state'] = "Quality Assurance"
+        self.controller.log.log['highest_state'] = '2'
+        self.controller.save()
+
         
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
+        print self.controller.model.modelsInfo
     
     def testCreateNewProject(self):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
@@ -71,6 +79,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
     
+    '''
     def testRunModel(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -104,7 +113,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
+    '''
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

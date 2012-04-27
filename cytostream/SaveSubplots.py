@@ -249,7 +249,7 @@ class SaveSubplots():
             args[4] = index1
             args[5] = index2
             args[6] = subsampleIndices
-            args[7] = self.log.log['selected_transform']
+            args[7] = self.log.log['plots_transform']
             args[8] = labels
             args[9] = subplotHighlight
             args[10] = self.log.log
@@ -296,7 +296,7 @@ class SaveSubplots():
                     if positiveEventInds.size > 0:
                         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
         
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['selected_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=True)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=True)
                 
 
     def get_axes(self,subplotIndex):
