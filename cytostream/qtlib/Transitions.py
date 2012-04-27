@@ -387,7 +387,7 @@ class Transitions():
         move_transition(self.mainWindow,repaint=True)
         self.mainWindow.reset_layout()    
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
-        subsample = 1000
+        subsample = 10000
         self.mainWindow.controller.handle_subsampling(subsample)
         self.mainWindow.odv = OneDimViewer(self.mainWindow.controller.homeDir,subset=subsample,background=True,parent=self.mainWindow.mainWidget)
 
@@ -406,16 +406,23 @@ class Transitions():
         self.mainWindow.status.showMessage("Histogram viewer", 5000)
 
     def move_to_preferences(self):
+
+        ## ensure there is a project present
+        currentState = self.mainWindow.log.log['current_state']
+        if currentState == 'Initial':
+            self.mainWindow.display_info('To begin either load an existing project or create a new one')
+            return False
+
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to preferences"
-
+            
         ## clean the layout
         move_transition(self.mainWindow,repaint=True)
         self.mainWindow.reset_layout()
 
         ## preferences widget    
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
-        self.mainWindow.preferences = Preferences(parent=self.mainWindow.mainWidget)
+        self.mainWindow.preferences = Preferences(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
 
         ## handle docks
         self.mainWindow.restore_docks()
