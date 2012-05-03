@@ -8,10 +8,11 @@ analysis variables  - these variables although set here may be changed while cyt
 A. Richards
 '''
 
-plotsToViewChannels =   [(0,1) for i in range(16)]
-plotsToViewFiles =      [0 for i in range(16)]
-plotsToViewRuns =       ['run1' for i in range(16)]
+plotsToViewChannels   = [(0,1) for i in range(16)]
+plotsToViewFiles      = [0 for i in range(16)]
+plotsToViewRuns       = ['run1' for i in range(16)]
 plotsToViewHighlights = [None for i in range(16)]
+plotsToViewFilters    = [None for i in range(16)]
 
 configDictDefault = {
     ########### state variables ##############################################################
@@ -44,6 +45,7 @@ configDictDefault = {
     'plots_to_view_files'                   : plotsToViewFiles,                   # defined above'
     'plots_to_view_runs'                    : plotsToViewRuns,                    # defined above'
     'plots_to_view_highlights'              : plotsToViewHighlights,              # defined above'
+    'plots_to_view_filters'                 : plotsToViewFilters,                 # defined above'
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string

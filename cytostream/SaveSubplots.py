@@ -153,6 +153,7 @@ class SaveSubplots():
         plotsToViewFiles        = self.log.log['plots_to_view_files']
         plotsToViewRuns         = self.log.log['plots_to_view_runs']
         plotsToViewHighlights   = self.log.log['plots_to_view_highlights']
+        plotsToViewFilters      = self.log.log['plots_to_view_filters']
 
         if len(plotsToViewChannels) != len(plotsToViewFiles):
             print "ERROR: SaveSubplots -- failed error check 1 make_scatter_plots",len(plotsToViewChannels),len(plotsToViewFiles)
@@ -167,6 +168,7 @@ class SaveSubplots():
             subplotChannels = plotsToViewChannels[int(subplotIndex)]
             subplotRunID = plotsToViewRuns[int(subplotIndex)]
             subplotHighlight = plotsToViewHighlights[int(subplotIndex)]
+            subplotFilter = plotsToViewFilters[int(subplotIndex)]
 
             if self.figMode == 'qa':
                 pass
