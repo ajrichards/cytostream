@@ -623,7 +623,13 @@ class Controller:
     #
     ##################################################################################################
 
-    def run_selected_model(self,progressBar=None,view=None,useSubsample=True):
+    def sanitize_check(self,script):
+        if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
+            return False
+        else:
+            return True
+
+    def run_selected_model_gpu(self,progressBar=None,view=None,useSubsample=True):
 
         def report_progress(percentComplete,percentReported,progressBar=None):
             if progressBar != None:
@@ -651,12 +657,7 @@ class Controller:
                     if allComplete == True:
                         print "\nAll models have been run"
 
-        def sanitize_check(script):
-            if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
-                return False
-            else:
-                return True
-
+        
         ## ensure filelist variable is up to date
         if len(self.fileNameList) == 0:
             self.fileNameList = get_fcs_file_names(self.homeDir)
@@ -737,7 +738,7 @@ class Controller:
             cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
                                                    self.homeDir,fListStr,gpu)
             ## sanitize shell input
-            isClean = sanitize_check(cmd)
+            isClean = self.sanitize_check(cmd)
             if isClean == False:
                 print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
                 sys.exit()
@@ -885,3 +886,148 @@ class Controller:
                         print "\r",int(round(percentDone)),"percent complete"
 
         '''
+
+    def run_selected_model_cpu(self,progressBar=None,view=None,useSubsample=True):
+
+        def report_progress(percentComplete,percentagesReported,progressBar=None):
+            if progressBar != None:
+                progressBar.move_bar(int(round(percentComplete)))
+            else:
+                if int(round(percentComplete)) in percentagesReported:
+                    return
+                
+                percentagesReported.append(int(round(percentComplete)))
+                if int(round(percentComplete)) != 100: 
+                    print "\r",int(round(percentComplete)),"percent complete",
+                else:
+                    print "\r",int(round(percentComplete)),"percent complete"
+                
+        ## ensure filelist variable is up to date
+        if len(self.fileNameList) == 0:
+            self.fileNameList = get_fcs_file_names(self.homeDir)
+
+        ## variables
+        numItersMCMC =  int(self.log.log['num_iters_mcmc'])
+        selectedModel = self.log.log['model_to_run']
+        percentComplete = 0
+        percentagesReported = []
+        fileList = self.fileNameList
+        
+        ## iterate the model run ID
+        self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
+        self.save()
+
+        if useSubsample == False:
+            subsample = 'original'
+        if selectedModel not in self.model.modelsInfo.keys():
+            print "ERROR: Controller.run_selected_model_cpu -- an invalid model was specified",selectedModels
+            return
+        
+        script = os.path.join(self.baseDir,self.model.modelsInfo[selectedModel][1])
+
+        fileCount = 0
+        for fileName in fileList:
+            fileCount += 1
+            if os.path.isfile(script) == False:
+                print "ERROR: Invalid model run file path ", script
+            print script
+            proc = subprocess.Popen("%s %s -h %s -f %s"%(self.pythonPath,script,
+                                                         self.homeDir,fileName), 
+                                    shell=True,
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+            while True:
+                try:
+                    next_line = proc.stdout.readline()
+                    if next_line == '' and proc.poll() != None:
+                        break
+                   
+                    ## to debug uncomment the following
+                    print next_line
+                except:
+                    break
+                    
+            percentComplete = float(fileCount) / float(len(fileList)) * 100.0
+            report_progress(percentComplete,percentagesReported,progressBar=progressBar)
+                                       
+        ## if using model reference ensure ref comes first
+        #if modelReference != None:    
+        #    refPosition = fileList.index(modelReference)
+        #    if refPosition != 0:
+        #        refFile = fileList.pop(refPosition)
+        #        fileList = [refFile] + fileList
+
+        ## handle GPU identification
+        # numGPUs = CONFIGCS['number_gpus']
+
+        ## option to force the use of only a single gpu
+        #if self.log.log['force_single_gpu'] == True:
+        #    numGPUs = 1
+
+        #if type(numGPUs) != type(1):
+        #    print "ERROR: Controller numGPUs is invalid variable type"
+
+        ## split the file list among the total number of gpus        
+        #gpuDeviceList = np.arange(numGPUs)
+        #fileListByGPU = {}
+        
+        #gpuCount = -1
+        #for fileInd in range(len(fileList)):
+        #    gpuCount+=1
+        #    if gpuCount > max(gpuDeviceList):
+        #        gpuCount = 0
+        #
+        #    if fileListByGPU.has_key(str(gpuCount)) == False:
+        #        fileListByGPU[str(gpuCount)] = []
+        # 
+        #    fileListByGPU[str(gpuCount)].append(fileList[fileInd])
+
+        ## send jobs to appropriate gpu
+        #for gpu,fList in fileListByGPU.iteritems():
+        #    fListStr = re.sub("\[|\]|\s|\'","",str(fList))
+        #    #fListStr = re.sub(",",";",fListStr)
+        #    script = os.path.join(self.baseDir,"QueueGPU.py")
+        #    if os.path.isfile(script) == False:
+        #        print "ERROR: Invalid model run file path ", script
+        #    
+        #    cmd = "%s %s -b %s -h %s -f %s -g %s"%(self.pythonPath,script,self.baseDir,
+        #                                           self.homeDir,fListStr,gpu)
+        #    ## sanitize shell input
+        #    isClean = self.sanitize_check(cmd)
+        #    if isClean == False:
+        #        print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
+        #        sys.exit()
+        #
+        #    proc = subprocess.Popen(cmd,shell=True)#,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+        #    
+        #print "DEBUG: Controller -- all jobs have been sent"
+        #
+        #totalCompletedFiles = 0
+        #percentComplete = {}
+        #percentReported = {}
+        #for gpu in fileListByGPU.keys():
+        #    percentComplete[gpu] = 0.001
+        #    percentReported[gpu] = []
+        #
+        #while totalCompletedFiles < len(self.fileNameList):
+        #    time.sleep(2)
+        #    completedFiles = {}
+        #    for gpu in fileListByGPU.keys():
+        #        completedFiles[gpu] = []
+        # 
+        #    for fName in os.listdir(os.path.join(self.homeDir,'models')):
+        #        if not re.search("\_%s\.log"%modelRunID,fName):
+        #            continue
+        #        
+        #        ## count completed files
+        #        actualFileName = re.sub("\_%s\.log"%modelRunID,"",fName)
+        #        for gpu,fList in fileListByGPU.iteritems():
+        #            if actualFileName in fList:
+        #                completedFiles[gpu].append(actualFileName)
+        #                totalCompletedFiles += 1        
+        #
+        #        ## print out process
+        #        for gpu,fList in completedFiles.iteritems():
+        #            _percentComplete = (float(len(completedFiles[gpu])) / float(len(fileListByGPU[gpu]))) * 100.0
+        #            percentComplete[gpu] = _percentComplete
+        #            report_progress(percentComplete,percentReported,progressBar=progressBar)

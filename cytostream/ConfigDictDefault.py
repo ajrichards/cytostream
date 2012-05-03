@@ -49,7 +49,8 @@ configDictDefault = {
     'subsample_qa'                          : '1e4',                              # any float, int or string
     'subsample_analysis'                    : '1e4',                              # any float, int or string
     'model_to_run'                          : 'kmeans',                           # dpmm-mcmc, dpmm-bem, kmeans etc    
-    'dpmm_k'                                : '16',                               # an int divisible by 16
+    'k'                                     : '16',                               # an int divisible by 16
+    'kmeans_repeats'                        : '5',                                # an int
     'dpmm_gamma'                            : '1.0',                              # gamma value for dpmm
     'thumbnails_to_view'                    : 'None',                             # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                               # (indices) !not yet functional

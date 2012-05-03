@@ -17,6 +17,7 @@ from FileControls import get_fcs_file_names,get_img_file_names,get_models_run_li
 from ConfigDictDefault import configDictDefault
 from Logging import Logger
 from Model import Model
+from RunModelBase import RunModelBase
 from Controller import Controller
 from SaveSubplots import SaveSubplots
 from NoGuiAnalysis import NoGuiAnalysis
