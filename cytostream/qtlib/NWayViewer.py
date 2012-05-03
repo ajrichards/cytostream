@@ -84,7 +84,7 @@ class NWayViewer(QtGui.QWidget):
                                    plotTitle="default",
                                    dpi=100,
                                    subsample = subsample,
-                                   transform=self.controller.log.log['selected_transform'],
+                                   transform=self.controller.log.log['plots_transform'],
                                    subplotNum=i+1
                                    )
 

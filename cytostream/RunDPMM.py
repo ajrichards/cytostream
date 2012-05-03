@@ -117,7 +117,7 @@ elif type(includedChannels) != type([]) or type(excludedChannels) != type([]):
 
 events = events[:,includedChannels]
 
-## remove the border data points for the model fitting                                               
+## remove the border data points for the model fitting       
 n,d = np.shape(events)
 
 allZeroInds = []

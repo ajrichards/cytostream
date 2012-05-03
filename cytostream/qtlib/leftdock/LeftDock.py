@@ -123,8 +123,8 @@ def add_left_dock(mainWindow):
             subsampleDefault = mainWindow.log.log['subsample_analysis']
 
         mainWindow.subsampleSelector = SubsampleSelector(subsampleList,parent=mainWindow.dockWidget,
-                                               selectionFn=mainWindow.set_selected_subsample,
-                                               subsampleDefault=subsampleDefault)
+                                                         mainWindow=mainWindow,subsampleDefault=subsampleDefault)
+        #selectionFn=mainWindow.set_selected_subsample,
         ssLayout = QtGui.QHBoxLayout()
         ssLayout.setAlignment(QtCore.Qt.AlignLeft)
         ssLayout.addWidget(mainWindow.subsampleSelector)

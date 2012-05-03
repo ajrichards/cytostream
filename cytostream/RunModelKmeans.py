@@ -80,9 +80,13 @@ class RunModelKmeans(RunModelBase):
         
         bestRepeat = (None,None,-2.0)
         for repeat in range(repeats):
-            kmeanResults, kmeanLabels = kmeans2(events,k,minit='points')
-            svg = SilValueGenerator(events,kmeanLabels)
-            avgSilVal = svg.silValues.mean()
+            
+            try:
+                kmeanResults, kmeanLabels = kmeans2(events,k,minit='points')
+                svg = SilValueGenerator(events,kmeanLabels)
+                avgSilVal = svg.silValues.mean()
+            except:
+                kmeanResults = None
 
             if kmeanResults == None or avgSilVal == -2.0:
                 continue

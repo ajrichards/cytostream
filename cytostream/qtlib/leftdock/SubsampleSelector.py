@@ -19,7 +19,7 @@ class SubsampleSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, subsampleList, color='white', parent=None, subsampleDefault=None, selectionFn=None):
+    def __init__(self, subsampleList, color='white', parent=None, subsampleDefault=None, mainWindow=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -28,6 +28,7 @@ class SubsampleSelector(QtGui.QWidget):
 
         ## declare variables
         subsampleList = [str(int(float(ss))) for ss in subsampleList[:-1]] + [subsampleList[-1]]
+        self.mainWindow = mainWindow
         
         ## setup layouts
         self.color = color
@@ -55,11 +56,15 @@ class SubsampleSelector(QtGui.QWidget):
             if subsampleList.__contains__(subsampleDefault):
                 self.subsampleSelector.setCurrentIndex(subsampleList.index(subsampleDefault))
             else:
-                print "ERROR: in subsample selector - bad specified subsampleDefault", subsampleDefault
+                print "WARNING: in subsample selector - bad specified subsampleDefault", subsampleDefault
+                self.subsampleSelector.setCurrentIndex(0)
+                if self.mainWindow != None:
+                    if self.mainWindow.controller.log.log['current_state'] == 'Quality Assurance':
+                        self.mainWindow.controller.log.log['subsample_qa'] = subsampleList[0]
+                    else:
+                        self.mainWindow.controller.log.log['subsample_analysis'] = subsampleList[0]
 
-        if selectionFn == None:
-            selectionFn = self.generic_callback
-        self.connect(self.subsampleSelector, QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
+        self.connect(self.subsampleSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.subsample_selector_callback)    
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -80,6 +85,9 @@ class SubsampleSelector(QtGui.QWidget):
         sf = str(self.subsampleSelector.currentText())
 
         return sf, sfInd
+
+    def subsample_selector_callback(self):
+        print 'callback subsample selector'
 
     def generic_callback(self):
         print 'callback does not do anything yet'
