@@ -102,7 +102,6 @@ class Controller:
         if self.channelDict == None:
             self.channelDict = self.model.load_channel_dict()
 
-
     def labels_load(self,modelRunID,modelType='components'):
         '''
         load the labels from a given model run
@@ -629,7 +628,10 @@ class Controller:
         else:
             return True
 
-    def run_selected_model_gpu(self,progressBar=None,view=None,useSubsample=True):
+    def run_selected_model_gpu(self,progressBar=None,view=None):
+        '''
+        used for gpu enabled models
+        '''
 
         def report_progress(percentComplete,percentReported,progressBar=None):
             if progressBar != None:
@@ -657,39 +659,23 @@ class Controller:
                     if allComplete == True:
                         print "\nAll models have been run"
 
-        
         ## ensure filelist variable is up to date
         if len(self.fileNameList) == 0:
             self.fileNameList = get_fcs_file_names(self.homeDir)
 
         ## variables
-        numItersMCMC =  int(self.log.log['num_iters_mcmc'])
-        selectedModel = self.log.log['model_to_run']
-        modelMode = self.log.log['model_mode']
-        modelReference = self.log.log['model_reference']
-        subsample = self.log.log['subsample_analysis']
         percentDone = 0
         totalIters = float(len(self.fileNameList)) * numItersMCMC
         percentagesReported = []
         fileList = self.fileNameList
         
-        modelRunID = 'run%s'%str(int(self.log.log['models_run_count']) + 1)
+        ## iterate models run
         self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
         self.save()
 
-        if useSubsample == False:
-            subsample = 'original'
-
-        ## error check
-        if modelMode == 'onefit':
-            print "ERROR: Controller one fit is not a valid model mode"
-            sys.exit()
-
-        #if modelMode == 'onefit' and modelReference == None:
-        #    print "ERROR: Controller.run_selected_model - cannot use 'onefit' without specifing a model reference"
-        #    return
-
         ## if model mode is 'onefit' ensure the reference file comes first
+        modelMode = self.log.log['model_mode']
+        modelReference = self.log.log['model_reference']
         if modelMode == 'onefit':
             if fileList.__contains__(modelReference) == False:
                 print "ERROR: Controller.run_selected_model - bad model reference"
@@ -730,7 +716,6 @@ class Controller:
         ## send jobs to appropriate gpu
         for gpu,fList in fileListByGPU.iteritems():
             fListStr = re.sub("\[|\]|\s|\'","",str(fList))
-            #fListStr = re.sub(",",";",fListStr)
             script = os.path.join(self.baseDir,"QueueGPU.py")
             if os.path.isfile(script) == False:
                 print "ERROR: Invalid model run file path ", script
@@ -745,7 +730,8 @@ class Controller:
 
             proc = subprocess.Popen(cmd,shell=True)#,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
             
-        print "DEBUG: Controller -- all jobs have been sent"
+        if self.verbose == True:
+            print "INFO: Controller -- all jobs have been sent"
 
         totalCompletedFiles = 0
         percentComplete = {}
@@ -754,6 +740,7 @@ class Controller:
             percentComplete[gpu] = 0.001
             percentReported[gpu] = []
 
+        ## update progress bar or prompt out by tracking log files
         while totalCompletedFiles < len(self.fileNameList):
             time.sleep(2)
             completedFiles = {}
@@ -828,64 +815,6 @@ class Controller:
         #        _percentComplete = int(float(len(fList)) / float(len(fileListByGPU[gpu])) * 100.0)
         #        percentComplete[gpu] = _percentComplete
         #        report_progress(percentComplete,percentReported,progressBar=progressBar)
-
-        '''
-        fileCount = 0
-        for fileName in fileList:
-            fileCount += 1
-            if selectedModel == 'dpmm':
-                script = os.path.join(self.baseDir,"RunDPMM.py")
-                if os.path.isfile(script) == False:
-                    print "ERROR: Invalid model run file path ", script 
-                proc = subprocess.Popen("%s %s -h %s -f %s -k %s -s %s"%(self.pythonPath,script,
-                                                                         self.homeDir,fileName,numComponents,subsample), 
-                                        shell=True,
-                                        stdout=subprocess.PIPE,
-                                        stdin=subprocess.PIPE)
-                while True:
-                    try:
-                        next_line = proc.stdout.readline()
-                        if next_line == '' and proc.poll() != None:
-                            break
-                       
-                        ## to debug uncomment the following 2 lines
-                        if not re.search("it =",next_line):
-                            print next_line
-                        
-                        if re.search("Error|error|ERROR",next_line) and view != None:
-                            view.display_error("There was a problem with your cuda device\n%s"%next_line)
-
-                        if re.search("it =",next_line):
-                            progress = 1.0 / totalIters
-                            percentDone+=progress * 100.0
-                            if progressBar != None:
-                                progressBar.move_bar(int(round(percentDone)))
-                            else:
-                                if int(round(percentDone)) not in percentagesReported:
-                                    percentagesReported.append(int(round(percentDone)))
-                                    if int(round(percentDone)) != 100: 
-                                        print "\r",int(round(percentDone)),"percent complete",
-                                    else:
-                                        print "\r",int(round(percentDone)),"percent complete"
-                    except:
-                        break
-            
-            else:
-                print "ERROR: invalid selected model", selectedModel
-
-            ## output progress 
-            if modelMode == 'onefit':
-                percentDone = float(fileCount) / float(len(fileList)) * 100.0
-                
-                if progressBar != None:
-                    progressBar.move_bar(int(round(percentDone)))
-                else:
-                    if int(round(percentDone)) != 100: 
-                        print "\r",int(round(percentDone)),"percent complete",
-                    else:
-                        print "\r",int(round(percentDone)),"percent complete"
-
-        '''
 
     def run_selected_model_cpu(self,progressBar=None,view=None,useSubsample=True):
 

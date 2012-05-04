@@ -39,7 +39,7 @@ for o, a in optlist:
     if o == '-g':
         gpuDevice = int(a)
 
-class RunModelDPMMMCMC(RunModelBase):
+class RunModelDPMM(RunModelBase):
 
     def __init__(self,homeDir):
         RunModelBase.__init__(self,homeDir)
@@ -64,8 +64,8 @@ class RunModelDPMMMCMC(RunModelBase):
         ## model specific parameters
         cleanBorderEvents = True
         k = int(self.log.log['k'])
-        dpmmGamma = float(log.log['dpmm_gamma'])
-        numItersMCMC =  int(log.log['num_iters_mcmc'])
+        dpmmGamma = float(self.log.log['dpmm_gamma'])
+        numItersMCMC =  int(self.log.log['num_iters_mcmc'])
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
@@ -75,7 +75,7 @@ class RunModelDPMMMCMC(RunModelBase):
 
         events = events[:,includedChannels]
         if cleanBorderEvents == True:
-            nonBorderEvents = self.clean_border_events(events)
+            nonBorderEvents = self.remove_border_events(events)
 
         ## run model
         self.start_timer()
@@ -100,7 +100,10 @@ class RunModelDPMMMCMC(RunModelBase):
 
                 ## handle gpu
                 mod.device = gpuDevice
-                mod.fit(nonZeroEvents,verbose=True)
+                if cleanBorderEvents == True:
+                    mod.fit(nonBorderEvents,verbose=True)
+                else:
+                    mod.fit(events,verbose=True)
                 full = mod.get_results()
                 tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')
                 cPickle.dump(full,tmp0)
@@ -122,6 +125,9 @@ class RunModelDPMMMCMC(RunModelBase):
         else:
             full, uselessClasses = self.model.load_model_results_pickle(modelReference,modelReferenceRunID,modelType='components')
 
+        ## get components
+        classifyComponents = full.classify(events)
+
         ## get modes
         modes = full.make_modal()
         classifyModes = modes.classify(events)
@@ -129,7 +135,7 @@ class RunModelDPMMMCMC(RunModelBase):
         runTime = self.get_run_time()
         ## save cluster labels (components)
         componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.npy")
-        np.save(componentsFilePath,labels)
+        np.save(componentsFilePath,classifyComponents)
         tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.pickle"),'w')
         cPickle.dump(full,tmp1)
         tmp1.close()
@@ -158,11 +164,13 @@ class RunModelDPMMMCMC(RunModelBase):
         writer.writerow(["unused channels",self.list2Str(self.excludedChannelLabels)])        
         writer.writerow(["number events",str(events.shape[0])])
         writer.writerow(["model mode", modelMode])
+        writer.writerow(["dpmm gamma", str(dpmmGamma)])
+        writer.writerow(["mcmc iterations", str(numItersMCMC)])
 
         ## model specific
         writer.writerow(["number components",str(k)])
 
 if __name__ == '__main__':
     print 'running RunModelKmeans.py...'
-    runModel = RunModelDPMMMCMC(homeDir)
+    runModel = RunModelDPMM(homeDir)
     runModel.run()

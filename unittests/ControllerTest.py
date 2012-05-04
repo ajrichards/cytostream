@@ -78,20 +78,34 @@ class ControllerTest(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
     '''
     
-    def testRunModelKmeans(self):
+    def testRunModelDPMMM(self):
         excludedChannelInd = 1
         subsample = '1e3'
         self.controller.log.log['num_iters_mcmc'] = 1100
         self.controller.log.log['selected_k'] = 16
-        self.controller.log.log['model_to_run'] = 'kmeans'
+        self.controller.log.log['model_to_run'] = 'dpmm-mcmc'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
         self.controller.log.log['subsample_analysis'] = subsample
-    
+        self.controller.save()
+
         ## run model
         self.controller.handle_subsampling(subsample)
         self.controller.run_selected_model_cpu(useSubsample=True)
-        
-        '''
+    '''
+    def testRunModelKmeans(self):
+        excludedChannelInd = 1
+        subsample = '1e3'
+        self.controller.log.log['selected_k'] = 16
+        self.controller.log.log['model_to_run'] = 'kmeans'
+        self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
+        self.controller.log.log['subsample_analysis'] = subsample
+        self.controller.save()
+
+        ## run model
+        self.controller.handle_subsampling(subsample)
+        self.controller.run_selected_model_cpu(useSubsample=True)
+       
+    
         fileName = "3FITC_4PE_004"
         fileChannels = self.controller.model.get_file_channel_list(fileName)    
         excludedChannel = fileChannels[excludedChannelInd]
@@ -115,7 +129,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('analysis',modelRunID=modelRunID)
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-        '''
+    '''
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()
