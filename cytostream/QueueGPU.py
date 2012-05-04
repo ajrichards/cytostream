@@ -14,7 +14,7 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:],'h:f:g:b:')
+    optlist, args = getopt.getopt(sys.argv[1:],'h:f:g:b:s:')
 except getopt.GetoptError:
     print getopt.GetoptError
 
@@ -36,6 +36,8 @@ for o, a in optlist:
         baseDir = a
     if o == '-g':
         gpuDevice = int(a)
+    if o == '-s':
+        selectedModel = a
 
 ## python path
 if pythonPath != None:
@@ -52,18 +54,23 @@ else:
     pythonPath = os.path.join(os.path.sep,"usr","bin","python")
 
 ## transform file list
-selectedModel = 'dpmm'
 fileList = fileListStr.split(",")
 fileCount = 0
 percentagesReported = []
-totalIters = 1100
+#totalIters = 1100
 
 def sanitize_check(script):
     if re.search(">|<|\*|\||^\$|;|#|\@|\&",script):
         return False
     else:
         return True
-                
+    
+if selectedModel in ['dpmm-mcmc', 'dpmm-bem']:
+    script = os.path.join(baseDir,"RunModelDPMM.py")
+else:
+    print "ERROR: QueueGPU got a selectedModel it does not know what to do with"
+    return
+            
 for fileName in fileList:
     fileCount += 1
 
@@ -76,42 +83,38 @@ for fileName in fileList:
     alreadyReported = []
     percentDone = 0.0
 
-    if selectedModel == 'dpmm':
-        script = os.path.join(baseDir,"RunDPMM.py")
-        if os.path.isfile(script) == False:
-            print "ERROR: Invalid model run file path ", script 
-        cmd = "%s %s -h %s -g %s -f %s"%(pythonPath,script,homeDir,gpuDevice,fileName) 
-        isClean = sanitize_check(cmd)
-        if isClean == False:
-            print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
-            sys.exit()
+    if os.path.isfile(script) == False:
+        print "ERROR: Invalid model run file path ", script 
+    cmd = "%s %s -h %s -g %s -f %s"%(pythonPath,script,homeDir,gpuDevice,fileName) 
+    isClean = sanitize_check(cmd)
+    if isClean == False:
+        print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
+        sys.exit()
             
-        proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+    proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
         
-        ## wait until job is finished
-        output = proc.communicate()
+    ## wait until job is finished
+    output = proc.communicate()
 
-        '''
-        THIS DOES NOT WORK AND BREAKS THINGS
-        while not proc.poll():
-            #try:
+    '''
+    THIS DOES NOT WORK AND BREAKS THINGS
+    while not proc.poll():
+        #try:
             next_line = proc.stdout.readline()
             if re.search("it =",next_line):
-                #print "...", next_line
-                progress = 1.0 / totalIters
-                percentDone+=progress * 100.0
-                if int(percentDone) in percentsToPrint and int(percentDone) not in alreadyReported: 
-                    writer.writerow([int(percentDone)])    
-                    alreadyReported.append(int(percentDone))
-
-                #if next_line == '' and proc.poll() != None:
-                #    break
-
-            #except:
+            #print "...", next_line
+            progress = 1.0 / totalIters
+            percentDone+=progress * 100.0
+            if int(percentDone) in percentsToPrint and int(percentDone) not in alreadyReported: 
+            writer.writerow([int(percentDone)])    
+            alreadyReported.append(int(percentDone))
+        
+            #if next_line == '' and proc.poll() != None:
             #    break
-        '''
-    else:
-        print "ERROR: invalid selected model", selectedModel
 
+        #except:
+        #    break
+    '''
+    
     percentComplete = float(fileCount)/float(len(fileList))
     print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)

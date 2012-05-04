@@ -73,7 +73,7 @@ class RunModelKmeans(RunModelBase):
 
         events = events[:,includedChannels]
         if cleanBorderEvents == True:
-            nonBorderEvents = self.clean_border_events(events)
+            nonBorderEvents = self.remove_border_events(events)
 
         ## run model
         self.start_timer()

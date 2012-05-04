@@ -19,6 +19,7 @@ class RunModelBase(object):
             print "INPUT ERROR: RunModelBase - invalid project", homeDir
             return None
 
+        self.homeDir = homeDir
         self.projName = os.path.split(homeDir)[-1]
         self.projectID = os.path.split(homeDir)[-1]
 
