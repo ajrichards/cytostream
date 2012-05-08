@@ -4,7 +4,7 @@ from CurveFitting import spline_1d
 from TwoComponentGaussEM import TwoComponentGaussEM
 from MiscFns import kullback_leibler, two_component_em, scale
 from Thresholds import make_positivity_plot, handle_dump_filtering
-from Thresholds import calculate_fscores
+from Thresholds import calculate_fscores,get_optimal_num_bins
 from Thresholds import get_cytokine_threshold, get_cytokine_positive_events
 from DistanceCalculator import DistanceCalculator
 from SilValueGenerator import SilValueGenerator

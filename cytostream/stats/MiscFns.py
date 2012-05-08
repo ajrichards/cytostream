@@ -111,7 +111,6 @@ def two_component_em(clustEvents,verbose=False,emGuesses=None,subset="cd3"):
         print "WARNING: two_component_em -- cutpoint returned multiple values",subset
         cutpoint = cutpoint[0]
 
-
     return resultsDict,cutpoint
 
 def scale(val, src, dst):
