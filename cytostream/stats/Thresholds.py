@@ -16,8 +16,34 @@ try:
 except:
     pass
 
+
+def get_optimal_num_bins(x, binRange, method='freedman'):
+    """
+    Find the optimal number of bins.
+    Modified versions of Freedman, Scott
+    """
+    N = x.shape[0]
+    if method.lower()=='freedman':
+        s=np.sort(x)
+        IQR = s[int(N*.75)] - s[int(N*.25)] # Interquantile range (75% -25%)
+        width = 2* IQR*N**(-1./3)
+    elif method.lower()=='scott':
+        width = 3.49 * x.std()* N**(-1./3)
+    else:
+        raise 'Method must be Scott or Freedman', method
+
+    optimalNumBins = int(np.diff(binRange)/width)
+    #print '\t (1)', optimalNumBins
+    optimalNumBins = int(scale(optimalNumBins,(0,600),(100,300)))
+    #print '\t (2)', optimalNumBins
+    if optimalNumBins > 300 or optimalNumBins < 100:
+        print "WARNING: extreme value for optimal num bins obtained", optimalNumBins
+
+    return optimalNumBins
+    
+
 ## functions
-def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=2.0):
+def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=10.0):
     n = len(neg_pdf)
     #print '...beta:%s,theta:%s'%(beta,theta)
     fpos = np.where(pos_pdf > theta*neg_pdf, pos_pdf-neg_pdf, 0)
@@ -33,9 +59,15 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=2.0):
 
     return fscores,precision,recall
 
-def calculate_fscores(neg,pos,numBins=100,beta=1.0,theta=2.0,fullOutput=True):
+def calculate_fscores(neg,pos,numBins=100,beta=1.0,theta=10.0,fullOutput=True):
+
     neg = neg.copy()
     pos = pos.copy()
+
+    allEvents = np.hstack((neg,pos))
+    #numBins1 = get_optimal_num_bins(allEvents,(allEvents.min(),allEvents.max()))
+    numBins = np.sqrt(np.max([neg.shape[0],pos.shape[0]]))
+
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
     xs = (bins[:-1]+bins[1:])/2.0
@@ -277,7 +309,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
-def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150,theta=2.0):
+def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150,theta=10.0):
     '''
     returns a dict of results for cytokine threshold analysis
     '''
@@ -303,6 +335,7 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
         _negEvents = _negEvents[filterInds,:]
     negEvents = _negEvents[:,cytoIndex]
 
+    #print "\n",posControlFile,negControlFile,negEvents.shape,posEvents.shape,cytoIndex
     fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput,theta=theta)
 
     return fResults

@@ -171,9 +171,7 @@ class Model:
                 tmp = open(newChanFilePath,'w')
                 cPickle.dump(fileChannels,tmp)
                 tmp.close()
-               
-            ## if data is not of type array
-            else:
+            else:    
                 cmd = "%s %s -f %s -h %s -d %s -t %s -c %s -m %s -a %s -l %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
                                                                                transform,fileChannelPath,compensationFilePath,autoComp,
                                                                                logicleScaleMax)
