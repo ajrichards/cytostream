@@ -20,7 +20,10 @@ class ControllerTest(unittest.TestCase):
 
         self.projectID = 'utest'
         self.homeDir = os.path.join(BASEDIR,"cytostream","projects",self.projectID)
-        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")    
+        self.fcsFileName = os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")
+        self.fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
+        self.fileName = re.sub('\.fcs|\.txt|\.out','',self.fileName)
+      
         self.controller = Controller(debug=False)
         channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
 
@@ -65,9 +68,7 @@ class ControllerTest(unittest.TestCase):
         subsample = '1e3'
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
-        fileName = re.sub('\s+','_',os.path.split(self.fcsFileName)[-1])
-        fileName = re.sub('\.fcs|\.txt|\.out','',fileName)
-        events = self.controller.get_events(fileName,subsample=subsample)
+        events = self.controller.get_events(self.fileName,subsample=subsample)
         self.assertEqual(events.shape[0], 1000)
 
     def testProcessImagesQa(self):
@@ -90,7 +91,22 @@ class ControllerTest(unittest.TestCase):
 
         ## run model
         self.controller.handle_subsampling(subsample)
+        self.controller.run_selected_model_cpu()
         self.controller.run_selected_model_gpu()
+
+        ## check components and modes
+        statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(self.fileName,'run1',modelType='components')
+        statModelModes, statModelModeClasses = self.controller.model.load_model_results_pickle(self.fileName,'run1',modelType='modes')
+        self.assertEqual(statModelComponentClasses.size,1000)
+        self.assertEqual(statModelModeClasses.size,1000)
+
+        ## check components and modes
+        statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(self.fileName,'run2',modelType='components')
+        statModelModes, statModelModeClasses = self.controller.model.load_model_results_pickle(self.fileName,'run2',modelType='modes')
+        self.assertEqual(statModelComponentClasses.size,1000)
+        self.assertEqual(statModelModeClasses.size,1000)
+
+
     '''
     def testRunModelKmeans(self):
         excludedChannelInd = 1
@@ -109,8 +125,6 @@ class ControllerTest(unittest.TestCase):
         fileName = "3FITC_4PE_004"
         fileChannels = self.controller.model.get_file_channel_list(fileName)    
         excludedChannel = fileChannels[excludedChannelInd]
-
-        
 
         ## check components and modes
         statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(fileName,'run1',modelType='components')
