@@ -68,7 +68,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         events = self.controller.get_events(self.fileName,subsample=subsample)
         self.assertEqual(events.shape[0], 1000)
-
+    
     def testProcessImagesQa(self):
         subsample = '1e3'
         print '...making qa images...'
@@ -76,6 +76,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
+    
     
     def testRunModelDPMMM(self):
         excludedChannelInd = 1
@@ -90,7 +91,7 @@ class ControllerTest(unittest.TestCase):
         ## prepare to run models
         self.controller.handle_subsampling(subsample)
 
-        ## check that it works with cpu
+        ## check that it works with cpu subprocessing
         self.controller.run_selected_model_cpu()
         time.sleep(1)
         labels1 = self.controller.get_labels(self.fileName,'run1')
@@ -98,14 +99,14 @@ class ControllerTest(unittest.TestCase):
         modelRunLog1, labels1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
         self.assertTrue(len(modelRunLog1.keys()) > 5)
 
-        ## check that same code it works with gpu
+        ## check that same code it works with gpu subprocessing
         self.controller.run_selected_model_gpu()
         time.sleep(1)
         labels2 = self.controller.get_labels(self.fileName,'run2')
         self.assertEqual(labels2.size,1000)
         modelRunLog2, labels2 = self.controller.get_labels(self.fileName,'run2',getLog=True)
         self.assertTrue(len(modelRunLog2.keys()) > 5)
-   
+    
     def testRunModelKmeans(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -129,7 +130,7 @@ class ControllerTest(unittest.TestCase):
         print '...making run1 images...'
         self.controller.process_images('analysis',modelRunID='run1')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','run1','3FITC_4PE_004_thumbs')))
-        
+    
 
 ### Run the tests
 if __name__ == '__main__':

@@ -65,7 +65,8 @@ class RunModelDPMM(RunModelBase):
         cleanBorderEvents = True
         k = int(self.log.log['k'])
         dpmmGamma = float(self.log.log['dpmm_gamma'])
-        numItersMCMC =  int(self.log.log['num_iters_mcmc'])
+        nIters =  int(self.log.log['dpmm_niter'])
+        burnin =  int(self.log.log['dpmm_burnin'])
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
@@ -95,7 +96,7 @@ class RunModelDPMM(RunModelBase):
 
         if loadModel == False:
             if loadParams == False:
-                mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
+                mod = fcm.statistics.DPMixtureModel(nclusts=k,niter=nIters,burnin=burnin)
                 mod.gamma = dpmmGamma
 
                 ## handle gpu
@@ -113,7 +114,8 @@ class RunModelDPMM(RunModelBase):
                 refMod = cPickle.load(tmp0)
                 tmp0.close()
         
-                mod = fcm.statistics.DPMixtureModel(nclusts=k,iter=numItersMCMC,burnin=0,last=1)
+                ## niter is number of iters saved and burnin is the number to do before saving
+                mod = fcm.statistics.DPMixtureModel(nclusts=k,niter=nIters,burnin=burnin)
                 mod.gamma = dpmmGamma
                 mod.load_mu(refMod.mus())
                 mod.load_sigma(refMod.sigmas())
@@ -129,8 +131,8 @@ class RunModelDPMM(RunModelBase):
         classifyComponents = full.classify(events)
 
         ## get modes
-        modes = full.make_modal()
-        classifyModes = modes.classify(events)
+        #modes = full.make_modal()
+        #classifyModes = modes.classify(events)
 
         runTime = self.get_run_time()
         ## save cluster labels (components)
@@ -141,8 +143,8 @@ class RunModelDPMM(RunModelBase):
         tmp1.close()
 
         ## save cluster labels (modes)
-        modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.npy")
-        np.save(modesFilePath,classifyModes)
+        #modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.npy")
+        #np.save(modesFilePath,classifyModes)
 
         ## save a log file
         if verbose == True:
@@ -162,12 +164,13 @@ class RunModelDPMM(RunModelBase):
         writer.writerow(["number events",str(events.shape[0])])
         writer.writerow(["model mode", modelMode])
         writer.writerow(["dpmm gamma", str(dpmmGamma)])
-        writer.writerow(["mcmc iterations", str(numItersMCMC)])
+        writer.writerow(["dpmm nIters", str(nIters)])
+        writer.writerow(["dpmm burnin", str(burnin)])
 
         ## model specific
         writer.writerow(["number components",str(k)])
 
 if __name__ == '__main__':
-    print 'running RunModelKmeans.py...'
+    print 'running RunModelDPMM.py...'
     runModel = RunModelDPMM(homeDir)
     runModel.run()
