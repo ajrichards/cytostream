@@ -158,7 +158,7 @@ class RunModelDPMM(RunModelBase):
         writer.writerow(["subsample", str(subsample)])
         writer.writerow(["project id", self.projName])
         writer.writerow(["file name", fileName])
-        writer.writerow(["full model name", self.model.modelsInfo[selectedModel][0]])
+        writer.writerow(["full model name", re.sub('"',"",self.model.modelsInfo[selectedModel][0])])
         writer.writerow(["model runtime",str(round(runTime,4))])
         writer.writerow(["used channels",self.list2Str(self.includedChannelLabels)])
         writer.writerow(["unused channels",self.list2Str(self.excludedChannelLabels)])        

@@ -65,11 +65,10 @@ def sanitize_check(script):
     else:
         return True
     
-if selectedModel in ['dpmm-mcmc', 'dpmm-bem']:
+if selectedModel in ['dpmm-mcmc','dpmm-bem']:
     script = os.path.join(baseDir,"RunModelDPMM.py")
 else:
     print "ERROR: QueueGPU got a selectedModel it does not know what to do with"
-    return
             
 for fileName in fileList:
     fileCount += 1
@@ -95,26 +94,6 @@ for fileName in fileList:
         
     ## wait until job is finished
     output = proc.communicate()
-
-    '''
-    THIS DOES NOT WORK AND BREAKS THINGS
-    while not proc.poll():
-        #try:
-            next_line = proc.stdout.readline()
-            if re.search("it =",next_line):
-            #print "...", next_line
-            progress = 1.0 / totalIters
-            percentDone+=progress * 100.0
-            if int(percentDone) in percentsToPrint and int(percentDone) not in alreadyReported: 
-            writer.writerow([int(percentDone)])    
-            alreadyReported.append(int(percentDone))
-        
-            #if next_line == '' and proc.poll() != None:
-            #    break
-
-        #except:
-        #    break
-    '''
     
     percentComplete = float(fileCount)/float(len(fileList))
     print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
