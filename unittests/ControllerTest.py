@@ -90,7 +90,7 @@ class ControllerTest(unittest.TestCase):
 
         ## run model
         self.controller.handle_subsampling(subsample)
-        self.controller.run_selected_model_cpu(useSubsample=True)
+        self.controller.run_selected_model_gpu()
     '''
     def testRunModelKmeans(self):
         excludedChannelInd = 1
