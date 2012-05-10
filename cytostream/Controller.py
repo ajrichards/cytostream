@@ -93,6 +93,7 @@ class Controller:
             self.eventsList = []
 
         self.labelsList = {}
+        self.modelsRunLog = {}
 
         if len(self.fileNameList) > 0:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
@@ -105,7 +106,6 @@ class Controller:
     def labels_load(self,modelRunID,modelType='components'):
         '''
         load the labels from a given model run
-        
         '''
 
         modelsRunList = get_models_run_list(self.log.log)
@@ -117,11 +117,15 @@ class Controller:
                 return None
             
             _labelsList = []
+            _logsList = []
             for fileName in self.fileNameList:
                 fModel, fClasses = self.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
+                modelLog = self.model.load_model_results_log(fileName,modelRunID)
                 _labelsList.append(fClasses)
+                _logsList.append(modelLog)
             self.labelsList[modelRunID] = _labelsList
-                
+            self.modelsRunLog[modelRunID] = _logsList
+
     def get_events(self,selectedFileName,subsample='original'):
         '''
             input:
@@ -148,24 +152,38 @@ class Controller:
             key = str(int(float(subsample)))
             return origEvents[self.subsampleDict[key],:]
     
-    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original'):
+    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original',getLog=False):
+        """
+        returns labels for a given file and run id
+        """
+
+        if modelType != 'components':
+            print "WARNING: Controller -- cytostream defaults to the use of components"
+            modelType = 'components'
+
         modelsRunList = get_models_run_list(self.log.log)
 
         if modelRunID not in modelsRunList:
             return None
-
         if selectedFileName not in self.fileNameList:
             print "ERROR: Controller.get_labels - Invalid selectedFile specified", selectedFileName
             return None
 
+        ## ensure labels are present
         self.labels_load(modelRunID,modelType=modelType)
         labels = self.labelsList[modelRunID][self.fileNameList.index(selectedFileName)]
+        modelRunLog = self.modelsRunLog[modelRunID][self.fileNameList.index(selectedFileName)]
 
         if subsample == 'original':
-            return labels
+            labelsToReturn = labels
         else:
-            return labels[self.subsampleDict[key],:]
+            labelsToReturn = labels[self.subsampleDict[key],:]
         
+        if getLog == True:
+            return modelRunLog,labelsToReturn
+        else:
+            return labelsToReturn
+
     def process_images(self,mode,modelRunID=None,progressBar=None,view=None):
 
         ## error check
@@ -376,8 +394,9 @@ class Controller:
 
     def handle_subsampling(self,subsample,isFilter=False):
         '''
-        if subsampling is specified at the qa or analysis stage and the number is the same this function enables 
-        the use of only a single subsampling.
+        handels subsampling by fetching saved indices
+        if subsampling is specified at the qa or analysis stage and the number is the same 
+        this function enables the use of only a single subsampling.
 
         When isFilter is set to False -- the subsample arg is an int or float
         When isFilter is set to True  -- the subsample arg is a np.array of indices
@@ -412,13 +431,10 @@ class Controller:
         else:
             return True
 
-    ##################################################################################################
-    #
-    # data dealings -- handling file, project, model and figure data
-    #
-    ##################################################################################################
-
     def create_new_project(self,homeDir,channelDict={},record=True):
+        """
+        create a new project
+        """
 
         ## initialize project
         self.initialize_project(homeDir)
@@ -472,10 +488,9 @@ class Controller:
         os.rmdir(homeDir)
 
     def rm_fcs_file(self,fcsFile):
-        '''
+        """
         remove a fcs file from a project
-
-        '''
+        """
 
         dataDir = os.path.join(self.homeDir,'data')
         modelsDir = os.path.join(self.homeDir,'models')
@@ -543,7 +558,7 @@ class Controller:
         ## initialize class wide variables 
         self.fileNameList = get_fcs_file_names(self.homeDir)
 
-        if len(self.fileNameList) < 25:
+        if len(self.fileNameList) < 50:
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
         else:
             self.eventsList = []
@@ -584,7 +599,6 @@ class Controller:
         if fileChannels == None or len(fileChannels) == 0:
             print "WARNING: Controller.validate_channel_dict invalid file channels specified"
             return False
-
 
         mismatchFound = False
         for key,chanInd in channelDict.iteritems():
@@ -642,7 +656,7 @@ class Controller:
                     for _gpu,_percent in percentComplete.iteritems():
                         
                         if isFirst == True:
-                            print "\r GPU:%s"%_gpu,int(round(_percent)),
+                            print "\rGPU:%s"%_gpu,int(round(_percent)),
                         if isFirst == False:
                             print "GPU:%s"%_gpu,int(round(_percent)),
                         isFirst = False
@@ -800,7 +814,7 @@ class Controller:
             fileCount += 1
             if os.path.isfile(script) == False:
                 print "ERROR: Invalid model run file path ", script
-            print script
+            
             proc = subprocess.Popen("%s %s -h %s -f %s"%(self.pythonPath,script,
                                                          self.homeDir,fileName), 
                                     shell=True,

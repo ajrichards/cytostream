@@ -103,7 +103,7 @@ class RunModelKmeans(RunModelBase):
         runTime = self.get_run_time()
 
         ## save cluster labels (components)
-        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.npy")
+        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.npy")
         np.save(componentsFilePath,labels)
 
         ## save a log file

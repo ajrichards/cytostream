@@ -134,18 +134,15 @@ class RunModelDPMM(RunModelBase):
 
         runTime = self.get_run_time()
         ## save cluster labels (components)
-        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_components.npy")
+        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.npy")
         np.save(componentsFilePath,classifyComponents)
-        tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.pickle"),'w')
+        tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_full.pickle"),'w')
         cPickle.dump(full,tmp1)
         tmp1.close()
 
         ## save cluster labels (modes)
-        tmp2 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.pickle"),'w')
-        modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_modes.npy")
+        modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.npy")
         np.save(modesFilePath,classifyModes)
-        cPickle.dump(modes,tmp2)
-        tmp2.close()
 
         ## save a log file
         if verbose == True:

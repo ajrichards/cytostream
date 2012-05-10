@@ -46,8 +46,6 @@ class RunModelBase(object):
         else:
             self.fileChannels = self.log.log['alternate_channel_labels']
 
-        print self.fileChannels
-
         if len(self.excludedChannels) != 0:
             self.includedChannels = list(set(range(len(self.fileChannels))).difference(set(self.excludedChannels)))
             self.includedChannelLabels = np.array(self.fileChannels)[self.includedChannels].tolist()
