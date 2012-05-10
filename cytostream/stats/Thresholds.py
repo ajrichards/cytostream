@@ -66,7 +66,13 @@ def calculate_fscores(neg,pos,numBins=100,beta=1.0,theta=10.0,fullOutput=True):
 
     allEvents = np.hstack((neg,pos))
     #numBins1 = get_optimal_num_bins(allEvents,(allEvents.min(),allEvents.max()))
-    numBins = np.sqrt(np.max([neg.shape[0],pos.shape[0]]))
+    numBins = int(np.sqrt(np.max([neg.shape[0],pos.shape[0]])))
+    #theta = 100.0
+    #beta = 0.1
+    #print '\tnum bins',numBins
+    #print '\ttheta   ',theta
+    #print '\tbeta    ',beta
+
 
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
@@ -366,7 +372,10 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
         events = nga.get_events(fileName)
         if filterID != None:
             filterInds = nga.get_filter_indices(fileName,filterID)
-            if len(filterInds) > 0:
+            #print filterInds
+            if type(filterInds) != type([]):
+                pass
+            elif len(filterInds) > 0:
                 events = events[filterInds,:]
         
         data = events[:,cytoIndex]
