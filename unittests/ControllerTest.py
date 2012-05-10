@@ -35,12 +35,10 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['current_state'] = "Quality Assurance"
         self.controller.log.log['highest_state'] = '2'
         self.controller.save()
-        
-    '''
+    
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
-        print self.controller.model.modelsInfo
     
     def testCreateNewProject(self):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
@@ -73,11 +71,11 @@ class ControllerTest(unittest.TestCase):
 
     def testProcessImagesQa(self):
         subsample = '1e3'
+        print '...making qa images...'
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-    '''
     
     def testRunModelDPMMM(self):
         excludedChannelInd = 1
@@ -89,25 +87,25 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['subsample_analysis'] = subsample
         self.controller.save()
 
-        ## run model
+        ## prepare to run models
         self.controller.handle_subsampling(subsample)
+
+        ## check that it works with cpu
         self.controller.run_selected_model_cpu()
+        time.sleep(1)
+        labels1 = self.controller.get_labels(self.fileName,'run1')
+        self.assertEqual(labels1.size,1000)        
+        modelRunLog1, labels1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
+        self.assertTrue(len(modelRunLog1.keys()) > 5)
+
+        ## check that same code it works with gpu
         self.controller.run_selected_model_gpu()
-
-        ## check components and modes
-        statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(self.fileName,'run1',modelType='components')
-        statModelModes, statModelModeClasses = self.controller.model.load_model_results_pickle(self.fileName,'run1',modelType='modes')
-        self.assertEqual(statModelComponentClasses.size,1000)
-        self.assertEqual(statModelModeClasses.size,1000)
-
-        ## check components and modes
-        statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(self.fileName,'run2',modelType='components')
-        statModelModes, statModelModeClasses = self.controller.model.load_model_results_pickle(self.fileName,'run2',modelType='modes')
-        self.assertEqual(statModelComponentClasses.size,1000)
-        self.assertEqual(statModelModeClasses.size,1000)
-
-
-    '''
+        time.sleep(1)
+        labels2 = self.controller.get_labels(self.fileName,'run2')
+        self.assertEqual(labels2.size,1000)
+        modelRunLog2, labels2 = self.controller.get_labels(self.fileName,'run2',getLog=True)
+        self.assertTrue(len(modelRunLog2.keys()) > 5)
+   
     def testRunModelKmeans(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -119,31 +117,20 @@ class ControllerTest(unittest.TestCase):
 
         ## run model
         self.controller.handle_subsampling(subsample)
-        self.controller.run_selected_model_cpu(useSubsample=True)
-       
-    
-        fileName = "3FITC_4PE_004"
-        fileChannels = self.controller.model.get_file_channel_list(fileName)    
-        excludedChannel = fileChannels[excludedChannelInd]
+        self.controller.run_selected_model_cpu()
 
-        ## check components and modes
-        statModelComponents, statModelComponentClasses = self.controller.model.load_model_results_pickle(fileName,'run1',modelType='components')
-        statModelModes, statModelModeClasses = self.controller.model.load_model_results_pickle(fileName,'run1',modelType='modes')
-        self.assertEqual(statModelComponentClasses.size,1000)
-        self.assertEqual(statModelModeClasses.size,1000)
-
-        ## check IR from log file
-        modelRunID = 'run1'
-        modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
-        self.assertEqual(self.projectID,modelLog['project id'])
-        self.assertEqual(excludedChannel,modelLog['unused channels'])
+        labels1 = self.controller.get_labels(self.fileName,'run1')
+        self.assertEqual(labels1.size,1000)        
+        modelRunLog1, labels1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
+        self.assertTrue(len(modelRunLog1.keys()) > 5)
+        self.assertEqual(self.projectID,modelRunLog1['project id'])
 
         ## test process images after model run
-        subsample = self.controller.log.log['subsample_analysis']
-        self.controller.handle_subsampling(subsample)
-        self.controller.process_images('analysis',modelRunID=modelRunID)
-        self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-    '''
+        print '...making run1 images...'
+        self.controller.process_images('analysis',modelRunID='run1')
+        self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','run1','3FITC_4PE_004_thumbs')))
+        
+
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()

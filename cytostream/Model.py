@@ -368,7 +368,7 @@ class Model:
 
         return randEvents
 
-    def load_model_results_pickle(self,fileName,modelNum,modelType='modes'):
+    def load_model_results_pickle(self,fileName,modelNum,modelType='components'):
         """
         about:
             loads a pickled fcm file into the workspace
@@ -384,21 +384,25 @@ class Model:
             print "ERROR: invalide model type specified in load_model_results"
             return False
 
-        tmp1File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.pickle"%modelType)
-        tmp2File = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_classify_%s.npy"%modelType)
-        tmp1 = open(tmp1File,'r')
-        
-        if os.path.isfile(tmp1File) == False or os.path.isfile(tmp2File) == False:
-            print "ERROR: bad model file specified -- path does not exist"
+        ## check to see if full is saved
+        full = None
+        tmpFileFull = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_full.pickle")        
+        if os.path.exists(tmpFileFull):
+            tmp1 = open(tmpFileFull,'r')
+            full = cPickle.load(tmp1)
+            tmp1.close()
+
+        labelsFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.npy"%modelType)
+
+        if os.path.isfile(labelsFile) == False:
+            print "ERROR: Model -- bad labels file specified -- path does not exist", labelsFile
 
         ## load the labels
-        classify = np.load(tmp2File)
+        tmp2 = open(labelsFile,'r')
+        classify = np.load(tmp2)
+        tmp2.close()
 
-        ## load the model
-        model = cPickle.load(tmp1)
-        tmp1.close()
-
-        return model,classify
+        return full,classify
     
     def load_model_results_log(self,fileName,modelNum):
         """
