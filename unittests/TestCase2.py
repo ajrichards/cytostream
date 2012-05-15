@@ -24,77 +24,51 @@ class TestCase2(unittest.TestCase):
         else:
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
-        ## necessary variables
-        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        ## declare variables
         projectID = 'utest'
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
-        channelDict = {'fsc-h':0,'ssc-h':1}
-
+        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
+        
         ## run the initial model for all files
         self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
         self.nga.set('subsample_qa', 1000)
         self.nga.set('subsample_analysis', 1000)
-        self.nga.run_model()
+        self.nga.set('model_to_run','kmeans')
+        self.nga.set('excluded_channels_analysis') = []
 
-        fileNameList = self.nga.get_file_names()
-        
-        ## create all pairwise figs for all files
-        #for fileName in fileNameList:
-        #    self.nga.make_results_figures(fileName,'run1')
+        ## rerun the model on the subset
+
+
+    
+    def tests(self):
+
+        ## run the first model
+        self.nga.run_model()
 
         ## create a filter that consists of clusters 1 and 2
         parentModelRunID = 'run1'
-        filterID = 'filter1'
-        modelMode = 'modes'
-        
+        filterID = 'ftr1'
+        modelMode = 'components'
+        fileNameList =self. nga.get_file_names()
         clusterIDs = [1,2]
         for fileName in fileNameList:
-            self.nga.handle_filtering(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+            self.nga.handle_filtering(filterID,fileName,parentModelRunID,'components',clusterIDs)
 
-        self.nga.set('subsample_analysis','filter1')
+        ## set subsample to filter id
+        self.nga.set('subsample_analysis','ftr1')
+
+
+        ## run the second model
         self.nga.run_model()
-        #self.nga.set('filter_in_focus',filterID)
-        
-        ## create all pairwise figs for all files
-        time.sleep(3)
-        for fileName in fileNameList:
-            self.nga.make_results_figures(fileName,'run2')
 
-        ## return filter in focus to default
-        #self.nga.set('filter_in_focus','None')
-        
-    def tests(self):
+
         ## ensure project was created
-        self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
-        
-        ## get file names
-        fileNameList = self.nga.get_file_names()
-        self.assertEqual(len(fileNameList),1)
 
-        ## get events
-        events = self.nga.get_events(fileNameList[0],subsample=self.nga.controller.log.log['subsample_qa'])
-        self.assertEqual(events.shape[0], int(float(self.nga.controller.log.log['subsample_qa'])))
-        
-        ## check that model results can be retrieved
-        modelRunID = 'run1'
-        subsample = 1000
-        componentModel, componentClasses = self.nga.get_model_results(fileNameList[0],modelRunID,'components')
-        self.assertEqual(componentClasses.size,subsample)
-        modesModel, modesClasses = self.nga.get_model_results(fileNameList[0],modelRunID,'modes')
-        self.assertEqual(modesClasses.size,subsample)
-        
-        ## check that information can be retrieved from model log file
-        modelLog = self.nga.get_model_log(fileNameList[0],modelRunID)
-        self.assertEqual('utest',modelLog['project id'])
 
-        ## check that analysis figs were made
-        #self.assertTrue(os.path.isdir(os.path.join(self.nga.controller.homeDir,'figs',modelRunID,'3FITC_4PE_004_thumbs')))
-
-        ## check run2 and relevant results
-        #filterID = "%s_%s"%(subsample,'filter1')
-        #events = self.nga.get_events(fileNameList[0],subsample=filterID)  
-        #self.failIf(subsample < events.shape[0])
+        modelLog1, modelLabels1 = self.nga.get_labels(selectedFileName,'run1',modelType='components',,getLog=True)
+        modelLog2, modelLabels2 = self.nga.get_labels(selectedFileName,'run2',modelType='components',,getLog=True)
 
 
 ### Run the tests 

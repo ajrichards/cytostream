@@ -362,6 +362,7 @@ class Model:
             randEvents = randEvents[:subsample]
         else:
             print "WARNING: Model.py get_sumsample_indices -- subsample must be the array or an int -- using original data"
+            return None
 
         ## save rand events for future use
         np.save(sampleIndicesFilePath,randEvents)

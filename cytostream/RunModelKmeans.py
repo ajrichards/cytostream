@@ -53,7 +53,7 @@ class RunModelKmeans(RunModelBase):
 
         ## persistant parameters
         selectedModel = self.log.log['model_to_run']
-        subsample = self.subsample
+        subsample = self.log.log['subsample_analysis']
         modelMode = self.log.log['model_mode']
         modelNum = self.modelNum
         modelReference = self.log.log['model_reference']
@@ -67,7 +67,10 @@ class RunModelKmeans(RunModelBase):
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
-        if subsample != 'original':
+        if re.search('ftr',subsample):
+            filterIndices = self.model.load_filter(fileName,subsample)
+            events = events[filterIndices,:]
+        elif subsample != 'original':
             subsampleIndices = self.model.get_subsample_indices(subsample)
             events = events[subsampleIndices,:]
 
