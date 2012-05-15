@@ -82,7 +82,7 @@ class ControllerTest(unittest.TestCase):
         excludedChannelInd = 1
         subsample = '1e3'
         self.controller.log.log['num_iters_mcmc'] = 1100
-        self.controller.log.log['selected_k'] = 16
+        self.controller.log.log['dpmm_k'] = 16
         self.controller.log.log['model_to_run'] = 'dpmm-mcmc'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
         self.controller.log.log['subsample_analysis'] = subsample
@@ -110,7 +110,7 @@ class ControllerTest(unittest.TestCase):
     def testRunModelKmeans(self):
         excludedChannelInd = 1
         subsample = '1e3'
-        self.controller.log.log['selected_k'] = 16
+        self.controller.log.log['dpmm_k'] = 16
         self.controller.log.log['model_to_run'] = 'kmeans'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
         self.controller.log.log['subsample_analysis'] = subsample

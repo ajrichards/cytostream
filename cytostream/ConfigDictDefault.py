@@ -31,8 +31,7 @@ configDictDefault = {
     'setting_max_scatter_display'           : '7e4',                              # any float, int or string
     'load_transform'                        : 'logicle',                          # log, logicle, none
     'plots_transform'                       : 'logicle',                          # log, logicle
-    'num_iters_mcmc'                        : '1100',                             # an int
-    'thumbnail_results_default'             : 'modes',                            # modes, components
+    'thumbnail_results_default'             : 'components',                       # modes, components
     'scatter_marker_size'                   : '2',                                # mpl scatter marker size
     'font_size'                             : '12',                               # int
     'font_name'                             : 'arial',                            # font name
@@ -40,7 +39,7 @@ configDictDefault = {
 
     ########### plotting variables  ########################################################## 
     'use_scaled_plots'                      : 'False',                            # True | False 
-    'results_mode'                          : 'modes',                            # modes, components
+    'results_mode'                          : 'components',                       # modes, components
     'plots_to_view_channels'                : plotsToViewChannels,                # defined above'
     'plots_to_view_files'                   : plotsToViewFiles,                   # defined above'
     'plots_to_view_runs'                    : plotsToViewRuns,                    # defined above'
@@ -50,11 +49,12 @@ configDictDefault = {
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string
     'subsample_analysis'                    : '1e4',                              # any float, int or string
-    'model_to_run'                          : 'kmeans',                           # dpmm-mcmc, dpmm-bem, kmeans etc    
-    'k'                                     : '16',                               # an int divisible by 16
+    'model_to_run'                          : 'kmeans',                           # dpmm-mcmc, dpmm-bem, kmeans etc
     'kmeans_repeats'                        : '5',                                # an int
+    'kmeans_k'                              : '16',                               # an int divisible by 16
     'dpmm_gamma'                            : '1.0',                              # gamma value for dpmm
     'dpmm_niter'                            : '100',                              # number of iters to save
+    'dpmm_k'                                : '96',                                # number of cluster for dpmm models
     'dpmm_burnin'                           : '900',                              # number of iters to go before saving
     'thumbnails_to_view'                    : 'None',                             # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                               # (indices) !not yet functional

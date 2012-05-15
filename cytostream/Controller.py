@@ -709,6 +709,9 @@ class Controller:
         gpuDeviceList = np.arange(numGPUs)
         fileListByGPU = {}
         
+        print 'running... %s via %s'%(selectedModel,self.model.modelsInfo[selectedModel][1])
+        print '\tusing % gpu devices'%len(gpuDeviceList)
+
         gpuCount = -1
         for fileInd in range(len(fileList)):
             gpuCount+=1
@@ -807,6 +810,8 @@ class Controller:
             print "ERROR: Controller.run_selected_model_cpu -- Invalid model",selectedModel
             return
         
+        print 'running... %s via %s'%(selectedModel,self.model.modelsInfo[selectedModel][1])
+
         script = os.path.join(self.baseDir,self.model.modelsInfo[selectedModel][1])
 
         fileCount = 0
