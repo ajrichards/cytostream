@@ -37,17 +37,19 @@ class TestCase1(unittest.TestCase):
     
         ## shows how to set parameters before analysis is begun
         configDict = configDictDefault.copy()
-        configDict['dpmm_niters'] = 100
-        configDict['dpmm_burnin'] = 900
-        configDict['subsample_qa'] = 500             # num. events for qa plots
-        configDict['subsample_analysis'] = 500       # num. events for model run and plots
-        self.nga.set('excluded_channels_analysis') = [channelDict['FSCH']]
+        configDict['load_transform'] = 'logicle'
 
         ## initialize the analysis class
         self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,
                                  makeQaFigs=False,record=False)
         
-        ## normal method to set parameters
+        ## normal way to modify parameters
+        self.nga.set('excluded_channels_analysis',[channelDict['FSCH']])
+        self.nga.set('dpmm_niter',100)
+        self.nga.set('dpmm_burnin',900)
+        self.nga.set('dpmm_k',16)
+        self.nga.set('subsample_qa',500)             # num. events for qa plots
+        self.nga.set('subsample_analysis',500)       # num. events for model run and plots
         self.nga.set('model_to_run','dpmm-mcmc')
 
         ## run the model

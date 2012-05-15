@@ -16,7 +16,7 @@ BASEDIR = os.path.dirname(__file__)
 class NoGuiAnalysis():
     def __init__(self,homeDir,channelDict=None,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
-                 logicleScaleMax=10**5):
+                 logicleScaleMax=10**5,autoComp=True):
         """
           class constructor 
 
@@ -49,6 +49,7 @@ class NoGuiAnalysis():
         self.verbose = verbose
         self.inputChannels = inputChannels
         self.compensationFilePath = compensationFilePath
+        self.autoComp = autoComp
         self.channelDict = channelDict
 
         ## initialize
@@ -83,6 +84,7 @@ class NoGuiAnalysis():
             ## load files
             self.set('load_transform',str(transform))
             self.set('logicle_scale_max',logicleScaleMax)
+            self.set('auto_compensation',self.autoComp)
             goFlag = self.load_files()
             self.set('current_state', 'Model')
             self.set('highest_state', '3')

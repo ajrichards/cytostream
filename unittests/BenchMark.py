@@ -20,13 +20,6 @@ class BenchMarkTest(unittest.TestCase):
         else:
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
-
-        try:
-            import gpustats
-        except:
-            print "ERROR: gpu not available not running benchmark"
-            return
-
         ## declare variables
         projectID = 'utest'
         homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
@@ -38,10 +31,17 @@ class BenchMarkTest(unittest.TestCase):
         self.nga.set('subsample_qa', 1000)
         self.nga.set('subsample_analysis', 1000)
         self.nga.set('model_to_run','dpmm-mcmc')
-        self.nga.set('dpmm_niters',100)
+        self.nga.set('dpmm_niter',100)
         self.nga.set('dpmm_burnin',900)
+        self.nga.set('dpmm_k',16)
         
     def testRunModel(self):
+        try:
+            import gpustats
+        except:
+            print "ERROR: gpu not available not running benchmark"
+            return
+
         timeBegin = time.time()        
         self.nga.run_model()
         timeEnd = time.time()

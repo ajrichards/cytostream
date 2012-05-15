@@ -49,6 +49,9 @@ class RunModelDPMM(RunModelBase):
         run specified model
         '''
 
+        #print '\t\trunning %s %s',fileName,gpuDevice
+
+
         if verbose == True:
             print '\t...writing log file',os.path.split(__file__)[-1]
 
@@ -63,7 +66,7 @@ class RunModelDPMM(RunModelBase):
 
         ## model specific parameters
         cleanBorderEvents = True
-        k = int(self.log.log['k'])
+        k = int(self.log.log['dpmm_k'])
         dpmmGamma = float(self.log.log['dpmm_gamma'])
         nIters =  int(self.log.log['dpmm_niter'])
         burnin =  int(self.log.log['dpmm_burnin'])
@@ -100,12 +103,12 @@ class RunModelDPMM(RunModelBase):
                 mod.gamma = dpmmGamma
 
                 ## handle gpu
-                mod.device = gpuDevice
+                mod.device = [gpuDevice]
+                #print 'value gpu device', gpuDevice
                 if cleanBorderEvents == True:
                     full = mod.fit(nonBorderEvents,verbose=True)
                 else:
                     full = mod.fit(events,verbose=True)
-                #full = mod.get_results()
                 tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')
                 cPickle.dump(full,tmp0)
                 tmp0.close()
@@ -121,7 +124,6 @@ class RunModelDPMM(RunModelBase):
                 mod.load_sigma(refMod.sigmas())
                 mod.load_pi(refMod.pis())
                 full = mod.fit(nonZeroEvents,verbose=True)
-                #full = mod.get_results()
     
         ## use a saved model
         else:
@@ -163,14 +165,13 @@ class RunModelDPMM(RunModelBase):
         writer.writerow(["unused channels",self.list2Str(self.excludedChannelLabels)])        
         writer.writerow(["number events",str(events.shape[0])])
         writer.writerow(["model mode", modelMode])
+
+        ## model specific
+        writer.writerow(["number components",str(k)])
         writer.writerow(["dpmm gamma", str(dpmmGamma)])
         writer.writerow(["dpmm nIters", str(nIters)])
         writer.writerow(["dpmm burnin", str(burnin)])
 
-        ## model specific
-        writer.writerow(["number components",str(k)])
-
 if __name__ == '__main__':
-    print 'running RunModelDPMM.py...'
     runModel = RunModelDPMM(homeDir)
     runModel.run()

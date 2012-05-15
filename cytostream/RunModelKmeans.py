@@ -62,7 +62,7 @@ class RunModelKmeans(RunModelBase):
 
         ## model specific parameters
         cleanBorderEvents = False
-        k = int(self.log.log['k'])
+        k = int(self.log.log['kmeans_k'])
         repeats = int(self.log.log['kmeans_repeats'])
 
         ## prepare events
@@ -131,6 +131,5 @@ class RunModelKmeans(RunModelBase):
         writer.writerow(["number components",str(k)])
 
 if __name__ == '__main__':
-    print 'running RunModelKmeans.py...'
     runModel = RunModelKmeans(homeDir)
     runModel.run()

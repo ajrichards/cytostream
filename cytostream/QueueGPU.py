@@ -94,6 +94,7 @@ for fileName in fileList:
         
     ## wait until job is finished
     output = proc.communicate()
-    
+    #print output[0]
+
     percentComplete = float(fileCount)/float(len(fileList))
     print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
