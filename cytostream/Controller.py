@@ -403,14 +403,14 @@ class Controller:
 
         '''
 
-        ## ensure 
+        ## ensure
         if isFilter == True and type(subsample) != type(np.array([])):
             print "ERROR: Controller.handle_subsampling invalid input with isFilter flag on"
             
         ## if subsample is set to some filter
         if subsample == 'original':
             return True
-        if re.search('filter',str(subsample)):
+        if re.search('ftr',str(subsample)):
             return True
 
         ## handle non filtering subsampling

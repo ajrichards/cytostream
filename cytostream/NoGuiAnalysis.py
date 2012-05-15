@@ -136,6 +136,15 @@ class NoGuiAnalysis():
         
         self.set('model_reference', fileList[0])
 
+    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original',getLog=False):
+
+        if getLog == True:
+            modelLog, modelLabels = self.controller.get_labels(selectedFileName,modelRunID,modelType=modelType,subsample=subsample,getLog=getLog)
+            return modelLog, modelLabels
+        else:
+            modelLabels = self.controller.get_labels(selectedFileName,modelRunID,modelType=modelType,subsample=subsample,getLog=getLog)
+            return modelLabels
+
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)
         return fileChannels
@@ -197,7 +206,8 @@ class NoGuiAnalysis():
         self.update()
         
         if key == 'subsample_qa' or key == 'subsample_analysis':
-            self.controller.handle_subsampling(value)
+            if not re.search('ftr',str(value)):
+                self.controller.handle_subsampling(value)
 
     def update(self):
         """
@@ -249,7 +259,12 @@ class NoGuiAnalysis():
 
         subsample = self.controller.log.log['subsample_analysis']
         self.controller.handle_subsampling(subsample)
-        self.controller.run_selected_model(useSubsample=self.useSubsample)
+
+        if  self.controller.log.log['model_to_run'] in ['dpmm-mcmc']:
+            self.controller.run_selected_model_gpu()
+        else:
+            self.controller.run_selected_model_cpu()
+
         self.set('current_state', 'Results Navigation')
         self.set('highest_state', '4')
 

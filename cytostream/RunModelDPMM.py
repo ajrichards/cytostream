@@ -102,10 +102,10 @@ class RunModelDPMM(RunModelBase):
                 ## handle gpu
                 mod.device = gpuDevice
                 if cleanBorderEvents == True:
-                    mod.fit(nonBorderEvents,verbose=True)
+                    full = mod.fit(nonBorderEvents,verbose=True)
                 else:
-                    mod.fit(events,verbose=True)
-                full = mod.get_results()
+                    full = mod.fit(events,verbose=True)
+                #full = mod.get_results()
                 tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')
                 cPickle.dump(full,tmp0)
                 tmp0.close()
@@ -120,8 +120,8 @@ class RunModelDPMM(RunModelBase):
                 mod.load_mu(refMod.mus())
                 mod.load_sigma(refMod.sigmas())
                 mod.load_pi(refMod.pis())
-                mod.fit(nonZeroEvents,verbose=True)
-                full = mod.get_results()
+                full = mod.fit(nonZeroEvents,verbose=True)
+                #full = mod.get_results()
     
         ## use a saved model
         else:
