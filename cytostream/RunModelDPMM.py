@@ -129,8 +129,23 @@ class RunModelDPMM(RunModelBase):
         else:
             full, uselessClasses = self.model.load_model_results_pickle(modelReference,modelReferenceRunID,modelType='components')
 
-        ## get components
-        classifyComponents = full.classify(events)
+        ## split events into chunks and get components
+        chunkSize = 2000
+        if events.shape[0] <= chunkSize:
+            classifyComponents = full.classify(events)
+        else:
+            wedges = np.linspace(0,events.shape[0],chunkSize)
+            classifyComponents = np.array([])
+            for i in range(len(wedges)):
+                if i == 0:
+                    pass
+                else:
+                    _events = events[int(round(wedges[i-1])):int(round(wedges[i]))]
+                    _classifyComponents = full.classify(_events)
+                    classifyComponents = np.hstack([classifyComponents,_classifyComponents])
+                
+        print classifyComponents.shape, events.shape
+        #classifyComponents = full.classify(events)
 
         ## get modes
         #modes = full.make_modal()
