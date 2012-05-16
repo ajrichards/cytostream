@@ -73,14 +73,9 @@ else:
 for fileName in fileList:
     fileCount += 1
 
-    if fileCount == 1:
-        print 'queue_%s_%s'%(gpuDevice,0.001)
-
+    print "queuing...%s/%s"%(fileCount,len(fileList))
     ## create log file to write output too
     writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s_gpu.log"%gpuDevice),'wa'))
-    percentsToPrint = range(100)
-    alreadyReported = []
-    percentDone = 0.0
 
     if os.path.isfile(script) == False:
         print "ERROR: Invalid model run file path ", script 
@@ -94,7 +89,6 @@ for fileName in fileList:
         
     ## wait until job is finished
     output = proc.communicate()
-    #print output[0]
+    print output[0]
 
-    percentComplete = float(fileCount)/float(len(fileList))
     print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
