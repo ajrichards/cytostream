@@ -710,7 +710,7 @@ class Controller:
         fileListByGPU = {}
         
         print 'running... %s via %s'%(selectedModel,self.model.modelsInfo[selectedModel][1])
-        print '\tusing % gpu devices'%len(gpuDeviceList)
+        print '\tusing %s gpu devices'%len(gpuDeviceList)
 
         gpuCount = -1
         for fileInd in range(len(fileList)):
