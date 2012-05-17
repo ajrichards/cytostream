@@ -45,8 +45,8 @@ class TestCase1(unittest.TestCase):
         
         ## normal way to modify parameters
         self.nga.set('excluded_channels_analysis',[channelDict['FSCH']])
-        self.nga.set('dpmm_niter',100)
-        self.nga.set('dpmm_burnin',900)
+        self.nga.set('dpmm_niter',1)
+        self.nga.set('dpmm_burnin',999)
         self.nga.set('dpmm_k',16)
         self.nga.set('subsample_qa',500)             # num. events for qa plots
         self.nga.set('subsample_analysis',500)       # num. events for model run and plots
