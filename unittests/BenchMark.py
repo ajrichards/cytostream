@@ -29,21 +29,28 @@ class BenchMarkTest(unittest.TestCase):
             print "ERROR: Model test cannot find home dir -- cwd", cwd
 
         ## declare variables
-        projectID = 'utest'
+        #projectID = 'utest'
+        #self.homeDir =  os.path.join(self.baseDir,"cytostream","projects", projectID)
+        #filePathList = [os.path.join(self.baseDir,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        #channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
+
+        ##################################################################
+        projectID = 'eqapol-test'
         self.homeDir =  os.path.join(self.baseDir,"cytostream","projects", projectID)
-        filePathList = [os.path.join(self.baseDir,"cytostream","example_data", "3FITC_4PE_004.fcs")]
-        self.fileName = '3FITC_4PE_004'
-        channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
-        
+        filePathList = [os.path.join(os.getenv("HOME"),"research","eqapol","sendout1","Site_Data","002","FCS_Files","002_11Aug11_A03.fcs")]
+        channelDict = {'FSCA':0,'SSCA':1,'CD4':2,'CD3':3,'IFNG+IL2':4,'CD8':5,'Time':6}
+        ##################################################################
+
         ## run the initial model for all files
         self.nga = NoGuiAnalysis(self.homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
-        self.nga.set('subsample_qa', 1000)
-        self.nga.set('subsample_analysis', 1000)
+        self.nga.set('subsample_qa', 2000)
+        self.nga.set('subsample_analysis', 'original') ## 
         self.nga.set('model_to_run','dpmm-mcmc')
-        self.nga.set('dpmm_niter',100)
-        self.nga.set('dpmm_burnin',900)
-        self.nga.set('dpmm_k',16)
-        
+        self.nga.set('dpmm_niter',1)
+        self.nga.set('dpmm_burnin',999)
+        self.nga.set('dpmm_k',96)
+        self.fileName = self.nga.get_file_names()[0]
+
     def testRunModel(self):
         try:
             import gpustats
@@ -53,7 +60,7 @@ class BenchMarkTest(unittest.TestCase):
 
         timeBegin = time.time()
         #self.nga.run_model()
-        gpuDevice = 0
+        gpuDevice = 2
         script = os.path.join(self.baseDir,'cytostream',"RunModelDPMM.py")
         cmd = "%s %s -h %s -g %s -f %s"%(pythonPath,script,self.homeDir,gpuDevice,self.fileName)
         proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)

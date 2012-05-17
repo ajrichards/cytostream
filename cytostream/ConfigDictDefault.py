@@ -53,9 +53,9 @@ configDictDefault = {
     'kmeans_repeats'                        : '5',                                # an int
     'kmeans_k'                              : '16',                               # an int divisible by 16
     'dpmm_gamma'                            : '1.0',                              # gamma value for dpmm
-    'dpmm_niter'                            : '100',                              # number of iters to save
-    'dpmm_k'                                : '96',                                # number of cluster for dpmm models
-    'dpmm_burnin'                           : '900',                              # number of iters to go before saving
+    'dpmm_niter'                            : '1',                                # number of iters to save
+    'dpmm_k'                                : '96',                               # number of cluster for dpmm models
+    'dpmm_burnin'                           : '9999',                             # number of iters to go before saving
     'thumbnails_to_view'                    : 'None',                             # None or '[(0,1),(0,3)]'
     'excluded_files'                        : '[]',                               # (indices) !not yet functional
     'excluded_channels_qa'                  : '[]',                               # a list of ints (indices)  

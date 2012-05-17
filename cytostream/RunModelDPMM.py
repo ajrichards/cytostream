@@ -83,7 +83,6 @@ class RunModelDPMM(RunModelBase):
 
         ## run model
         self.start_timer()
-        
         loadModel = False
         if modelMode == 'onefit' and modelReference == fileName:
             loadModel = False
@@ -129,29 +128,13 @@ class RunModelDPMM(RunModelBase):
         else:
             full, uselessClasses = self.model.load_model_results_pickle(modelReference,modelReferenceRunID,modelType='components')
 
-        ## split events into chunks and get components
-        chunkSize = 2000
-        if events.shape[0] <= chunkSize:
-            classifyComponents = full.classify(events)
-        else:
-            wedges = np.linspace(0,events.shape[0],chunkSize)
-            classifyComponents = np.array([])
-            for i in range(len(wedges)):
-                if i == 0:
-                    pass
-                else:
-                    _events = events[int(round(wedges[i-1])):int(round(wedges[i]))]
-                    _classifyComponents = full.classify(_events)
-                    classifyComponents = np.hstack([classifyComponents,_classifyComponents])
-                
-        print classifyComponents.shape, events.shape
-        #classifyComponents = full.classify(events)
-
-        ## get modes
-        #modes = full.make_modal()
-        #classifyModes = modes.classify(events)
-
+        ## classification
+        classifyStart = time.time()
+        classifyComponents = full.classify(events)
+        classifyEnd = time.time()
+        classifyTime = classifyEnd - classifyStart
         runTime = self.get_run_time()
+        
         ## save cluster labels (components)
         componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.npy")
         np.save(componentsFilePath,classifyComponents)
@@ -160,6 +143,9 @@ class RunModelDPMM(RunModelBase):
         tmp1.close()
 
         ## save cluster labels (modes)
+        ## get modes
+        #modes = full.make_modal()
+        #classifyModes = modes.classify(events)
         #modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.npy")
         #np.save(modesFilePath,classifyModes)
 
@@ -175,7 +161,9 @@ class RunModelDPMM(RunModelBase):
         writer.writerow(["project id", self.projName])
         writer.writerow(["file name", fileName])
         writer.writerow(["full model name", re.sub('"',"",self.model.modelsInfo[selectedModel][0])])
-        writer.writerow(["model runtime",str(round(runTime,4))])
+        writer.writerow(["total runtime",time.strftime('%H:%M:%S', time.gmtime(runTime))])
+        writer.writerow(["model runtime",time.strftime('%H:%M:%S', time.gmtime(runTime-classifyTime))])
+        writer.writerow(["classify runtime",time.strftime('%H:%M:%S', time.gmtime(classifyTime))])
         writer.writerow(["used channels",self.list2Str(self.includedChannelLabels)])
         writer.writerow(["unused channels",self.list2Str(self.excludedChannelLabels)])        
         writer.writerow(["number events",str(events.shape[0])])
