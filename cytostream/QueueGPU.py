@@ -73,7 +73,6 @@ else:
 for fileName in fileList:
     fileCount += 1
 
-    print "queuing...%s/%s"%(fileCount,len(fileList))
     ## create log file to write output too
     writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s_gpu.log"%gpuDevice),'wa'))
 
