@@ -34,7 +34,7 @@ class CytostreamPlotter(QtGui.QWidget):
                  drawState='heat',parent=None,background=True,selectedChannel1=0,
                  selectedChannel2=1,mainWindow=None,uniqueLabels=None,
                  enableGating=False,homeDir=None,compactMode=False,labelList=None,
-                 minNumEvents=3,showNoise=False,subsample=70000,numSubplots=1,
+                 minNumEvents=3,showNoise=False,subsample='original',numSubplots=1,
                  axesLabels=True,plotTitle=None,useSimple=False,dpi=100,
                  transform='logicle',useScaled=False,modelRunID='run1',subplotNum=1):
         '''
@@ -78,7 +78,6 @@ class CytostreamPlotter(QtGui.QWidget):
         self.subplotNum = subplotNum
         self.plotTitle = plotTitle
         self.plotTitle = re.sub("_"," ",self.plotTitle)
-
         self.useSimple = useSimple
         self.dpi = dpi
         self.transform = transform
@@ -138,24 +137,25 @@ class CytostreamPlotter(QtGui.QWidget):
         maxScatter = 70000
         if self.subsample == 'original' and maxNumEvents > maxScatter:
             self.subsample = maxScatter
-            self.subsample = self.model.get_subsample_indices(self.subsample)
+            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
             for i in range(len(self.labelList)):
                 self.labelList[i] = self.labelList[i][self.subsample]
         ## case where original is smaller than max scatter display
         elif self.subsample == 'original':
+            self.subsampleIndices = 'original'
             #self.subsample = self.model.get_subsample_indices(self.subsample)
             #self.subsample = np.arange(events.shape[0])
             self.subsample = 'original'
         ## case where we have a subsample but no labels 
         elif self.labelList == None:
-            self.subsample = self.model.get_subsample_indices(self.subsample)
+            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
         ## case where labels are smaller than subsample (usually means model was run on a subsample) 
         elif len(self.labelList[i]) < self.subsample:
             self.subsample = len(labels)
-            self.subsample = self.model.get_subsample_indices(self.subsample)
+            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
         ## case where labels and subsample match 
         elif len(self.labelList[i]) == self.subsample:
-            self.subsample = self.model.get_subsample_indices(self.subsample)
+            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
         else:
             print "WARNING: something unexpected occured in CytostreamPlotter subsample handeling"        
 
@@ -221,7 +221,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args[3] = self.channelDict
         args[4] = self.selectedChannel1
         args[5] = self.selectedChannel2
-        args[6] = self.subsample
+        args[6] = self.subsampleIndices
         args[7] = self.transform
         if self.labelList != None:
             args[8] = self.labelList[self.fileNameList.index(self.selectedFileName)]
@@ -240,6 +240,19 @@ class CytostreamPlotter(QtGui.QWidget):
         args[17] = self.useScaled
         args[18] = True
 
+        ## set the text for num events
+        if self.subsample == 'original':
+            subsampleLabel = '---'
+        else:
+            try:
+                x = float(self.subsample)
+                subsampleLabel = '%.1e' % float(self.subsample)
+            except:
+                subsampleLabel = self.subsample
+
+        self.subplotLabel2.setText(subsampleLabel)
+        self.subplotLabel3.setText('%.1e' % self.selectedEvents.shape[0])
+
         ## draw on canvas
         draw_plot(args,parent=self)
         self.fig.canvas.draw()
@@ -252,10 +265,15 @@ class CytostreamPlotter(QtGui.QWidget):
         self.ax = self.fig.add_subplot(111)
 
         ## set the plot number
-        self.subplotLabel = QtGui.QLabel(str(int(self.subplotNum)))
-
+        self.subplotLabel1 = QtGui.QLabel(str(int(self.subplotNum)))        
+        self.subplotLabel2 = QtGui.QLabel('None')
+        totalEvents = 'None'
+        self.subplotLabel3 = QtGui.QLabel('None')
+        print dir(self.subplotLabel3)
+        
         ## upper controls
         maxWidth = 100
+      
         #channelsLabel = QtGui.QLabel('Channels')
         #self.channel1Selector = QtGui.QComboBox(self)
         #for channel in self.channelList:
@@ -335,8 +353,12 @@ class CytostreamPlotter(QtGui.QWidget):
             self.connect(self.fig_save, QtCore.SIGNAL('clicked()'), self.figure_save)
 
         ## prepare layout
-        hboxPlotLabel = QtGui.QHBoxLayout()
-        hboxPlotLabel.setAlignment(QtCore.Qt.AlignCenter)
+        hboxPlotLabel1 = QtGui.QHBoxLayout()
+        hboxPlotLabel1.setAlignment(QtCore.Qt.AlignCenter)
+        hboxPlotLabel2 = QtGui.QHBoxLayout()
+        hboxPlotLabel2.setAlignment(QtCore.Qt.AlignCenter)
+        hboxPlotLabel3 = QtGui.QHBoxLayout()
+        hboxPlotLabel3.setAlignment(QtCore.Qt.AlignCenter)
 
         if self.compactMode == False:
             hboxVizSelector = QtGui.QHBoxLayout()
@@ -360,11 +382,17 @@ class CytostreamPlotter(QtGui.QWidget):
         masterBox = QtGui.QHBoxLayout()
         
         ## figure draw layout
-        hboxPlotLabel.addWidget(self.subplotLabel)
+        hboxPlotLabel1.addWidget(self.subplotLabel1)
+        hboxPlotLabel2.addWidget(self.subplotLabel2)
+        hboxPlotLabel3.addWidget(self.subplotLabel3)
+
         if self.compactMode == False:
             hboxVizSelector.addWidget(self.vizSelector)
             hboxSaveBtn.addWidget(self.fig_save)
-        controlBoxTop.addLayout(hboxPlotLabel)
+        controlBoxTop.addLayout(hboxPlotLabel1)
+        controlBoxTop.addLayout(hboxPlotLabel2)
+        controlBoxTop.addLayout(hboxPlotLabel3)
+        
         if self.compactMode == False:
             controlBoxBottom.addLayout(hboxVizSelector)
             controlBoxBottom.addLayout(hboxSaveBtn)
@@ -385,11 +413,24 @@ class CytostreamPlotter(QtGui.QWidget):
         self.setAutoFillBackground(True)
     
         ## font color
-        fontPalette = self.subplotLabel.palette()
-        fontRole = self.subplotLabel.backgroundRole()
+        fontPalette = self.subplotLabel1.palette()
+        fontRole = self.subplotLabel1.backgroundRole()
         fontPalette.setColor(fontRole, QtGui.QColor('#FFFFFF'))
-        self.subplotLabel.setPalette(fontPalette)
-        self.subplotLabel.setAutoFillBackground(True)
+        self.subplotLabel1.setPalette(fontPalette)
+        self.subplotLabel1.setAutoFillBackground(True)
+
+        fontPalette = self.subplotLabel2.palette()
+        fontRole = self.subplotLabel2.backgroundRole()
+        fontPalette.setColor(fontRole, QtGui.QColor('#FFCC00'))
+        self.subplotLabel2.setPalette(fontPalette)
+        self.subplotLabel2.setAutoFillBackground(True)
+
+        fontPalette = self.subplotLabel3.palette()
+        fontRole = self.subplotLabel3.backgroundRole()
+        fontPalette.setColor(fontRole, QtGui.QColor('#0088FF'))
+        self.subplotLabel3.setPalette(fontPalette)
+        self.subplotLabel3.setAutoFillBackground(True)
+
 
         ## finalize layout
         canvasBox.addWidget(self.canvas)
@@ -626,14 +667,12 @@ if __name__ == '__main__':
     ## setup class to run model
     homeDir = os.path.join(baseDir,"..","projects","utest")
     nga = NoGuiAnalysis(homeDir,channelDict,[filePath],useSubsample=True,makeQaFigs=False,record=False,transform='logicle')
-    nga.set('num_iters_mcmc', 1200)
     nga.set('subsample_qa', 2000)
     nga.set('subsample_analysis', subsample)
     nga.set('dpmm_k',96)
-    nga.set('thumbnail_results_default','components')
     
     ## declare the necessary variables
-    transform = nga.get('selected_transform')
+    transform = nga.get('plots_transform')
     fileNameList = [selectedFile]
     channelList = nga.get_file_channels()
     eventsList = [nga.get_events(fn) for fn in fileNameList]
