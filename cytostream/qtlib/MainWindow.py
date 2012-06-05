@@ -800,8 +800,10 @@ class MainWindow(QtGui.QMainWindow):
             chanInds = re.findall("\d+\_\d+\_thumb",img)
             i,j,k = chanInds[0].split("_")
             i,j = int(i),int(j)
-            channelI = self.controller.channelDict[self.controller.log.log['official_channel_map'][i]]
-            channelJ = self.controller.channelDict[self.controller.log.log['official_channel_map'][j]]
+            print '\nij', i, j
+            print self.controller.log.log['thumbs_channel_map']
+            channelI = self.controller.channelDict[self.controller.log.log['thumbs_channel_map'][i]]
+            channelJ = self.controller.channelDict[self.controller.log.log['thumbs_channel_map'][j]]
             self.log.log['plots_to_view_channels'][0] = (channelI, channelJ)
             self.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
 
