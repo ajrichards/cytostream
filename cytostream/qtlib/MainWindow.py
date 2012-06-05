@@ -243,6 +243,11 @@ class MainWindow(QtGui.QMainWindow):
         if goFlag == True:
             self.transitions.move_to_data_processing()
             self.status.showMessage("New project successfully created", 5000)
+            ## docks check
+            if self.dockWidget == None:
+                add_left_dock(self)
+            if self.pDock == None:
+                self.add_pipeline_dock()
         else:
             print "ERROR: create new project did not succeed"
 
@@ -515,9 +520,9 @@ class MainWindow(QtGui.QMainWindow):
         '''
 
         ## keep track of the highest state
-        if self.stateList.__contains__(self.log.log['current_state']):
-            if self.stateList.index(self.log.log['current_state']) > int(self.log.log['highest_state']):
-                self.log.log['highest_state'] = self.stateList.index(self.log.log['current_state'])
+        if self.stateList.__contains__(self.controller.log.log['current_state']):
+            if self.stateList.index(self.controller.log.log['current_state']) > int(self.controller.log.log['highest_state']):
+                self.controller.log.log['highest_state'] = self.stateList.index(self.controller.log.log['current_state'])
                 self.controller.save()
     
     def run_file_aligner(self):
@@ -757,26 +762,28 @@ class MainWindow(QtGui.QMainWindow):
 
         '''
 
-        if self.log.log['current_state'] == "Data Processing":
+        if self.controller.log.log['current_state'] == "Data Processing":
             self.transitions.move_to_data_processing(withProgressBar=withProgressBar)
-        elif self.log.log['current_state'] == "Quality Assurance":
+        elif self.controller.log.log['current_state'] == "Quality Assurance":
             self.transitions.move_to_quality_assurance(mode=qaMode)
-        elif self.log.log['current_state'] == "Model":
+        elif self.controller.log.log['current_state'] == "Model":
             self.transitions.move_to_model_run()
-        elif self.log.log['current_state'] == "Model Results":
+        elif self.controller.log.log['current_state'] == "Model Results":
             self.transitions.move_to_model_results()
-        elif self.log.log['current_state'] == "Analysis":
+        elif self.controller.log.log['current_state'] == "Analysis":
             self.transitions.move_to_analysis(self)
-        elif self.log.log['current_state'] == "Sample Aligner":
+        elif self.controller.log.log['current_state'] == "Sample Aligner":
             self.transitions.move_to_sample_aligner(self)
-        elif self.log.log['current_state'] == "Basic Subsets":
+        elif self.controller.log.log['current_state'] == "Basic Subsets":
             self.transitions.move_to_basic_subsets(self)
-        elif self.log.log['current_state'] == "Positivity":
+        elif self.controller.log.log['current_state'] == "Positivity":
             self.transitions.move_to_positivity(self)
-        elif self.log.log['current_state'] == "Analysis Results":
+        elif self.controller.log.log['current_state'] == "Analysis Results":
             self.transitions.move_to_analysis_results(self)
-        elif self.log.log['current_state'] == "Reports":
+        elif self.controller.log.log['current_state'] == "Reports":
             self.transitions.move_to_reports(self)
+        elif self.controller.log.log['current_state'] == "Initial":
+            self.transitions.move_to_initial(self)
         else:
             print "ERROR: MainWindow.refresh_state was given invalid state", self.log.log['current_state']
 

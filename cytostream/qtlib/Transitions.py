@@ -101,6 +101,15 @@ class Transitions():
             else:
                 self.mainWindow.controller.save()
     
+
+        ## get the project directory
+        defaultDir = self.mainWindow.controller.defaultDir
+        projectDir = QtGui.QFileDialog.getExistingDirectory(self.mainWindow, 'Select the project folder', 
+                                                            options=QtGui.QFileDialog.ShowDirsOnly,directory=defaultDir)
+        projectDir = str(projectDir)
+        if projectDir == '' or projectDir == None:
+            return None
+
         ## clean the layout
         self.mainWindow.controller.reset_workspace()
         self.mainWindow.reset_layout()
@@ -120,14 +129,7 @@ class Transitions():
         self.move_to_initial()
         self.mainWindow.status.showMessage("Open an existing project", 5000)
 
-        ## get the project directory
-        defaultDir = self.mainWindow.controller.defaultDir
-        projectDir = QtGui.QFileDialog.getExistingDirectory(self.mainWindow, 'Select the project folder', 
-                                                            options=QtGui.QFileDialog.ShowDirsOnly,directory=defaultDir)
-        projectDir = str(projectDir)
-        if projectDir == '' or projectDir == None:
-            return None
-
+    
         self.mainWindow.open_existing_project_handler(projectDir)
 
     def move_to_model_results(self,mode='menu'):

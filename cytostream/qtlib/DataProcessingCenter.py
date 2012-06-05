@@ -66,13 +66,6 @@ class DataProcessingCenter(QtGui.QWidget):
         self.nfEditBtn = None
         self.nfLoadBtn = None
 
-        ## prepare model and log
-        if self.mainWindow != None:
-            self.controller = mainWindow.controller
-            self.log = self.controller.log
-        else:
-            self.log = None
-
         ## prepare layout
         vbox = QtGui.QVBoxLayout()
         vbox.setAlignment(QtCore.Qt.AlignTop)
@@ -169,7 +162,7 @@ class DataProcessingCenter(QtGui.QWidget):
         #else:
         self.connect(self.nfRemoveBtn, QtCore.SIGNAL('clicked()'),self.remove_file_from_load_list)
 
-        if self.mainWindow != None and int(self.mainWindow.log.log['highest_state']) == 1:
+        if self.mainWindow != None and int(self.mainWindow.controller.log.log['highest_state']) == 1:
             self.nfEditBtn = QtGui.QPushButton("Edit settings")
             self.nfEditBtn.setMaximumWidth(130)
             nfLayout3.addWidget(self.nfEditBtn)
@@ -497,10 +490,10 @@ class DataProcessingCenter(QtGui.QWidget):
             reply = QtGui.QMessageBox.warning(self, "Warning", msg)
             return None
 
-        if self.log != None:
-            self.log.log['alternate_channel_labels'] = altLabels
-            self.log.log['excluded_channels_qa'] = excludedChannels
-            self.controller.save()
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['alternate_channel_labels'] = altLabels
+            self.mainWindow.controller.log.log['excluded_channels_qa'] = excludedChannels
+            self.mainWindow.controller.save()
 
         if msg == True:
             msg = "Alternate channel names have been saved"
@@ -526,9 +519,9 @@ class DataProcessingCenter(QtGui.QWidget):
             reply = QtGui.QMessageBox.warning(self, "Warning", msg)
             return None
 
-        if self.log != None:
-            self.log.log['alternate_file_labels'] = altFiles
-            self.controller.save()
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['alternate_file_labels'] = altFiles
+            self.mainWindow.controller.save()
         else:
             print 'alternate file names', altFiles
 
@@ -573,10 +566,10 @@ class DataProcessingCenter(QtGui.QWidget):
         
             if reply == QtGui.QMessageBox.Yes:
                 ## remove all files associated with each fcs file
-                if self.log != None:
+                if self.mainWindow != None:
                     for indToRemove in filesToRemove:
                         fileToRemove = self.fileList[indToRemove]
-                        self.controller.rm_fcs_file(fileToRemove)
+                        self.mainWindow.controller.rm_fcs_file(fileToRemove)
             
                 ## reset file list and recreate widget
                 self.fileList = np.array(self.fileList)[includedIndices].tolist()
@@ -595,8 +588,8 @@ class DataProcessingCenter(QtGui.QWidget):
 
         '''
 
-        if self.log != None:
-            events = self.controller.get_events(fileName,subsample='original')
+        if self.mainWindow != None:
+            events = self.mainWindow.controller.get_events(fileName,subsample='original')
             return len(events)
         else:
             return 'na'
@@ -607,8 +600,8 @@ class DataProcessingCenter(QtGui.QWidget):
 
         '''
 
-        if self.log != None:
-            fileChannels = self.controller.model.get_file_channel_list(fileName)
+        if self.mainWindow != None:
+            fileChannels = self.mainWindow.controller.model.get_file_channel_list(fileName)
             return len(fileChannels)
         else:
             return 'na'
