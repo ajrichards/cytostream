@@ -34,7 +34,7 @@ configDictDefault = {
     'thumbnail_results_default'             : 'components',                       # modes, components
     'scatter_marker_size'                   : '2',                                # mpl scatter marker size
     'font_size'                             : '12',                               # int
-    'font_name'                             : 'arial',                            # font name
+    'font_name'                             : 'sans',                             # font name
     'plot_type'                             : 'png',                              # png, pdf, jpg
 
     ########### plotting variables  ########################################################## 
