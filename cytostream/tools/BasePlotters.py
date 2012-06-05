@@ -471,7 +471,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     return indicesFG
 
 
-def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='arial',
+def create_cytokine_subplot(nga,ax,fileName,index1,index2,filterID,fThreshold,bins=120,fontSize=7,fontName='sans',
                             yLabel='default',xLabel='default',title=None,yLim=None,xLim=None,
                             useColor=True,transform=('logicle','x')):
     if useColor == True:

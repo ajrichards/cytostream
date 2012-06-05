@@ -24,7 +24,7 @@ import Controller
 
 class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
-                 figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='arial',
+                 figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='sans',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
                  gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True):
 
@@ -298,7 +298,7 @@ class SaveSubplots():
                     if positiveEventInds.size > 0:
                         ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
         
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,'Arial',useSimple=False,axesOff=False,useScaled=True)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,'sans',useSimple=False,axesOff=False,useScaled=True)
                 
 
     def get_axes(self,subplotIndex):

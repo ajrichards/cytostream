@@ -122,7 +122,7 @@ class Centroids:
 
         return plotID, channelsID
 
-def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
+def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='sans'):
     '''
     to map an axis to a scale that immunologists are familar with
     '''
@@ -158,7 +158,7 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.set_ylim([0, 1e05])
 
 
-def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
+def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='sans'):
     '''
     to map an axis to a scale that immunologists are familar with
     '''
@@ -193,7 +193,7 @@ def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='Arial'):
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, np.log10(262144)])
 
-def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='Arial'):
+def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='sans'):
     '''
     formats a scatter axis ticks to the K format
     '''
@@ -243,4 +243,4 @@ def get_fontsize(numSubplots):
     return fontSize
 
 def get_fontname():
-    return 'Arial'
+    return 'sans'
