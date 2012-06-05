@@ -75,7 +75,7 @@ class ThumbnailViewer(QtGui.QWidget):
             for j in range(len(channels)):
                 img = "."
                 for t in thumbs:
-                    if re.search("%s\_%s\_thumb"%(i,j),t):
+                    if re.search("%s\_%s\_thumb"%(j,i),t):
                         img = t
                         break
             
