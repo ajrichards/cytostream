@@ -24,7 +24,7 @@ configDictDefault = {
     'models_run_count'                      : '0',                                # do not change
     'filters_run_count'                     : '0',                                # do not change
     'force_single_gpu'                      : 'False',                            # do not change
-    'official_channel_map'                  : "[]",                               # do not change
+    'thumbs_channel_map'                    : "{}",                               # do not change
 
     ########### immutable variables ##########################################################
     'input_data_type'                       : 'fcs',                              # fcs, comma, tab, array

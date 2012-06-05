@@ -243,8 +243,9 @@ class Controller:
                     channelIndices.append(self.channelDict[channel])
                     channelThumbs.append(channel)
 
-        self.log.log['official_channel_map'] = channelThumbs
-        self.save()
+        #print 'creating thumbs channel map', channelThumbs# self.log.log['thumbs_channel_map']
+        #elf.log.log['thumbs_channel_map'] = channelThumbs
+        #self.save()
         maxNumComparisons = 5
         if len(channelIndices) < 3:
             channelIndices = range(len(self.fileChannels))[:maxNumComparisons]
@@ -265,6 +266,10 @@ class Controller:
         for comp in comparisons:
             channelInds.update(comp)
         channels = np.array(self.fileChannels)[list(channelInds)]
+
+        ## save the thumb channel map
+        self.log.log['thumbs_channel_map'] = channelThumbs
+        self.save()
 
         ## get num images to create
         for fileName in self.fileNameList:
