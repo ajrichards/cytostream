@@ -32,8 +32,11 @@ def get_fcs_file_names(homeDir,excludedFiles=[]):
     returns a sorted list of file names associated with the project
     
     '''
-
-    if os.path.exists(homeDir) == False:
+    
+    try:
+        if os.path.exists(homeDir) == False:
+            return []
+    except:
         return []
 
     if os.path.exists(os.path.join(homeDir,"data")) == False:
