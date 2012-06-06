@@ -1,7 +1,7 @@
 #!/usr/bin/python                                                                                                                                                               
 '''
 Cytostream
-modeSelector
+VizModeSelector
 
 A bar of radio widgets to select from different visualization modes
 
@@ -85,16 +85,16 @@ class VizModeSelector(QtGui.QWidget):
 
             ## ensure num subplots are saved when changed
             numPlots = self.get_num_subplots()
-            self.mainWindow.log.log['num_subplots'] = str(numPlots)
+            self.mainWindow.controller.log.log['num_subplots'] = str(numPlots)
             self.mainWindow.controller.save()
 
-            selectedFile = self.mainWindow.log.log['selected_file']
+            selectedFile = self.mainWindow.controller.log.log['selected_file']
             if selectedFile == '':
                 return
             
-            if self.mainWindow.log.log['selected_plot'] == None:
-                self.mainWindow.log.log['selected_plot'] = '1'
-            selectedPlot = self.mainWindow.log.log['selected_plot']
+            if self.mainWindow.controller.log.log['selected_plot'] == None:
+                self.mainWindow.controller.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.controller.log.log['selected_plot']
             vizMode = self.get_selected()
 
             ## make sure plotSelector displays correct options
@@ -103,7 +103,7 @@ class VizModeSelector(QtGui.QWidget):
             if vizMode == 'plot':
                 self.mainWindow.handle_show_plot()
             elif vizMode == 'thumbnails':
-                if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
+                if self.mainWindow.controller.log.log['current_state'] == 'Quality Assurance':
                     self.mainWindow.display_thumbnails()
                 else:
                     print "Check VizModeSelector callback for appropriate move"
@@ -117,16 +117,16 @@ class VizModeSelector(QtGui.QWidget):
 
             ## ensure num subplots are saved when changed
             numPlots = self.get_num_subplots()
-            self.mainWindow.log.log['num_subplots'] = str(numPlots)
+            self.mainWindow.controller.log.log['num_subplots'] = str(numPlots)
             self.mainWindow.controller.save()
 
-            selectedFile = self.mainWindow.log.log['selected_file']
+            selectedFile = self.mainWindow.controller.log.log['selected_file']
             if selectedFile == '':
                 return
             
-            if self.mainWindow.log.log['selected_plot'] == None:
-                self.mainWindow.log.log['selected_plot'] = '1'
-            selectedPlot = self.mainWindow.log.log['selected_plot']
+            if self.mainWindow.controller.log.log['selected_plot'] == None:
+                self.mainWindow.controller.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.controller.log.log['selected_plot']
             vizMode = self.get_selected()
 
             ## make sure plotSelector displays correct options

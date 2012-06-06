@@ -1,7 +1,7 @@
 #!/usr/bin/python                                                                                                                                                               
 '''
 Cytostream 
-SubsetSelector 
+FileSelector 
 
 A combobox widget to select from different files
 

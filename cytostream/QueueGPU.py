@@ -89,5 +89,8 @@ for fileName in fileList:
     ## wait until job is finished
     output = proc.communicate()
     print output[0]
-
-    print 'QueueGPU: has finished task %s out of %s for GPU:%s'%(fileCount,len(fileList),gpuDevice)
+    if re.search("GPU enabled",output[0]):
+        modelMethod = "GPU"
+    else:
+        modelMethod = "CPU"
+    print 'QueueGPU: via %s has finished task %s out of %s for GPU:%s'%(modelMethod,fileCount,len(fileList),gpuDevice)

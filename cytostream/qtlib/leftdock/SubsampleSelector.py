@@ -87,7 +87,59 @@ class SubsampleSelector(QtGui.QWidget):
         return sf, sfInd
 
     def subsample_selector_callback(self):
-        print 'callback subsample selector'
+
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:        
+            selectedFile = self.mainWindow.controller.log.log['selected_file']
+            if selectedFile == '':
+                return
+    
+            currentState = self.mainWindow.controller.log.log['current_state']
+            self.mainWindow.log.log['selected_file'] = selectedFile
+            self.mainWindow.controller.save()
+            numPlots = self.mainWindow.log.log['num_subplots']
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+                self.mainWindow.controller.save()
+
+            selectedPlot = self.mainWindow.controller.log.log['selected_plot']
+            vizMode = self.mainWindow.vizModeSelector.get_selected()
+
+            if vizMode == 'thumbnails':
+                return
+            
+            selectedSubsample = self.get_selected_subsample()
+            print 'changing subsample for ', selectedPlot, selectedSubsample
+
+            if vizMode == 'plot':
+                if selectedPlot == '*':
+                    for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                        fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                        self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
+                        self.mainWindow.controller.save()
+                        self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                        self.mainWindow.nwv.plots[selectedPlot].subsample = selectedSubsample
+                        self.mainWindow.nwv.plots[selectedPlot].initialize()
+                        self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+                else:
+                    pass
+                    fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                    self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
+                    self.mainWindow.controller.save()
+                    self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].subsample = selectedSubsample
+                    self.mainWindow.nwv.plots[selectedPlot].initialize()
+                    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            else:
+                print "ERROR: invalid visMode detected in subsample detector"
+
+    def get_selected_subsample(self):
+        sf = str(self.subsampleSelector.currentText())
+        if sf == 'All Data':
+            sf = 'original'
+        return sf
 
     def generic_callback(self):
         print 'callback does not do anything yet'

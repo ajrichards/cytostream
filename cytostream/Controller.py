@@ -265,8 +265,8 @@ class Controller:
         channels = np.array(self.fileChannels)[list(channelInds)]
 
         ## save the thumb channel map
-        #self.log.log['thumbs_channel_map'] = channelThumbs
-        #self.save()
+        self.log.log['default_thumb_channels'] = channelThumbs
+        self.save()
 
         ## get num images to create
         for fileName in self.fileNameList:
