@@ -113,6 +113,14 @@ class CytostreamPlotter(QtGui.QWidget):
             self.model = None
             print "Model could not be initialized -- working as a non-cytostream project"
 
+        ## initialize labels and subsamples
+        self.initialize()
+
+        ## prepare figure widget for drawing
+        self.create_figure_widget()
+
+    def initialize(self):
+
         ## get max and min number of events
         minNumEvents,maxNumEvents = 0,0
 
@@ -134,12 +142,14 @@ class CytostreamPlotter(QtGui.QWidget):
                 self.subsample = modelLog['subsample']
 
         ## ensure only maximum num events are shown                  
-        maxScatter = 70000
-        if self.subsample == 'original' and maxNumEvents > maxScatter:
-            self.subsample = maxScatter
+        #maxScatter = 70000
+        if self.subsample == 'original' and self.labelList != None:
+            self.subsample = 'original'#maxScatter
             self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
-            for i in range(len(self.labelList)):
-                self.labelList[i] = self.labelList[i][self.subsample]
+            
+            if self.labelList != None:
+                for i in range(len(self.labelList)):
+                    self.labelList[i] = self.labelList[i][self.subsample]
         ## case where original is smaller than max scatter display
         elif self.subsample == 'original':
             self.subsampleIndices = 'original'
@@ -174,9 +184,6 @@ class CytostreamPlotter(QtGui.QWidget):
         ## save an instance of the centroids to speed up plotting
         if self.labelList != None:
             self.savedCentroids = Centroids()
-
-        ## prepare figure widget for drawing
-        self.create_figure_widget()
 
     def draw(self,cbInt=None,selectedFile=None):
         '''
@@ -269,7 +276,6 @@ class CytostreamPlotter(QtGui.QWidget):
         self.subplotLabel2 = QtGui.QLabel('None')
         totalEvents = 'None'
         self.subplotLabel3 = QtGui.QLabel('None')
-        print dir(self.subplotLabel3)
         
         ## upper controls
         maxWidth = 100
