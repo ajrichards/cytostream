@@ -15,6 +15,8 @@ from BasicFunctions import move_transition
 from OpenExistingProject import OpenExistingProject
 from EditMenu import EditMenu
 from Preferences import Preferences
+from PreferencesKmeans import PreferencesKmeans
+from PreferencesDPMM import PreferencesDPMM
 from ChannelSelector import ChannelSelector
 from FileSelector import FileSelector
 from PlotSelector import PlotSelector
@@ -22,7 +24,6 @@ from PlotTickControls import PlotTickControls
 from SubsampleSelector import SubsampleSelector
 from VizModeSelector import VizModeSelector
 from ModelToRunSelector import ModelToRunSelector
-from ModelTypeSelector import ModelTypeSelector
 from KSelector import KSelector
 from TextEntry import TextEntry
 from OneDimViewer import OneDimViewer
@@ -37,7 +38,6 @@ from LeftDock import add_left_dock, remove_left_dock
 from Transitions import Transitions
 from MenuFunctions import create_menubar_toolbar, create_action, add_actions, restore_docks
 from CytostreamPlotter import CytostreamPlotter
-#from MultiplePlotter import MultiplePlotter
 from NWayViewer import NWayViewer
 
 from ThumbnailViewer import ThumbnailViewer

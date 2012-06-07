@@ -227,13 +227,13 @@ class Controller:
         defaultThumbChannels = self.log.log['default_thumb_channels']
         for channel in defaultThumbChannels:
             if channel == 'FSC':
-                for channel in ['FCSA','FSCH','FSCW','FSC']:
+                for channel in ['FSCA','FSCH','FSCW','FSC']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
                         channelThumbs.append(channel)
                         break
             elif channel == 'SSC':
-                for channel in ['SCSA','SSCH','SSCW','SSC']:
+                for channel in ['SSCA','SSCH','SSCW','SSC']:
                     if self.channelDict.has_key(channel):
                         channelIndices.append(self.channelDict[channel])
                         channelThumbs.append(channel)
@@ -545,7 +545,8 @@ class Controller:
 
         if dataType in ['comma','tab']:
             if self.fileChannelPath == None:
-                allFiles = QtGui.QFileDialog.getOpenFileNames(view,'Load the channels file')
+                defaultDir = os.path.join(self.homeDir,os.path.pardir)
+                allFiles = QtGui.QFileDialog.getOpenFileNames(view,'Load the channels file',directory=defaultDir)
                 self.fileChannelPath = str(allFiles[0])
 
         ## used the selected transform

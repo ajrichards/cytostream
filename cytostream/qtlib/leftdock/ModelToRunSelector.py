@@ -12,6 +12,7 @@ __author__ = "A Richards"
 import sys,re
 from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import RadioBtnWidget
+from cytostream import modelsInfo
 
 class ModelToRunSelector(QtGui.QWidget):
     '''
@@ -20,7 +21,7 @@ class ModelToRunSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self, mtrList, color='white', parent=None, mtrDefault=None, mtrCallback=None):
+    def __init__(self, color='white', parent=None, mainWindow=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -28,15 +29,22 @@ class ModelToRunSelector(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## error checking
-        if mtrDefault != None and mtrList.__contains__(mtrDefault) == False:
-            print "ERROR: RadioBtnWidget - bad default specified",mtrDefault
-            return None
+        #if mtrDefault != None and mtrList.__contains__(mtrDefault) == False:
+        #    print "ERROR: RadioBtnWidget - bad default specified",mtrDefault
+        #    return None
 
         ## variables
-        self.modelToRunList = mtrList
+        self.modelToRunList = modelsInfo.keys()
         self.color = color
         self.btns = {}
         self.btnGroup = QtGui.QButtonGroup(parent)
+        self.mainWindow = mainWindow
+        self.selectedModel = 'dpmm-mcmc'
+
+        if self.mainWindow != None:
+            self.selectedModel = self.mainWindow.controller.log.log['model_to_run']
+        if self.selectedModel not in self.modelToRunList:
+            self.selectedModel = self.modelToRunList[0]
 
         ## setup layout
         vbox = QtGui.QVBoxLayout()
@@ -46,11 +54,11 @@ class ModelToRunSelector(QtGui.QWidget):
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
         
         ## modelToRun selector
-        self.modelToRunSelector = RadioBtnWidget(self.modelToRunList,parent=self,callbackFn=mtrCallback,widgetLabel="Model")
+        mtrCallback = self.model_to_run_select_callback
+        self.modelToRunSelector = RadioBtnWidget(self.modelToRunList,parent=self,widgetLabel="Model",callbackFn=mtrCallback)
         hbox2.addWidget(self.modelToRunSelector)
-        if mtrDefault != None:
-            self.set_checked(mtrDefault)
-
+        self.set_checked(self.selectedModel)
+        
         ## finalize layout
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
@@ -61,6 +69,25 @@ class ModelToRunSelector(QtGui.QWidget):
         role = self.backgroundRole()
         palette.setColor(role, QtGui.QColor(self.color))
         self.setPalette(palette)
+
+    def model_to_run_select_callback(self):
+        validModels = ['kmeans','dpmm-mcmc']
+        selectedModel = self.modelToRunSelector.selectedItem
+ 
+        if selectedModel not in validModels:
+            msg = "Selected model '%s' not in current list of valid models"%selectedModel
+            if self.mainWindow == None:
+                print "WARNING",msg
+            else:
+                self.mainWindow.display_warning(msg)
+            self.set_checked('dpmm-mcmc')
+            self.selectedModel = 'dpmm-mcmc'
+        else:
+            self.selectedModel = selectedModel
+
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['model_to_run'] = self.selectedModel
+            self.mainWindow.controller.save()
 
     def set_checked(self,modelToRunLabel):
         if self.modelToRunList.__contains__(modelToRunLabel) == False:
@@ -74,8 +101,6 @@ class ModelToRunSelector(QtGui.QWidget):
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    
-    mtrList = ['modelToRun1', 'modelToRun2']
-    ms = ModelToRunSelector(mtrList)
+    ms = ModelToRunSelector()
     ms.show()
     sys.exit(app.exec_())

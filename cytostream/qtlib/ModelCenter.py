@@ -15,8 +15,8 @@ from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import ProgressBar, KSelector, TextEntry
 
 class ModelCenter(QtGui.QWidget):
-    def __init__(self, fileList, channelList, mode='progressbar',parent=None, runModelFn=None, mainWindow=None, 
-                 alternateFiles=None, excludedChannels=[], excludedFiles=[],modelToRun='dpmm',
+    def __init__(self, fileList, channelList,parent=None, runModelFn=None, mainWindow=None, 
+                 alternateFiles=None, excludedChannels=[], excludedFiles=[],
                  returnBtnFn=None):
         QtGui.QWidget.__init__(self,parent)
 
@@ -24,10 +24,8 @@ class ModelCenter(QtGui.QWidget):
         self.mainWindow = mainWindow
         self.fileList = fileList
         self.masterChannelList = channelList
-        self.mode = mode
         self.excludedChannels = excludedChannels
         self.excludedFiles = excludedFiles
-        self.modelToRun = modelToRun
         self.runModelFn = runModelFn
 
         ## handle alternate names
@@ -39,20 +37,16 @@ class ModelCenter(QtGui.QWidget):
             self.alternateChannels = self.mainWindow.log.log['alternate_channel_labels']     
 
         if self.mainWindow != None:
-            self.numItersMCMC = self.mainWindow.log.log['num_iters_mcmc']
+            self.dpmmNiter = self.mainWindow.log.log['dpmm_niter']
             self.dpmmK = int(self.mainWindow.log.log['dpmm_k'])
         else:
-            self.numItersMCMC = '1100'
+            self.dpmmNiter = '1'
             self.dpmmK = 16
 
         if self.mainWindow != None:
             self.cleanBorderEvents = self.mainWindow.log.log['clean_border_events']
         else:
             self.cleanBorderEvents = True
-
-        ## error checking
-        if self.mode not in ['progressbar', 'edit']:
-            print "ERROR: ModelCenter -- bad input mode", self.mode
 
         ## setup layouts
         self.grid = QtGui.QGridLayout()
@@ -62,32 +56,10 @@ class ModelCenter(QtGui.QWidget):
         self.hbox.setAlignment(QtCore.Qt.AlignTop)
 
         ## initialize view 
-        if self.mode == 'progressbar':
-            self.init_progressbar_view()
-        if self.mode == 'edit':
-            self.add_model_specific_settings()
-            self.make_channels_sheet()
-            self.make_files_sheet()
-
-            ## save button
-            btnBox = QtGui.QHBoxLayout()
-            btnBox.setAlignment(QtCore.Qt.AlignCenter)
-            self.saveBtn = QtGui.QPushButton("save changes")
-            self.saveBtn.setMaximumWidth(100)
-            self.connect(self.saveBtn, QtCore.SIGNAL('clicked()'),self.save_callback)
-            btnBox.addWidget(self.saveBtn)
-       
-            ## return button
-            self.returnBtn = QtGui.QPushButton("return")
-            self.returnBtn.setMaximumWidth(100)
-            if self.mainWindow != None:
-                self.connect(self.returnBtn, QtCore.SIGNAL('clicked()'),self.mainWindow.handle_model_edit_return)
-            btnBox.addWidget(self.returnBtn)
-       
+        self.init_progressbar_view()
+        
         ## finalize layout
         vbox.addLayout(self.hbox)
-        if self.mode == 'edit':
-            vbox.addLayout(btnBox)
         self.setLayout(vbox)
 
     def set_enable_disable(self):
@@ -95,29 +67,22 @@ class ModelCenter(QtGui.QWidget):
         enable/disable buttons
         '''
 
-        if self.mode == 'progressbar' and self.mainWindow !=None:
-            self.mainWindow.pDock.contBtn.setEnabled(False)
-            self.mainWindow.moreInfoBtn.setEnabled(True)
-            self.mainWindow.pDock.inactivate_all()
-        elif self.mode == 'edit' and self.mainWindow !=None:
-            self.mainWindow.pDock.contBtn.setEnabled(False)
-            self.mainWindow.moreInfoBtn.setEnabled(True)
-            self.mainWindow.pDock.inactivate_all()
-
+        self.mainWindow.pDock.contBtn.setEnabled(False)
+        self.mainWindow.moreInfoBtn.setEnabled(True)
+        self.mainWindow.pDock.inactivate_all()
+        
     def set_disable(self):
         '''
         disable buttons
         '''
 
-        if self.mode == 'progressbar' and self.mainWindow !=None:
+        if self.mainWindow !=None:
             self.progressBar.button.setText('Please wait...')
             self.progressBar.button.setEnabled(False)
             self.widgetSubtitle.setText("Running model...")
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
-            self.mainWindow.subsampleSelector.setEnabled(False)
             self.mainWindow.modelToRunSelector.setEnabled(False)
-            self.mainWindow.modelModeSelector.setEnabled(False)
             self.mainWindow.modelSettingsBtn.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()
 
@@ -274,95 +239,6 @@ class ModelCenter(QtGui.QWidget):
             ssLayout.addLayout(ssLayout2)
             self.hbox.addLayout(ssLayout)
 
-    def add_model_specific_settings(self):
-        '''
-        initializes the first of three vertical panels 
-        the widgets are specific to the selected model 
-        to run
-
-        '''
-
-        mssLayout = QtGui.QVBoxLayout()
-        mssLayout1 = QtGui.QVBoxLayout()
-        mssLayout1.setAlignment(QtCore.Qt.AlignTop)
-        mssLayout1 = QtGui.QVBoxLayout()
-        mssLayout1.setAlignment(QtCore.Qt.AlignTop)
-        mssLayout2 = QtGui.QVBoxLayout()
-        mssLayout2.setAlignment(QtCore.Qt.AlignCenter)
-
-        if self.modelToRun in ['dpmm','k-means']:
-            self.parametersLabel = QtGui.QLabel('Edit parameters')
-            hbox1 = QtGui.QHBoxLayout()
-            hbox1.setAlignment(QtCore.Qt.AlignCenter)
-            hbox1.addWidget(self.parametersLabel)
-            mssLayout1.addLayout(hbox1)
-            
-            self.kSelector = KSelector(parent=self,kDefault=self.dpmmK)
-            hbox2a = QtGui.QHBoxLayout()
-            hbox2a.setAlignment(QtCore.Qt.AlignCenter)
-            hbox2a.addWidget(QtGui.QLabel(" "))
-            hbox2a.addWidget(self.kSelector)
-            hbox2a.addWidget(QtGui.QLabel(" "))
-            mssLayout1.addLayout(hbox2a)
-
-        if self.modelToRun == 'dpmm':
-            hbox2b = QtGui.QHBoxLayout()
-            hbox2b.setAlignment(QtCore.Qt.AlignCenter)
-            hbox2c = QtGui.QHBoxLayout()
-            hbox2c.setAlignment(QtCore.Qt.AlignCenter)
-            teDefault = self.numItersMCMC
-            self.mcmcItersEntry = TextEntry("MCMC iterations",textEntryDefault=teDefault) 
-            hbox2b.addWidget(QtGui.QLabel(" "))
-            hbox2b.addWidget(self.mcmcItersEntry)
-            hbox2b.addWidget(QtGui.QLabel(" "))
-            self.cleanBorderEventsBox = QtGui.QCheckBox("Clean border events")
-            self.cleanBorderEventsBox.setCheckable(True)
-
-            if self.cleanBorderEvents == True:
-                self.cleanBorderEventsBox.setCheckState(QtCore.Qt.Checked)
-
-            self.connect(self.cleanBorderEventsBox,QtCore.SIGNAL('clicked()'),self.clean_border_events_callback)
-            hbox2c.addWidget(self.cleanBorderEventsBox)
-            mssLayout1.addLayout(hbox2b)
-            mssLayout1.addLayout(hbox2c)
-            
-        ## finalize layout
-        mssLayout.addLayout(mssLayout1)
-        mssLayout.addLayout(mssLayout2)
-        self.hbox.addLayout(mssLayout)
-
-    def save_callback(self):
-        '''
-        saves model parameters
-        saves excluded channels
-        saves excluded files
-      
-        '''
-
-        ## save parameters
-        if self.modelToRun == 'dpmm':
-            numItersMCMC = self.mcmcItersEntry.get_text()
-            dpmmK = self.kSelector.get_text()
-
-            if re.search("\D",numItersMCMC):
-                msg = "The number of iterations for MCMC must be a numeric value"
-                reply = QtGui.QMessageBox.warning(self, "Warning", msg)
-                return None
-
-            if self.mainWindow != None:
-                self.mainWindow.log.log['num_mcmc_iters'] = numItersMCMC
-                self.mainWindow.log.log['dpmm_k'] = dpmmK
-                self.mainWindow.controller.save()
-
-        ## excluded channels save
-        n = len(self.masterChannelList)
-        checkStates = [self.modelChannels.itemFromIndex(self.modelChannels.index(i,0)).checkState() for i in range(n)]
-        excludedChannels = np.where(np.array([i for i in checkStates]) == 0)[0].tolist()
-        
-        if self.mainWindow != None:
-            self.mainWindow.log.log['excluded_channels_analysis'] = excludedChannels
-            self.mainWindow.controller.save()
-
     def generic_callback(self):
         print 'This button does nothing'
 
@@ -380,7 +256,6 @@ if __name__ == '__main__':
 
     fileList = ['file1','file2','file3']
     channelList = ['channel1', 'channel2', 'channel3']
-    mode = 'edit' # edit, progressbar
-    mc = ModelCenter(fileList,channelList,mode=mode)
+    mc = ModelCenter(fileList,channelList)
     mc.show()
     sys.exit(app.exec_())

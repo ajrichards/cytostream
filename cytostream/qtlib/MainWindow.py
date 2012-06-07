@@ -80,11 +80,20 @@ class MainWindow(QtGui.QMainWindow):
         self.create_statusbar()
         create_menubar_toolbar(self)
 
+        ## error check and use shortcut to open existing project if specified form cmd line
         if projectID != None:
-            homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
+            if os.path.isdir(projectID) == False:
+                homeDir = os.path.join(self.controller.baseDir,"projects",projectID)
+            else:
+                homeDir = projectID
             if os.path.isdir(homeDir) == False:
-                print "Controller: Bad home dir specified fatal error"
+                print "Controller: ERROR: home dir specified not found: fatal error"
+                print "\t", homeDir
                 sys.exit()
+                if os.path.exists(os.path.join(homeDir,os.path.split(homeDir)[-1]+".log")) == False:
+                    print "Controller: ERROR: home dir specified not a valid cytostream dir: fatal error"
+                    print "\t", homeDir
+                    sys.exit()
             self.open_existing_project_handler(homeDir)
        
     def reset_view_workspace(self):
@@ -427,15 +436,6 @@ class MainWindow(QtGui.QMainWindow):
             self.display_info("Selected model mode is not yet available")
             self.modelModeSelector.set_checked('normal')
             
-    def handle_edit_settings_callback(self):
-        '''
-        handles the model edit callback
-        '''
-        if self.log.log['current_state'] == 'Model Run':
-            self.transitions.move_to_model_run(self,modelMode='edit')
-        elif self.log.log['current_state'] == 'File Alignment':
-            move_to_file_aligner(self,faMode='edit')
-
     def handle_model_edit_return(self):
         '''
         handles the model edit return
@@ -491,7 +491,7 @@ class MainWindow(QtGui.QMainWindow):
         mode = self.log.log['current_state']
         
         ## save necessary variables
-        self.set_selected_subsample()   
+        #self.set_selected_subsample()   
 
         ## handle subsampling
         if self.log.log['current_state'] == 'Quality Assurance':
@@ -512,10 +512,15 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
-        if mode == 'Model Run':
+        elif mode == 'Model':
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
-            self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
+            if  self.controller.log.log['model_to_run'] in ['dpmm-mcmc']:
+                self.controller.run_selected_model_gpu(progressBar=self.mc.progressBar,view=self)
+            else:
+                self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
+
+            #self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
             self.transitions.move_to_model_run(modelMode='progressbar')
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
@@ -526,6 +531,8 @@ class MainWindow(QtGui.QMainWindow):
             self.controller.handle_subsampling(subsample)
             self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
             self.transitions.move_to_model_results(self,mode='menu')
+        else:
+            print "ERROR: got unexpected mode for MainWindow.run_progress_bar",mode
 
     def recreate_figures(self):
         '''
@@ -668,30 +675,28 @@ class MainWindow(QtGui.QMainWindow):
         if selectedPlot > 0:
             self.log.log['selected_plot'] = selectedPlot
 
-    def set_selected_file(self):
-        '''
-        set the selected file
-        '''
+    #def set_selected_file(self):
+    #    '''
+    #    set the selected file
+    #    '''
+    #
+    #    selectedFile = self.fileSelector.get_selected_file() 
+    #    self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
+    #    self.controller.save()
 
-        selectedFile = self.fileSelector.get_selected_file() 
-        self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
-        self.controller.save()
-
-    def set_selected_subsample(self):
-        '''
-        set the selected subsample
-        '''
-
-        selectedSubsample, selectedSubsampleInd = self.subsampleSelector.get_selected_subsample() 
-        if selectedSubsample == 'All Data':
-            selectedSubsample = 'original'
-
-        if self.log.log['current_state'] == 'Quality Assurance':
-            self.log.log['subsample_qa'] = selectedSubsample
-        if self.log.log['current_state'] == 'Model':
-            self.log.log['subsample_analysis'] = selectedSubsample
-            
-        self.controller.save()
+    #def set_selected_subsample(self):
+    #    '''
+    #    set the selected subsample
+    #    '''
+    #
+    #    selectedSubsample = self.subsampleSelector.get_selected_subsample() 
+    #
+    #    if self.log.log['current_state'] == 'Quality Assurance':
+    #        self.log.log['subsample_qa'] = selectedSubsample
+    #    if self.log.log['current_state'] == 'Model':
+    #        self.log.log['subsample_analysis'] = selectedSubsample
+    #        
+    #    self.controller.save()
 
     def get_master_channel_list(self):
         ''' 
