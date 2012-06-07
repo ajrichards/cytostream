@@ -47,8 +47,8 @@ configDictDefault = {
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string
-    'subsample_analysis'                    : '1e4',                              # any float, int or string
-    'model_to_run'                          : 'kmeans',                           # dpmm-mcmc, dpmm-bem, kmeans etc
+    'subsample_analysis'                    : 'original',                         # any float, int or string
+    'model_to_run'                          : 'dpmm-mcmc',                        # dpmm-mcmc, dpmm-bem, kmeans etc
     'kmeans_repeats'                        : '5',                                # an int
     'kmeans_k'                              : '16',                               # an int divisible by 16
     'dpmm_gamma'                            : '1.0',                              # gamma value for dpmm

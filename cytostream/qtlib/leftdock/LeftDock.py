@@ -14,7 +14,7 @@ import sys,os,ast
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
-from cytostream.qtlib import ModelTypeSelector,PlotSelector,PlotTickControls,ChannelSelector
+from cytostream.qtlib import PlotSelector,PlotTickControls,ChannelSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -35,7 +35,7 @@ def add_left_dock(mainWindow):
     plotList = [str(i+1) for i in range(numPlots)]
 
     ## declare variables
-    subsampleList = ["1e04", "1e05","5e06","All Data"]
+    subsampleList = ["1e04", "7.5e04","1.5e05","All Data"]
     if mainWindow.controller.projectID == None:
         projectID = "no project loaded"
     else:
@@ -124,7 +124,6 @@ def add_left_dock(mainWindow):
 
         mainWindow.subsampleSelector = SubsampleSelector(subsampleList,parent=mainWindow.dockWidget,
                                                          mainWindow=mainWindow,subsampleDefault=subsampleDefault)
-        #selectionFn=mainWindow.set_selected_subsample,
         ssLayout = QtGui.QHBoxLayout()
         ssLayout.setAlignment(QtCore.Qt.AlignLeft)
         ssLayout.addWidget(mainWindow.subsampleSelector)
@@ -186,51 +185,29 @@ def add_left_dock(mainWindow):
         mainWindow.vizModeSelector.setMaximumWidth(alignWidth)
         mainWindow.vizModeSelector.setMinimumWidth(alignWidth)
 
-    ## model mode (type) selector
-    if mainWindow.log.log['current_state'] in ['Model']:
-        mmDefault = mainWindow.log.log['model_mode']
-        btnLabels = ['normal','onefit','pooled','target']
-        mmCallback = mainWindow.handle_model_mode_callback
-        mainWindow.modelModeSelector = ModelTypeSelector(btnLabels,parent=mainWindow.dockWidget,modelTypeDefault=mmDefault,
-                                                         modelTypeCallback=mmCallback)
-        mmsLayout = QtGui.QHBoxLayout()
-        mmsLayout.setAlignment(QtCore.Qt.AlignLeft)
-        mmsLayout.addWidget(mainWindow.modelModeSelector)
-        vboxCenter.addLayout(mmsLayout)
-        mainWindow.modelModeSelector.setAutoFillBackground(True)
-        mainWindow.modelModeSelector.setMaximumWidth(alignWidth)
-        mainWindow.modelModeSelector.setMinimumWidth(alignWidth)
-
     ## model to run selector
     if mainWindow.log.log['current_state'] in ['Model']:
         mtrDefault = mainWindow.log.log['model_to_run']
-        btnLabels = ['dpmm','k-means','upload']
-        mtrCallback = mainWindow.handle_model_to_run_callback
-        mainWindow.modelToRunSelector = ModelToRunSelector(btnLabels,parent=mainWindow.dockWidget,mtrDefault=mtrDefault,
-                                                           mtrCallback=mtrCallback)
+        mainWindow.modelToRunSelector = ModelToRunSelector(parent=mainWindow.dockWidget,mainWindow=mainWindow)
         mtrLayout = QtGui.QHBoxLayout()
         mtrLayout.setAlignment(QtCore.Qt.AlignLeft)
         mtrLayout.addWidget(mainWindow.modelToRunSelector)
-        vboxCenter.addLayout(mtrLayout)
+        vboxTop.addLayout(mtrLayout)
         mainWindow.modelToRunSelector.setAutoFillBackground(True)
         mainWindow.modelToRunSelector.setMaximumWidth(alignWidth)
         mainWindow.modelToRunSelector.setMinimumWidth(alignWidth)
     
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Model','File Alignment']:
+    if mainWindow.log.log['current_state'] in ['Model','Sample Alignment']:
         mainWindow.modelSettingsBtn = QtGui.QPushButton("Edit settings")
         mainWindow.modelSettingsBtn.setMaximumWidth(140)
         mainWindow.modelSettingsBtn.setMinimumWidth(140)
         msbLayout = QtGui.QHBoxLayout()
         msbLayout.setAlignment(QtCore.Qt.AlignCenter)
         msbLayout.addWidget(mainWindow.modelSettingsBtn)
-        if mainWindow.log.log['current_state'] in ['Model']:
-            vboxCenter.addLayout(msbLayout)
-        else:
-            vboxBottom.addLayout(msbLayout)
-
-        msBtnFn = mainWindow.handle_edit_settings_callback
+        msBtnFn = mainWindow.transitions.move_to_preferences
         mainWindow.connect(mainWindow.modelSettingsBtn,QtCore.SIGNAL('clicked()'),msBtnFn)
+        vboxCenter.addLayout(msbLayout)
 
     ## more recreate figures
     if mainWindow.log.log['current_state'] in ['Quality Assurance']:

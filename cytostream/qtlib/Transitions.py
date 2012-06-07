@@ -21,8 +21,8 @@ from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
 from cytostream.qtlib import FileAlignerCenter, Waiting
-from cytostream.qtlib import OneDimViewer, Preferences
-
+from cytostream.qtlib import OneDimViewer, PreferencesDPMM, PreferencesKmeans
+from cytostream.tools import get_official_name_match
 
 class Transitions():
     '''
@@ -186,9 +186,9 @@ class Transitions():
         self.mainWindow.status.showMessage("Results Navigation", 5000)
         return True
 
-    def move_to_model_run(self,modelMode='progressbar'):
+    def move_to_model_run(self):
         if self.mainWindow.controller.verbose == True:
-            print "INFO: moving to model run", modelMode
+            print "INFO: moving to model run"
 
         ## error checking
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
@@ -208,7 +208,7 @@ class Transitions():
         ## create center widget
         fileList = get_fcs_file_names(self.mainWindow.controller.homeDir)
         channelList = self.mainWindow.get_master_channel_list()
-        self.mainWindow.mc = ModelCenter(fileList,channelList,mode=modelMode,parent=self.mainWindow.mainWidget,
+        self.mainWindow.mc = ModelCenter(fileList,channelList,parent=self.mainWindow.mainWidget,
                                          runModelFn=self.mainWindow.run_progress_bar,mainWindow=self.mainWindow)
         ## handle docks
         self.mainWindow.restore_docks()
@@ -231,11 +231,14 @@ class Transitions():
         ## save channel dict
         if self.mainWindow.dpc:
             channelDict = {}
+            #officialChannelList = [get_official_name_match(i) for i in self.mainWindow.controller.masterChannelList]
             n = len(self.mainWindow.controller.masterChannelList)
             chanLabels = [str(self.mainWindow.dpc.modelChannels.data(self.mainWindow.dpc.modelChannels.index(i,3)).toString()) for i in range(n)]
             for i,cl in enumerate(chanLabels):
                 if cl != 'Unmatched':
                     channelDict[cl] = i
+                else:
+                    print "ERROR: Transitions: we have unmatched channel"
             self.mainWindow.model.save_channel_dict(channelDict)
             self.mainWindow.channelDict = self.mainWindow.model.load_channel_dict()
 
@@ -327,8 +330,8 @@ class Transitions():
 
             closeBtnFn = lambda a=self.mainWindow:self.move_to_data_processing(a)
             defaultTransform = self.mainWindow.log.log['selected_transform']
-            self.mainWindow.editMenu = EditMenu(parent=self.mainWindow.mainWidget,closeBtnFn=closeBtnFn,defaultTransform=defaultTransform,
-                                                mainWindow=self.mainWindow)
+            self.mainWindow.editMenu = EditMenu(parent=self.mainWindow.mainWidget,closeBtnFn=closeBtnFn,
+                                                defaultTransform=defaultTransform,mainWindow=self.mainWindow)
             ## handle dock widgets
             self.mainWindow.restore_docks()
 
@@ -342,7 +345,10 @@ class Transitions():
             
         ## ready a DataProcessingCenter class
         def load_files():
-            allFiles = QtGui.QFileDialog.getOpenFileNames(self.mainWindow, 'Open file(s)')
+            defaultDir = os.path.join(self.mainWindow.controller.homeDir,os.path.pardir)
+            print 'using default dir', defaultDir
+            allFiles = QtGui.QFileDialog.getOpenFileNames(self.mainWindow,'Open file(s)',
+                                                          directory=defaultDir)
             for fileName in allFiles:
                 if not re.search("\.fcs|\.csv|\.txt",os.path.split(str(fileName))[-1]):
                     print "WARNING: loaded file is of unknown extension", fileName
@@ -411,20 +417,34 @@ class Transitions():
 
         ## ensure there is a project present
         currentState = self.mainWindow.log.log['current_state']
+        modelToRun =  self.mainWindow.log.log['model_to_run']
         if currentState == 'Initial':
             self.mainWindow.display_info('To begin either load an existing project or create a new one')
             return False
 
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to preferences"
-            
+        
+        validStates = ['Model','Sample Alignment']
+        if currentState not in validStates:
+            self.mainWindow.display_info('Preferences are only available from: %s'%validStates)
+            return None
+
         ## clean the layout
         move_transition(self.mainWindow,repaint=True)
         self.mainWindow.reset_layout()
 
         ## preferences widget    
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
-        self.mainWindow.preferences = Preferences(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
+
+        if currentState == 'Data Processing':
+            self.mainWindow.preferences = Preferences(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
+        if currentState == 'Model':
+            if modelToRun in ['dpmm-mcmc','dpmm-bem']:
+                self.mainWindow.preferences = PreferencesDPMM(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
+            elif modelToRun == 'kmeans':
+                self.mainWindow.preferences = PreferencesKmeans(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
+
 
         ## handle docks
         self.mainWindow.restore_docks()
@@ -437,7 +457,6 @@ class Transitions():
         self.mainWindow.vboxCenter.addLayout(hbl)
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
-
         self.mainWindow.status.showMessage("Application preferences", 5000)
 
     def move_to_results_summary(self,runNew=False):
@@ -458,7 +477,7 @@ class Transitions():
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow) 
     
         ## manage the state
-        self.mainWindow.log.log['current_state'] = "File Alignment"
+        self.mainWindow.log.log['current_state'] = "Sample Alignment"
         self.mainWindow.update_highest_state()
         self.mainWindow.controller.save()
 
@@ -477,5 +496,5 @@ class Transitions():
         self.mainWindow.vboxCenter.addLayout(hbl)
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
-        self.mainWindow.status.showMessage("File Alignment", 5000)
+        self.mainWindow.status.showMessage("Sample Alignment", 5000)
         return True

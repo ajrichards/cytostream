@@ -157,9 +157,6 @@ class DataProcessingCenter(QtGui.QWidget):
         self.nfRemoveBtn = QtGui.QPushButton("Remove file(s)")
         self.nfRemoveBtn.setMaximumWidth(130)
         nfLayout3.addWidget(self.nfRemoveBtn)
-        #if self.loadFileFn == None:
-        #    self.connect(self.nfLoadBtn, QtCore.SIGNAL('clicked()'),self.generic_callback)
-        #else:
         self.connect(self.nfRemoveBtn, QtCore.SIGNAL('clicked()'),self.remove_file_from_load_list)
 
         if self.mainWindow != None and int(self.mainWindow.controller.log.log['highest_state']) == 1:
