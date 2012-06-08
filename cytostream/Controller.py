@@ -643,7 +643,14 @@ class Controller:
 
         def report_progress(percentComplete,percentReported,progressBar=None):
             if progressBar != None:
-                progressBar.move_bar(int(round(percentComplete)))
+                #progressBar.move_bar(int(round(percentComplete)))
+                totalProgress = 0
+                for _gpu,_percent in percentComplete.iteritems():
+                    totalProgress += float(_percent)
+                
+                pComplete = totalProgress / (len(percentComplete) * 100.0)
+                progressBar.move_bar(int(round(pComplete)))
+
             else:
                 isNew = False
                 for _gpu,_percent in percentComplete.iteritems():
@@ -756,7 +763,7 @@ class Controller:
 
         ## update progress bar or prompt out by tracking log files
         while totalCompletedFiles < len(self.fileNameList):
-            time.sleep(2)
+            time.sleep(3)
             completedFiles = {}
             for gpu in fileListByGPU.keys():
                 completedFiles[gpu] = []

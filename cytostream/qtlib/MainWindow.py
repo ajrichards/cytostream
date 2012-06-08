@@ -519,9 +519,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.controller.run_selected_model_gpu(progressBar=self.mc.progressBar,view=self)
             else:
                 self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
-
-            #self.controller.run_selected_model(progressBar=self.mc.progressBar,view=self)
-            self.transitions.move_to_model_run(modelMode='progressbar')
+            self.transitions.move_to_model_run()
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
             self.mc.widgetSubtitle.setText("Creating figures...")
@@ -530,7 +528,7 @@ class MainWindow(QtGui.QMainWindow):
             modelRunID = 'run' + str(self.log.log['models_run_count'])
             self.controller.handle_subsampling(subsample)
             self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
-            self.transitions.move_to_model_results(self,mode='menu')
+            self.transitions.move_to_model_results(mode='menu')
         else:
             print "ERROR: got unexpected mode for MainWindow.run_progress_bar",mode
 
@@ -543,8 +541,8 @@ class MainWindow(QtGui.QMainWindow):
 
         if self.log.log['current_state'] == 'Quality Assurance':
             self.transitions.move_to_quality_assurance(mode='progressbar')
-        elif self.log.log['current_state'] == 'Results Navigation':
-            self.transitions.move_to_model(modelMode='progressbar')
+        elif self.log.log['current_state'] == 'Model Results':
+            self.transitions.move_to_model_results()
 
     def plots_enable_disable(self,mode='thumbnails'):
         '''
@@ -574,7 +572,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(False)
         elif mode == 'plot':
             if self.log.log['current_state'] == 'Quality Assurance':
-                self.pDock.enable_continue_btn(lambda a=self:self.transitions.move_to_model_run(a))
+                self.pDock.enable_continue_btn(self.transitions.move_to_model_run)
             self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
 
             if self.fileSelector:
@@ -675,14 +673,14 @@ class MainWindow(QtGui.QMainWindow):
         if selectedPlot > 0:
             self.log.log['selected_plot'] = selectedPlot
 
-    #def set_selected_file(self):
-    #    '''
-    #    set the selected file
-    #    '''
-    #
-    #    selectedFile = self.fileSelector.get_selected_file() 
-    #    self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
-    #    self.controller.save()
+    def set_selected_file(self):
+        '''
+        set the selected file
+        '''
+    
+        selectedFile = self.fileSelector.get_selected_file() 
+        self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
+        self.controller.save()
 
     #def set_selected_subsample(self):
     #    '''
