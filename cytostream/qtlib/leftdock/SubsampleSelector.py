@@ -47,22 +47,24 @@ class SubsampleSelector(QtGui.QWidget):
 
         hbox2.addWidget(self.subsampleSelector)
 
+        if self.mainWindow == None:
+            subsampleDefault = subsampleList[0]
+        else:
+            currentState = self.mainWindow.controller.log.log['current_state']
+            if currentState == 'Quality Assurance':
+                subsampleDefault = self.mainWindow.controller.log.log['subsample_qa']
+            else:
+                subsampleDefault = "original"
+
         if subsampleDefault != None and subsampleDefault == 'original':
             subsampleDefault = "All Data"
-
-        if subsampleDefault != None:
-            if subsampleDefault != "All Data":
-                subsampleDefault = str(int(float(subsampleDefault)))
+            self.subsampleSelector.setCurrentIndex(subsampleList.index(subsampleDefault))
+        else:
+            subsampleDefault = str(int(float(subsampleDefault)))
             if subsampleList.__contains__(subsampleDefault):
                 self.subsampleSelector.setCurrentIndex(subsampleList.index(subsampleDefault))
             else:
-                print "WARNING: in subsample selector - bad specified subsampleDefault", subsampleDefault
                 self.subsampleSelector.setCurrentIndex(0)
-                if self.mainWindow != None:
-                    if self.mainWindow.controller.log.log['current_state'] == 'Quality Assurance':
-                        self.mainWindow.controller.log.log['subsample_qa'] = subsampleList[0]
-                    else:
-                        self.mainWindow.controller.log.log['subsample_analysis'] = subsampleList[0]
 
         self.connect(self.subsampleSelector, QtCore.SIGNAL("currentIndexChanged(int)"), self.subsample_selector_callback)    
 
@@ -147,7 +149,7 @@ class SubsampleSelector(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
-    subsampleList = ['subsample1', 'subsample2']
+    subsampleList = ['10000', '7500000']
     fs = SubsampleSelector(subsampleList)
     fs.show()
     sys.exit(app.exec_())
