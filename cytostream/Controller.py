@@ -822,29 +822,50 @@ class Controller:
         
         print 'running... %s via %s'%(selectedModel,self.model.modelsInfo[selectedModel][1])
 
+        cmd = self.pythonPath
         script = os.path.join(self.baseDir,self.model.modelsInfo[selectedModel][1])
 
-        fileCount = 0
-        for fileName in fileList:
-            fileCount += 1
-            if os.path.isfile(script) == False:
-                print "ERROR: Invalid model run file path ", script
+        if view == None:
+            fileCount = 0
+            for fileName in fileList:
+                fileCount += 1
+                if os.path.isfile(script) == False:
+                    print "ERROR: Invalid model run file path ", script
             
-            proc = subprocess.Popen("%s %s -h %s -f %s"%(self.pythonPath,script,
-                                                         self.homeDir,fileName), 
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
-            while True:
-                try:
-                    next_line = proc.stdout.readline()
-                    if next_line == '' and proc.poll() != None:
+                argsStr = "%s -h %s -f %s"%(script,self.homeDir,fileName)
+                proc = subprocess.Popen(cmd + ' ' + argsStr, 
+                                        shell=True,
+                                        stdout=subprocess.PIPE,
+                                        stdin=subprocess.PIPE)
+                while True:
+                    try:
+                        next_line = proc.stdout.readline()
+                        proc.wait()
+                        if next_line == '' and proc.poll() != None:
+                            break
+                        else:
+                            print next_line
+                    except:
+                        proc.wait()
                         break
-                   
-                    ## to debug uncomment the following
-                    print next_line
-                except:
-                    break
-                    
-            percentComplete = float(fileCount) / float(len(fileList)) * 100.0
-            report_progress(percentComplete,percentagesReported,progressBar=progressBar)
+        else:
+            #argsList = [script,"-h",self.homeDir,"-f",fileName]
+            
+            view.mc.init_model_process(cmd,script,fileList)
+
+            ## wait until file is complete before moving on to next file
+            #isComplete = False
+            #while isComplete == False:
+            #    time.sleep(4)
+            #    
+            #    for fName in os.listdir(os.path.join(self.homeDir,'models')):
+            #        if not re.search("\_%s\.log"%modelRunID,fName):
+            #            continue
+            #        else:
+            #            isComplete = True
+                                        
+            #percentComplete = float(fileCount) / float(len(fileList)) * 100.0
+            #report_progress(percentComplete,percentagesReported,progressBar=progressBar)
+
+
+

@@ -516,19 +516,19 @@ class MainWindow(QtGui.QMainWindow):
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
             if  self.controller.log.log['model_to_run'] in ['dpmm-mcmc']:
-                self.controller.run_selected_model_gpu(progressBar=self.mc.progressBar,view=self)
+                self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
             else:
                 self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
-            self.transitions.move_to_model_run()
-            self.mc.set_disable()
-            QtCore.QCoreApplication.processEvents()
-            self.mc.widgetSubtitle.setText("Creating figures...")
-            self.mc.progressBar.progressLabel.setText("Creating figures...")
-            subsample = self.controller.log.log['subsample_analysis']
-            modelRunID = 'run' + str(self.log.log['models_run_count'])
-            self.controller.handle_subsampling(subsample)
-            self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
-            self.transitions.move_to_model_results(mode='menu')
+            #self.transitions.move_to_model_run()
+            #self.mc.set_disable()
+            #QtCore.QCoreApplication.processEvents()
+            #self.mc.widgetSubtitle.setText("Creating figures...")
+            #self.mc.progressBar.progressLabel.setText("Creating figures...")
+            #subsample = self.controller.log.log['subsample_analysis']
+            #modelRunID = 'run' + str(self.log.log['models_run_count'])
+            #self.controller.handle_subsampling(subsample)
+            #self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
+            #self.transitions.move_to_model_results(mode='menu')
         else:
             print "ERROR: got unexpected mode for MainWindow.run_progress_bar",mode
 

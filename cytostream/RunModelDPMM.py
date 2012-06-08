@@ -59,7 +59,7 @@ class RunModelDPMM(RunModelBase):
         selectedModel = self.log.log['model_to_run']
         subsample = self.subsample
         modelMode = self.log.log['model_mode']
-        modelNum = self.modelNum
+        modelRunID = self.modelRunID
         modelReference = self.log.log['model_reference']
         modelReferenceRunID =  self.log.log['model_reference_run_id']
         includedChannels = self.includedChannels
@@ -108,11 +108,11 @@ class RunModelDPMM(RunModelBase):
                     full = mod.fit(nonBorderEvents,verbose=True)
                 else:
                     full = mod.fit(events,verbose=True)
-                tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_dpmm.pickle"),'w')
+                tmp0 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_dpmm.pickle"),'w')
                 cPickle.dump(full,tmp0)
                 tmp0.close()
             else:
-                tmp0 = open(os.path.join(homeDir,'models',modelReference+"_%s"%(modelNum)+"_dpmm.pickle"),'r')
+                tmp0 = open(os.path.join(homeDir,'models',modelReference+"_%s"%(modelRunID)+"_dpmm.pickle"),'r')
                 refMod = cPickle.load(tmp0)
                 tmp0.close()
         
@@ -136,9 +136,9 @@ class RunModelDPMM(RunModelBase):
         runTime = self.get_run_time()
         
         ## save cluster labels (components)
-        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.npy")
+        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_components.npy")
         np.save(componentsFilePath,classifyComponents)
-        tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_full.pickle"),'w')
+        tmp1 = open(os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_full.pickle"),'w')
         cPickle.dump(full,tmp1)
         tmp1.close()
 
@@ -146,14 +146,14 @@ class RunModelDPMM(RunModelBase):
         ## get modes
         #modes = full.make_modal()
         #classifyModes = modes.classify(events)
-        #modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_modes.npy")
+        #modesFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_modes.npy")
         #np.save(modesFilePath,classifyModes)
 
         ## save a log file
         if verbose == True:
             print '\t...writing log file', os.path.split(__file__)[-1]
 
-        writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+".log"),'w'))
+        writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+".log"),'w'))
         
         ## for all models
         writer.writerow(["timestamp", time.asctime()])

@@ -9,10 +9,37 @@ The main widget for the model state
 
 __author__ = "A Richards"
 
-import sys,re
+import os,sys,re,time
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import ProgressBar, KSelector, TextEntry
+
+class WorkThread(QtCore.QThread):
+    def __init__(self,mc,mainWindow,fileName):
+        QtCore.QThread.__init__(self)
+        self.mc = mc
+        self.mainWindow = mainWindow
+        self.fileName = fileName
+
+    #def __del__(self):
+    #    self.wait()
+
+    def run(self):
+        modelRunID = self.mainWindow.controller.log.log['selected_model']
+        logFileName = self.fileName+"_%s"%(modelRunID)+".log"
+
+        logFilePath = os.path.join(self.mainWindow.controller.homeDir,'models',logFileName)
+        isFound = False
+        while isFound == False:
+            time.sleep(3)
+            if os.path.exists(logFilePath):
+                print 'found it'
+                isFound = True
+
+        finished = QtCore.pyqtSignal()
+        self.finished.emit()
+
+        return
 
 class ModelCenter(QtGui.QWidget):
     def __init__(self, fileList, channelList,parent=None, runModelFn=None, mainWindow=None, 
@@ -244,12 +271,70 @@ class ModelCenter(QtGui.QWidget):
 
     def clean_border_events_callback(self):
         print 'clean border events'
-        #print dir(self.cleanBorderEventsBox)
         state = str(self.cleanBorderEventsBox.isChecked())
         
         if self.mainWindow != None:
             self.mainWindow.log.log['clean_border_events'] = state
+
+    def init_model_process(self,command,script,fileList):
+        if self.mainWindow != None:
+            self.progressBar.button.setEnabled(0)
+            self.progressBar.button.setText('Please wait...')
+            self.mainWindow.pDock.contBtn.setEnabled(False)
+
+        self.command = command
+        self.script = script
+        self.filesToRun = fileList
+        self.nextFileToRun = 0
+        self.submit_job()
+
+    def submit_job(self):
         
+        if self.nextFileToRun >= len(self.filesToRun):
+            print 'no more files in the list'
+            return
+
+        fileName = self.filesToRun[self.nextFileToRun]
+        print 'submitting process', fileName
+        args = [self.script,"-h",self.mainWindow.controller.homeDir,"-f",fileName]
+        self.process = QtCore.QProcess(self)
+        self.process.startDetached(self.command,args)
+        self.send_thread_to_wait_on_process_finish(fileName)
+        #self.process.waitForFinished()
+        
+    def send_thread_to_wait_on_process_finish(self,fileName):
+        if self.mainWindow == None:
+            return
+
+        self.workThread = WorkThread(self,self.mainWindow,fileName)
+        self.connect(self.workThread, QtCore.SIGNAL("finished()"), self.on_process_finished)
+        self.workThread.start()
+
+    def on_process_finished(self):
+        if self.mainWindow == None:
+            return
+
+        modelRunID = self.mainWindow.controller.log.log['selected_model']
+        self.process.close()
+
+        totalComplete = 0
+        for dirFileName in os.listdir(os.path.join(self.mainWindow.controller.homeDir,'models')):
+            for fileName in self.fileList:
+                if dirFileName == fileName+"_%s"%(modelRunID)+".log":
+                    totalComplete+=1
+                
+        percentComplete = (float(totalComplete) / float(len(self.fileList))) * 100.0
+        print 'process finished',percentComplete,totalComplete
+        self.progressBar.move_bar(int(round(percentComplete)))
+
+        ## check to see if we need to send another file
+        self.nextFileToRun += 1
+        if self.nextFileToRun >= len(self.filesToRun):
+            print 'all files have been run'
+            return
+        else:
+            self.submit_job()
+
 ### Run the tests 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
