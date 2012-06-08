@@ -30,7 +30,8 @@ class RunModelBase(object):
         ## prepare model
         self.model = Model()
         self.model.initialize(homeDir)
-        self.modelNum = "run%s"%int(self.log.log['models_run_count'])
+        self.modelRunID = self.log.log['selected_model']
+        #self.modelNum = "run%s"%int(self.log.log['models_run_count'])
         self.subsample = self.log.log['subsample_analysis']
 
         ## get events

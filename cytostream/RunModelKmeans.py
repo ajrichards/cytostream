@@ -55,7 +55,7 @@ class RunModelKmeans(RunModelBase):
         selectedModel = self.log.log['model_to_run']
         subsample = self.log.log['subsample_analysis']
         modelMode = self.log.log['model_mode']
-        modelNum = self.modelNum
+        modelRunID = self.modelRunID
         modelReference = self.log.log['model_reference']
         modelReferenceRunID =  self.log.log['model_reference_run_id']
         includedChannels = self.includedChannels
@@ -106,14 +106,14 @@ class RunModelKmeans(RunModelBase):
         runTime = self.get_run_time()
 
         ## save cluster labels (components)
-        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+"_components.npy")
+        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_components.npy")
         np.save(componentsFilePath,labels)
 
         ## save a log file
         if verbose == True:
             print '\t...writing log file', os.path.split(__file__)[-1]
 
-        writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelNum)+".log"),'w'))
+        writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+".log"),'w'))
         
         ## for all models
         writer.writerow(["timestamp", time.asctime()])
