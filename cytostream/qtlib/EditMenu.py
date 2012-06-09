@@ -16,7 +16,7 @@ class EditMenu(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## variables
-        self.transformsList = ['log','logicle']
+        self.transformsList = ['log','logicle','none']
         self.inputTypeList   = ['fcm','tab-delimited','comma-delimited']
         self.defaultTransform = defaultTransform
         self.defaultInputType = defaultInputType
@@ -94,18 +94,24 @@ class EditMenu(QtGui.QWidget):
     def generic_callback(self):
         print 'This button does nothing'
 
-    def transformation_callback(self,item=None):
+    def transformation_callback(self):
         '''
         transformation selection callback 
         
         '''
         
-        if item !=None:
-            self.selectedTransform = item
+        selectedTransform = self.transformSelector.selectedItem
 
-            if self.mainWindow != None:
-                self.mainWindow.log.log['selected_transform'] = self.selectedTransform
-                self.mainWindow.controller.save()
+        if selectedTransform == 'none':
+            self.selectedTransform = 'None'
+        else:
+            self.selectedTransform = selectedTransform
+
+        print 'saving', self.selectedTransform
+
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['load_transform'] = self.selectedTransform
+            self.mainWindow.controller.save()
     
     def input_type_callback(self,item=None):
         '''
@@ -113,18 +119,16 @@ class EditMenu(QtGui.QWidget):
         
         '''
         
-        if item !=None:
+        selectedInputType = self.inputTypeSelector.selectedItem
 
-            if item == 'comma-delimited':
-                item = 'comma'
-            elif item == 'tab-delimited':
-                item = 'tab'
+        if selectedInputType == 'comma-delimited':
+            self.selectedInputType = 'comma'
+        elif selectedInputType == 'tab-delimited':
+            self.selectedInputType = 'tab'
 
-            self.selectedInputDataType = item
-
-            if self.mainWindow != None:
-                self.mainWindow.log.log['input_data_type'] = self.selectedInputDataType
-                self.mainWindow.controller.save()
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['input_data_type'] = self.selectedInputDataType
+            self.mainWindow.controller.save()
 
 ### Run the tests
 if __name__ == '__main__':
