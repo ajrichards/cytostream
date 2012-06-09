@@ -28,11 +28,6 @@ class ModelToRunSelector(QtGui.QWidget):
 
         QtGui.QWidget.__init__(self,parent)
 
-        ## error checking
-        #if mtrDefault != None and mtrList.__contains__(mtrDefault) == False:
-        #    print "ERROR: RadioBtnWidget - bad default specified",mtrDefault
-        #    return None
-
         ## variables
         self.modelToRunList = modelsInfo.keys()
         self.color = color

@@ -319,6 +319,10 @@ class Transitions():
         
         ## create a edit menu function
         def move_to_edit_menu(self):
+            '''
+            the edit menu before preprocessing
+            '''
+
             ## clean the layout
             self.mainWindow.reset_layout()
             self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
@@ -329,7 +333,7 @@ class Transitions():
                 remove_left_dock(self.mainWindow)
 
             closeBtnFn = lambda a=self.mainWindow:self.move_to_data_processing(a)
-            defaultTransform = self.mainWindow.log.log['selected_transform']
+            defaultTransform = self.mainWindow.log.log['load_transform']
             self.mainWindow.editMenu = EditMenu(parent=self.mainWindow.mainWidget,closeBtnFn=closeBtnFn,
                                                 defaultTransform=defaultTransform,mainWindow=self.mainWindow)
             ## handle dock widgets
