@@ -16,6 +16,7 @@ class EditMenu(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## variables
+        self.autoCompList = ['True','False']
         self.transformsList = ['log','logicle','none']
         self.inputTypeList   = ['fcm','tab-delimited','comma-delimited']
         self.defaultTransform = defaultTransform
@@ -36,6 +37,8 @@ class EditMenu(QtGui.QWidget):
         self.hbl2.setAlignment(QtCore.Qt.AlignCenter)
         self.hbl3 = QtGui.QHBoxLayout()
         self.hbl3.setAlignment(QtCore.Qt.AlignCenter)
+        self.hbl4 = QtGui.QHBoxLayout()
+        self.hbl4.setAlignment(QtCore.Qt.AlignCenter)
 
         ## set default transform
         if self.defaultTransform not in self.transformsList:
@@ -65,11 +68,18 @@ class EditMenu(QtGui.QWidget):
             
         self.hbl2.addWidget(self.inputTypeSelector)
 
+        ## input selector widget
+        self.autoCompSelector = RadioBtnWidget(self.autoCompList,parent=self,callbackFn=self.auto_comp_callback,
+                                               widgetLabel="Auto compensation",default='True')
+            
+        self.hbl3.addWidget(self.autoCompSelector)
+
+
         ## create the buttons
         self.closeBtn = QtGui.QPushButton("save and return", self)
         self.closeBtn.setMaximumWidth(200)
         self.closeBtn.setMinimumWidth(200)
-        self.hbl3.addWidget(self.closeBtn)
+        self.hbl4.addWidget(self.closeBtn)
         if closeBtnFn == None:
             closeBtnFn = self.generic_callback
 
@@ -79,6 +89,7 @@ class EditMenu(QtGui.QWidget):
         self.vbl.addLayout(self.hbl1)
         self.vbl.addLayout(self.hbl2)
         self.vbl.addLayout(self.hbl3)
+        self.vbl.addLayout(self.hbl4)
         self.vbl.setAlignment(QtCore.Qt.AlignCenter)
         self.setLayout(self.vbl)
 
@@ -128,6 +139,19 @@ class EditMenu(QtGui.QWidget):
 
         if self.mainWindow != None:
             self.mainWindow.controller.log.log['input_data_type'] = self.selectedInputDataType
+            self.mainWindow.controller.save()
+
+    def auto_comp_callback(self):
+        '''
+        specify whether cytostream should autocompensate 
+        
+        '''
+        
+        selectedAutoComp = self.autoCompSelector.selectedItem
+        self.selectedAutoComp = selectedAutoComp
+
+        if self.mainWindow != None:
+            self.mainWindow.controller.log.log['auto_compensation'] = self.selectedAutoComp
             self.mainWindow.controller.save()
 
 ### Run the tests

@@ -104,7 +104,7 @@ class DataProcessingCenter(QtGui.QWidget):
             if self.nfLoadBtn != None:
                 self.nfLoadBtn.setEnabled(False)
             if self.nfEditBtn != None:
-                self.nfEditBtn.setEnabled(False)
+                self.nfEditBtn.setEnabled(True)
             self.mainWindow.pDock.contBtn.setEnabled(False)
             self.mainWindow.moreInfoBtn.setEnabled(False)
             self.mainWindow.pDock.inactivate_all()

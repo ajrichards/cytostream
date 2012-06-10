@@ -13,6 +13,7 @@ import os,sys,re,time
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from cytostream.qtlib import ProgressBar, KSelector, TextEntry
+from cytostream.qtlib import TextScreen
 
 class WorkThread(QtCore.QThread):
     def __init__(self,mc,mainWindow,fileName):
@@ -20,9 +21,6 @@ class WorkThread(QtCore.QThread):
         self.mc = mc
         self.mainWindow = mainWindow
         self.fileName = fileName
-
-    #def __del__(self):
-    #    self.wait()
 
     def run(self):
         modelRunID = self.mainWindow.controller.log.log['selected_model']
@@ -35,9 +33,6 @@ class WorkThread(QtCore.QThread):
             if os.path.exists(logFilePath):
                 print 'found it'
                 isFound = True
-
-        finished = QtCore.pyqtSignal()
-        self.finished.emit()
 
         return
 
@@ -122,6 +117,8 @@ class ModelCenter(QtGui.QWidget):
         pbLayout2a.setAlignment(QtCore.Qt.AlignCenter)
         pbLayout2b = QtGui.QHBoxLayout()
         pbLayout2b.setAlignment(QtCore.Qt.AlignCenter)
+        pbLayout2c = QtGui.QHBoxLayout()
+        pbLayout2c.setAlignment(QtCore.Qt.AlignCenter)
         pbLayout3 = QtGui.QHBoxLayout()
         pbLayout3.setAlignment(QtCore.Qt.AlignCenter)
         pbLayout4 = QtGui.QHBoxLayout()
@@ -130,8 +127,10 @@ class ModelCenter(QtGui.QWidget):
         ## label widget
         self.widgetTitle = QtGui.QLabel('Data Modeling')
         self.widgetSubtitle = QtGui.QLabel('Select model for loaded data')
+        self.textScreen = TextScreen()
         pbLayout2a.addWidget(self.widgetTitle)
         pbLayout2b.addWidget(self.widgetSubtitle)
+        pbLayout2c.addWidget(self.textScreen)
 
         ## show the progress bar
         self.init_progressbar()
@@ -139,6 +138,7 @@ class ModelCenter(QtGui.QWidget):
         ## finalize layout 
         pbLayout2.addLayout(pbLayout2a)
         pbLayout2.addLayout(pbLayout2b)
+        pbLayout2.addLayout(pbLayout2c)
         pbLayout1.addLayout(pbLayout2)
         pbLayout1.addLayout(pbLayout3)
         pbLayout1.addWidget(QtGui.QLabel('\t\t\t'))
@@ -295,12 +295,11 @@ class ModelCenter(QtGui.QWidget):
             return
 
         fileName = self.filesToRun[self.nextFileToRun]
-        print 'submitting process', fileName
+        self.textScreen.add_text('...submitting %s'%fileName)
         args = [self.script,"-h",self.mainWindow.controller.homeDir,"-f",fileName]
         self.process = QtCore.QProcess(self)
         self.process.startDetached(self.command,args)
         self.send_thread_to_wait_on_process_finish(fileName)
-        #self.process.waitForFinished()
         
     def send_thread_to_wait_on_process_finish(self,fileName):
         if self.mainWindow == None:
@@ -330,7 +329,8 @@ class ModelCenter(QtGui.QWidget):
         ## check to see if we need to send another file
         self.nextFileToRun += 1
         if self.nextFileToRun >= len(self.filesToRun):
-            print 'all files have been run'
+            self.textScreen.add_text("All files complete.")
+            self.mainWindow.on_model_run_finish()
             return
         else:
             self.submit_job()
