@@ -296,7 +296,7 @@ class Controller:
                 continue
     
             ## progress point information 
-            imageProgress = range(int(numImagesToCreate))
+            imageProgress = range(int(numImagesToCreate)+len(channelThumbs))
         
             ## specify model type to show as thumbnails
             modelType = self.log.log['thumbnail_results_default']
@@ -343,9 +343,43 @@ class Controller:
                     progressBar.move_bar(int(round(percentDone)))
                     #print 'moving', percentDone
             
+            #thumbDir = os.path.join(imgDir,fileName+"_thumbs")
+            #self.create_thumbs(imgDir,thumbDir,fileName,channels)
+
+            ## plot the histograms
+            for chan in channelThumbs:
+                chanInd = self.channelDict[chan]
+                figName = os.path.join(imgDir,"%s_%s.%s"%(fileName,chan,self.log.log['plot_type']))
+                script = os.path.join(self.baseDir,"RunMakeHistogramPlot.py")
+                
+                if os.path.isfile(script) == False:
+                    print 'ERROR: cannot find RunMakeScatterPlot.py'
+                    return False
+                else:
+                    pltCmd = "%s %s -h %s -f %s -c %s -s %s"%(self.pythonPath,script,self.homeDir,figName,chanInd,subsample)
+                    proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                    while True:
+                        try:
+                            next_line = proc.stdout.readline() 
+                            proc.wait()
+                            if next_line == '' and proc.poll() != None:
+                                break
+                            else:
+                                print next_line
+                        except:
+                            proc.wait()
+                            break 
+
+                imageCount += 1
+                progress = 1.0 / float(len(imageProgress)) *100.0
+                percentDone+=progress
+                     
+                if progressBar != None:
+                    progressBar.move_bar(int(round(percentDone)))
+            
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
             self.create_thumbs(imgDir,thumbDir,fileName,channels)
-
+            
     def create_thumbs(self,imgDir,thumbDir,fileName,channels,thumbsClean=True):
         # test to see if thumbs dir needs to be made
         if os.path.isdir(thumbDir) == False:

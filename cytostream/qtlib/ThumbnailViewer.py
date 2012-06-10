@@ -12,12 +12,11 @@ class Thumbnail(QtGui.QWidget):
         imgBtn = QtGui.QPushButton()
         grid = QtGui.QGridLayout()
         iconSize = thumbSize
-        if isDiagonal == True:
-            imgBtn.setIcon(QtGui.QIcon.fromTheme("face-monkey"))
-        elif os.path.isfile(imgPath) == True:
+
+        if os.path.isfile(imgPath) == True:
             imgBtn.setIcon(QtGui.QIcon(imgPath))
             img = os.path.split(imgPath)[-1]
-            if callbackFn != None:
+            if callbackFn != None and isDiagonal == False:
                 self.connect(imgBtn, QtCore.SIGNAL('clicked()'),lambda x=img: callbackFn(img=x))
         else:
             imgBtn.setIcon(QtGui.QIcon.fromTheme("image-missing"))
@@ -74,10 +73,16 @@ class ThumbnailViewer(QtGui.QWidget):
         for i in range(len(channels)):
             for j in range(len(channels)):
                 img = "."
-                for t in thumbs:
-                    if re.search("%s\_%s\_thumb"%(j,i),t):
-                        img = t
-                        break
+
+                if i == j:
+                    for t in thumbs:
+                        if re.search("\_"+channels[i]+"\_thumb",t):
+                            img = t
+                else:
+                    for t in thumbs:
+                        if re.search("%s\_%s\_thumb"%(j,i),t):
+                            img = t
+                            break
             
                 xLabel,yLabel = None,None
                 if j == 0:
@@ -90,6 +95,10 @@ class ThumbnailViewer(QtGui.QWidget):
                     isDiagonal = True
 
                 imgPath = os.path.join(self.thumbDir,img)
+
+                if os.path.exists(imgPath) == False:
+                    print "WARNING: Can not find imgPath in ThumbnailViewer", imgPath
+
                 thumbWidget = Thumbnail(imgPath,self.thumbSize,parent=None,xLabel=xLabel,yLabel=yLabel,
                                         isDiagonal=isDiagonal,callbackFn=callbackFn) 
                 grid.addWidget(thumbWidget,i,j)

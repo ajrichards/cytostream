@@ -519,26 +519,30 @@ class MainWindow(QtGui.QMainWindow):
                 self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
             else:
                 self.controller.run_selected_model_cpu(progressBar=self.mc.progressBar,view=self)
-            #self.transitions.move_to_model_run()
-            #self.mc.set_disable()
-            #QtCore.QCoreApplication.processEvents()
-            #self.mc.widgetSubtitle.setText("Creating figures...")
-            #self.mc.progressBar.progressLabel.setText("Creating figures...")
-            #subsample = self.controller.log.log['subsample_analysis']
-            #modelRunID = 'run' + str(self.log.log['models_run_count'])
-            #self.controller.handle_subsampling(subsample)
-            #self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
-            #self.transitions.move_to_model_results(mode='menu')
         else:
             print "ERROR: got unexpected mode for MainWindow.run_progress_bar",mode
+
+    def on_model_run_finish(self):
+        '''
+        after completion of model run automatically creatue figures
+        '''
+
+        self.transitions.move_to_model_run()
+        self.mc.set_disable()
+        QtCore.QCoreApplication.processEvents()
+        self.mc.widgetSubtitle.setText("Creating figures...")
+        self.mc.progressBar.progressLabel.setText("Creating figures...")
+        subsample = self.controller.log.log['subsample_analysis']
+        modelRunID = 'run' + str(self.log.log['models_run_count'])
+        self.controller.handle_subsampling(subsample)
+        self.controller.process_images('analysis',modelRunID=modelRunID,progressBar=self.mc.progressBar,view=self)
+        self.transitions.move_to_model_results(mode='menu')
 
     def recreate_figures(self):
         '''
         call back from state transtions to enable thumbnail figure recreation
         '''
         
-        print 'should be recreating figures'
-
         if self.log.log['current_state'] == 'Quality Assurance':
             self.transitions.move_to_quality_assurance(mode='progressbar')
         elif self.log.log['current_state'] == 'Model Results':
@@ -573,8 +577,7 @@ class MainWindow(QtGui.QMainWindow):
         elif mode == 'plot':
             if self.log.log['current_state'] == 'Quality Assurance':
                 self.pDock.enable_continue_btn(self.transitions.move_to_model_run)
-            self.connect(self.recreateBtn,QtCore.SIGNAL('clicked()'),self.recreate_figures)
-
+            
             if self.fileSelector:
                 self.fileSelector.setEnabled(True)
             if self.plotSelector:

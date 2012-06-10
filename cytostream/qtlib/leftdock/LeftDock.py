@@ -217,6 +217,7 @@ def add_left_dock(mainWindow):
         rbLayout = QtGui.QHBoxLayout()
         rbLayout.setAlignment(QtCore.Qt.AlignCenter)
         rbLayout.addWidget(mainWindow.recreateBtn)
+        mainWindow.connect(mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),mainWindow.recreate_figures)
         vboxBottom.addLayout(rbLayout)
 
     ## models run btn
