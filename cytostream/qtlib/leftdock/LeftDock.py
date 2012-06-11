@@ -186,7 +186,7 @@ def add_left_dock(mainWindow):
         mainWindow.vizModeSelector.setMinimumWidth(alignWidth)
 
     ## model to run selector
-    if mainWindow.log.log['current_state'] in ['Model']:
+    if mainWindow.log.log['current_state'] in ['Model Run']:
         mtrDefault = mainWindow.log.log['model_to_run']
         mainWindow.modelToRunSelector = ModelToRunSelector(parent=mainWindow.dockWidget,mainWindow=mainWindow)
         mtrLayout = QtGui.QHBoxLayout()
@@ -198,7 +198,7 @@ def add_left_dock(mainWindow):
         mainWindow.modelToRunSelector.setMinimumWidth(alignWidth)
     
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Model','Sample Alignment']:
+    if mainWindow.log.log['current_state'] in ['Model Run','Sample Alignment']:
         mainWindow.modelSettingsBtn = QtGui.QPushButton("Edit settings")
         mainWindow.modelSettingsBtn.setMaximumWidth(140)
         mainWindow.modelSettingsBtn.setMinimumWidth(140)
@@ -221,7 +221,7 @@ def add_left_dock(mainWindow):
         vboxBottom.addLayout(rbLayout)
 
     ## models run btn
-    if mainWindow.log.log['current_state'] in ['Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Model Rusults']:
         mainWindow.modelsRunBtn = QtGui.QPushButton("Models run")
         mainWindow.modelsRunBtn.setMaximumWidth(140)
         mainWindow.modelsRunBtn.setMinimumWidth(140)
@@ -233,7 +233,7 @@ def add_left_dock(mainWindow):
         mainWindow.connect(mainWindow.modelsRunBtn,QtCore.SIGNAL('clicked()'),modelsRunBtnFn)
 
     ## save images
-    if mainWindow.log.log['current_state'] in ['Quality Assurance','Results Navigation']:
+    if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
         mainWindow.saveImgsBtn = QtGui.QPushButton("Save figures")
         mainWindow.saveImgsBtn.setMaximumWidth(140)
         mainWindow.saveImgsBtn.setMinimumWidth(140)
@@ -246,8 +246,8 @@ def add_left_dock(mainWindow):
         mainWindow.connect(mainWindow.saveImgsBtn,QtCore.SIGNAL('clicked()'),saveImgsBtnFn)
 
     ## more info btn
-    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model', 'Results Navigation',
-                                               'File Alignment']:
+    if mainWindow.log.log['current_state'] in ['Initial','Data Processing','Quality Assurance','Model Run', 
+                                               'Model Results','File Alignment']:
         mainWindow.moreInfoBtn = QtGui.QPushButton("More info")
         mainWindow.moreInfoBtn.setMaximumWidth(140)
         mainWindow.moreInfoBtn.setMinimumWidth(140)

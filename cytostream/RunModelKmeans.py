@@ -53,7 +53,6 @@ class RunModelKmeans(RunModelBase):
 
         ## persistant parameters
         selectedModel = self.log.log['model_to_run']
-        subsample = self.log.log['subsample_analysis']
         modelMode = self.log.log['model_mode']
         modelRunID = self.modelRunID
         modelReference = self.log.log['model_reference']

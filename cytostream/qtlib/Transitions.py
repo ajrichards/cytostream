@@ -5,7 +5,18 @@ Cytostream
 StateTransitions
 
 functions that handle the transitions from one software state to another
-                                                                                                                             
+
+stage notation
+
+0 - Initial
+1 - Data Processing
+2 - Quality Assurance
+3 - Model Run
+4 - Model Results
+5 - Analysis
+6 - Analysis Results
+7 - Reports
+                                                 
 '''
 
 __author__ = "A Richards"
@@ -128,7 +139,6 @@ class Transitions():
         ## enable disable other widgets
         self.move_to_initial()
         self.mainWindow.status.showMessage("Open an existing project", 5000)
-
     
         self.mainWindow.open_existing_project_handler(projectDir)
 
@@ -164,7 +174,7 @@ class Transitions():
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow)
 
         ## handle state
-        self.mainWindow.controller.log.log['current_state'] = 'Model'
+        self.mainWindow.controller.log.log['current_state'] = 'Model Results'
         self.mainWindow.update_highest_state()
         self.mainWindow.controller.save()
 
@@ -183,7 +193,8 @@ class Transitions():
         self.mainWindow.vboxCenter.addLayout(hbl)
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
-        self.mainWindow.status.showMessage("Results Navigation", 5000)
+        self.mainWindow.status.showMessage("Model Results", 5000)
+        self.mainWindow.controller.log.log['highest_state'] = 4
         return True
 
     def move_to_model_run(self):
@@ -201,7 +212,7 @@ class Transitions():
         self.mainWindow.mainWidget = QtGui.QWidget(self.mainWindow) 
     
         ## manage the state
-        self.mainWindow.log.log['current_state'] = "Model"
+        self.mainWindow.log.log['current_state'] = "Model Run"
         self.mainWindow.update_highest_state()
         self.mainWindow.controller.save()
 
@@ -220,8 +231,8 @@ class Transitions():
         self.mainWindow.vboxCenter.addLayout(hbl)
         self.mainWindow.mainWidget.setLayout(self.mainWindow.vbl)
         self.mainWindow.refresh_main_widget()
-
-        self.mainWindow.status.showMessage("Model", 5000)
+        self.mainWindow.controller.log.log['highest_state'] = 3
+        self.mainWindow.status.showMessage("Model Run", 5000)
         return True
 
     def move_to_quality_assurance(self,mode='thumbnails'):
@@ -429,7 +440,7 @@ class Transitions():
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to preferences"
         
-        validStates = ['Model','Sample Alignment']
+        validStates = ['Model Run','Sample Alignment']
         if currentState not in validStates:
             self.mainWindow.display_info('Preferences are only available from: %s'%validStates)
             return None
@@ -443,12 +454,11 @@ class Transitions():
 
         if currentState == 'Data Processing':
             self.mainWindow.preferences = Preferences(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
-        if currentState == 'Model':
+        if currentState == 'Model Run':
             if modelToRun in ['dpmm-mcmc','dpmm-bem']:
                 self.mainWindow.preferences = PreferencesDPMM(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
             elif modelToRun == 'kmeans':
                 self.mainWindow.preferences = PreferencesKmeans(parent=self.mainWindow.mainWidget,mainWindow=self.mainWindow)
-
 
         ## handle docks
         self.mainWindow.restore_docks()
