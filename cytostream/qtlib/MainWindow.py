@@ -159,12 +159,12 @@ class MainWindow(QtGui.QMainWindow):
             appColor = '#999999'
 
         self.pipelineDockWidget = QtGui.QWidget(self)
-        btnCallBacks = [lambda a=self:self.transitions.move_to_initial(a),
-                        lambda a=self:self.transitions.move_to_quality_assurance(a), 
-                        lambda a=self:self.transitions.move_to_model_run(a), 
-                        lambda a=self:self.transitions.move_to_model_results(a),
-                        lambda a=self:self.transitions.move_to_analysis(a),
-                        lambda a=self:self.transitions.move_to_reports(a)]
+        #        lambda a=self:self.transitions.move_to_quality_assurance(a), 
+        btnCallBacks = [lambda a="Function currently turned off":self.display_info(a),
+                        lambda a="Function currently turned off":self.display_info(a), 
+                        lambda a="Function currently turned off":self.display_info(a), 
+                        lambda a="Function currently turned off":self.display_info(a),
+                        lambda a="Funciton currently turned off":self.display_info(a)]
        
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
                                   appColor=appColor,noBtns=noBtns)
@@ -719,7 +719,7 @@ class MainWindow(QtGui.QMainWindow):
             self.transitions.move_to_data_processing(withProgressBar=withProgressBar)
         elif self.controller.log.log['current_state'] == "Quality Assurance":
             self.transitions.move_to_quality_assurance(mode=qaMode)
-        elif self.controller.log.log['current_state'] == "Model":
+        elif self.controller.log.log['current_state'] == "Model Run":
             self.transitions.move_to_model_run()
         elif self.controller.log.log['current_state'] == "Model Results":
             self.transitions.move_to_model_results()

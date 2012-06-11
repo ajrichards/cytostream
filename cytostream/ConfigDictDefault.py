@@ -47,7 +47,7 @@ configDictDefault = {
 
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string (quality assurance)
-    'subsample_analysis'                    : '500',                              # any float, int or string (plot visualization)
+    'subsample_analysis'                    : '7.5e04',                           # any float, int or string (plot visualization)
     'subsample_run'                         : 'original',                         # any float, int or string (model run)
     'model_to_run'                          : 'dpmm-mcmc',                        # dpmm-mcmc, dpmm-bem, kmeans etc
     'kmeans_repeats'                        : '5',                                # an int

@@ -57,6 +57,9 @@ class PipelineDock(QtGui.QWidget):
 
         ## highlight current state
         if currentState in self.allStates[1:]:
+            if currentState in ["Model Run", "Model Results"]:
+                currentState = "Model"
+            
             self.set_btn_highlight(currentState)
 
     def create_buttons(self):

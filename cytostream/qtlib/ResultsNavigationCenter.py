@@ -22,7 +22,7 @@ class ResultsNavigationCenter(QtGui.QWidget):
         QtGui.QWidget.__init__(self,parent)
 
         ## arg variables
-        self.setWindowTitle('Results Navigation')
+        self.setWindowTitle('Model Results')
         self.fileList = fileList
         self.alternateChannelList = alternateChannelList
         self.alternateFileList = alternateFileList
@@ -87,17 +87,21 @@ class ResultsNavigationCenter(QtGui.QWidget):
         enable/disable buttons
         
         '''
-        
+    
         if len(self.modelsRunList) > 1:
             self.mainWindow.pDock.contBtn.setEnabled(True)
         else:
             self.mainWindow.pDock.contBtn.setEnabled(False)
 
-        self.mainWindow.moreInfoBtn.setEnabled(True)
-        self.mainWindow.saveImgsBtn.setEnabled(False)
-        self.mainWindow.fileSelector.setEnabled(False)
-        self.mainWindow.modeSelector.setEnabled(False)
-        self.mainWindow.pDock.enable_disable_states()
+        if self.mode == 'menu':
+            self.mainWindow.fileSelector.setEnabled(False)
+            self.mainWindow.moreInfoBtn.setEnabled(True)
+            self.mainWindow.saveImgsBtn.setEnabled(False)
+            self.mainWindow.pDock.enable_disable_states()        
+
+
+        #self.mainWindow.modeSelector.setEnabled(False)
+
         
     def init_results_navigation_menu_view(self):
         hboxTop1 = QtGui.QHBoxLayout()
