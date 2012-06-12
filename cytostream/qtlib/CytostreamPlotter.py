@@ -85,6 +85,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.useScaled = ast.literal_eval(str(useScaled))
         self.modelRunID = modelRunID
         self.savedCentroids = {}
+        self.drawLabels = True
 
         ## additional class variables
         self.colors = get_all_colors()
@@ -196,7 +197,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.gate_clear_callback()
 
         ## handle args
-        args = [None for i in range(19)]
+        args = [None for i in range(20)]
         args[0] = self.ax
         args[1] = self.eventsList[self.fileNameList.index(self.selectedFileName)]
         self.selectedEvents = self.eventsList[self.fileNameList.index(self.selectedFileName)]
@@ -220,6 +221,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args[16] = self.useSimple
         args[17] = self.useScaled
         args[18] = True
+        args[19] = self.drawLabels
 
         ## set the text for num events
         if self.subsample == 'original':

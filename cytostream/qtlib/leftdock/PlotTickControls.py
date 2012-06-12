@@ -37,6 +37,10 @@ class PlotTickControls(QtGui.QWidget):
         self.scaleCB = QtGui.QCheckBox("Scale")
         self.scaleCB.setChecked(scaleDefault)
         self.connect(self.scaleCB,QtCore.SIGNAL('stateChanged(int)'), self.scale_callback)
+        self.labelsCB = QtGui.QCheckBox("Labels")
+        self.labelsCB.setChecked(titleDefault)
+        self.connect(self.labelsCB,QtCore.SIGNAL('stateChanged(int)'), self.labels_callback)
+
         self.axesCB = QtGui.QCheckBox("Axes")
         self.axesCB.setChecked(axesDefault)
         self.connect(self.axesCB,QtCore.SIGNAL('stateChanged(int)'), self.axes_callback)
@@ -53,8 +57,10 @@ class PlotTickControls(QtGui.QWidget):
         
         col1Box.addWidget(self.titleCB)
         col1Box.addWidget(self.scaleCB)
+        col1Box.addWidget(self.labelsCB)
         col2Box.addWidget(self.gridCB)
         col2Box.addWidget(self.axesCB)
+
         
         ### finalize layout
         masterBox.addLayout(col1Box)
@@ -126,6 +132,25 @@ class PlotTickControls(QtGui.QWidget):
                     self.mainWindow.nwv.plots[selectedPlot].draw()
             else:
                 self.mainWindow.nwv.plots[selectedPlot].useScaled = useScaled
+                self.mainWindow.nwv.plots[selectedPlot].draw()
+
+    def labels_callback(self):
+        if self.mainWindow == None:
+            print 'callback does not do anything without main widget present'
+        else:
+            drawLabels = self.labelsCB.isChecked()
+            numPlots  = self.mainWindow.log.log['num_subplots']
+            
+            if self.mainWindow.log.log['selected_plot'] == None:
+                self.mainWindow.log.log['selected_plot'] = '1'
+            selectedPlot = self.mainWindow.log.log['selected_plot']
+
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    self.mainWindow.nwv.plots[selectedPlot].drawLabels = drawLabels
+                    self.mainWindow.nwv.plots[selectedPlot].draw()
+            else:
+                self.mainWindow.nwv.plots[selectedPlot].drawLabels = drawLabels
                 self.mainWindow.nwv.plots[selectedPlot].draw()
 
     def axes_callback(self):

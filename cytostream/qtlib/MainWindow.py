@@ -574,6 +574,9 @@ class MainWindow(QtGui.QMainWindow):
         elif mode == 'plot':
             if self.log.log['current_state'] == 'Quality Assurance':
                 self.pDock.enable_continue_btn(self.transitions.move_to_model_run)
+                self.plotTickControls.labelsCB.setEnabled(False)
+            else:
+                self.plotTickControls.labelsCB.setEnabled(True)
             
             if self.fileSelector:
                 self.fileSelector.setEnabled(True)
