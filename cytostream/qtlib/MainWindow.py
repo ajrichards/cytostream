@@ -58,7 +58,7 @@ class MainWindow(QtGui.QMainWindow):
         self.controller = Controller(debug=debug)
         self.mainWidget = QtGui.QWidget(self)
         self.reset_view_workspace()
-        self.stateList = ['Initial','Data Processing','Quality Assurance','Model','Model Results',
+        self.stateList = ['Initial','Data Processing','Quality Assurance','Model Run','Model Results',
                           'Analysis','Analysis Results','Reports']
         self.resultsModeList = ['modes','components']
 
@@ -489,9 +489,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def run_progress_bar(self):
         mode = self.log.log['current_state']
-        
-        ## save necessary variables
-        #self.set_selected_subsample()   
 
         ## handle subsampling
         if self.log.log['current_state'] == 'Quality Assurance':
@@ -512,7 +509,7 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.QCoreApplication.processEvents()
             self.controller.process_images('qa',progressBar=self.qac.progressBar,view=self)
             self.display_thumbnails()
-        elif mode == 'Model':
+        elif mode == 'Model Run':
             self.mc.set_disable()
             QtCore.QCoreApplication.processEvents()
             if  self.controller.log.log['model_to_run'] in ['dpmm-mcmc']:
@@ -778,7 +775,7 @@ class MainWindow(QtGui.QMainWindow):
         self.nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
                          self.log.log['plots_to_view_runs'],self.log.log['plots_to_view_highlights'],
                          self.log.log['num_subplots'],figMode=figMode,background=True,modelType='components',
-                         useScaled=self.log.log['use_scaled_plots'],parent=self)
+                         useScaled=self.log.log['use_scaled_plots'],parent=self,mainWindow=self)
         
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)

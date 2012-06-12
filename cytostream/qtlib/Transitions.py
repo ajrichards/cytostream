@@ -184,7 +184,6 @@ class Transitions():
                                                       mainWindow=self.mainWindow)
         ## handle docks
         self.mainWindow.restore_docks()
-        ##self.mainWindow.connect(self.mainWindow.recreateBtn,QtCore.SIGNAL('clicked()'),self.mainWindow.recreate_figures)
 
         ## handle layout
         hbl = QtGui.QHBoxLayout()
@@ -195,6 +194,14 @@ class Transitions():
         self.mainWindow.refresh_main_widget()
         self.mainWindow.status.showMessage("Model Results", 5000)
         self.mainWindow.controller.log.log['highest_state'] = 4
+
+        ## enable disable
+        self.mainWindow.subsampleSelector.setEnabled(False)
+        self.mainWindow.channelSelector.setEnabled(False)
+        self.mainWindow.plotSelector.setEnabled(False)
+        self.mainWindow.plotTickControls.setEnabled(False)
+        self.mainWindow.vizModeSelector.setEnabled(False)
+
         return True
 
     def move_to_model_run(self):

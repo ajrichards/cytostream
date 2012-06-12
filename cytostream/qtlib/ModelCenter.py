@@ -176,6 +176,7 @@ class ModelCenter(QtGui.QWidget):
         self.pbarLayout1.addLayout(pbarLayout1a)
         self.pbarLayout1.addLayout(pbarLayout1b)
 
+    '''
     def make_channels_sheet(self):
         ## setup layouts
         ssLayout = QtGui.QVBoxLayout()
@@ -218,7 +219,8 @@ class ModelCenter(QtGui.QWidget):
         ssLayout.addLayout(ssLayout1)
         ssLayout.addLayout(ssLayout2)
         self.hbox.addLayout(ssLayout)
-
+    '''
+    '''
     def make_files_sheet(self,firstRun=True):
         ## setup layouts
         if firstRun == True:
@@ -265,6 +267,7 @@ class ModelCenter(QtGui.QWidget):
             ssLayout.addLayout(ssLayout1)
             ssLayout.addLayout(ssLayout2)
             self.hbox.addLayout(ssLayout)
+    '''
 
     def generic_callback(self):
         print 'This button does nothing'

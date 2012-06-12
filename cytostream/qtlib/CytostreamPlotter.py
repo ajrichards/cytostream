@@ -20,7 +20,7 @@ from matplotlib.mlab import griddata
 
 from matplotlib.lines import Line2D
 from cytostream import Model, Logger, get_fcs_file_names 
-from cytostream.tools import get_all_colors, Centroids, draw_plot
+from cytostream.tools import get_all_colors, Centroids, draw_plot,get_file_sample_stats
 from cytostream.tools import DrawGateInteractor, PolyGateInteractor, get_fontsize, get_fontname
 from cytostream.qtlib import RadioBtnWidget
 
@@ -33,10 +33,11 @@ class CytostreamPlotter(QtGui.QWidget):
     def __init__(self,fileNameList,eventsList,channelList,channelDict,
                  drawState='heat',parent=None,background=True,selectedChannel1=0,
                  selectedChannel2=1,mainWindow=None,uniqueLabels=None,
-                 enableGating=False,homeDir=None,compactMode=False,labelList=None,
-                 minNumEvents=3,showNoise=False,subsample='original',numSubplots=1,
+                 enableGating=False,homeDir=None,compactMode=False,controller=None,
+                 minNumEvents=3,showNoise=False,subsample='7.5e04',numSubplots=1,
                  axesLabels=True,plotTitle=None,useSimple=False,dpi=100,
-                 transform='logicle',useScaled=False,modelRunID='run1',subplotNum=1):
+                 transform='logicle',useScaled=False,modelRunID='run1',subplotNum=1,
+                 selectedFileName=None):
         '''
         constructor
 
@@ -70,8 +71,8 @@ class CytostreamPlotter(QtGui.QWidget):
         self.enableGating = enableGating
         self.homeDir = homeDir
         self.axesLabels = axesLabels
+        self.controller = controller
         self.compactMode = compactMode
-        self.labelList = labelList
         self.minNumEvents = minNumEvents
         self.showNoise = showNoise
         self.numSubplots = numSubplots
@@ -83,6 +84,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.transform = transform
         self.useScaled = ast.literal_eval(str(useScaled))
         self.modelRunID = modelRunID
+        self.savedCentroids = {}
 
         ## additional class variables
         self.colors = get_all_colors()
@@ -98,92 +100,66 @@ class CytostreamPlotter(QtGui.QWidget):
         self.resultsMode = 'components'
 
         ## variables to be used when class is called for drawing
-        self.selectedFileName = None
+        self.selectedFileName = selectedFileName
         self.subsample = subsample
         self.line = None
         self.labels = None
         self.selectedHighlight = None
         self.vizList = ['heat','scatter','contour']
 
-        ## try to initialize a model
-        if self.homeDir != None:
-            self.model = Model()
-            self.model.initialize(self.homeDir)
-        else:
-            self.model = None
-            print "Model could not be initialized -- working as a non-cytostream project"
+        if self.mainWindow != None:
+            self.controller = self.mainWindow.controller
 
         ## initialize labels and subsamples
-        self.initialize()
+        if self.selectedFileName != None:
+            self.initialize(self.selectedFileName)
 
         ## prepare figure widget for drawing
         self.create_figure_widget()
 
-    def initialize(self):
+    def initialize(self,selectedFileName):
 
-        ## get max and min number of events
-        minNumEvents,maxNumEvents = 0,0
+        ## handle labels (assumes that there is one label for each event)
+        if self.modelRunID != None:
+            if self.controller != None:
+                self.labels = self.controller.get_labels(selectedFileName,self.modelRunID,subsample='original',getLog=False)
+            else:
+                print "ERROR CytostreamPlotter: either mainWindow or controller needs to be specified to get labels"
 
-        for i,fileName in enumerate(self.fileNameList):
-            events = self.eventsList[i]
-            if events.shape[0] > maxNumEvents:
-                maxNumEvents = events.shape[0]
-            if events.shape[0] < minNumEvents:
-                minNumEvents = events.shape[0]
-            
-        ## handle labels
-        if self.modelRunID != None and self.model != None:
-            self.labelList = []
-            minNumEvents,maxNumEvents = 0,0
-            for i,fileName in enumerate(self.fileNameList):                
-                statModel, labels = self.model.load_model_results_pickle(fileName,self.modelRunID,modelType=self.resultsMode)
-                self.labelList.append(labels)
-                modelLog = self.model.load_model_results_log(fileName,self.modelRunID)
-                self.subsample = modelLog['subsample']
+            if self.labels == None:
+                print "WARNING: CytostreamPlotter had trouble getting specified labels", self.modelRunID, selectedFileName
+            else:
+                if self.savedCentroids.has_key(selectedFileName) == False:
+                    eventsToPlot = self.eventsList[self.fileNameList.index(selectedFileName)]
+                    centroids,variances,sizes = get_file_sample_stats(eventsToPlot,self.labels)
+                    self.savedCentroids[selectedFileName] = centroids,variances,sizes
+                self.currentCentroids = self.savedCentroids[selectedFileName]
 
-        ## ensure only maximum num events are shown                  
-        #maxScatter = 70000
-        if self.subsample == 'original' and self.labelList != None:
-            self.subsample = 'original'#maxScatter
-            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
-            
-            if self.labelList != None:
-                for i in range(len(self.labelList)):
-                    self.labelList[i] = self.labelList[i][self.subsample]
-        ## case where original is smaller than max scatter display
-        elif self.subsample == 'original':
-            self.subsampleIndices = 'original'
-            #self.subsample = self.model.get_subsample_indices(self.subsample)
-            #self.subsample = np.arange(events.shape[0])
+        ## Handle subsample
+        if self.subsample == 'original':
             self.subsample = 'original'
-        ## case where we have a subsample but no labels 
-        elif self.labelList == None:
-            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
-        ## case where labels are smaller than subsample (usually means model was run on a subsample) 
-        elif len(self.labelList[i]) < self.subsample:
-            self.subsample = len(labels)
-            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
-        ## case where labels and subsample match 
-        elif len(self.labelList[i]) == self.subsample:
-            self.subsampleIndices = self.model.get_subsample_indices(self.subsample)
+            self.subsampleIndices = np.arange(events.shape[0])
         else:
-            print "WARNING: something unexpected occured in CytostreamPlotter subsample handeling"        
+            if self.controller != None:
+                self.subsampleIndices = self.controller.get_subsample_indices(self.subsample)
+                if self.labels != None:
+                    self.labels = self.labels[self.subsampleIndices]
+            else:
+                print "ERROR: cannot use subsampling without specfied controller"
 
         ## error checking
         if type([]) != type(self.fileNameList):
             print "INPUT ERROR: CytostreamPlotter - fileNameList must be of type list"
         if type([]) != type(self.eventsList):
             print "INPUT ERROR: CytostreamPlotter - eventsList must be of type list"
-        if self.labelList != None and type([]) != type(self.labelList):
-            print "INPUT ERROR: CytostreamPlotter - labelList must be of type list"
         if len(self.fileNameList) != len(self.eventsList):
             print "INPUT ERROR: CytostreamPlotter - fileNameList and eventsList size mismatch"
         if self.drawState not in self.vizList:
             print "INPUT ERROR: CytostreamPlotter - drawState not valid",self.drawState
 
         ## save an instance of the centroids to speed up plotting
-        if self.labelList != None:
-            self.savedCentroids = Centroids()
+        #if self.labels != None and self.savedCentroids != None:
+        #    self.savedCentroids = Centroids()
 
     def draw(self,cbInt=None,selectedFile=None):
         '''
@@ -230,9 +206,7 @@ class CytostreamPlotter(QtGui.QWidget):
         args[5] = self.selectedChannel2
         args[6] = self.subsampleIndices
         args[7] = self.transform
-        if self.labelList != None:
-            args[8] = self.labelList[self.fileNameList.index(self.selectedFileName)]
-            self.selectedLabels = self.labelList[self.fileNameList.index(self.selectedFileName)]
+        args[8] = self.labels
         args[9] = self.selectedHighlight
         args[10] = self.log
         args[11] = self.drawState
@@ -350,7 +324,8 @@ class CytostreamPlotter(QtGui.QWidget):
             self.vertSlider.setEnabled(False)
 
         if self.compactMode == False:
-            self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,vertical=True)
+            tooltips = ['heat scatter plot','colored scatter plot','contour plot']
+            self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,tooltips=tooltips,vertical=True)
             self.vizSelector.btns[self.drawState].setChecked(True)
             self.vizSelector.selectedItem = self.drawState
             self.vizSelector.setMaximumWidth(maxWidth)
@@ -436,7 +411,6 @@ class CytostreamPlotter(QtGui.QWidget):
         fontPalette.setColor(fontRole, QtGui.QColor('#0088FF'))
         self.subplotLabel3.setPalette(fontPalette)
         self.subplotLabel3.setAutoFillBackground(True)
-
 
         ## finalize layout
         canvasBox.addWidget(self.canvas)
@@ -651,9 +625,30 @@ class CytostreamPlotter(QtGui.QWidget):
             self.fig.savefig(figName,transparent=False,dpi=self.dpi)
     
     def plot_viz_callback(self,item=None):
-        if item in self.vizList:
-            self.drawState = item
-            self.draw()
+
+        selectedPlotType = self.vizSelector.selectedItem
+        print 'plot viz callback', selectedPlotType
+
+        if selectedPlotType == 'scatter' and self.labels == None:
+            if self.mainWindow != None:
+                self.mainWindow.display_warning("Draw state 'scatter' only available once labels are present")
+            else:
+                print "WARNING: Draw state 'scatter' only available once labels are present"
+            self.drawState = 'heat'
+            self.vizSelector.set_checked(self.drawState)
+            return
+
+        if selectedPlotType == 'contour':
+            if self.mainWindow != None:
+                self.mainWindow.display_warning("Draw state 'contour' not yet available")
+            else:
+                print "WARNING: Draw state 'contour' only not yet available"
+            self.drawState = 'heat'
+            self.vizSelector.set_checked(self.drawState)
+            return
+
+        self.drawState = selectedPlotType
+        self.draw()
 
     def generic_callback(self):
         print 'this is a generic callback'
@@ -703,7 +698,6 @@ if __name__ == '__main__':
                            enableGating=False,
                            homeDir=homeDir,
                            compactMode=False,
-                           labelList=None,
                            minNumEvents=3,
                            showNoise=False,
                            axesLabels=True,
@@ -711,9 +705,11 @@ if __name__ == '__main__':
                            plotTitle="default",
                            dpi=100,
                            subsample = subsample,
-                           transform=transform
+                           transform=transform,
+                           controller = nga.controller
                            )
 
+    cp.initialize(selectedFile)
     cp.draw(selectedFile=selectedFile)
 
     ## show it

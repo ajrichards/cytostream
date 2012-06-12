@@ -76,7 +76,6 @@ class NWayViewer(QtGui.QWidget):
                                    enableGating=False,
                                    homeDir=self.controller.homeDir,
                                    compactMode=compactMode,
-                                   labelList=None,
                                    minNumEvents=3,
                                    showNoise=False,
                                    axesLabels=True,
@@ -88,6 +87,7 @@ class NWayViewer(QtGui.QWidget):
                                    subplotNum=i+1
                                    )
 
+            cp.initialize(self.controller.fileNameList[self.files[i]])
             cp.draw(selectedFile=self.controller.fileNameList[self.files[i]])
 
             ## store widget for editing

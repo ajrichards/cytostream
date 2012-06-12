@@ -74,7 +74,7 @@ class ResultsNavigationCenter(QtGui.QWidget):
 
         ## initialize view
         self.init_results_navigation_menu_view()
-        
+                
         ## finalize layout
         if self.mainWindow == None:
             vbl.addLayout(self.vboxTop)
