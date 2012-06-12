@@ -54,7 +54,7 @@ class SubsampleSelector(QtGui.QWidget):
             if currentState == 'Quality Assurance':
                 subsampleDefault = self.mainWindow.controller.log.log['subsample_qa']
             else:
-                subsampleDefault = "original"
+                subsampleDefault = self.mainWindow.controller.log.log['subsample_analysis']
 
         if subsampleDefault != None and subsampleDefault == 'original':
             subsampleDefault = "All Data"
@@ -123,7 +123,7 @@ class SubsampleSelector(QtGui.QWidget):
                         self.mainWindow.controller.save()
                         self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
                         self.mainWindow.nwv.plots[selectedPlot].subsample = selectedSubsample
-                        self.mainWindow.nwv.plots[selectedPlot].initialize()
+                        self.mainWindow.nwv.plots[selectedPlot].initialize(selectedFile)
                         self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
                 else:
                     pass
@@ -132,7 +132,7 @@ class SubsampleSelector(QtGui.QWidget):
                     self.mainWindow.controller.save()
                     self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
                     self.mainWindow.nwv.plots[selectedPlot].subsample = selectedSubsample
-                    self.mainWindow.nwv.plots[selectedPlot].initialize()
+                    self.mainWindow.nwv.plots[selectedPlot].initialize(selectedFile)
                     self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
             else:
                 print "ERROR: invalid visMode detected in subsample detector"

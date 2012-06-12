@@ -75,14 +75,14 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget.setMaximumWidth(widgetWidth)
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
-    if mainWindow.log.log['current_state'] == 'Initial':
-        pass
-    elif mainWindow.log.log['current_state'] == 'Quality Assurance':
-        excludedFiles = mainWindow.log.log['excluded_files_qa']
-        subsampleDefault = mainWindow.log.log['subsample_qa']
-    else:
-        excludedFiles = mainWindow.log.log['excluded_files_analysis']
-        subsampleDefault = mainWindow.log.log['subsample_analysis']
+    #if mainWindow.log.log['current_state'] == 'Initial':
+    #    pass
+    #elif mainWindow.log.log['current_state'] == 'Quality Assurance':
+    #    excludedFiles = mainWindow.log.log['excluded_files_qa']
+    #    subsampleDefault = mainWindow.log.log['subsample_qa']
+    #else:
+    #    excludedFiles = mainWindow.log.log['excluded_files_analysis']
+    #    subsampleDefault = mainWindow.log.log['subsample_analysis']
 
     ## check to see if fileList needs adjusting
     if type(excludedFiles) == type([]) and len(excludedFiles) > 0:
@@ -118,9 +118,9 @@ def add_left_dock(mainWindow):
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
 
         if mainWindow.log.log['current_state'] == 'Data Processing':
-            subsampleDefault = mainWindow.log.log['subsample_qa']
+            subsampleDefault = mainWindow.controller.log.log['subsample_qa']
         else:
-            subsampleDefault = mainWindow.log.log['subsample_analysis']
+            subsampleDefault = mainWindow.controller.log.log['subsample_analysis']
 
         mainWindow.subsampleSelector = SubsampleSelector(subsampleList,parent=mainWindow.dockWidget,
                                                          mainWindow=mainWindow,subsampleDefault=subsampleDefault)

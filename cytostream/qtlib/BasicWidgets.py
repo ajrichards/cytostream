@@ -2,6 +2,14 @@ import sys,os,math
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+
+
+class Tooltip(QtGui.QWidget):
+    def __init__(self, msg='This is a tooltip', parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.setToolTip(msg)
+        QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
+
 class Waiting(QtGui.QWidget):
     def __init__(self, parent = None):
 
@@ -43,7 +51,7 @@ class Waiting(QtGui.QWidget):
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,color='white',widgetLabel=None,vertical=False):
+    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,tooltips=None,color='white',widgetLabel=None,vertical=False):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
@@ -67,7 +75,7 @@ class RadioBtnWidget(QtGui.QWidget):
         self.btnGroup = QtGui.QButtonGroup(parent)
         self.color = color
 
-        for bLabel in self.btnLabels:
+        for b,bLabel in enumerate(self.btnLabels):
             rad = QtGui.QRadioButton(bLabel)
             self.btns[bLabel] = rad
             self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.set_selected(item))
@@ -80,11 +88,22 @@ class RadioBtnWidget(QtGui.QWidget):
             if default != None and bLabel == default:
                 self.btns[bLabel].setChecked(True)
                 self.selectedItem = bLabel
+            
+            if tooltips != None:
+                 tt = Tooltip(msg=tooltips[b],parent=self.btns[bLabel])
 
         vbox.addLayout(hbox1)
         hbox2.addLayout(btnBox)
         vbox.addLayout(hbox2)
         self.setLayout(vbox)
+
+    def set_checked(self,btnLabel):
+        if self.btnLabels.__contains__(btnLabel) == False:
+            print "ERROR: RadioBtnWidget - bad mode label in set_checked"
+            return None
+
+        self.btns[btnLabel].setChecked(True)
+        self.selectedItem = btnLabel
 
     def set_selected(self,item=None):
         if item !=None:
@@ -177,9 +196,3 @@ class ProgressBar(QtGui.QWidget):
 
     def set_callback(self,callback):
         self.connect(self.button,QtCore.SIGNAL('clicked()'),callback)
-
-class Tooltip(QtGui.QWidget):
-    def __init__(self, msg='This is a tooltip', parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.setToolTip(msg)
-        QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))

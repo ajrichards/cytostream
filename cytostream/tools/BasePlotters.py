@@ -314,21 +314,8 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     fontName = get_fontname()
     fontSize = get_fontsize(numSubplots)
 
-    ##if parent != None and channel1Ind != None:
-    ##    parent.selectedChannel1=channel1Ind
-    ##    parent.channel1Selector.setCurrentIndex(parent.selectedChannel1)
-    ##if parent != None and channel2Ind != None:
-    ##    parent.selectedChannel2=channel2Ind
-    ##    parent.channel2Selector.setCurrentIndex(parent.selectedChannel2)
-
     if numSubplots == None:
         numSubplots = 1
-
-    ## highlight
-    ####if parent != None and str(parent.selectedHighlight) == "None":
-    ####    parent.selectedHighlight = None
-    ####elif parent != None and str(parent.selectedHighlight) != "None":
-    ####    highlight = [parent.selectedHighlight]
 
     ## clear axis
     ax.clear()
@@ -344,16 +331,14 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     # determine of the events those to plot
     eventsToPlot = events[subsampleInds,:]
 
-    ## get centroids
-    if parent != None and str(labels) != "None":
-        #plotID, channelsID = parent.savedCentroids.get_ids(parent.selectedFileName,parent.subsample,parent.modelRunID,channel1Ind,channel2Ind)
-        #centroids = parent.savedCentroids.get_centroids(parent.selectedEvents,parent.selectedLabels,plotID,channelsID)
-        centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
-    if parent == None and str(labels) != "None":
-        centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
-
     if str(labels) != "None" and eventsToPlot.shape[0] != len(labels):
         print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
+
+    ## get centroids
+    if parent != None and str(labels) != "None":
+        centroids,variances,sizes = parent.currentCentroids
+    if parent == None and str(labels) != "None":
+        centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
 
     ## error check
     if str(labels) != "None":

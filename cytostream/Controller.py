@@ -428,6 +428,14 @@ class Controller:
         else:
             print "ERROR: bad file name specified",fileName
 
+    def get_subsample_indices(self,subsample):
+        if subsample == 'original':
+            return
+
+        self.handle_subsampling(subsample)
+        key = str(int(float(subsample)))
+        return self.subsampleDict[key]
+
     def handle_subsampling(self,subsample,isFilter=False):
         '''
         handels subsampling by fetching saved indices
