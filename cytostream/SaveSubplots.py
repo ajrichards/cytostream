@@ -26,7 +26,7 @@ class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='sans',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
-                 gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True):
+                 gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True):
 
         ## arg variables
         self.controller = controller
@@ -54,6 +54,7 @@ class SaveSubplots():
         self.trimmed = trimmed
         self.hasFrame = hasFrame
         inputDPI = dpi
+        self.drawLabels = drawLabels
 
         ## if given a homeDir initialize a controller
         if type(self.controller) == type('a') and os.path.exists(self.controller):
@@ -243,7 +244,7 @@ class SaveSubplots():
                 ax.set_frame_on(False)
 
             ## handle args
-            args = [None for i in range(19)]
+            args = [None for i in range(20)]
             args[0] = self.get_axes(subplotIndex)
             args[1] = events
             args[2] = self.channelList
@@ -263,6 +264,7 @@ class SaveSubplots():
             args[16] = self.useSimple
             args[17] = self.useScale
             args[18] = False
+            args[19] = self.drawLabels
 
             ## add a line if specified {subplot:(lineX,lineY)}
             indicesFG = draw_plot(args,axesOff=self.axesOff)

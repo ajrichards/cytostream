@@ -269,6 +269,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     useSimple    = args[16]
     useScaled    = args[17]
     isGui        = args[18]
+    drawLabels   = args[19]
 
     ## force drawState to heat if necessary
     if labels == None and drawState != 'heat':
@@ -421,7 +422,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
                      drawState=drawState)
         
-        if str(labels) != "None":
+        if str(labels) != "None" and drawLabels == True:
             draw_labels(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,centroids,numSubplots,drawState)
         
         ## handle title and labels
