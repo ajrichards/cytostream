@@ -622,7 +622,7 @@ class MainWindow(QtGui.QMainWindow):
             fileChannels = self.log.log['alternate_channel_labels']
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
             thumbDir = os.path.join(imgDir,'qa',self.log.log['selected_file']+"_thumbs")
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,mainWindow=self)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,fileChannels,self.controller.channelDict,mainWindow=self)
         elif mode == 'Model Results':
             excludedChannels = self.log.log['excluded_channels_analysis']
             self.mainWidget = QtGui.QWidget(self)
@@ -634,7 +634,7 @@ class MainWindow(QtGui.QMainWindow):
 
             thumbDir = os.path.join(imgDir,self.log.log['selected_file']+"_thumbs")
             channelsToView = np.array(fileChannels)[list(set(range(len(fileChannels))).difference(set(excludedChannels)))].tolist()
-            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,mainWindow=self)
+            self.tv = ThumbnailViewer(self.mainWidget,thumbDir,channelsToView,self.controller.channelDict,mainWindow=self)
         else:
             print "ERROR: bad mode specified in display thumbnails", mode
             return
@@ -753,10 +753,10 @@ class MainWindow(QtGui.QMainWindow):
             chanInds = re.findall("\d+\_\d+\_thumb",img)
             i,j,k = chanInds[0].split("_")
             i,j = int(i),int(j)
-            channelI = self.controller.channelDict[self.controller.log.log['default_thumb_channels'][i]]
-            channelJ = self.controller.channelDict[self.controller.log.log['default_thumb_channels'][j]]
-            self.log.log['plots_to_view_channels'][0] = (channelI, channelJ)
-            self.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
+            print i,j,k
+            self.controller.log.log['plots_to_view_channels'][0] = (i,j)
+            self.controller.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
+            self.controller.save()
 
         ## initialize transition
         fileChannels = self.log.log['alternate_channel_labels']
