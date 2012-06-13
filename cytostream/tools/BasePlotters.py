@@ -90,7 +90,7 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
             return
 
         if drawState == 'scatter':
-            labelColor = colorList[l]
+            labelColor = colorList[int(l)]
 
         xPos = centroids[str(int(l))][index1]
         yPos = centroids[str(int(l))][index2]
@@ -367,6 +367,8 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             highlight = highlight[0]
 
         for clustID in highlight:
+            if str(clustID) == "None":
+                continue
             if int(clustID) not in labels:
                 continue                
             indicesFG = np.hstack([indicesFG, np.where(labels==int(clustID))[0]])

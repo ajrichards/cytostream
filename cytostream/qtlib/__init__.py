@@ -19,6 +19,7 @@ from Preferences import Preferences
 from PreferencesKmeans import PreferencesKmeans
 from PreferencesDPMM import PreferencesDPMM
 from ChannelSelector import ChannelSelector
+from ClusterSelector import ClusterSelector
 from FileSelector import FileSelector
 from PlotSelector import PlotSelector
 from PlotTickControls import PlotTickControls

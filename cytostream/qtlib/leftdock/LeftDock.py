@@ -14,7 +14,7 @@ import sys,os,ast
 from PyQt4 import QtGui,QtCore
 from cytostream import get_fcs_file_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
-from cytostream.qtlib import PlotSelector,PlotTickControls,ChannelSelector
+from cytostream.qtlib import PlotSelector,PlotTickControls,ChannelSelector,ClusterSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -105,7 +105,7 @@ def add_left_dock(mainWindow):
     ## file selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
         mainWindow.fileSelector = FileSelector(fileList,parent=mainWindow.dockWidget,mainWindow=mainWindow,
-                                               fileDefault=mainWindow.log.log['selected_file'])
+                                               fileDefault=mainWindow.controller.log.log['selected_file'])
         fsLayout = QtGui.QHBoxLayout()
         fsLayout.setAlignment(QtCore.Qt.AlignLeft)
         fsLayout.addWidget(mainWindow.fileSelector)
@@ -114,6 +114,25 @@ def add_left_dock(mainWindow):
         mainWindow.fileSelector.setMaximumWidth(alignWidth)
         mainWindow.fileSelector.setMinimumWidth(alignWidth)
        
+    ## cluster selector
+    if mainWindow.controller.log.log['current_state'] in ['Model Results']:
+        uniqueLabels = set([])
+        modelRunID = mainWindow.controller.log.log['selected_model']
+        for fileName in fileList:
+            fileLabels = mainWindow.controller.get_labels(fileName,modelRunID,modelType='components',
+                                                          subsample='original',getLog=False)
+            uniqueLabels.update(set(fileLabels.tolist()))
+        uniqueLabels = list(uniqueLabels)
+        uniqueLabels.sort()
+        mainWindow.clusterSelector = ClusterSelector(uniqueLabels,parent=mainWindow.dockWidget,mainWindow=mainWindow)
+        csLayout = QtGui.QHBoxLayout()
+        csLayout.setAlignment(QtCore.Qt.AlignLeft)
+        csLayout.addWidget(mainWindow.clusterSelector)
+        vboxTop.addLayout(csLayout)
+        mainWindow.clusterSelector.setAutoFillBackground(True)
+        mainWindow.clusterSelector.setMaximumWidth(alignWidth)
+        mainWindow.clusterSelector.setMinimumWidth(alignWidth)
+    
     ## subsample selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
 

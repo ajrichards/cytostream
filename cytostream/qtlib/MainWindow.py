@@ -109,6 +109,7 @@ class MainWindow(QtGui.QMainWindow):
         self.channelSelector = None
         self.vizModeSelector = None
         self.subsampleSelector = None
+        self.clusterSelector = None
         self.dpc = None
         self.pDock = None
         self.dock = None
@@ -572,6 +573,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.vizModeSelector.set_checked(mode)
             if self.subsampleSelector:
                 self.subsampleSelector.setEnabled(False)
+            if self.clusterSelector:
+                self.clusterSelector.setEnabled(False)
         elif mode == 'plot':
             if self.log.log['current_state'] == 'Quality Assurance':
                 self.pDock.enable_continue_btn(self.transitions.move_to_model_run)
@@ -592,6 +595,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.vizModeSelector.set_checked(mode)
             if self.subsampleSelector:
                 self.subsampleSelector.setEnabled(True)
+            if self.clusterSelector:
+                self.clusterSelector.setEnabled(True)
             self.pDock.contBtn.setEnabled(True)
             self.pDock.enable_disable_states()
 
