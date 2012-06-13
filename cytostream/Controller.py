@@ -251,18 +251,26 @@ class Controller:
             self.save()
 
         comparisons = []
-        for j in range(len(channelIndices)):
-            for i in range(len(channelIndices)):
-                if j == i:
+        #for j in range(len(channelIndices)):
+        #    for i in range(len(channelIndices)):
+        #        if j == i:
+        #            continue
+        #        comparisons.append((j,i))
+        #self.log.log['thumbnails_to_view'] = comparisons
+        for _j,chanj in enumerate(channelThumbs):
+            j = self.channelDict[chanj]
+            for _i,chani in enumerate(channelThumbs):
+                if _j == _i:
                     continue
-                comparisons.append((j,i))
+                i = self.channelDict[chani]
+                comparisons.append((i,j))
         self.log.log['thumbnails_to_view'] = comparisons
 
         ## get channels to be viewed
         channelInds = set([])
         for comp in comparisons:
             channelInds.update(comp)
-        channels = np.array(self.fileChannels)[list(channelInds)]
+        #channels = np.array(self.fileChannels)[list(channelInds)]
 
         ## save the thumb channel map
         self.log.log['default_thumb_channels'] = channelThumbs
@@ -347,17 +355,26 @@ class Controller:
             #self.create_thumbs(imgDir,thumbDir,fileName,channels)
 
             ## plot the histograms
+            #print channelThumbs
+            #print self.channelDict
+            #sys.exit()
+
             for chan in channelThumbs:
                 chanInd = self.channelDict[chan]
                 figName = os.path.join(imgDir,"%s_%s.%s"%(fileName,chan,self.log.log['plot_type']))
                 script = os.path.join(self.baseDir,"RunMakeHistogramPlot.py")
-                
+
+                #plotsToViewChannels[0] = comp
+                #self.log.log["plots_to_view_channels"] = plotsToViewChannels
+                #self.save()
+
                 if os.path.isfile(script) == False:
-                    print 'ERROR: cannot find RunMakeScatterPlot.py'
+                    print 'ERROR: cannot find RunMakeHistogramPlot.py'
                     return False
                 else:
                     pltCmd = "%s %s -h %s -f %s -c %s -s %s"%(self.pythonPath,script,self.homeDir,figName,chanInd,subsample)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+                    print 'plotting', fileName,chan,chanInd
                     while True:
                         try:
                             next_line = proc.stdout.readline() 
@@ -378,9 +395,9 @@ class Controller:
                     progressBar.move_bar(int(round(percentDone)))
             
             thumbDir = os.path.join(imgDir,fileName+"_thumbs")
-            self.create_thumbs(imgDir,thumbDir,fileName,channels)
+            self.create_thumbs(imgDir,thumbDir,fileName)
             
-    def create_thumbs(self,imgDir,thumbDir,fileName,channels,thumbsClean=True):
+    def create_thumbs(self,imgDir,thumbDir,fileName,thumbsClean=True):
         # test to see if thumbs dir needs to be made
         if os.path.isdir(thumbDir) == False:
             os.mkdir(thumbDir)
@@ -394,10 +411,12 @@ class Controller:
         for img in os.listdir(imgDir):
             if os.path.isfile(os.path.join(imgDir,img)) == True:
                 imgFile = os.path.join(imgDir,img)
-                self.make_thumb(imgFile,thumbDir,fileName,channels)
+                self.make_thumb(imgFile,thumbDir,fileName)
                 os.remove(imgFile)
 
-    def make_thumb(self,imgFile,thumbDir,fileName,channels):
+    def make_thumb(self,imgFile,thumbDir,fileName):
+
+        channels = self.fileChannels
         if os.path.isfile(imgFile) == True:
 
             if len(channels) <= 4:

@@ -42,7 +42,7 @@ class Thumbnail(QtGui.QWidget):
         self.setLayout(grid)
 
 class ThumbnailViewer(QtGui.QWidget):
-    def __init__(self, parent, thumbDir, fileChannels,thumbsClean=True,mainWindow=None):
+    def __init__(self, parent, thumbDir,fileChannels,channelDict,thumbsClean=True,mainWindow=None):
         QtGui.QWidget.__init__(self,parent)
 
         if parent == None:
@@ -74,13 +74,18 @@ class ThumbnailViewer(QtGui.QWidget):
             for j in range(len(channels)):
                 img = "."
 
+                chanI = channels[i]
+                chanJ = channels[j]
+                indI = channelDict[chanI]
+                indJ = channelDict[chanJ]
+
                 if i == j:
                     for t in thumbs:
                         if re.search("\_"+channels[i]+"\_thumb",t):
                             img = t
                 else:
                     for t in thumbs:
-                        if re.search("%s\_%s\_thumb"%(j,i),t):
+                        if re.search("%s\_%s\_thumb"%(indJ,indI),t):
                             img = t
                             break
             
@@ -95,6 +100,8 @@ class ThumbnailViewer(QtGui.QWidget):
                     isDiagonal = True
 
                 imgPath = os.path.join(self.thumbDir,img)
+
+                #print i,channels[i],j,channels[j],imgPath
 
                 if os.path.exists(imgPath) == False:
                     print "WARNING: Can not find imgPath in ThumbnailViewer", imgPath
