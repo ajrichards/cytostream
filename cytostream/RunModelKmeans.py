@@ -9,7 +9,7 @@ import sys,getopt,os,re,cPickle,time,csv
 import numpy as np
 from cytostream import RunModelBase
 from scipy.cluster.vq import kmeans2,kmeans
-from cytostream.stats import SilValueGenerator
+from cytostream.stats import get_silhouette_values
 
 if len(sys.argv) < 3:
     print sys.argv[0] + " -f fileName -h homeDir -v -g gpuDevice"
@@ -66,11 +66,11 @@ class RunModelKmeans(RunModelBase):
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
-        if re.search('ftr',subsample):
-            filterIndices = self.model.load_filter(fileName,subsample)
+        if re.search('ftr',self.subsample):
+            filterIndices = self.model.load_filter(fileName,self.subsample)
             events = events[filterIndices,:]
-        elif subsample != 'original':
-            subsampleIndices = self.model.get_subsample_indices(subsample)
+        elif self.subsample != 'original':
+            subsampleIndices = self.model.get_subsample_indices(self.subsample)
             events = events[subsampleIndices,:]
 
         events = events[:,includedChannels]
@@ -83,12 +83,16 @@ class RunModelKmeans(RunModelBase):
         bestRepeat = (None,None,-2.0)
         for repeat in range(repeats):
             
-            try:
-                kmeanResults, kmeanLabels = kmeans2(events,k,minit='points')
-                svg = SilValueGenerator(events,kmeanLabels)
-                avgSilVal = svg.silValues.mean()
-            except:
-                kmeanResults = None
+            #try:
+            kmeanResults, kmeanLabels = kmeans2(events,k,minit='points')
+            silValues = get_silhouette_values([events],[kmeanLabels],subsample=10000,
+                                                  minNumEvents=3,resultsType='raw')
+
+            #svg = SilValueGenerator(events,kmeanLabels)
+            #print silValues['0'].keys()
+            avgSilVal = silValues['0'].mean()
+            #except:
+            #kmeanResults = None
 
             if kmeanResults == None or avgSilVal == -2.0:
                 continue
@@ -116,7 +120,7 @@ class RunModelKmeans(RunModelBase):
         
         ## for all models
         writer.writerow(["timestamp", time.asctime()])
-        writer.writerow(["subsample", str(subsample)])
+        writer.writerow(["subsample", str(self.subsample)])
         writer.writerow(["project id", self.projName])
         writer.writerow(["file name", fileName])
         writer.writerow(["full model name", self.model.modelsInfo[selectedModel][0]])

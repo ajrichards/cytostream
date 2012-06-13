@@ -31,8 +31,10 @@ class TestCase2(unittest.TestCase):
         
         ## run the initial model for all files
         self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
-        self.nga.set('subsample_qa', 1000)
-        self.nga.set('subsample_analysis', 1000)
+        subsample = 1000
+        self.nga.set('subsample_qa', subsample)
+        self.nga.set('subsample_run', subsample)
+        self.nga.set('subsample_analysis', subsample)
         self.nga.set('model_to_run','kmeans')
         self.nga.set('excluded_channels_analysis',[])
 
@@ -51,7 +53,7 @@ class TestCase2(unittest.TestCase):
             self.nga.handle_filtering(filterID,fileName,parentModelRunID,'components',clusterIDs)
 
         ## set subsample to filter id
-        self.nga.set('subsample_analysis','ftr1')
+        self.nga.set('subsample_run','ftr1')
 
         ## run the second model
         self.nga.run_model()

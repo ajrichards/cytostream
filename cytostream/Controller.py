@@ -251,12 +251,6 @@ class Controller:
             self.save()
 
         comparisons = []
-        #for j in range(len(channelIndices)):
-        #    for i in range(len(channelIndices)):
-        #        if j == i:
-        #            continue
-        #        comparisons.append((j,i))
-        #self.log.log['thumbnails_to_view'] = comparisons
         for _j,chanj in enumerate(channelThumbs):
             j = self.channelDict[chanj]
             for _i,chani in enumerate(channelThumbs):
@@ -270,7 +264,6 @@ class Controller:
         channelInds = set([])
         for comp in comparisons:
             channelInds.update(comp)
-        #channels = np.array(self.fileChannels)[list(channelInds)]
 
         ## save the thumb channel map
         self.log.log['default_thumb_channels'] = channelThumbs
@@ -374,7 +367,7 @@ class Controller:
                 else:
                     pltCmd = "%s %s -h %s -f %s -c %s -s %s"%(self.pythonPath,script,self.homeDir,figName,chanInd,subsample)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
-                    print 'plotting', fileName,chan,chanInd
+
                     while True:
                         try:
                             next_line = proc.stdout.readline() 

@@ -77,7 +77,6 @@ class ControllerTest(unittest.TestCase):
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
     
-    
     def testRunModelDPMMM(self):
         excludedChannelInd = 1
         subsample = '1e3'
@@ -85,6 +84,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['dpmm_k'] = 16
         self.controller.log.log['model_to_run'] = 'dpmm-mcmc'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
+        self.controller.log.log['subsample_run'] = subsample
         self.controller.log.log['subsample_analysis'] = subsample
         self.controller.save()
 
@@ -113,6 +113,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['dpmm_k'] = 16
         self.controller.log.log['model_to_run'] = 'kmeans'
         self.controller.log.log['excluded_channels_analysis'] = [excludedChannelInd]
+        self.controller.log.log['subsample_run'] = subsample
         self.controller.log.log['subsample_analysis'] = subsample
         self.controller.save()
 
@@ -131,7 +132,6 @@ class ControllerTest(unittest.TestCase):
         self.controller.process_images('analysis',modelRunID='run1')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','run1','3FITC_4PE_004_thumbs')))
     
-
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()
