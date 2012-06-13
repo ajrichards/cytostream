@@ -252,7 +252,12 @@ class NoGuiAnalysis():
         subsample = self.controller.log.log['subsample_qa']
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
-    
+
+    def make_results_figures(self,modelRunID):
+        subsample = self.controller.log.log['subsample_analysis']
+        self.controller.handle_subsampling(subsample)
+        self.controller.process_images('analysis',modelRunID=modelRunID)
+
     def run_model(self):
         """
         runs model for all input files
@@ -267,7 +272,7 @@ class NoGuiAnalysis():
         else:
             self.controller.run_selected_model_cpu()
 
-        self.set('current_state', 'Results Navigation')
+        self.set('current_state', 'Model Results')
         self.set('highest_state', '4')
 
     def get_model_results(self,fileName,modelRunID,modelType):
@@ -303,26 +308,26 @@ class NoGuiAnalysis():
         modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
         return modelLog
 
-    def make_results_figures(self,fileName,modelRunID):
-        """
-        make the results figures for a given file and a given model run
-
-        """
-
-        ## error checking
-        modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.npy'%(fileName,modelRunID))
-        if os.path.exists(modelPath) == False:
-            print "ERROR: NoGuiAnalysis -- model path does not exist did you run the model?"
-            return None
-
-        fileList = self.get_file_names()
-        if fileName not in fileList:
-            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping make results figures"
-            return None
-
-        subsample = self.controller.log.log['subsample_analysis']
-        self.controller.handle_subsampling(subsample)
-        self.controller.process_images('analysis',modelRunID=modelRunID)
+    #def make_results_figures(self,fileName,modelRunID):
+    #    """
+    #    make the results figures for a given file and a given model run
+    #
+    #    """
+    # 
+    #    ## error checking
+    #    modelPath = os.path.join(self.controller.homeDir,'models','%s_%s_classify_components.npy'%(fileName,modelRunID))
+    #    if os.path.exists(modelPath) == False:
+    #        print "ERROR: NoGuiAnalysis -- model path does not exist did you run the model?"
+    #        return None
+    #
+    #    fileList = self.get_file_names()
+    #    if fileName not in fileList:
+    #        print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping make results figures"
+    #        return None
+    #
+    #    subsample = self.controller.log.log['subsample_analysis']
+    #    self.controller.handle_subsampling(subsample)
+    #    self.controller.process_images('analysis',modelRunID=modelRunID)
 
     def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,asIndices=False):
         fileList = self.get_file_names()
