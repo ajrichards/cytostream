@@ -49,6 +49,7 @@ class TestCase1(unittest.TestCase):
         self.nga.set('dpmm_burnin',999)
         self.nga.set('dpmm_k',16)
         self.nga.set('subsample_qa',500)             # num. events for qa plots
+        self.nga.set('subsample_run',500)       # num. events for model run and plots
         self.nga.set('subsample_analysis',500)       # num. events for model run and plots
         self.nga.set('model_to_run','dpmm-mcmc')
 

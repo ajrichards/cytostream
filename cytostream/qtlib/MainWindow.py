@@ -544,6 +544,7 @@ class MainWindow(QtGui.QMainWindow):
             self.transitions.move_to_quality_assurance(mode='progressbar')
         elif self.log.log['current_state'] == 'Model Results':
             self.transitions.move_to_model_results()
+            #self.on_model_run_finish()
 
     def plots_enable_disable(self,mode='thumbnails'):
         '''
