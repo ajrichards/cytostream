@@ -99,11 +99,12 @@ class VizModeSelector(QtGui.QWidget):
 
             ## make sure plotSelector displays correct options
             self.mainWindow.plotSelector.ensure_correct_options(int(numPlots)) 
+            validStates = ['Quality Assurance', 'Model Results']
 
             if vizMode == 'plot':
                 self.mainWindow.handle_show_plot()
             elif vizMode == 'thumbnails':
-                if self.mainWindow.controller.log.log['current_state'] == 'Quality Assurance':
+                if self.mainWindow.controller.log.log['current_state'] in validStates:
                     self.mainWindow.display_thumbnails()
                 else:
                     print "Check VizModeSelector callback for appropriate move"

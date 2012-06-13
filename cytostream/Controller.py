@@ -156,7 +156,7 @@ class Controller:
         """
         returns labels for a given file and run id
         """
-
+        
         if modelType != 'components':
             print "WARNING: Controller -- cytostream defaults to the use of components"
             modelType = 'components'
@@ -184,7 +184,7 @@ class Controller:
         else:
             return labelsToReturn
 
-    def process_images(self,mode,modelRunID=None,progressBar=None,view=None):
+    def process_images(self,mode,modelRunID=None,progressBar=None,view=None,verbose=False):
 
         ## error check
         if mode not in ['qa','analysis']:
@@ -342,24 +342,14 @@ class Controller:
                      
                 if progressBar != None:
                     progressBar.move_bar(int(round(percentDone)))
-                    #print 'moving', percentDone
             
-            #thumbDir = os.path.join(imgDir,fileName+"_thumbs")
-            #self.create_thumbs(imgDir,thumbDir,fileName,channels)
-
-            ## plot the histograms
-            #print channelThumbs
-            #print self.channelDict
-            #sys.exit()
+                if verbose == True:
+                    print progress
 
             for chan in channelThumbs:
                 chanInd = self.channelDict[chan]
                 figName = os.path.join(imgDir,"%s_%s.%s"%(fileName,chan,self.log.log['plot_type']))
                 script = os.path.join(self.baseDir,"RunMakeHistogramPlot.py")
-
-                #plotsToViewChannels[0] = comp
-                #self.log.log["plots_to_view_channels"] = plotsToViewChannels
-                #self.save()
 
                 if os.path.isfile(script) == False:
                     print 'ERROR: cannot find RunMakeHistogramPlot.py'
@@ -383,6 +373,9 @@ class Controller:
                 imageCount += 1
                 progress = 1.0 / float(len(imageProgress)) *100.0
                 percentDone+=progress
+
+                if verbose == True:
+                    print progress
                      
                 if progressBar != None:
                     progressBar.move_bar(int(round(percentDone)))

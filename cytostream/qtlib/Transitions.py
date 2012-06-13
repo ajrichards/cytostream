@@ -201,6 +201,7 @@ class Transitions():
         self.mainWindow.plotSelector.setEnabled(False)
         self.mainWindow.plotTickControls.setEnabled(False)
         self.mainWindow.vizModeSelector.setEnabled(False)
+        self.mainWindow.clusterSelector.setEnabled(False)
 
         return True
 

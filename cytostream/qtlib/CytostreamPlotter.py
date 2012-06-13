@@ -277,17 +277,6 @@ class CytostreamPlotter(QtGui.QWidget):
         #if self.fileNameList != None or self.uniqueLabels != None:
         #    additionalSelectorLabel = QtGui.QLabel('Additional Selectors')
 
-        #if self.uniqueLabels != None:                                                                         
-        #    self.highlightSelector = QtGui.QComboBox(self)
-        #    for hl in ["None"] + self.uniqueLabels:
-        #        self.highlightSelector.addItem(str(hl))
-        #
-        #    self.highlightSelector.setCurrentIndex(0)
-        #    self.connect(self.highlightSelector, QtCore.SIGNAL('activated(int)'),self.highlight_selector_callback)
-        #    
-        #    self.highlightSelector.setMaximumWidth(maxWidth)
-        #    self.highlightSelector.setMinimumWidth(maxWidth)
-
         ## lower controls 
         if self.enableGating == True:
             self.gateSelector = QtGui.QComboBox(self)
@@ -465,17 +454,17 @@ class CytostreamPlotter(QtGui.QWidget):
             self.mainWindow.log.log['plots_to_view_files'][self.subplotIndex] = selectedIndex
             self.mainWindow.controller.save()
 
-    def highlight_selector_callback(self,selectedInd):
-        selectedTxt = str(self.highlightSelector.currentText())
-        self.selectedHighlight = selectedTxt
-        self.draw()
-
-        if self.mainWindow != None:
-            if self.selectedHighlight == 'None':
-                self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = 'None'
-            else:
-                self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
-            self.mainWindow.controller.save()
+    #def highlight_selector_callback(self,selectedInd):
+    #    selectedTxt = str(self.highlightSelector.currentText())
+    #    self.selectedHighlight = selectedTxt
+    #    self.draw()
+    #
+    #    if self.mainWindow != None:
+    #        if self.selectedHighlight == 'None':
+    #            self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = 'None'
+    #        else:
+    #            self.mainWindow.log.log['plots_to_view_highlights'][self.subplotIndex] = int(self.selectedHighlight)
+    #        self.mainWindow.controller.save()
 
     def grid_toggle_callback(self,showGrid):
         '''
