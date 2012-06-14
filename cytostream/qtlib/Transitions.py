@@ -254,7 +254,7 @@ class Transitions():
         self.mainWindow.controller.save()
 
         self.mainWindow.plots_enable_disable()
-        self.mainWindow.handle_show_plot()
+        self.mainWindow.handle_show_plot(gating=True)
 
 
     def move_to_quality_assurance(self,mode='thumbnails'):
