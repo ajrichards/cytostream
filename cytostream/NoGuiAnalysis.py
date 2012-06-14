@@ -243,7 +243,7 @@ class NoGuiAnalysis():
         
         return filterIndices
 
-    def make_qa_figures(self):
+    def make_qa_figures(self,verbose=False):
         """
         makes the figures for quality assurance
 
@@ -251,12 +251,12 @@ class NoGuiAnalysis():
 
         subsample = self.controller.log.log['subsample_qa']
         self.controller.handle_subsampling(subsample)
-        self.controller.process_images('qa')
+        self.controller.process_images('qa',verbose=verbose)
 
-    def make_results_figures(self,modelRunID):
+    def make_results_figures(self,modelRunID,verbose=False):
         subsample = self.controller.log.log['subsample_analysis']
         self.controller.handle_subsampling(subsample)
-        self.controller.process_images('analysis',modelRunID=modelRunID)
+        self.controller.process_images('analysis',modelRunID=modelRunID,verbose=verbose)
 
     def run_model(self):
         """

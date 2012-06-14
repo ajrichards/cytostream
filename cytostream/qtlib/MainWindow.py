@@ -38,7 +38,7 @@ from cytostream import get_project_names, get_fcs_file_names
 from cytostream.qtlib import create_menubar_toolbar,move_transition
 from cytostream.qtlib import Transitions
 from cytostream.qtlib import add_left_dock, remove_left_dock, ProgressBar, PipelineDock, restore_docks
-from cytostream.qtlib import ThumbnailViewer, NWayViewer, CytostreamPlotter
+from cytostream.qtlib import ThumbnailViewer, NWayViewer
 from cytostream.qtlib import moreInfoDict
 
 __version__ = "0.9"
@@ -759,7 +759,7 @@ class MainWindow(QtGui.QMainWindow):
             chanInds = re.findall("\d+\_\d+\_thumb",img)
             i,j,k = chanInds[0].split("_")
             i,j = int(i),int(j)
-            print i,j,k
+
             self.controller.log.log['plots_to_view_channels'][0] = (i,j)
             self.controller.log.log['plots_to_view_files'][0] = self.controller.fileNameList.index(self.log.log['selected_file'])
             self.controller.save()
