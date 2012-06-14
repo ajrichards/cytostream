@@ -113,8 +113,10 @@ def create_menubar_toolbar(mainWindow):
     editPreferences = create_action(mainWindow,"&Preferences", mainWindow.transitions.move_to_preferences,
                                     "Ctrl+P", None, "Application preferences")
     editRestoreDocks = create_action(mainWindow,"&Restore docks", lambda a=mainWindow: restore_docks(a),
-                                     "Ctrl+R", None, "Restore Docks")
+                                     "Ctrl+R", None, "Restore docks")
 
+    toolCreateFilter = create_action(mainWindow,"&Create filter", mainWindow.transitions.move_to_create_filter,
+                                     "Ctrl+F", None, tip="Create a manual filter")
     ## help menu actions
     helpAboutAction = create_action(mainWindow,"&About %s"%mainWindow.controller.appName,
                                     mainWindow.helpAbout)
@@ -135,8 +137,8 @@ def create_menubar_toolbar(mainWindow):
 
     ## define tool menu
     mainWindow.toolMenu = mainWindow.menuBar().addMenu("&Tools")
-    #mainWindow.toolMenuActions = (None)
-    #add_actions(mainWindow,mainWindow.toolMenu,mainWindow.toolMenuActions)
+    mainWindow.toolMenuActions = ([toolCreateFilter])
+    add_actions(mainWindow,mainWindow.toolMenu,mainWindow.toolMenuActions)
 
     ## define help menu
     helpMenu = mainWindow.menuBar().addMenu("&Help")

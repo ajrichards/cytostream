@@ -243,6 +243,20 @@ class Transitions():
         self.mainWindow.status.showMessage("Model Run", 5000)
         return True
 
+    def move_to_create_filter(self):
+        ## ensure we are in a valid view
+        if self.mainWindow.controller.log.log['current_state'] not in ['Model Results']:
+            self.mainWindow.display_info("Create filter only works from Model Results stage")
+            return
+        
+        ## force num subplots to 1
+        self.mainWindow.controller.log.log['num_subplots'] = 1
+        self.mainWindow.controller.save()
+
+        self.mainWindow.plots_enable_disable()
+        self.mainWindow.handle_show_plot()
+
+
     def move_to_quality_assurance(self,mode='thumbnails'):
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to quality assurance -- ", mode
