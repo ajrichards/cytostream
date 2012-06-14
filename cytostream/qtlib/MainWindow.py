@@ -748,7 +748,7 @@ class MainWindow(QtGui.QMainWindow):
 
         QtCore.QCoreApplication.processEvents()
 
-    def handle_show_plot(self,img=None):
+    def handle_show_plot(self,img=None,gating=False):
         mode = self.log.log['current_state']
         self.set_selected_file()
         
@@ -784,7 +784,7 @@ class MainWindow(QtGui.QMainWindow):
         self.nwv = NWayViewer(self.controller,self.log.log['plots_to_view_channels'],self.log.log['plots_to_view_files'],
                          self.log.log['plots_to_view_runs'],self.log.log['plots_to_view_highlights'],
                          self.log.log['num_subplots'],figMode=figMode,background=True,modelType='components',
-                         useScaled=self.log.log['use_scaled_plots'],parent=self,mainWindow=self)
+                         useScaled=self.log.log['use_scaled_plots'],parent=self,mainWindow=self,gating=gating)
         
         hbl = QtGui.QHBoxLayout()
         hbl.setAlignment(QtCore.Qt.AlignCenter)

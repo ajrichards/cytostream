@@ -13,6 +13,7 @@ from MoreInfo import *
 from TextScreen import TextScreen
 from BasicWidgets import Slider, ProgressBar, Imager, RadioBtnWidget,Waiting
 from BasicFunctions import move_transition
+from FilterControls import FilterControls
 from OpenExistingProject import OpenExistingProject
 from EditMenu import EditMenu
 from Preferences import Preferences

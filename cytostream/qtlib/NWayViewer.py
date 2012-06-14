@@ -8,7 +8,7 @@ from cytostream.qtlib import CytostreamPlotter
 class NWayViewer(QtGui.QWidget):
 
     def __init__(self,controller,channels,files,runs,highlights,numSubplots,figMode='qa',parent=None,
-                 background=False,modelType=None,mainWindow=None,useScaled=False):
+                 background=False,modelType=None,mainWindow=None,useScaled=False,gating=False):
 
         QtGui.QWidget.__init__(self,parent)
         if parent == None:
@@ -29,6 +29,7 @@ class NWayViewer(QtGui.QWidget):
         self.background = background
         self.modelType = modelType
         self.mainWindow = mainWindow
+        self.gating = gating
         self.plots = {}
  
         ## ensure valid input
@@ -73,7 +74,7 @@ class NWayViewer(QtGui.QWidget):
                                    selectedChannel2=self.channels[i][1],
                                    mainWindow=self.mainWindow,
                                    uniqueLabels=None,
-                                   enableGating=False,
+                                   enableGating=self.gating,
                                    homeDir=self.controller.homeDir,
                                    compactMode=compactMode,
                                    minNumEvents=3,
