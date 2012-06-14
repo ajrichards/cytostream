@@ -87,9 +87,10 @@ class Controller:
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
 
-        if len(self.fileNameList) < 25: 
+        if len(self.fileNameList) < 50: 
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
         else:
+            print "WARNING: Controller has more than 50 files shoud we be using events list?"
             self.eventsList = []
 
         self.labelsList = {}
