@@ -251,82 +251,22 @@ class CytostreamPlotter(QtGui.QWidget):
         ## set the plot number
         self.subplotLabel1 = QtGui.QLabel(str(int(self.subplotNum))) 
         self.subplotLabel2 = QtGui.QLabel('None')
+        self.subplotLabel2.setStyleSheet("font: 6pt")
         totalEvents = 'None'
         self.subplotLabel3 = QtGui.QLabel('None')
-        
+        self.subplotLabel3.setStyleSheet("font: 6pt")
+
         ## upper controls
         maxWidth = 100
       
         ## lower controls
         if self.enableGating == True:
-
             self.fc = FilterControls(parent=self,mainWindow=self.mainWindow)
-
-            '''
-            self.filteringLabel = QtGui.QLabel("Filter controls")
-
-            self.gateSelector = QtGui.QComboBox(self)
-            for gt in ["None","Draw","Polygon", "Rectangle", "Square"]:
-                self.gateSelector.addItem(gt)
-
-            self.gateSelector.setCurrentIndex(0)
-            self.connect(self.gateSelector, QtCore.SIGNAL('activated(int)'),self.gate_select_callback)
-
-            self.gate_set = QtGui.QPushButton("Set")
-            self.connect(self.gate_set, QtCore.SIGNAL('clicked()'), self.gate_set_callback)
-            self.gate_set.setEnabled(False)
-            self.gate_set.setMaximumWidth(maxWidth*0.6)
-            self.gate_set.setMinimumWidth(maxWidth*0.6)
-
-            self.gate_clear = QtGui.QPushButton("Clear")
-            self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.gate_clear_callback)
-            self.gate_clear.setEnabled(False)
-            self.gate_clear.setMaximumWidth(maxWidth*0.6)
-            self.gate_clear.setMinimumWidth(maxWidth*0.6)
-
-            self.gate_save = QtGui.QPushButton("Save Gate")
-            self.connect(self.gate_save, QtCore.SIGNAL('clicked()'), self.gate_save_callback)
-            self.gate_save.setEnabled(False)
-            
-            self.defaultVert = 6
-            self.vertSliderLabel = QtGui.QLabel(str(self.defaultVert))
-            self.vertSlider = QtGui.QSlider(QtCore.Qt.Horizontal)
-            self.vertSlider.setRange(3,8)
-            self.vertSlider.setValue(self.defaultVert)
-            self.vertSlider.setTracking(True)
-            self.vertSlider.setTickPosition(QtGui.QSlider.TicksBothSides)
-            self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.gate_vert_selector_callback)
-            self.vertSlider.setEnabled(False)
-            self.vertSlider.setMaximumWidth(maxWidth)
-            self.vertSlider.setMinimumWidth(maxWidth)
-
-            hboxGate0 = QtGui.QHBoxLayout()
-            hboxGate0.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate0.addWidget(self.filteringLabel)
-            hboxGate1 = QtGui.QHBoxLayout()
-            hboxGate1.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate1.addWidget(self.gateSelector)
-            hboxGate1.addWidget(self.gate_set)
-            hboxGate2 = QtGui.QHBoxLayout()
-            hboxGate2.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate2.addWidget(QtGui.QLabel(" "))
-            hboxGate3 = QtGui.QHBoxLayout()
-            hboxGate3.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate3.addWidget(self.vertSliderLabel)
-            hboxGate4 = QtGui.QHBoxLayout()
-            hboxGate4.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate4.addWidget(self.vertSlider)
-            hboxGate5 = QtGui.QHBoxLayout()
-            hboxGate5.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate5.addWidget(self.gate_save)
-            hboxGate6 = QtGui.QHBoxLayout()
-            hboxGate6.setAlignment(QtCore.Qt.AlignCenter)
-            hboxGate6.addWidget(self.gate_clear)
-            '''
 
         if self.compactMode == False:
             tooltips = ['heat scatter plot','colored scatter plot','contour plot']
-            self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,tooltips=tooltips,vertical=True)
+            self.vizSelector = RadioBtnWidget(self.vizList,parent=self.parent,callbackFn=self.plot_viz_callback,
+                                              tooltips=tooltips,vertical=True,useText=False)
             self.vizSelector.btns[self.drawState].setChecked(True)
             self.vizSelector.selectedItem = self.drawState
             self.vizSelector.setMaximumWidth(maxWidth)
@@ -381,14 +321,6 @@ class CytostreamPlotter(QtGui.QWidget):
 
         if self.enableGating == True:
             controlBoxCenter.addWidget(self.fc)
-            #controlBoxCenter.addLayout(hboxGate0)
-            #controlBoxCenter.addLayout(hboxGate1)
-            #controlBoxCenter.addLayout(hboxGate2)
-            #controlBoxCenter.addLayout(hboxGate3)
-            #controlBoxCenter.addLayout(hboxGate4)
-            #controlBoxCenter.addLayout(hboxGate5)
-            #controlBoxCenter.addLayout(hboxGate6)
-        
         if self.compactMode == False:
             controlBoxBottom.addLayout(hboxVizSelector)
             controlBoxBottom.addLayout(hboxSaveBtn)
@@ -439,12 +371,8 @@ class CytostreamPlotter(QtGui.QWidget):
         self.subplotLabel3.setAutoFillBackground(True)
 
         ## finalize layout
-        print dir(plotBox)
-        #plotBox.maximumSize(maxWidth)
-        #print plotBox.SetMaximumSize#setSizeConstraint(maxWidth*0.6)
-        #vertSlider.setMinimumWidth(maxWidth*0.6)
-        #int ax, int ay, int aw, int ah
-        plotBox.setGeometry(QtCore.QRect(10, 250, 75, 23))
+        if self.enableGating == True:
+            self.fc.setMaximumWidth(self.fc.maxWidth*1.5)
 
         canvasBox.addWidget(self.canvas)
         plotBox.addLayout(canvasBox)
@@ -553,19 +481,19 @@ class CytostreamPlotter(QtGui.QWidget):
 
         if self.currentGate == 'Draw':
             self.gateInteractor = DrawGateInteractor(self.ax, self.canvas, self.eventsList[fileInd], self.selectedChannel1, self.selectedChannel2)
-            self.vertSlider.setEnabled(False)
+            self.fc.vertSlider.setEnabled(False)
             self.gate_set.setEnabled(True)
         elif self.currentGate == 'Polygon':
-            self.vertSlider.setEnabled(True)
+            self.fc.vertSlider.setEnabled(True)
             self.fc.gate_save.setEnabled(True)
             self.fc.gate_clear.setEnabled(True)
             self.fc.gate_set.setEnabled(True)
-            self.currentPolyVerts = self.defaultVert
+            self.currentPolyVerts = self.fc.defaultVert
             self.poly = Polygon(([a,c],[mid1,f],[b,c],[b,d],[mid1,e],[a,d]), animated=True,alpha=0.0)
             self.ax.add_patch(self.poly)
             self.gateInteractor = PolyGateInteractor(self.ax,self.poly,self.canvas)
-            self.fc.vertSlider.setValue(self.defaultVert)
-            self.fc.vertSliderLabel.setText(str(self.defaultVert))
+            self.fc.vertSlider.setValue(self.fc.defaultVert)
+            self.fc.vertSliderLabel.setText(str(self.fc.defaultVert))
             self.canvas.draw()            
         else:
             msg = "This gate tool is not yet available"
@@ -601,8 +529,8 @@ class CytostreamPlotter(QtGui.QWidget):
         if self.line != None:
             self.line.set_visible(False)
 
-        if self.gateSelector != None:
-            self.gateSelector.setCurrentIndex(0)
+        if self.enableGating == True:
+            self.fc.gateSelector.setCurrentIndex(0)
         else:
             return
 
@@ -717,7 +645,7 @@ if __name__ == '__main__':
                            selectedChannel2=channelDict['SSCH'],
                            mainWindow=None,
                            uniqueLabels=None,
-                           enableGating=True,
+                           enableGating=False,
                            homeDir=homeDir,
                            compactMode=False,
                            minNumEvents=3,

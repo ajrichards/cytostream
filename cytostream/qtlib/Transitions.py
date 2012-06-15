@@ -85,6 +85,7 @@ class Transitions():
 
         ## add main label
         self.mainWindow.titleLabel = QtGui.QLabel('Cytostream')
+        self.mainWindow.titleLabel.setStyleSheet("font: 16pt")
         hbl1.addWidget(self.mainWindow.titleLabel)
 
         ## add image widget(s)

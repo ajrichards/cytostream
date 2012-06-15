@@ -110,6 +110,7 @@ class MainWindow(QtGui.QMainWindow):
         self.vizModeSelector = None
         self.subsampleSelector = None
         self.clusterSelector = None
+        self.saveImgsBtn = None
         self.dpc = None
         self.pDock = None
         self.dock = None
@@ -597,6 +598,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(True)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(True)
+            if self.saveImgsBtn and self.controller.log.log['num_subplots'] != '1':
+                self.saveImgsBtn.setEnabled(True)
+
             self.pDock.contBtn.setEnabled(True)
             self.pDock.enable_disable_states()
 
