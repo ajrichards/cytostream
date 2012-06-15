@@ -36,6 +36,9 @@ class NWayViewer(QtGui.QWidget):
         if self.figMode == 'qa':
             self.runs = [None for i in self.runs]
             self.modelType = None
+            self.drawState = 'heat'
+        else:
+            self.drawState = 'scatter'
 
         ## setup layouts
         self.vbl = QtGui.QVBoxLayout()
@@ -66,7 +69,7 @@ class NWayViewer(QtGui.QWidget):
                                    self.controller.eventsList,
                                    self.controller.fileChannels,
                                    self.controller.channelDict,
-                                   drawState='heat',
+                                   drawState=self.drawState,
                                    modelRunID=self.runs[i],
                                    parent=self.parent,
                                    background=True,

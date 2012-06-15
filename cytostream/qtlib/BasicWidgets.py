@@ -51,7 +51,8 @@ class Waiting(QtGui.QWidget):
 
 class RadioBtnWidget(QtGui.QWidget):
 
-    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,tooltips=None,color='white',widgetLabel=None,vertical=False):
+    def __init__(self,btnLabels,parent=None,default=None,callbackFn=None,tooltips=None,color='white',
+                 widgetLabel=None,vertical=False,useText=True):
         QtGui.QWidget.__init__(self,parent)
 
         if default != None and btnLabels.__contains__(default) == False:
@@ -77,6 +78,8 @@ class RadioBtnWidget(QtGui.QWidget):
 
         for b,bLabel in enumerate(self.btnLabels):
             rad = QtGui.QRadioButton(bLabel)
+            if useText == False:
+                rad.setText("")
             self.btns[bLabel] = rad
             self.connect(self.btns[bLabel], QtCore.SIGNAL('clicked()'),lambda item=bLabel:self.set_selected(item))
             btnBox.addWidget(self.btns[bLabel])

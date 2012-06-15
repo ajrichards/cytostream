@@ -10,7 +10,7 @@ class FilterControls(QtGui.QWidget):
         ## variables
         self.parent = parent
         self.mainWindow = mainWindow
-        maxWidth = 100
+        self.maxWidth = 100
 
         ##  init the ui
         self.filteringLabel = QtGui.QLabel("Filter controls")
@@ -26,15 +26,15 @@ class FilterControls(QtGui.QWidget):
         if self.parent != None:
             self.connect(self.gate_set, QtCore.SIGNAL('clicked()'), self.parent.gate_set_callback)
         self.gate_set.setEnabled(False)
-        self.gate_set.setMaximumWidth(maxWidth*0.6)
-        self.gate_set.setMinimumWidth(maxWidth*0.6)
+        self.gate_set.setMaximumWidth(self.maxWidth*0.6)
+        self.gate_set.setMinimumWidth(self.maxWidth*0.6)
 
         self.gate_clear = QtGui.QPushButton("Clear")
         if self.parent != None:
             self.connect(self.gate_clear, QtCore.SIGNAL('clicked()'), self.parent.gate_clear_callback)
         self.gate_clear.setEnabled(False)
-        self.gate_clear.setMaximumWidth(maxWidth*0.6)
-        self.gate_clear.setMinimumWidth(maxWidth*0.6)
+        self.gate_clear.setMaximumWidth(self.maxWidth*0.6)
+        self.gate_clear.setMinimumWidth(self.maxWidth*0.6)
 
         self.gate_save = QtGui.QPushButton("Save Gate")
         if self.parent != None:
@@ -51,8 +51,8 @@ class FilterControls(QtGui.QWidget):
         if self.parent != None:
             self.connect(self.vertSlider, QtCore.SIGNAL('valueChanged(int)'), self.parent.gate_vert_selector_callback)
         self.vertSlider.setEnabled(False)
-        self.vertSlider.setMaximumWidth(maxWidth)
-        self.vertSlider.setMinimumWidth(maxWidth)
+        self.vertSlider.setMaximumWidth(self.maxWidth)
+        self.vertSlider.setMinimumWidth(self.maxWidth)
 
         ## layout
         masterBox = QtGui.QVBoxLayout()
