@@ -109,3 +109,17 @@ def get_models_run_list(log):
     modelsRunList = ['run'+str(i+1) for i in range(maxModelRun)]
 
     return modelsRunList
+
+
+def get_saved_gate_names(homeDir):
+    """
+    returns a list of the gates that have been saved run 
+    """
+
+    gateList = []
+    for fileName in os.listdir(os.path.join(homeDir,"data")):
+        if re.search("\.gate",fileName):           
+            gateList.append(re.sub("\.gate","",fileName))
+            
+    return gateList
+
