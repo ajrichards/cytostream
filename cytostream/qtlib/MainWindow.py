@@ -110,6 +110,7 @@ class MainWindow(QtGui.QMainWindow):
         self.vizModeSelector = None
         self.subsampleSelector = None
         self.clusterSelector = None
+        self.gateSelector = None
         self.saveImgsBtn = None
         self.dpc = None
         self.pDock = None
@@ -576,6 +577,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(False)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(False)
+            if self.gateSelector:
+                self.gateSelector.setEnabled(False)
+
         elif mode == 'plot':
             if self.log.log['current_state'] == 'Quality Assurance':
                 self.pDock.enable_continue_btn(self.transitions.move_to_model_run)
@@ -598,6 +602,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(True)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(True)
+            if self.gateSelector:
+                self.gateSelector.setEnabled(True)
             if self.saveImgsBtn and self.controller.log.log['num_subplots'] != '1':
                 self.saveImgsBtn.setEnabled(True)
 

@@ -66,6 +66,7 @@ class Controller:
         self.fileNameList = None
         self.channelDict = None
         self.subsampleDict = {}
+        self.uniqueLabels = {}
 
         if self.debug == True:
             print 'DEBUG ON'

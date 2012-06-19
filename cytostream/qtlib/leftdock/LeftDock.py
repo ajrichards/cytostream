@@ -12,9 +12,10 @@ __author__ = "A. Richards"
 
 import sys,os,ast
 from PyQt4 import QtGui,QtCore
-from cytostream import get_fcs_file_names
+from cytostream import get_fcs_file_names,get_saved_gate_names
 from cytostream.qtlib import FileSelector,SubsampleSelector,VizModeSelector,ModelToRunSelector
 from cytostream.qtlib import PlotSelector,PlotTickControls,ChannelSelector,ClusterSelector
+from cytostream.qtlib import GateSelector
 
 def remove_left_dock(mainWindow):
     mainWindow.removeDockWidget(mainWindow.mainDockWidget)
@@ -116,14 +117,18 @@ def add_left_dock(mainWindow):
        
     ## cluster selector
     if mainWindow.controller.log.log['current_state'] in ['Model Results']:
-        uniqueLabels = set([])
         modelRunID = mainWindow.controller.log.log['selected_model']
-        for fileName in fileList:
-            fileLabels = mainWindow.controller.get_labels(fileName,modelRunID,modelType='components',
-                                                          subsample='original',getLog=False)
-            uniqueLabels.update(set(fileLabels.tolist()))
-        uniqueLabels = list(uniqueLabels)
-        uniqueLabels.sort()
+        if mainWindow.controller.uniqueLabels.has_key(modelRunID) == False:
+            uniqueLabels = set([])
+            for fileName in fileList:
+                fileLabels = mainWindow.controller.get_labels(fileName,modelRunID,modelType='components',
+                                                              subsample='original',getLog=False)
+                uniqueLabels.update(set(fileLabels.tolist()))
+            uniqueLabels = list(uniqueLabels)
+            uniqueLabels.sort()
+            mainWindow.controller.uniqueLabels[modelRunID] = uniqueLabels
+
+        uniqueLabels = mainWindow.controller.uniqueLabels[modelRunID]
         mainWindow.clusterSelector = ClusterSelector(uniqueLabels,parent=mainWindow.dockWidget,mainWindow=mainWindow)
         csLayout = QtGui.QHBoxLayout()
         csLayout.setAlignment(QtCore.Qt.AlignLeft)
@@ -133,6 +138,20 @@ def add_left_dock(mainWindow):
         mainWindow.clusterSelector.setMaximumWidth(alignWidth)
         mainWindow.clusterSelector.setMinimumWidth(alignWidth)
     
+    ## gate selector
+    if mainWindow.controller.log.log['current_state'] in ['Model Results']:
+        
+        gateList = get_saved_gate_names(mainWindow.controller.homeDir)
+        if len(gateList) > 0:
+            mainWindow.gateSelector = GateSelector(gateList,parent=mainWindow.dockWidget,mainWindow=mainWindow)
+            gsLayout = QtGui.QHBoxLayout()
+            gsLayout.setAlignment(QtCore.Qt.AlignLeft)
+            gsLayout.addWidget(mainWindow.gateSelector)
+            vboxTop.addLayout(gsLayout)
+            mainWindow.gateSelector.setAutoFillBackground(True)
+            mainWindow.gateSelector.setMaximumWidth(alignWidth)
+            mainWindow.gateSelector.setMinimumWidth(alignWidth)
+
     ## subsample selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results','Analysis Results']:
 
