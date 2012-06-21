@@ -17,31 +17,6 @@ except:
     pass
 
 
-def get_optimal_num_bins(x, binRange, method='freedman'):
-    """
-    Find the optimal number of bins.
-    Modified versions of Freedman, Scott
-    """
-    N = x.shape[0]
-    if method.lower()=='freedman':
-        s=np.sort(x)
-        IQR = s[int(N*.75)] - s[int(N*.25)] # Interquantile range (75% -25%)
-        width = 2* IQR*N**(-1./3)
-    elif method.lower()=='scott':
-        width = 3.49 * x.std()* N**(-1./3)
-    else:
-        raise 'Method must be Scott or Freedman', method
-
-    optimalNumBins = int(np.diff(binRange)/width)
-    #print '\t (1)', optimalNumBins
-    optimalNumBins = int(scale(optimalNumBins,(0,600),(100,300)))
-    #print '\t (2)', optimalNumBins
-    if optimalNumBins > 300 or optimalNumBins < 100:
-        print "WARNING: extreme value for optimal num bins obtained", optimalNumBins
-
-    return optimalNumBins
-    
-
 ## functions
 def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=5.0):
     n = len(neg_pdf)
@@ -54,19 +29,25 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=5.0):
     precision[tp==0]=0
     recall = tp/(tp+fn)
     recall[recall==0]=0
-    fscores = (1+beta*beta)*(precision*recall)/(beta*beta*precision + recall)
+    denom = beta*beta*precision + recall
+    zeroInds = np.where(denom == 0)[0]
+    if len(zeroInds) > 0:
+        denom[zeroInds] = np.finfo(float).eps
+    
+    fscores = (1+beta*beta)*(precision*recall)/(denom)
     fscores[np.where(np.isnan(fscores)==True)[0]]=0
 
     return fscores,precision,recall
 
-def calculate_fscores(neg,pos,numBins=100,beta=1.0,theta=5.0,fullOutput=True):
+def calculate_fscores(neg,pos,beta=0.2,theta=5.0,fullOutput=True):
 
     neg = neg.copy()
     pos = pos.copy()
 
     allEvents = np.hstack((neg,pos))
-    #numBins1 = get_optimal_num_bins(allEvents,(allEvents.min(),allEvents.max()))
     numBins = int(np.sqrt(np.max([neg.shape[0],pos.shape[0]])))
+    #numBins = int(0.5 * float(numBins))
+    #print 'numbins',numBins
 
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
@@ -309,7 +290,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
-def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,numBins=150,theta=5.0):
+def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,theta=5.0):
     '''
     returns a dict of results for cytokine threshold analysis
     '''
@@ -336,8 +317,8 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
     negEvents = _negEvents[:,cytoIndex]
 
     #print "\n",posControlFile,negControlFile,negEvents.shape,posEvents.shape,cytoIndex
-    fResults = calculate_fscores(negEvents,posEvents,numBins=numBins,beta=beta,fullOutput=fullOutput,theta=theta)
-    print "\t ", beta, theta
+    fResults = calculate_fscores(negEvents,posEvents,beta=beta,fullOutput=fullOutput,theta=theta)
+    print "\t", beta, theta
 
     return fResults
 
@@ -360,26 +341,33 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
     percentages = {}
     counts = {}
     idx = {}
-    filterInds = np.array([])
+    filterInds = None
 
     ## determine and save percentages, counts and indices
     for fileName in fileList:
         events = nga.get_events(fileName)
+        positiveEventInds = np.array([])
         if filterID != None:
             filterInds = nga.get_filter_indices(fileName,filterID)
-            #print filterInds
-            if type(filterInds) != type([]):
+          
+            if filterInds == None or str(filterInds) == 'False':
                 pass
             elif len(filterInds) > 0:
-                events = events[filterInds,:]
-        
-        data = events[:,cytoIndex]
-        positiveEventInds = np.where(data > fThreshold)[0]
+                _positiveEventInds = np.where(events[:,cytoIndex] > fThreshold)[0]
+                if _positiveEventInds.size > 0:
+                    positiveEventInds = np.array(list(set(filterInds.tolist()).intersection(set(_positiveEventInds.tolist()))))
+            else:
+                print 'not suppose to happen'
+        else:
+            positiveEventInds = np.where(events[:,cytoIndex] > fThreshold)[0]
 
         if events.shape[0] == 0 or len(positiveEventInds) == 0:
             percentages[fileName] = 0.0
         else:
-            percentages[fileName] = (float(positiveEventInds.size)/float(events.shape[0])) * 100.0
+            if filterID == None:
+                percentages[fileName] = (float(positiveEventInds.size)/float(events.shape[0])) * 100.0
+            else:
+                percentages[fileName] = (float(positiveEventInds.size)/float(len(filterInds))) * 100.0
         counts[fileName] = positiveEventInds.size
         idx[fileName] = positiveEventInds
 

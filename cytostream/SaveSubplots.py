@@ -302,7 +302,6 @@ class SaveSubplots():
         
                 finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,'sans',useSimple=False,axesOff=False,useScaled=True)
                 
-
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:
             ax = self.fig.add_subplot(1,1,subplotIndex+1)
