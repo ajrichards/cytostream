@@ -299,7 +299,10 @@ class Controller:
                 continue
     
             ## progress point information 
-            imageProgress = range(int(numImagesToCreate)+len(channelThumbs))
+            #print "Controller: image create info"
+            #print "\tnum images to create",int(numImagesToCreate)
+            #print "\tlen channelthumbs", len(channelThumbs)
+            imageProgress = range(int(numImagesToCreate)+(len(channelThumbs)*len(self.fileNameList)))
         
             ## specify model type to show as thumbnails
             modelType = self.log.log['thumbnail_results_default']
@@ -346,7 +349,7 @@ class Controller:
                     progressBar.move_bar(int(round(percentDone)))
             
                 if verbose == True:
-                    print progress
+                    print percentDone
 
             for chan in channelThumbs:
                 chanInd = self.channelDict[chan]
@@ -377,7 +380,7 @@ class Controller:
                 percentDone+=progress
 
                 if verbose == True:
-                    print progress
+                    print percentDone
                      
                 if progressBar != None:
                     progressBar.move_bar(int(round(percentDone)))

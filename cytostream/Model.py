@@ -520,7 +520,7 @@ class Model:
 
         if len(clusterIDs) == 0:
             print "WARNING: Controller.get_indices_for_filter -- clusterIDs was empty"
-            return False
+            return None
 
         statModel, fileLabels = self.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
         modelLog = self.load_model_results_log(fileName,parentModelRunID)
