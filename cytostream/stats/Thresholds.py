@@ -318,7 +318,6 @@ def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,
 
     #print "\n",posControlFile,negControlFile,negEvents.shape,posEvents.shape,cytoIndex
     fResults = calculate_fscores(negEvents,posEvents,beta=beta,fullOutput=fullOutput,theta=theta)
-    print "\t", beta, theta
 
     return fResults
 
@@ -350,7 +349,7 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
         if filterID != None:
             filterInds = nga.get_filter_indices(fileName,filterID)
           
-            if filterInds == None or str(filterInds) == 'False':
+            if str(filterInds) == 'None' or str(filterInds) == 'False':
                 pass
             elif len(filterInds) > 0:
                 _positiveEventInds = np.where(events[:,cytoIndex] > fThreshold)[0]
