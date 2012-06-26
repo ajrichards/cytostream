@@ -482,7 +482,7 @@ class CytostreamPlotter(QtGui.QWidget):
         if self.currentGate == 'Draw':
             self.gateInteractor = DrawGateInteractor(self.ax, self.canvas, self.eventsList[fileInd], self.selectedChannel1, self.selectedChannel2)
             self.fc.vertSlider.setEnabled(False)
-            self.gate_set.setEnabled(True)
+            self.fc.gate_set.setEnabled(True)
         elif self.currentGate == 'Polygon':
             self.fc.vertSlider.setEnabled(True)
             self.fc.gate_save.setEnabled(True)
