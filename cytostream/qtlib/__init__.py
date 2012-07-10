@@ -31,6 +31,7 @@ from ModelToRunSelector import ModelToRunSelector
 from KSelector import KSelector
 from TextEntry import TextEntry
 from OneDimViewer import OneDimViewer
+from FileUploader import FileUploader
 
 ## files requireing only 1st level deps
 from DataProcessingCenter import DataProcessingCenter

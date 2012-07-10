@@ -18,7 +18,7 @@ except:
 
 
 ## functions
-def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=2.0):
+def _calculate_fscores(neg_pdf, pos_pdf, beta=0.2, theta=3.0):
     n = len(neg_pdf)
     #print '...beta:%s,theta:%s'%(beta,theta)
     fpos = np.where(pos_pdf > theta*neg_pdf, pos_pdf-neg_pdf, 0)
@@ -39,15 +39,13 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=1.0, theta=2.0):
 
     return fscores,precision,recall
 
-def calculate_fscores(neg,pos,beta=0.2,theta=2.0,fullOutput=True):
+def calculate_fscores(neg,pos,beta=0.2,theta=3.0,fullOutput=True):
 
     neg = neg.copy()
     pos = pos.copy()
 
     allEvents = np.hstack((neg,pos))
     numBins = int(np.sqrt(np.max([neg.shape[0],pos.shape[0]])))
-    #numBins = int(0.5 * float(numBins))
-    #print 'numbins',numBins
 
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
@@ -290,7 +288,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
-def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,theta=2.0):
+def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,theta=3.0):
     '''
     returns a dict of results for cytokine threshold analysis
     '''
