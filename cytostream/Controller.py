@@ -92,7 +92,7 @@ class Controller:
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
         else:
             print "WARNING: Controller has more than 50 files shoud we be using events list?"
-            self.eventsList = []
+            self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
 
         self.labelsList = {}
         self.modelsRunLog = {}

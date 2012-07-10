@@ -14,8 +14,7 @@ import sys,time,os,re
 from PyQt4 import QtGui, QtCore
 import numpy as np
 from cytostream import Logger, Model, get_fcs_file_names
-from cytostream.qtlib import ProgressBar
-from cytostream.qtlib import move_transition
+from cytostream.qtlib import ProgressBar,move_transition,FileUploader
 from cytostream.tools import officialNames,get_official_name_match
 
 class ComboBoxDelegate(QtGui.QItemDelegate):
@@ -132,6 +131,8 @@ class DataProcessingCenter(QtGui.QWidget):
         nfLayout2b.setAlignment(QtCore.Qt.AlignCenter)        
         nfLayout3 = QtGui.QHBoxLayout()
         nfLayout3.setAlignment(QtCore.Qt.AlignCenter) 
+        nfLayout3a = QtGui.QHBoxLayout()
+        nfLayout3a.setAlignment(QtCore.Qt.AlignCenter)
         nfLayout4 = QtGui.QHBoxLayout()
         nfLayout4.setAlignment(QtCore.Qt.AlignCenter)
         
@@ -207,6 +208,13 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## show the progress bar
         if self.showProgressBar == True:
+            self.pbarLayout1 = QtGui.QVBoxLayout()
+            self.pbarLayout1.setAlignment(QtCore.Qt.AlignCenter)
+            self.fileUploadLayout = QtGui.QHBoxLayout()
+            self.fileUploadLayout.setAlignment(QtCore.Qt.AlignCenter)
+            self.fileUploader = FileUploader(mainLabel='Load Compensation Matrix')
+            self.fileUploadLayout.addWidget(self.fileUploader)
+            self.pbarLayout1.addLayout(self.fileUploadLayout)
             self.init_progressbar()
         else:
             self.nfRemoveBtn.setEnabled(False)
@@ -253,8 +261,6 @@ class DataProcessingCenter(QtGui.QWidget):
         pbarLayout1a.setAlignment(QtCore.Qt.AlignCenter)
         pbarLayout1b = QtGui.QHBoxLayout()
         pbarLayout1b.setAlignment(QtCore.Qt.AlignCenter)
-        self.pbarLayout1 = QtGui.QVBoxLayout()
-        self.pbarLayout1.setAlignment(QtCore.Qt.AlignCenter)
 
         pbarLayout1a.addWidget(buffer6)
         pbarLayout1a.addWidget(buffer6)
