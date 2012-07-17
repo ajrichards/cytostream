@@ -244,6 +244,13 @@ class DataProcessingCenter(QtGui.QWidget):
             if self.progressBar != None:
                 self.mainWindow.vboxCenter.addLayout(self.pbarLayout1)
             self.mainWindow.vboxCenter.addLayout(nfLayout1)
+
+    def init_compmat_upload(self):
+        self.cmBrowseBtn = QtGui.QPushButton("Browse")
+        self.cmBrowseBtn.setMaximumWidth(130)
+        nfLayout3.addWidget(self.nfEditBtn)
+        nfLayout3 = QtGui.QHBoxLayout()
+        nfLayout3.setAlignment(QtCore.Qt.AlignCenter) 
         
     def init_progressbar(self):
         ## add progress bar if loading
