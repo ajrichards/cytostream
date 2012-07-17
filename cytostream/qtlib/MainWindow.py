@@ -308,7 +308,6 @@ class MainWindow(QtGui.QMainWindow):
     def load_files_with_progressbar(self,progressBar):
         '''
         callback for loading files from data processing
-
         '''
 
         ## error check
@@ -317,6 +316,10 @@ class MainWindow(QtGui.QMainWindow):
         if len(self.allFilePaths) < 1:
             print "WARNING: MainWindow -- load_files_with_progressbar -- allFilePaths is empty"
 
+
+        if len(self.dpc.fileUploader.loadedFilePaths) > 0:
+            compensationFilePath = self.dpc.fileUploader.loadedFilePaths[0]
+        self.controller.compensationFilePath = compensationFilePath
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar,view=self)
         self.allFilePaths = []
         move_transition(self)
