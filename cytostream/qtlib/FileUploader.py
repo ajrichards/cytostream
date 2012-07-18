@@ -77,7 +77,17 @@ class FileUploader(QtGui.QWidget):
         if inputFilePath == '':
             return
 
-        self.update_list(str(inputFilePath))
+        inputFilePath = str(inputFilePath)
+        inputFileName = os.path.split(inputFilePath)[-1]
+        if re.search(">|<|\*|\||^\$|;|#|\@|\&|\s",inputFileName):
+            msg1 = "There were invalid characters in the uploaded file name\n"
+            msg2 = "To proceed remove all spaces and characters like\n, '$', ';', '@', '|', '<', and '*'\n\n"
+            msg3 = "Spaces may be replaced with a '_'"
+            msg = msg1 + msg2 + msg3
+            QtGui.QMessageBox.information(self,'Information',msg)
+            return
+
+        self.update_list(inputFilePath)
 
     def update_list(self,filePath):
         

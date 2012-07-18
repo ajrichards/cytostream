@@ -319,7 +319,8 @@ class MainWindow(QtGui.QMainWindow):
 
         if len(self.dpc.fileUploader.loadedFilePaths) > 0:
             compensationFilePath = self.dpc.fileUploader.loadedFilePaths[0]
-        self.controller.compensationFilePath = compensationFilePath
+            self.controller.compensationFilePath = compensationFilePath
+
         self.controller.load_files_handler(self.allFilePaths,progressBar=progressBar,view=self)
         self.allFilePaths = []
         move_transition(self)
