@@ -3,6 +3,7 @@
 import sys,getopt,os,re,time,csv,ast,cPickle,time
 import numpy as np
 import fcm
+from NoGuiAnalysis import NoGuiAnalysis
 
 
 if len(sys.argv) < 3:
@@ -51,30 +52,34 @@ if dataType != 'fcs':
 #print 'hello'
 #data = fcm.loadFCS('/home/clemmys/research/eqapol/sendout1/analysis1/EQAPOL_4C_Pregated/CD8+Cyto+/101_08Jul11_C05_013_CD8_Cyto.fcs')
 
+if homeDir == None:
+    print "INPUT ERROR: LoadFile.py --- no home dir specified", homeDir
+    sys.exit()
+
 ## initial error checking
 if os.path.isdir(homeDir) == False:
-    print "INPUT ERROR: not a valid project", homeDir
+    print "INPUT ERROR: LoadFile.py --- not a valid project", homeDir
     sys.exit()
 
 autoComp = ast.literal_eval(str(autoComp))
 if autoComp not in [True,False]:
-    print "WARNING: LoadFile invalid value for autoComp", autoComp
+    print "WARNING: LoadFile.py --- invalid value for autoComp", autoComp
     autoComp = True
 
 if os.path.isfile(filePath) == False:
-    print "INPUT ERROR: file path does not exist", filePath
+    print "INPUT ERROR: LoadFile.py --- file path does not exist", filePath
     sys.exit()
 
 if compensationFilePath != "None" and os.path.isfile(filePath) == False:
-    print "INPUT ERROR: compensation matrix file  path does not exist", compensationFilePath
+    print "INPUT ERROR: LoadFile.py --- compensation matrix file  path does not exist", compensationFilePath
     sys.exit()
 
 if dataType not in ['fcs','tab','comma','array']:
-    print "INPUT ERROR: bad data type specified", dataType
+    print "INPUT ERROR: LoadFile.py --- bad data type specified", dataType
     sys.exit()
 
 if str(transform) not in ['logicle','log','None']:
-    print "INPUT ERROR: bas data transform specified ", transform
+    print "INPUT ERROR: LoadFile.py --- bad data transform specified ", transform
     sys.exit()
 
 ## variables
@@ -86,6 +91,12 @@ if dataType == 'fcs':
         fcsData = fcm.loadFCS(filePath,sidx=osidx,spill=ospill,auto_comp=autoComp,transform=None)
     else:
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
+
+    ## get channel max
+    logicleScaleMax = int(fcsData.notes.text['p1r'])
+    nga = NoGuiAnalysis(homeDir,loadExisting=True)
+    if logicleScaleMax == 1024:
+        nga.set('logicle_scale_max',logicleScaleMax)
     
     ## handle transform
     isTransformed = False
