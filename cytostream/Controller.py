@@ -327,7 +327,7 @@ class Controller:
                     print 'ERROR: cannot find RunMakeScatterPlot.py'
                     return False
                 else:
-                    pltCmd = "%s %s -h %s -f %s -m %s -s %s"%(self.pythonPath,script,self.homeDir,figName,mode,subsample)
+                    pltCmd = "'%s' '%s' -h '%s' -f '%s' -m '%s' -s '%s'"%(self.pythonPath,script,self.homeDir,figName,mode,subsample)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                     while True:
                         try:
@@ -360,7 +360,7 @@ class Controller:
                     print 'ERROR: cannot find RunMakeHistogramPlot.py'
                     return False
                 else:
-                    pltCmd = "%s %s -h %s -f %s -c %s -s %s"%(self.pythonPath,script,self.homeDir,figName,chanInd,subsample)
+                    pltCmd = "'%s' '%s' -h '%s' -f '%s' -c '%s' -s '%s'"%(self.pythonPath,script,self.homeDir,figName,chanInd,subsample)
                     proc = subprocess.Popen(pltCmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
 
                     while True:
@@ -653,6 +653,7 @@ class Controller:
 
         if fileChannels == None or len(fileChannels) == 0:
             print "WARNING: Controller.validate_channel_dict invalid file channels specified"
+            print '...', fileChannels
             return False
 
         mismatchFound = False
@@ -792,9 +793,9 @@ class Controller:
             if os.path.isfile(script) == False:
                 print "ERROR: Invalid model run file path ", script
             
-            cmd = "%s %s -b %s -h %s -f %s -g %s -s %s"%(self.pythonPath,script,self.baseDir,
-                                                         self.homeDir,fListStr,gpu,
-                                                         selectedModel)
+            cmd = "'%s' '%s' -b '%s' -h '%s' -f '%s' -g '%s' -s '%s'"%(self.pythonPath,script,self.baseDir,
+                                                                       self.homeDir,fListStr,gpu,
+                                                                       selectedModel)
             ## sanitize shell input
             isClean = self.sanitize_check(cmd)
             if isClean == False:
@@ -884,7 +885,7 @@ class Controller:
                 if os.path.isfile(script) == False:
                     print "ERROR: Invalid model run file path ", script
             
-                argsStr = "%s -h %s -f %s"%(script,self.homeDir,fileName)
+                argsStr = "'%s' -h '%s' -f '%s'"%(script,self.homeDir,fileName)
                 proc = subprocess.Popen(cmd + ' ' + argsStr, 
                                         shell=True,
                                         stdout=subprocess.PIPE,

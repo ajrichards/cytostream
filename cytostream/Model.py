@@ -172,10 +172,10 @@ class Model:
                 cPickle.dump(fileChannels,tmp)
                 tmp.close()
             else:
-                cmd = "%s %s -f '%s' -h '%s' -d %s -t %s -c '%s' -m '%s' -a '%s' -l %s"%(self.pythonPath,script,filePath,self.homeDir,dataType,
-                                                                                     transform,fileChannelPath,compensationFilePath,autoComp,
-                                                                                     logicleScaleMax)
-                print cmd
+                cmd = "'%s' '%s' -f '%s' -h '%s' -d '%s' -t '%s' -c '%s' -m '%s' -a '%s' -l '%s'"%(self.pythonPath,script,filePath,self.homeDir,dataType,
+                                                                                                   transform,fileChannelPath,compensationFilePath,autoComp,
+                                                                                                   logicleScaleMax)
+
                 proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
                 ## for debugging
                 #proc = subprocess.Popen(cmd,shell=True)
