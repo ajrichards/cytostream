@@ -78,7 +78,7 @@ for fileName in fileList:
 
     if os.path.isfile(script) == False:
         print "ERROR: Invalid model run file path ", script 
-    cmd = "%s %s -h %s -g %s -f %s"%(pythonPath,script,homeDir,gpuDevice,fileName) 
+    cmd = "'%s' '%s' -h '%s' -g '%s' -f '%s'"%(pythonPath,script,homeDir,gpuDevice,fileName) 
     isClean = sanitize_check(cmd)
     if isClean == False:
         print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"

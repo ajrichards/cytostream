@@ -3,8 +3,7 @@
 import sys,getopt,os,re,time,csv,ast,cPickle,time
 import numpy as np
 import fcm
-from NoGuiAnalysis import NoGuiAnalysis
-
+from Logging import Logger
 
 if len(sys.argv) < 3:
     print sys.argv[0] + " -f filePath -h homeDir -d dataType -t transform"
@@ -93,10 +92,13 @@ if dataType == 'fcs':
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
 
     ## get channel max
-    logicleScaleMax = int(fcsData.notes.text['p1r'])
-    nga = NoGuiAnalysis(homeDir,loadExisting=True)
-    if logicleScaleMax == 1024:
-        nga.set('logicle_scale_max',logicleScaleMax)
+    scaleMax = int(fcsData.notes.text['p1r'])
+    if scaleMax == 1024:
+        log = Logger()
+        log.initialize(homeDir,load=True)
+        log.log['logicle_scale_max'] = scaleMax 
+        log.write()
+        logicleScaleMax = scaleMax
     
     ## handle transform
     isTransformed = False
