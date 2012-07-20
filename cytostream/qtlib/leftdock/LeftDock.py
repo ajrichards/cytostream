@@ -144,9 +144,14 @@ def add_left_dock(mainWindow):
         gateList = get_saved_gate_names(mainWindow.controller.homeDir)
         if len(gateList) > 0:
             mainWindow.gateSelector = GateSelector(gateList,parent=mainWindow.dockWidget,mainWindow=mainWindow)
+            mainWindow.gsScrollArea = QtGui.QScrollArea()
+            mainWindow.gsScrollArea.setWidget(mainWindow.gateSelector)
+            mainWindow.gsScrollArea.setAlignment(QtCore.Qt.AlignCenter)
+
             gsLayout = QtGui.QHBoxLayout()
             gsLayout.setAlignment(QtCore.Qt.AlignLeft)
-            gsLayout.addWidget(mainWindow.gateSelector)
+            #gsLayout.addWidget(mainWindow.gateSelector)
+            gsLayout.addWidget(mainWindow.gsScrollArea)
             vboxTop.addLayout(gsLayout)
             mainWindow.gateSelector.setAutoFillBackground(True)
             mainWindow.gateSelector.setMaximumWidth(alignWidth)

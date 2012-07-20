@@ -44,25 +44,25 @@ class Transitions():
     def __init__(self,mainWindow):
         self.mainWindow = mainWindow
 
-    def setup_waiting(self):
-        '''
-        experimental
-        '''
-        self.waiting = Waiting(self.mainWindow.mainWidget)
-        self.waiting.hide()
+    #def setup_waiting(self):
+    #    '''
+    #    experimental
+    #    '''
+    #    self.waiting = Waiting(self.mainWindow.mainWidget)
+    #    self.waiting.hide()
 
-    def start_waiting(self):
-        '''
-        experimental
-        '''
-        self.waiting.show()
+    #def start_waiting(self):
+    #    '''
+    #    experimental
+    #    '''
+    #    self.waiting.show()
 
-    def resizeEvent(self, event):
-        '''
-        experimental
-        '''
-        self.waiting.resize(event.size())
-        event.accept()
+    #def resizeEvent(self, event):
+    #    '''
+    #    experimental
+    #    '''
+    #    self.waiting.resize(event.size())
+    #    event.accept()
 
     def move_to_initial(self):
 
@@ -144,6 +144,10 @@ class Transitions():
         self.mainWindow.open_existing_project_handler(projectDir)
 
     def move_to_model_results(self,mode='menu'):
+        '''
+        transition to model results state
+        '''
+
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to results navigation", mode
 
@@ -209,6 +213,10 @@ class Transitions():
         return True
 
     def move_to_model_run(self):
+        '''
+        transition to model run state
+        '''
+
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to model run"
 
@@ -247,6 +255,10 @@ class Transitions():
         return True
 
     def move_to_create_filter(self):
+        '''
+        transition to create filter state
+        '''
+
         ## ensure we are in a valid view
         if self.mainWindow.controller.log.log['current_state'] not in ['Model Results']:
             self.mainWindow.display_info("Create filter only works from Model Results stage")
@@ -259,8 +271,11 @@ class Transitions():
         self.mainWindow.plots_enable_disable()
         self.mainWindow.handle_show_plot(gating=True)
 
-
     def move_to_quality_assurance(self,mode='thumbnails'):
+        '''
+        transition to quality assurance state
+        '''
+
         if self.mainWindow.controller.verbose == True:
             print "INFO: moving to quality assurance -- ", mode
 
@@ -299,7 +314,8 @@ class Transitions():
             print 'INFO: changing thumbnails tag to progressbar'
 
         if mode == 'thumbnails':
-            self.mainWindow.display_thumbnails()
+            self.mainWindow.display_thumbnails(forceMode='Quality Assurance')
+            self.mainWindow.pDock.set_btn_highlight("Quality Assurance")
             return True
 
         ## clean the layout
