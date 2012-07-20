@@ -163,13 +163,13 @@ class MainWindow(QtGui.QMainWindow):
 
         self.pipelineDockWidget = QtGui.QWidget(self)
         #        lambda a=self:self.transitions.move_to_quality_assurance(a), 
-        btnCallBacks = [lambda a="Function currently turned off":self.display_info(a),
-                        lambda a="Function currently turned off":self.display_info(a), 
-                        lambda a="Function currently turned off":self.display_info(a), 
-                        lambda a="Function currently turned off":self.display_info(a),
-                        lambda a="Funciton currently turned off":self.display_info(a)]
+        #btnCallBacks = [lambda a="Function currently turned off":self.display_info(a),
+        #                lambda a="Function currently turned off":self.display_info(a), 
+        #                lambda a="Function currently turned off":self.display_info(a), 
+        #                lambda a="Function currently turned off":self.display_info(a),
+        #                lambda a="Funciton currently turned off":self.display_info(a)]
        
-        self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,btnCallBacks=btnCallBacks,
+        self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,mainWindow=self,
                                   appColor=appColor,noBtns=noBtns)
         palette = self.pipelineDockWidget.palette()
         role = self.pipelineDockWidget.backgroundRole()
@@ -476,7 +476,6 @@ class MainWindow(QtGui.QMainWindow):
     def update_highest_state(self):
         '''
         keep track of the highest state achieved in software
-
         '''
 
         ## keep track of the highest state
@@ -488,7 +487,6 @@ class MainWindow(QtGui.QMainWindow):
     def run_file_aligner(self):
         '''
         handles the running of the file aligner
-
         '''
 
         print 'this is where we run the file aligner'
@@ -581,7 +579,10 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(False)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(False)
+            #if self.gateSelector:
+            #    self.gateSelector.setEnabled(False)
             if self.gateSelector:
+                self.gsScrollArea.setEnabled(False)
                 self.gateSelector.setEnabled(False)
 
         elif mode == 'plot':
@@ -606,21 +607,28 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(True)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(True)
+            #if self.gateSelector:
+            #    self.gateSelector.setEnabled(True)
             if self.gateSelector:
-                self.gateSelector.setEnabled(True)
+                self.gsScrollArea.setEnabled(True)
+                self.gateSelector.setEnabled(True)          
+
             if self.saveImgsBtn and self.controller.log.log['num_subplots'] != '1':
                 self.saveImgsBtn.setEnabled(True)
 
             self.pDock.contBtn.setEnabled(True)
             self.pDock.enable_disable_states()
 
-    def display_thumbnails(self,runNew=False):
+    def display_thumbnails(self,runNew=False,forceMode=None):
         ''' 
         displays thumbnail images for quality assurance or results navigation states
         '''
 
         ## enable/disable
-        mode = self.log.log['current_state']
+        if forceMode != None:
+            mode = forceMode
+        else:
+            mode = self.log.log['current_state']
 
         ## setup layout
         self.reset_layout()
@@ -705,20 +713,6 @@ class MainWindow(QtGui.QMainWindow):
         self.log.log['selected_file'] = re.sub("\.txt|\.fcs","",selectedFile)
         self.controller.save()
 
-    #def set_selected_subsample(self):
-    #    '''
-    #    set the selected subsample
-    #    '''
-    #
-    #    selectedSubsample = self.subsampleSelector.get_selected_subsample() 
-    #
-    #    if self.log.log['current_state'] == 'Quality Assurance':
-    #        self.log.log['subsample_qa'] = selectedSubsample
-    #    if self.log.log['current_state'] == 'Model':
-    #        self.log.log['subsample_analysis'] = selectedSubsample
-    #        
-    #    self.controller.save()
-
     def get_master_channel_list(self):
         ''' 
         returns the master channels list
@@ -732,7 +726,6 @@ class MainWindow(QtGui.QMainWindow):
     def refresh_state(self,withProgressBar=False,qaMode='thumbnails'):
         '''
         given the current state return to normal widget view
-
         '''
 
         if self.controller.log.log['current_state'] == "Data Processing":

@@ -319,6 +319,7 @@ class DataProcessingCenter(QtGui.QWidget):
 
         ## create the excluded channels panel
         self.modelChannels = QtGui.QStandardItemModel()
+        nameMatchedChannels = [get_official_name_match(chan) for chan in self.masterChannelList]
 
         for row in range(len(self.masterChannelList)):
             channel = self.masterChannelList[row]
@@ -341,6 +342,10 @@ class DataProcessingCenter(QtGui.QWidget):
             check = QtCore.Qt.Unchecked if row in self.excludedChannels else QtCore.Qt.Checked
             if nameMatch in ['Time','FL1A']:
                 item0.setCheckState(QtCore.Qt.Unchecked)
+            elif nameMatch in ['FSCW','FSCH'] and 'FSCA' in nameMatchedChannels:
+                item0.setCheckState(QtCore.Qt.Unchecked)
+            elif nameMatch in ['SSCW','SSCH'] and 'SSCA' in nameMatchedChannels:
+                item0.setCheckState(QtCore.Qt.Unchecked)
             else:
                 item0.setCheckState(check)
             item0.setCheckable(True)
@@ -350,6 +355,9 @@ class DataProcessingCenter(QtGui.QWidget):
             item3.setEditable(True)
 
             self.modelChannels.appendRow([item0,item1,item2,item3])
+
+        ## if area scatter present then check for width and height for removal from defaults
+        
 
 
         #self.viewChannels = QtGui.QTableWidget()

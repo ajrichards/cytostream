@@ -51,6 +51,8 @@ def get_official_name_match(channel):
 
     if strippedChannel == 'IFN+IL2' or strippedChannel == "IFN+IL2PE":
         return 'IFNG+IL2'
+    elif re.search("IFN",strippedChannel) and re.search("IL2",strippedChannel):
+        return 'IFNG+IL2'
 
     ## check for exact match 
     for key in officialNames.keys():    

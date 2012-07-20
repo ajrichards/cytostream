@@ -299,14 +299,10 @@ class Controller:
                 continue
     
             ## progress point information 
-            #print "Controller: image create info"
-            #print "\tnum images to create",int(numImagesToCreate)
-            #print "\tlen channelthumbs", len(channelThumbs)
             imageProgress = range(int(numImagesToCreate)+(len(channelThumbs)*len(self.fileNameList)))
         
             ## specify model type to show as thumbnails
             modelType = self.log.log['thumbnail_results_default']
-
             plotsToViewChannels = [(0,1) for i in range(16)]
             plotsToViewFiles = [fileInd for i in range(16)]
             plotsToViewHighlights = [None for i in range(16)]
@@ -407,25 +403,27 @@ class Controller:
 
     def make_thumb(self,imgFile,thumbDir,fileName):
 
+        comparisons = self.log.log['thumbnails_to_view']
+
         channels = self.fileChannels
         if os.path.isfile(imgFile) == True:
 
-            if len(channels) <= 4:
+            if len(comparisons) <= 4:
                 thumbSize = 250
-            elif len(channels) == 5:
-                thumbSize = 220
-            elif len(channels) == 6:
-                thumbSize = 150
-            elif len(channels) == 7:
+            elif len(comparisons) <= 8:
+                thumbSize = 200
+            elif len(comparisons) <= 12:
+                thumbSize = 180
+            elif len(comparisons) <= 16:
+                thumbSize = 160
+            elif len(comparisons) <= 20:
+                thumbSize = 140
+            elif len(comparisons) <= 24:
                 thumbSize = 120
-            elif len(channels) == 8:
-                thumbSize = 90
-            elif len(channels) == 9:
-                thumbSize = 60
-            elif len(channels) == 10:
+            elif len(comparisons) <= 28:
+                thumbSize = 100
+            else:
                 thumbSize = 50
-            elif len(channels) > 10:
-                thumbSize = 40
           
             thumbFile  = os.path.split(imgFile[:-4]+"_thumb.png")[-1]
             thumbFile = os.path.join(thumbDir,thumbFile)

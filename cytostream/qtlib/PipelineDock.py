@@ -6,7 +6,7 @@ from BasicWidgets import Tooltip
 
 class PipelineDock(QtGui.QWidget):
 
-    def __init__(self, log, allStates, parent=None, appColor='black', eSize=35, btnCallBacks=None,noBtns=False):
+    def __init__(self, log, allStates, parent=None, appColor='black', eSize=35,mainWindow=None,noBtns=False):
         QtGui.QWidget.__init__(self, parent)
 
         ## input variables
@@ -14,11 +14,11 @@ class PipelineDock(QtGui.QWidget):
         self.log = log
         self.allStates = allStates
         self.dataProcessingBtn = None
+        self.mainWindow = mainWindow
 
         ## declared variables
         self.buff = 2.0
         self.btnColor = QtGui.QColor(255, 204, 153)
-        self.btnCallBacks = btnCallBacks
 
         ## actions
         if noBtns == False:
@@ -178,28 +178,24 @@ class PipelineDock(QtGui.QWidget):
 
     def btn_callback(self,btnName):
         goFlag = False
+        if self.mainWindow == None:
+            return
+
         if btnName == 'Data Processing':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[0]()
+            msg = "Data cannot be loaded into an existing project\n"
+            self.mainWindow.display_info(msg)
         elif btnName == 'Quality Assurance':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[1]()
-        elif btnName == 'Model':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[2]()
-        elif btnName == 'Analysis':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[3]()
-        elif btnName == 'Reports':
-            if self.btnCallBacks != None:
-                goFlag = self.btnCallBacks[4]()
+            msg = "Data cannot be loaded into an existing project\n"
+            self.mainWindow.transitions.move_to_quality_assurance()
+        elif btnName in ['Model Run','Model Results']:
+            msg = "Data cannot be loaded into an existing project\n"
+            self.mainWindow.transitions.move_to_model_results()
         else:
-            print 'ERROR: Invalid value in button callback - pipelinedock - %s'%value
+            msg = "PipelineDock.btn_callback: Invalid state transition: "+btnName
+            self.mainWindow.display_info(msg)
 
         if goFlag == True:
             self.set_btn_highlight(btnName)
-
-        #QtCore.QCoreApplication.processEvents()
 
     def inactivate_all(self):
         self.dataProcessingBtn.setEnabled(False)
