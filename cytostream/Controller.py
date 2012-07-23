@@ -18,7 +18,7 @@ if mpl.get_backend() != 'agg':
 
 from PyQt4 import QtGui
 from Model import Model
-from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
+from FileControls import get_fcs_file_names,get_img_file_names,get_project_names,get_saved_gate_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
 from cytostream.tools import get_official_name_match
@@ -919,4 +919,19 @@ class Controller:
             #report_progress(percentComplete,percentagesReported,progressBar=progressBar)
 
 
+    def load_gate(self,gateID):
+        '''
+        loads the gate from a pickle file
+        '''
+        print 'loading...', gateID
+        gateList = get_saved_gate_names(self.homeDir)
+        if gateID not in gateList:
+            print "ERROR: Controller.load_gate -- invalid gate specified",gateID
+            return
+        
+        gateFilePath = os.path.join(self.homeDir,'data','%s.gate'%gateID)
+        tmp = open(gateFilePath,'r')
+        gate = cPickle.load(tmp)
+        tmp.close()
 
+        return gate

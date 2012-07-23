@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 '''
 Cytostream
 LeftDock 
@@ -76,15 +75,6 @@ def add_left_dock(mainWindow):
     mainWindow.dockWidget.setMaximumWidth(widgetWidth)
     mainWindow.dockWidget.setMinimumWidth(widgetWidth)
 
-    #if mainWindow.log.log['current_state'] == 'Initial':
-    #    pass
-    #elif mainWindow.log.log['current_state'] == 'Quality Assurance':
-    #    excludedFiles = mainWindow.log.log['excluded_files_qa']
-    #    subsampleDefault = mainWindow.log.log['subsample_qa']
-    #else:
-    #    excludedFiles = mainWindow.log.log['excluded_files_analysis']
-    #    subsampleDefault = mainWindow.log.log['subsample_analysis']
-
     ## check to see if fileList needs adjusting
     if type(excludedFiles) == type([]) and len(excludedFiles) > 0:
         for f in excludedFiles:
@@ -93,7 +83,7 @@ def add_left_dock(mainWindow):
     ## plot selector
     if mainWindow.log.log['current_state'] in ['Quality Assurance','Model Results']:
         mainWindow.plotSelector = PlotSelector(plotList,parent=mainWindow.dockWidget,
-                                               selectionFn=mainWindow.plot_selector_callback,
+                                               mainWindow=mainWindow,
                                                plotDefault=mainWindow.log.log['selected_plot'])
         psLayout = QtGui.QHBoxLayout()
         psLayout.setAlignment(QtCore.Qt.AlignLeft)

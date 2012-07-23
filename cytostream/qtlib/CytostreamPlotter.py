@@ -103,7 +103,7 @@ class CytostreamPlotter(QtGui.QWidget):
         ## variables to be used when class is called for drawing
         self.selectedFileName = selectedFileName
         self.subsample = subsample
-        self.line = None
+        self.lines = []
         self.labels = None
         self.selectedHighlight = None
         self.vizList = ['heat','scatter','contour']
@@ -511,31 +511,41 @@ class CytostreamPlotter(QtGui.QWidget):
         
         self.currentPolyVerts = int(value)
         self.canvas.draw()
-        
-    def gate_set_callback(self):
-        self.gate_clear_callback()
-        gate =  self.gateInteractor.gate
+    
+    def gate_set_callback(self,gateList=None):
+        '''
+        draw a line plot for given gate(s)
+        '''
 
-        gx = np.array([g[0] for g in gate])
-        gy = np.array([g[1] for g in gate])
-        self.line = Line2D(gx,gy,linewidth=3.0,alpha=0.8)
-        self.ax.add_line(self.line)
-        self.canvas.draw()
+        if gateList == None:
+            gateList = [self.gateInteractor.gate]
+
+        for gate in gateList:
+            gx = np.array([g[0] for g in gate])
+            gy = np.array([g[1] for g in gate])
+        
+            self.lines.append(Line2D(gx,gy,linewidth=3.0,alpha=0.8))
+            self.ax.add_line(self.lines[-1])
+            self.canvas.draw()
 
     def gate_clear_callback(self):
+        '''
+        clears all line plots of gates from the canvas
+        '''
+
         if self.gateInteractor != None:
             self.gateInteractor.clean()
 
-        if self.line != None:
-            self.line.set_visible(False)
-
+        if len(self.lines) != 0:
+            for line in self.lines:
+                line.set_visible(False)
+    
         if self.enableGating == True:
             self.fc.gateSelector.setCurrentIndex(0)
-        else:
-            return
-
-        self.canvas.draw()
         
+        self.canvas.draw()
+        self.lines = []
+    
     def gate_save_callback(self):
         currentGateInd = int(self.fc.gateSelector.currentIndex())
         currentGate= str(self.fc.gateSelector.currentText())

@@ -53,8 +53,6 @@ class ClusterSelector(QtGui.QWidget):
             else:
                 print "ERROR: in cluster selector - bad specified clusterDefault", clusterDefault
 
-        #if selectionFn == None:
-        #    selectionFn = self.generic_callback
         self.connect(self.clusterSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.cluster_selector_callback)    
 
         ## finalize layout
@@ -85,6 +83,7 @@ class ClusterSelector(QtGui.QWidget):
             if selectedFile == '':
                 return
 
+            self.mainWindow.transitions.begin_wait()
             self.selectedHighlight = self.get_selected_cluster() 
             numPlots = self.mainWindow.log.log['num_subplots']
 
@@ -115,6 +114,7 @@ class ClusterSelector(QtGui.QWidget):
 
                 self.mainWindow.controller.save()
                 self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+            self.mainWindow.transitions.end_wait()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

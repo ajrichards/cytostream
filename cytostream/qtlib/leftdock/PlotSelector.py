@@ -11,6 +11,7 @@ __author__ = "A Richards"
 
 import sys,re
 from PyQt4 import QtGui, QtCore
+import numpy as np
 
 class PlotSelector(QtGui.QWidget):
     '''
@@ -19,7 +20,7 @@ class PlotSelector(QtGui.QWidget):
 
     '''
 
-    def __init__(self,plotList,color='white',parent=None,modelsRun=None,plotDefault='1',selectionFn=None):
+    def __init__(self,plotList,color='white',parent=None,modelsRun=None,plotDefault='1',mainWindow=None):
         '''
         class constructor used to initialize this Qwidget child class
         '''
@@ -30,6 +31,7 @@ class PlotSelector(QtGui.QWidget):
         self.color = color
         self.plotList = plotList
         self.parent = parent
+        self.mainWindow = mainWindow
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
@@ -56,9 +58,7 @@ class PlotSelector(QtGui.QWidget):
             else:
                 print "ERROR: in plot selector - bad specified plotDefault", plotDefault
 
-        if selectionFn == None:
-            selectionFn = self.generic_callback
-        self.connect(self.plotSelector,QtCore.SIGNAL("currentIndexChanged(int)"), selectionFn)    
+        self.connect(self.plotSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.plot_selector_callback)    
 
         ## finalize layout
         vbox.addLayout(hbox1)
@@ -90,6 +90,32 @@ class PlotSelector(QtGui.QWidget):
         for plotName in self.plotList:
             self.plotSelector.addItem(plotName)
 
+    def plot_selector_callback(self):
+        '''
+        callback function for PlotSelector movement
+        '''
+        selectedPlot,selectedPlotInd = self.get_selected_plot()
+        if selectedPlot == '':
+            return None
+        selectedPlot = str(selectedPlot)
+
+        if self.mainWindow == None:
+            print "INFO: PlotSelector does nothing without main window"
+            return 
+
+        self.mainWindow.transitions.begin_wait()
+        self.mainWindow.controller.log.log['selected_plot'] = selectedPlot
+        self.mainWindow.controller.save()
+
+        ## adjust x and y axes as different plots are selected
+        if selectedPlot != '*' and selectedPlot != None:
+            cp = self.mainWindow.nwv.plots[selectedPlot]
+            channel1 = cp.selectedChannel1
+            channel2 = cp.selectedChannel2
+            self.mainWindow.channelSelector.channel1Selector.setCurrentIndex(channel1)
+            self.mainWindow.channelSelector.channel2Selector.setCurrentIndex(channel2)
+
+        self.mainWindow.transitions.end_wait()
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     

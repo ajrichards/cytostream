@@ -96,7 +96,8 @@ class SubsampleSelector(QtGui.QWidget):
             selectedFile = self.mainWindow.controller.log.log['selected_file']
             if selectedFile == '':
                 return
-    
+
+            self.mainWindow.transitions.begin_wait()
             currentState = self.mainWindow.controller.log.log['current_state']
             self.mainWindow.log.log['selected_file'] = selectedFile
             self.mainWindow.controller.save()
@@ -136,6 +137,8 @@ class SubsampleSelector(QtGui.QWidget):
                     self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
             else:
                 print "ERROR: invalid visMode detected in subsample detector"
+
+            self.mainWindow.transitions.end_wait()
 
     def get_selected_subsample(self):
         sf = str(self.subsampleSelector.currentText())
