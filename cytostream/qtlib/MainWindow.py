@@ -162,13 +162,6 @@ class MainWindow(QtGui.QMainWindow):
             appColor = '#999999'
 
         self.pipelineDockWidget = QtGui.QWidget(self)
-        #        lambda a=self:self.transitions.move_to_quality_assurance(a), 
-        #btnCallBacks = [lambda a="Function currently turned off":self.display_info(a),
-        #                lambda a="Function currently turned off":self.display_info(a), 
-        #                lambda a="Function currently turned off":self.display_info(a), 
-        #                lambda a="Function currently turned off":self.display_info(a),
-        #                lambda a="Funciton currently turned off":self.display_info(a)]
-       
         self.pDock = PipelineDock(self.controller.log, self.stateList,parent=self.pipelineDockWidget,eSize=0.07*self.screenWidth,mainWindow=self,
                                   appColor=appColor,noBtns=noBtns)
         palette = self.pipelineDockWidget.palette()
@@ -579,8 +572,6 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(False)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(False)
-            #if self.gateSelector:
-            #    self.gateSelector.setEnabled(False)
             if self.gateSelector:
                 self.gsScrollArea.setEnabled(False)
                 self.gateSelector.setEnabled(False)
@@ -607,8 +598,6 @@ class MainWindow(QtGui.QMainWindow):
                 self.subsampleSelector.setEnabled(True)
             if self.clusterSelector:
                 self.clusterSelector.setEnabled(True)
-            #if self.gateSelector:
-            #    self.gateSelector.setEnabled(True)
             if self.gateSelector:
                 self.gsScrollArea.setEnabled(True)
                 self.gateSelector.setEnabled(True)          
@@ -693,17 +682,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.transitions.move_to_model_results()
 
-    def plot_selector_callback(self,item=None):
-        '''
-        callback function for PlotSelector movement
-        '''
-        selectedPlot,selectedPlotInd = self.plotSelector.get_selected_plot() 
-        if selectedPlot == '':
-            return None
-        selectedPlot = str(selectedPlot)
-        if selectedPlot > 0:
-            self.log.log['selected_plot'] = selectedPlot
-
     def set_selected_file(self):
         '''
         set the selected file
@@ -756,6 +734,11 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.processEvents()
 
     def handle_show_plot(self,img=None,gating=False):
+        '''
+        main handle to show a plot
+        '''
+
+        self.transitions.begin_wait()
         mode = self.log.log['current_state']
         self.set_selected_file()
         
@@ -805,6 +788,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.setLayout(self.vbl)
         self.refresh_main_widget()
         QtCore.QCoreApplication.processEvents()
+        self.transitions.end_wait()
 
     def display_info(self,msg):
         '''
@@ -821,6 +805,10 @@ class MainWindow(QtGui.QMainWindow):
         reply = QtGui.QMessageBox.warning(self, "Warning", msg)
 
     def refresh_main_widget(self):
+        '''
+        main function to reset main widget
+        '''
+
         self.setCentralWidget(self.mainWidget)
         self.mainWidget.activateWindow()
         self.mainWidget.update()

@@ -11,7 +11,7 @@ sys.path.append(os.path.join(baseDir,'leftdock'))
 ## files requiring no cytostream deps
 from MoreInfo import *
 from TextScreen import TextScreen
-from BasicWidgets import Slider, ProgressBar, Imager, RadioBtnWidget,Waiting
+from BasicWidgets import Slider, ProgressBar, Imager, RadioBtnWidget
 from BasicFunctions import move_transition
 from FilterControls import FilterControls
 from OpenExistingProject import OpenExistingProject

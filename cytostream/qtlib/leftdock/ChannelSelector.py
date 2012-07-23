@@ -89,6 +89,7 @@ class ChannelSelector(QtGui.QWidget):
             if selectedFile == '':
                 return
 
+            self.mainWindow.transitions.begin_wait()
             numPlots = self.mainWindow.log.log['num_subplots']
 
             if self.mainWindow.log.log['selected_plot'] == None:
@@ -119,6 +120,7 @@ class ChannelSelector(QtGui.QWidget):
                 self.mainWindow.nwv.plots[selectedPlot].selectedChannel1 = channel1
                 self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
 
+            self.mainWindow.transitions.end_wait()
 
     def channel2_selector_callback(self):
         if self.mainWindow == None:
@@ -128,6 +130,7 @@ class ChannelSelector(QtGui.QWidget):
             if selectedFile == '':
                 return
 
+            self.mainWindow.transitions.begin_wait()
             numPlots = self.mainWindow.log.log['num_subplots']
 
             if self.mainWindow.log.log['selected_plot'] == None:
@@ -157,6 +160,8 @@ class ChannelSelector(QtGui.QWidget):
                 self.mainWindow.controller.save()
                 self.mainWindow.nwv.plots[selectedPlot].selectedChannel2 = channel2
                 self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+
+            self.mainWindow.transitions.end_wait()
 
     def get_selected_channels(self):
         channel1 = self.channel1Selector.currentIndex()

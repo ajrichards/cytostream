@@ -83,6 +83,22 @@ class GateSelector(QtGui.QWidget):
 
         return sf
 
+    def get_checked_gates(self):
+        '''
+        returns a 0,1 array of checked gates
+        along with the corresponding gate name list
+        '''
+        
+        checkStates = []
+        gateNameList = []
+        selectedGates = []
+
+        for gateName,cb in self.checkBoxes.iteritems():
+            if cb.isChecked() == True:
+                selectedGates.append(gateName)
+
+        return selectedGates
+
     def generic_callback(self):
         print 'callback does not do anything yet'
 
@@ -99,7 +115,8 @@ class GateSelector(QtGui.QWidget):
             if selectedFile == '':
                 return
 
-            selectedGate = self.get_selected_gate() 
+            selectedGates = self.get_checked_gates() 
+            
             numPlots = self.mainWindow.log.log['num_subplots']
 
             if self.mainWindow.log.log['selected_plot'] == None:
@@ -107,43 +124,42 @@ class GateSelector(QtGui.QWidget):
                 self.mainWindow.controller.save()
             selectedPlot = self.mainWindow.log.log['selected_plot']
             
-            print 'showing gate', selectedGate
-
-            ## add gate if specified
-            #if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:
-            #    for i in range(len(self.gatesToShow[subplotIndex])):
-            #        gate = self.gatesToShow[subplotIndex][i]
-            #        gx = np.array([g[0] for g in gate])
-            #        gy = np.array([g[1] for g in gate])
-            #        line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
-            #        ax = self.get_axes(subplotIndex)
-            #        ax.add_line(line)
-
-            
             if selectedPlot == '*':
-                print 'not yet enabled for multiple plots'
-                #for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
-                #    fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                #    if self.selectedHighlight == 'None':
-                #        self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
-                #        self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
-                #    else:
-                #        self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
-                #        self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
-                #    self.mainWindow.controller.save()
-                #    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-            else:
-
                 fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                if self.selectedHighlight == 'None':
-                    self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
-                    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
-                else:
-                    self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
-                    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                    cp = self.mainWindow.nwv.plots[selectedPlot]
+                    cp.gate_clear_callback()
 
-                self.mainWindow.controller.save()
-                self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+                    if len(selectedGates) == 0:
+                        return
+
+                    for selectedGate in selectedGates:
+                        cGate = self.mainWindow.controller.load_gate(selectedGate)
+
+                        if cGate['channel1'] != cp.selectedChannel1:
+                            continue
+                        if cGate['channel2'] != cp.selectedChannel2:
+                            continue
+
+                        cp.gate_set_callback([cGate['verts']])
+            else:
+                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                cp = self.mainWindow.nwv.plots[selectedPlot]
+                cp.gate_clear_callback()
+
+                if len(selectedGates) == 0:
+                    return
+
+                for selectedGate in selectedGates:
+                    cGate = self.mainWindow.controller.load_gate(selectedGate)
+
+                    if cGate['channel1'] != cp.selectedChannel1:
+                        continue
+                    if cGate['channel2'] != cp.selectedChannel2:
+                        continue
+
+                    cp.gate_set_callback([cGate['verts']])
+
 
     def gate_selector_callback(self):
         '''
@@ -177,7 +193,6 @@ class GateSelector(QtGui.QWidget):
             #        ax = self.get_axes(subplotIndex)
             #        ax.add_line(line)
 
-            
             if selectedPlot == '*':
                 print 'not yet enabled for multiple plots'
                 #for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
@@ -193,12 +208,12 @@ class GateSelector(QtGui.QWidget):
             else:
 
                 fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                if self.selectedHighlight == 'None':
-                    self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
-                    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
-                else:
-                    self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
-                    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
+                #if self.selectedHighlight == 'None':
+                #    self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
+                #    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
+                #else:
+                #    self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
+                #    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
 
                 self.mainWindow.controller.save()
                 self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)

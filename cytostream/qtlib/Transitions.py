@@ -31,7 +31,7 @@ from cytostream.qtlib import ProgressBar, Imager, move_transition
 from cytostream.qtlib import OpenExistingProject, DataProcessingCenter
 from cytostream.qtlib import QualityAssuranceCenter, ModelCenter
 from cytostream.qtlib import ResultsNavigationCenter, EditMenu
-from cytostream.qtlib import FileAlignerCenter, Waiting
+from cytostream.qtlib import FileAlignerCenter
 from cytostream.qtlib import OneDimViewer, PreferencesDPMM, PreferencesKmeans
 from cytostream.tools import get_official_name_match
 
@@ -44,25 +44,11 @@ class Transitions():
     def __init__(self,mainWindow):
         self.mainWindow = mainWindow
 
-    #def setup_waiting(self):
-    #    '''
-    #    experimental
-    #    '''
-    #    self.waiting = Waiting(self.mainWindow.mainWidget)
-    #    self.waiting.hide()
+    def begin_wait(self):
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
 
-    #def start_waiting(self):
-    #    '''
-    #    experimental
-    #    '''
-    #    self.waiting.show()
-
-    #def resizeEvent(self, event):
-    #    '''
-    #    experimental
-    #    '''
-    #    self.waiting.resize(event.size())
-    #    event.accept()
+    def end_wait(self):
+        QtGui.QApplication.restoreOverrideCursor()
 
     def move_to_initial(self):
 
