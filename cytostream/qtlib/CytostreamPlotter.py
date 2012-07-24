@@ -119,6 +119,13 @@ class CytostreamPlotter(QtGui.QWidget):
         self.create_figure_widget()
 
     def initialize(self,selectedFileName):
+        '''
+        recalculates centroids and reinitializes labels
+        needs to be done if any of the following are changed
+            * subsample
+            * run
+            * labels
+        '''
 
         ## handle labels (assumes that there is one label for each event)
         if self.modelRunID != None:

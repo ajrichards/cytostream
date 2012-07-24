@@ -214,7 +214,7 @@ def get_indices_from_gate(data,gate):
 
 def get_clusters_from_gate(data,labels,gate):
     '''
-    returns indices from a gate
+    returns clusters from a gate
     '''
 
     ## create a matrix of the mean values
@@ -228,10 +228,25 @@ def get_clusters_from_gate(data,labels,gate):
         else:
             meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
 
+    print meanMat
     allData = [(d[0], d[1]) for d in meanMat]
     ind = np.nonzero(points_inside_poly(allData, gate))[0]
     if len(ind) > 0:
         clusters = uniqueLabels[ind]
+    else:
+        clusters = []
+
+    return clusters
+
+def get_clusters_via_gate(meanMat,meanMatLabels,gate):
+    '''
+    returns clusters from a gate
+    '''
+
+    allData = [(d[0], d[1]) for d in meanMat]
+    ind = np.nonzero(points_inside_poly(allData, gate))[0]
+    if len(ind) > 0:
+        clusters = meanMatLabels[ind]
     else:
         clusters = []
 

@@ -10,6 +10,8 @@ __author__ = "A Richards"
 
 import sys,re
 from PyQt4 import QtGui, QtCore
+import numpy as np
+from cytostream.tools import get_indices_from_gate, get_clusters_via_gate
 
 class GateSelector(QtGui.QWidget):
     '''
@@ -29,7 +31,8 @@ class GateSelector(QtGui.QWidget):
         self.gateList = ['None'] + gateList
         self.parent = parent
         self.mainWindow = mainWindow
-        self.checkBoxes = {}
+        self.checkBoxes1 = {}
+        self.checkBoxes2 = {}
 
         ## setup layouts
         vbox = QtGui.QVBoxLayout()
@@ -38,35 +41,36 @@ class GateSelector(QtGui.QWidget):
         hbox2 = QtGui.QHBoxLayout()
         col1Box = QtGui.QVBoxLayout()
         col1Box.setAlignment(QtCore.Qt.AlignLeft)
+        col2Box = QtGui.QVBoxLayout()
+        col2Box.setAlignment(QtCore.Qt.AlignLeft)
        
         ## gate event selector
-        hbox1.addWidget(QtGui.QLabel('gate   '))
-        self.gateSelector = QtGui.QComboBox(self)
+        hbox1.addWidget(QtGui.QLabel('gate viewer'))
         
-        for gateName in self.gateList:
-            self.gateSelector.addItem(gateName)
-
-        hbox1.addWidget(self.gateSelector)
-     
-        if gateDefault != None:
-            gateDefault = str(gateDefault)
-            if self.gateList.__contains__(gateDefault):
-                self.gateSelector.setCurrentIndex(self.gateList.index(gateDefault))
-            else:
-                print "ERROR: in gate selector - bad specified gateDefault", gateDefault
-
-        self.connect(self.gateSelector,QtCore.SIGNAL("currentIndexChanged(int)"), self.gate_selector_callback)    
-
+        ## gate names
+        #for ftr in self.gateList[1:]:
+        #    self.checkBoxes0[ftr] = QtGui.QCheckBox(ftr)
+        #    self.connect(self.checkBoxes1[ftr],QtCore.SIGNAL('stateChanged(int)'), self.checkbox1_callback)
+        
         ## gate line drawer
         for ftr in self.gateList[1:]:
-            self.checkBoxes[ftr] = QtGui.QCheckBox(ftr)
-            self.connect(self.checkBoxes[ftr],QtCore.SIGNAL('stateChanged(int)'), self.checkbox_callback)
+            self.checkBoxes1[ftr] = QtGui.QCheckBox(ftr)
+            self.connect(self.checkBoxes1[ftr],QtCore.SIGNAL('stateChanged(int)'), self.checkbox1_callback)
 
         for ftr in self.gateList[1:]:
-            col1Box.addWidget(self.checkBoxes[ftr])
+            col1Box.addWidget(self.checkBoxes1[ftr])
+       
+        ## gate event parser
+        for ftr in self.gateList[1:]:
+            self.checkBoxes2[ftr] = QtGui.QCheckBox(ftr)
+            self.connect(self.checkBoxes2[ftr],QtCore.SIGNAL('stateChanged(int)'), self.checkbox2_callback)
+
+        for ftr in self.gateList[1:]:
+            col2Box.addWidget(self.checkBoxes2[ftr])
        
         ## finalize layout
         hbox2.addLayout(col1Box)
+        hbox2.addLayout(col2Box)
         vbox.addLayout(hbox1)
         vbox.addLayout(hbox2)
         self.setLayout(vbox)
@@ -83,7 +87,7 @@ class GateSelector(QtGui.QWidget):
 
         return sf
 
-    def get_checked_gates(self):
+    def get_checked_gates_1(self):
         '''
         returns a 0,1 array of checked gates
         along with the corresponding gate name list
@@ -93,16 +97,33 @@ class GateSelector(QtGui.QWidget):
         gateNameList = []
         selectedGates = []
 
-        for gateName,cb in self.checkBoxes.iteritems():
+        for gateName,cb in self.checkBoxes1.iteritems():
             if cb.isChecked() == True:
                 selectedGates.append(gateName)
 
         return selectedGates
 
+    def get_checked_gates_2(self):
+        '''
+        returns a 0,1 array of checked gates
+        along with the corresponding gate name list
+        '''
+        
+        checkStates = []
+        gateNameList = []
+        selectedGates = []
+
+        for gateName,cb in self.checkBoxes2.iteritems():
+            if cb.isChecked() == True:
+                selectedGates.append(gateName)
+
+        return selectedGates
+
+
     def generic_callback(self):
         print 'callback does not do anything yet'
 
-    def checkbox_callback(self):
+    def checkbox1_callback(self):
         '''
         shows the actual gate as a line plot
         '''
@@ -112,12 +133,11 @@ class GateSelector(QtGui.QWidget):
             return
 
         self.mainWindow.transitions.begin_wait()
-
         selectedFile = self.mainWindow.controller.log.log['selected_file']
         if selectedFile == '':
             return
 
-        selectedGates = self.get_checked_gates()     
+        selectedGates = self.get_checked_gates_1()     
         numPlots = self.mainWindow.log.log['num_subplots']
 
         if self.mainWindow.log.log['selected_plot'] == None:
@@ -143,8 +163,9 @@ class GateSelector(QtGui.QWidget):
 
                     cp.gate_set_callback([cGate['verts']])
         else:
-            fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+            
             cp = self.mainWindow.nwv.plots[selectedPlot]
+            fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
             cp.gate_clear_callback()
 
             if len(selectedGates) > 0:
@@ -159,64 +180,109 @@ class GateSelector(QtGui.QWidget):
 
         self.mainWindow.transitions.end_wait()
 
-    def gate_selector_callback(self):
+    def checkbox2_callback(self):
         '''
         highlights for a given plot the events in a given gate
         '''
+  
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
-        else:
-            
-            selectedFile = self.mainWindow.controller.log.log['selected_file']
-            if selectedFile == '':
-                return
+            return
 
-            selectedGate = self.get_selected_gate() 
-            numPlots = self.mainWindow.log.log['num_subplots']
+        self.mainWindow.transitions.begin_wait()
+        selectedFile = self.mainWindow.controller.log.log['selected_file']
+        if selectedFile == '':
+            return
 
-            if self.mainWindow.log.log['selected_plot'] == None:
-                self.mainWindow.log.log['selected_plot'] = '1'
-                self.mainWindow.controller.save()
-            selectedPlot = self.mainWindow.log.log['selected_plot']
-            
-            print 'showing gate', selectedGate
+        selectedGates = self.get_checked_gates_2()     
+        numPlots = self.mainWindow.log.log['num_subplots']
 
-            ## add gate if specified
-            #if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:
-            #    for i in range(len(self.gatesToShow[subplotIndex])):
-            #        gate = self.gatesToShow[subplotIndex][i]
-            #        gx = np.array([g[0] for g in gate])
-            #        gy = np.array([g[1] for g in gate])
-            #        line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
-            #        ax = self.get_axes(subplotIndex)
-            #        ax.add_line(line)
-
-            if selectedPlot == '*':
-                print 'not yet enabled for multiple plots'
-                #for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
-                #    fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                #    if self.selectedHighlight == 'None':
-                #        self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
-                #        self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
-                #    else:
-                #        self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
-                #        self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
-                #    self.mainWindow.controller.save()
-                #    self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-            else:
-
+        if self.mainWindow.log.log['selected_plot'] == None:
+            self.mainWindow.log.log['selected_plot'] = '1'
+            self.mainWindow.controller.save()
+        selectedPlot = self.mainWindow.log.log['selected_plot']
+        
+        if selectedPlot == '*':
+            for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                cp = self.mainWindow.nwv.plots[selectedPlot]
+                selectedFile = cp.selectedFileName
                 fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                #if self.selectedHighlight == 'None':
-                #    self.mainWindow.controller.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = 'None'
-                #    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = self.selectedHighlight
-                #else:
-                #    self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = int(self.selectedHighlight)
-                #    self.mainWindow.nwv.plots[selectedPlot].selectedHighlight = [str(self.selectedHighlight)]
+                fileEvents = cp.eventsList[fileIndex]
+                fileLabels = cp.labels
+                currentCentroids = cp.currentCentroids[0]
+                meanMat = None
+                meanMatLabels = []
+                keys = list(set(currentCentroids.keys()))
+                keys.sort()
+                for key in keys:
+                    item = currentCentroids[key]
+                    if meanMat == None:
+                        meanMat = item
+                    else:
+                        meanMat = np.vstack([meanMat,item])
+                    meanMatLabels.append(key)
 
+                meanMatLabels = np.array(meanMatLabels)
+                if len(selectedGates) > 0:
+                    allGateClusters = None
+                    for selectedGate in selectedGates:
+                        cGate = self.mainWindow.controller.load_gate(selectedGate)
+                        gateClusters = get_clusters_via_gate(meanMat[:,[cGate['channel1'],cGate['channel2']]],meanMatLabels,cGate['verts'])
+                        if allGateClusters == None:
+                            allGateClusters = set(gateClusters)
+                        else:
+                            allGateClusters = allGateClusters.intersection(set(gateClusters))
+
+                    if allGateClusters != None:
+                        allGateClusters = list(allGateClusters)
+                else:
+                    allGateClusters = None
+
+                self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = allGateClusters
                 self.mainWindow.controller.save()
-                self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-            
+                cp.selectedHighlight = allGateClusters
+                cp.draw(selectedFile=selectedFile)
+        else:
+            cp = self.mainWindow.nwv.plots[selectedPlot]
+            selectedFile = cp.selectedFileName
+            fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+            fileEvents = cp.eventsList[fileIndex]
+            fileLabels = cp.labels
+            currentCentroids = cp.currentCentroids[0]
+            meanMat = None
+            meanMatLabels = []
+            keys = list(set(currentCentroids.keys()))
+            keys.sort()
+            for key in keys:
+                item = currentCentroids[key]
+                if meanMat == None:
+                    meanMat = item
+                else:
+                    meanMat = np.vstack([meanMat,item])
+                meanMatLabels.append(key)
+            meanMatLabels = np.array(meanMatLabels)
+        
+            if len(selectedGates) > 0:
+                allGateClusters = None
+                for selectedGate in selectedGates:
+                    cGate = self.mainWindow.controller.load_gate(selectedGate)
+                    gateClusters = get_clusters_via_gate(meanMat[:,[cGate['channel1'],cGate['channel2']]],meanMatLabels,cGate['verts'])
+                    if allGateClusters == None:
+                        allGateClusters = set(gateClusters)
+                    else:
+                        allGateClusters = allGateClusters.intersection(set(gateClusters))
 
+                if allGateClusters != None:
+                    allGateClusters = list(allGateClusters)
+            else:
+                allGateClusters = None
+
+            self.mainWindow.log.log['plots_to_view_highlights'][int(selectedPlot)-1] = allGateClusters
+            self.mainWindow.controller.save()
+            cp.selectedHighlight = allGateClusters
+            cp.draw(selectedFile=selectedFile)
+            
+        self.mainWindow.transitions.end_wait()
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
