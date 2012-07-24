@@ -126,6 +126,18 @@ class PlotSelector(QtGui.QWidget):
             selectedFile = cp.selectedFileName
             self.mainWindow.fileSelector.fileSelector.setCurrentIndex(self.mainWindow.fileSelector.fileList.index(selectedFile))
 
+            ## make sure correct gate ticks are shown
+            for gateName,cb in self.mainWindow.gateSelector.checkBoxes1.iteritems():
+                if gateName in cp.gateTicks[0]:
+                    cb.setChecked(True)
+                else:
+                    cb.setChecked(False)
+            for gateName,cb in self.mainWindow.gateSelector.checkBoxes2.iteritems():
+                if gateName in cp.gateTicks[1]:
+                    cb.setChecked(True)
+                else:
+                    cb.setChecked(False)
+
         self.mainWindow.transitions.end_wait()
 
 

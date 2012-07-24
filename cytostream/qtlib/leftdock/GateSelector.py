@@ -47,11 +47,6 @@ class GateSelector(QtGui.QWidget):
         ## gate event selector
         hbox1.addWidget(QtGui.QLabel('gate viewer'))
         
-        ## gate names
-        #for ftr in self.gateList[1:]:
-        #    self.checkBoxes0[ftr] = QtGui.QCheckBox(ftr)
-        #    self.connect(self.checkBoxes1[ftr],QtCore.SIGNAL('stateChanged(int)'), self.checkbox1_callback)
-        
         ## gate line drawer
         for ftr in self.gateList[1:]:
             self.checkBoxes1[ftr] = QtGui.QCheckBox(ftr)
@@ -119,6 +114,15 @@ class GateSelector(QtGui.QWidget):
 
         return selectedGates
 
+    def uncheck_all(self):
+        '''
+        unchecks all ticks
+        '''
+
+        for gateName,cb in self.checkBoxes1.iteritems():
+            cb.setChecked(False)
+        for gateName,cb in self.checkBoxes2.iteritems():
+            cb.setChecked(False)
 
     def generic_callback(self):
         print 'callback does not do anything yet'
@@ -148,6 +152,8 @@ class GateSelector(QtGui.QWidget):
         if selectedPlot == '*':
             fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
             for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                if self.mainWindow.nwv.plots.has_key(selectedPlot) == False:
+                    continue
                 cp = self.mainWindow.nwv.plots[selectedPlot]
                 cp.gate_clear_callback()
 
@@ -162,6 +168,7 @@ class GateSelector(QtGui.QWidget):
                         continue
 
                     cp.gate_set_callback([cGate['verts']])
+                    cp.gateTicks[0] = selectedGates
         else:
             
             cp = self.mainWindow.nwv.plots[selectedPlot]
@@ -177,7 +184,7 @@ class GateSelector(QtGui.QWidget):
                         continue
 
                     cp.gate_set_callback([cGate['verts']])
-
+                    cp.gateTicks[0] = selectedGates
         self.mainWindow.transitions.end_wait()
 
     def checkbox2_callback(self):
@@ -204,6 +211,9 @@ class GateSelector(QtGui.QWidget):
         
         if selectedPlot == '*':
             for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
+                if self.mainWindow.nwv.plots.has_key(selectedPlot) == False:
+                    continue
+
                 cp = self.mainWindow.nwv.plots[selectedPlot]
                 selectedFile = cp.selectedFileName
                 fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
@@ -242,6 +252,7 @@ class GateSelector(QtGui.QWidget):
                 self.mainWindow.controller.save()
                 cp.selectedHighlight = allGateClusters
                 cp.draw(selectedFile=selectedFile)
+                cp.gateTicks[1] = selectedGates
         else:
             cp = self.mainWindow.nwv.plots[selectedPlot]
             selectedFile = cp.selectedFileName
@@ -281,7 +292,11 @@ class GateSelector(QtGui.QWidget):
             self.mainWindow.controller.save()
             cp.selectedHighlight = allGateClusters
             cp.draw(selectedFile=selectedFile)
-            
+            cp.gateTicks[1] = selectedGates            
+
+        ## ensure that if there were gates drawn then redraw them
+        self.checkbox1_callback()
+
         self.mainWindow.transitions.end_wait()
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -923,7 +923,7 @@ class Controller:
         '''
         loads the gate from a pickle file
         '''
-        print 'loading...', gateID
+
         gateList = get_saved_gate_names(self.homeDir)
         if gateID not in gateList:
             print "ERROR: Controller.load_gate -- invalid gate specified",gateID

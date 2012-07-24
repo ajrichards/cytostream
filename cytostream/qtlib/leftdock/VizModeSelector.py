@@ -112,6 +112,12 @@ class VizModeSelector(QtGui.QWidget):
                 print "ERROR: invalid visMode detected"
 
     def viz_mode_selector_callback_2(self):
+        '''
+        call back when number of subplots are changed
+            * all highlights are reset
+
+        '''
+
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
         else:
@@ -133,8 +139,20 @@ class VizModeSelector(QtGui.QWidget):
             ## make sure plotSelector displays correct options
             self.mainWindow.plotSelector.ensure_correct_options(int(numPlots)) 
 
+            ## reset everything
+            self.mainWindow.gateSelector.uncheck_all()
+            self.mainWindow.clusterSelector.clusterSelector.setCurrentIndex(0)
+            self.mainWindow.subsampleSelector.subsampleSelector.setCurrentIndex(1)
+            selectedSubsample = self.mainWindow.subsampleSelector.get_selected_subsample()
+
+            self.mainWindow.controller.log.log['plots_to_view_highlights'] = [None for i in range(16)]
+            self.mainWindow.controller.log.log['subsample_analysis'] = selectedSubsample 
+            self.mainWindow.controller.save()
+
+            ## reset the subsample
             if vizMode == 'plot':
                 self.mainWindow.handle_show_plot()
+
 
     def update_num_subplots(self,numSubplotsDefault):
         '''
