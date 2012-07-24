@@ -109,50 +109,47 @@ class GateSelector(QtGui.QWidget):
 
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
-        else:
+            return
+
+        self.mainWindow.transitions.begin_wait()
+
+        selectedFile = self.mainWindow.controller.log.log['selected_file']
+        if selectedFile == '':
+            return
+
+        selectedGates = self.get_checked_gates()     
+        numPlots = self.mainWindow.log.log['num_subplots']
+
+        if self.mainWindow.log.log['selected_plot'] == None:
+            self.mainWindow.log.log['selected_plot'] = '1'
+            self.mainWindow.controller.save()
+        selectedPlot = self.mainWindow.log.log['selected_plot']
             
-            selectedFile = self.mainWindow.controller.log.log['selected_file']
-            if selectedFile == '':
-                return
-
-            selectedGates = self.get_checked_gates() 
-            
-            numPlots = self.mainWindow.log.log['num_subplots']
-
-            if self.mainWindow.log.log['selected_plot'] == None:
-                self.mainWindow.log.log['selected_plot'] = '1'
-                self.mainWindow.controller.save()
-            selectedPlot = self.mainWindow.log.log['selected_plot']
-            
-            if selectedPlot == '*':
-                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
-                    cp = self.mainWindow.nwv.plots[selectedPlot]
-                    cp.gate_clear_callback()
-
-                    if len(selectedGates) == 0:
-                        return
-
-                    for selectedGate in selectedGates:
-                        cGate = self.mainWindow.controller.load_gate(selectedGate)
-
-                        if cGate['channel1'] != cp.selectedChannel1:
-                            continue
-                        if cGate['channel2'] != cp.selectedChannel2:
-                            continue
-
-                        cp.gate_set_callback([cGate['verts']])
-            else:
-                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+        if selectedPlot == '*':
+            fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+            for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
                 cp = self.mainWindow.nwv.plots[selectedPlot]
                 cp.gate_clear_callback()
 
                 if len(selectedGates) == 0:
-                    return
+                    continue
 
                 for selectedGate in selectedGates:
                     cGate = self.mainWindow.controller.load_gate(selectedGate)
+                    if cGate['channel1'] != cp.selectedChannel1:
+                        continue
+                    if cGate['channel2'] != cp.selectedChannel2:
+                        continue
 
+                    cp.gate_set_callback([cGate['verts']])
+        else:
+            fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+            cp = self.mainWindow.nwv.plots[selectedPlot]
+            cp.gate_clear_callback()
+
+            if len(selectedGates) > 0:
+                for selectedGate in selectedGates:
+                    cGate = self.mainWindow.controller.load_gate(selectedGate)
                     if cGate['channel1'] != cp.selectedChannel1:
                         continue
                     if cGate['channel2'] != cp.selectedChannel2:
@@ -160,6 +157,7 @@ class GateSelector(QtGui.QWidget):
 
                     cp.gate_set_callback([cGate['verts']])
 
+        self.mainWindow.transitions.end_wait()
 
     def gate_selector_callback(self):
         '''

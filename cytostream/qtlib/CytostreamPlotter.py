@@ -567,7 +567,11 @@ class CytostreamPlotter(QtGui.QWidget):
                       'fileName':self.selectedFileName}
         
         if gateFilePath == None or gateFilePath == '':
-            return 
+            return
+
+        if not re.search("\.gate",gateFilePath):
+            gateFilePath = gateFilePath+".gate"
+
         tmp1 = open(gateFilePath,'w')
         cPickle.dump(gateToSave,tmp1)
         tmp1.close()
@@ -587,7 +591,6 @@ class CytostreamPlotter(QtGui.QWidget):
     def plot_viz_callback(self,item=None):
 
         selectedPlotType = self.vizSelector.selectedItem
-        print 'plot viz callback', selectedPlotType
 
         if selectedPlotType == 'scatter' and self.labels == None:
             if self.mainWindow != None:

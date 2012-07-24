@@ -81,41 +81,47 @@ class FileSelector(QtGui.QWidget):
     def file_selector_callback(self):
         if self.mainWindow == None:
             print 'callback does not do anything without main widget present'
-        else:
-            selectedFile = self.get_selected_file()
-            if selectedFile == '':
-                return
-            self.mainWindow.log.log['selected_file'] = selectedFile
-            self.mainWindow.controller.save()
-            numPlots = self.mainWindow.log.log['num_subplots']
-            
-            if self.mainWindow.log.log['selected_plot'] == None:
-                self.mainWindow.log.log['selected_plot'] = '1'
-                self.mainWindow.controller.save()
-            selectedPlot = self.mainWindow.log.log['selected_plot']
-            vizMode = self.mainWindow.vizModeSelector.get_selected()
+            return
 
-            if vizMode == 'plot':
-                if selectedPlot == '*':
-                    for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
-                        fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
-                        self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
-                        self.mainWindow.controller.save()
-                        self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
-                        self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-                else:
+        self.mainWindow.transitions.begin_wait()
+        selectedFile = self.get_selected_file()
+        if selectedFile == '':
+            return
+        self.mainWindow.log.log['selected_file'] = selectedFile
+        self.mainWindow.controller.save()
+        numPlots = self.mainWindow.log.log['num_subplots']
+            
+        if self.mainWindow.log.log['selected_plot'] == None:
+            self.mainWindow.log.log['selected_plot'] = '1'
+            self.mainWindow.controller.save()
+        selectedPlot = self.mainWindow.log.log['selected_plot']
+        vizMode = self.mainWindow.vizModeSelector.get_selected()
+
+        if vizMode == 'plot':
+            if selectedPlot == '*':
+                for selectedPlot in [str(i+1) for i in range(int(numPlots))]:
                     fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
                     self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
                     self.mainWindow.controller.save()
                     self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                    self.mainWindow.nwv.plots[selectedPlot].initialize(selectedFile)
                     self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
-            elif vizMode == 'thumbnails':
-                if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
-                    self.mainWindow.display_thumbnails()
-                else:
-                    print "Check FileSelector callback for appropriate move"
             else:
-                print "ERROR: invalid visMode detected"
+                fileIndex = self.mainWindow.controller.fileNameList.index(selectedFile)
+                self.mainWindow.controller.log.log['plots_to_view_files'][int(selectedPlot)-1] = fileIndex
+                self.mainWindow.controller.save()
+                self.mainWindow.nwv.plots[selectedPlot].selectedFile = selectedFile
+                self.mainWindow.nwv.plots[selectedPlot].initialize(selectedFile)
+                self.mainWindow.nwv.plots[selectedPlot].draw(selectedFile=selectedFile)
+        elif vizMode == 'thumbnails':
+            if self.mainWindow.log.log['current_state'] == 'Quality Assurance':
+                self.mainWindow.display_thumbnails()
+            else:
+                print "Check FileSelector callback for appropriate move"
+        else:
+            print "ERROR: invalid visMode detected"
+
+        self.mainWindow.transitions.begin_wait()
 
     def generic_callback(self):
         print 'callback does not do anything yet'

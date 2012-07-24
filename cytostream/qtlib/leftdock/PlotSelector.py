@@ -103,19 +103,32 @@ class PlotSelector(QtGui.QWidget):
             print "INFO: PlotSelector does nothing without main window"
             return 
 
+        ## error check
+        if self.mainWindow.nwv == None:
+            return
+
+        ## make changes
         self.mainWindow.transitions.begin_wait()
         self.mainWindow.controller.log.log['selected_plot'] = selectedPlot
         self.mainWindow.controller.save()
 
-        ## adjust x and y axes as different plots are selected
-        if selectedPlot != '*' and selectedPlot != None:
+        ## ensure that as we change the subplot focus the correct options appear
+        if selectedPlot != '*' and str(selectedPlot) != "None":
             cp = self.mainWindow.nwv.plots[selectedPlot]
+         
+            ## adjust x and y axes as different plots are selected
             channel1 = cp.selectedChannel1
             channel2 = cp.selectedChannel2
             self.mainWindow.channelSelector.channel1Selector.setCurrentIndex(channel1)
             self.mainWindow.channelSelector.channel2Selector.setCurrentIndex(channel2)
 
+            ## make sure correct file is shown
+            selectedFile = cp.selectedFileName
+            self.mainWindow.fileSelector.fileSelector.setCurrentIndex(self.mainWindow.fileSelector.fileList.index(selectedFile))
+
         self.mainWindow.transitions.end_wait()
+
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     
