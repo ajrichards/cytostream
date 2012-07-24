@@ -99,6 +99,7 @@ class CytostreamPlotter(QtGui.QWidget):
         self.fontSize = get_fontsize(self.numSubplots) 
         self.currentAxesLabels = None
         self.resultsMode = 'components'
+        self.gateTicks = [[],[]]
 
         ## variables to be used when class is called for drawing
         self.selectedFileName = selectedFileName

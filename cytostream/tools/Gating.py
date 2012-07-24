@@ -228,7 +228,6 @@ def get_clusters_from_gate(data,labels,gate):
         else:
             meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
 
-    print meanMat
     allData = [(d[0], d[1]) for d in meanMat]
     ind = np.nonzero(points_inside_poly(allData, gate))[0]
     if len(ind) > 0:
