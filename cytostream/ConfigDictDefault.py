@@ -63,6 +63,7 @@ configDictDefault = {
     'excluded_files_qa'                     : '[]',                               # a list of ints
     'excluded_files_analysis'               : '[]',                               # a list of ints
     'alternate_channel_labels'              : '[]',                               # a list of labels
+    'short_channel_labels'                  : '[]',                               # a list of labels
     'alternate_file_labels'                 : '[]',                               # a list of labels
     'file_in_focus'                         : 'all',                              # all or file name
     'clean_border_events'                   : 'True',                             # True | False      

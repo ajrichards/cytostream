@@ -91,11 +91,18 @@ if dataType == 'fcs':
     else:
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
 
+    ## init a logger
+    log = Logger()
+    log.initialize(homeDir,load=True)
+    
+    ## get short names 
+    shortNames = [fcsData.notes.text['p%dn' % (i+1)] for i in range(int(fcsData.notes.text['par']))]
+    log.log['short_channel_labels'] = shortNames
+    log.write()
+
     ## get channel max
     scaleMax = int(fcsData.notes.text['p1r'])
     if scaleMax == 1024:
-        log = Logger()
-        log.initialize(homeDir,load=True)
         log.log['logicle_scale_max'] = scaleMax 
         log.write()
         logicleScaleMax = scaleMax

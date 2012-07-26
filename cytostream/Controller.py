@@ -918,6 +918,24 @@ class Controller:
             #percentComplete = float(fileCount) / float(len(fileList)) * 100.0
             #report_progress(percentComplete,percentagesReported,progressBar=progressBar)
 
+    def save_gate(self,gateName,verts,channel1,channel2,parent):
+        '''
+        saves a given gate
+        channels are the channel index
+        '''
+        
+        gateFilePath = os.path.join(os.path.join(self.homeDir,"data"),gateName)
+        gateToSave = {'verts':verts,
+                      'channel1':channel1,
+                      'channel2':channel2,
+                      'parent':parent}
+
+        if not re.search("\.gate",gateFilePath):
+            gateFilePath = gateFilePath+".gate"
+
+        tmp1 = open(gateFilePath,'w')
+        cPickle.dump(gateToSave,tmp1)
+        tmp1.close()
 
     def load_gate(self,gateID):
         '''

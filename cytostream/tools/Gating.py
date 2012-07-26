@@ -3,8 +3,12 @@ derived from the lasso routine on matplotlibs website.
 
 """
 
-import sys
+import sys,os,re
 from PyQt4 import QtGui,QtCore
+import fcm
+from fcm.core.transforms import _logicle as logicle
+from cytostream.tools import officialNames,get_official_name_match
+
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
@@ -250,3 +254,152 @@ def get_clusters_via_gate(meanMat,meanMatLabels,gate):
         clusters = []
 
     return clusters
+
+class GateImporter:
+    '''
+    used to import gates from flojo xml files
+    '''
+    
+    def __init__(self,nga,xmlFilePath,modelRunID='run1',transform='logicle'):
+        '''
+        constructor initalizes all necessary variables
+        '''
+
+        ## declare variables
+        self.nga = nga
+        self.fileNameList = self.nga.get_file_names()
+        self.channelNameList = self.nga.get_channel_names()
+        print 'channel list', self.channelNameList
+        self.modelRunID = modelRunID
+        self.transform = transform
+        self.savedGates = []
+
+        ## specify the default scatters
+        self.channelDict = self.nga.channelDict
+        if self.channelDict.has_key('SSCA') and self.channelDict.has_key('FSCA'):
+            self.sscChanInd = self.channelDict['SSCA']
+            self.fscChanInd = self.channelDict['FSCA']
+        elif self.channelDict.has_key('SSCH') and self.channelDict.has_key('FSCH'):
+            self.sscChanInd = self.channelDict['SSCH']
+            self.fscChanInd = self.channelDict['FSCH']
+        elif self.channelDict.has_key('SSCW') and self.channelDict.has_key('FSCW'):
+            self.sscChanInd = self.channelDict['SSCW']
+            self.fscChanInd = self.channelDict['FSCW']
+        else:      
+            self.sscChanInd = self.channelDict['SSC']
+            self.fscChanInd = self.channelDict['FSC']
+            
+        ## error check
+        if os.path.exists(xmlFilePath) == False: 
+            print "cannot find xml file", self.xmlFilePath
+            return
+        if self.transform != 'logicle':
+            print "ERROR: GateImporter is only implemented for logicle transforms"
+            return
+
+        ## parse out the gates
+        self.read_gate(xmlFilePath)
+
+    def logical_transform(self,gateVerts,axis='both',reverse=False):
+        '''
+        used to logicle transform channels as the gate is imported
+        '''
+        
+        dim0 = [g[0] for g in gateVerts]
+        dim1 = [g[1] for g in gateVerts]
+
+        if axis in ['x','both']:
+            dim0 = (10**5)*logicle(dim0, 262144, 4.5, None, 0.5)
+        if axis in ['y','both']:
+            dim1 = (10**5)*logicle(dim1, 262144, 4.5, None, 0.5)
+    
+        newGate = []
+        for g in range(len(gateVerts)):
+            if reverse == False:
+                newGate.append((dim0[g],dim1[g]))
+            else:
+                newGate.append((dim1[g],dim0[g]))
+   
+        return newGate
+
+    def read_gate(self,xmlFilePath):
+        '''
+        uses fcm to read in the xmlfile
+        this function is very specific to a panel and is not likely to generalize
+        '''
+
+        ## read in gates
+        fjxml = fcm.load_flowjo_xml(xmlFilePath)
+        fjxml = fjxml.flat_gates()
+        gates = {}
+        resultType = None
+        for key, item in fjxml.iteritems():
+            key = re.sub("\.fcs","",key)
+            normalizedKey = re.sub("\.","_",re.sub("\s+","",key))
+            normalizedKey = re.sub("-","_",key)
+            
+            for fn in self.fileNameList:
+                if re.search(fn,normalizedKey):
+                    normalizedKey = fn
+                gates[normalizedKey] = item
+                resultsType = 0
+            if not re.search("\D",normalizedKey):
+                gates[normalizedKey] = item
+                resultsType = 1
+
+        ## assumes that all gates are the same for each file (otherwise create a loop)
+        gateList = gates[gates.keys()[1]]
+        print 'found %s gates', len(gateList)
+        pGate = gateList[0]
+        for pGate in gateList:
+            verts,name,channel1,channel2 = self.read_fcm_poly_gate(pGate.gate)
+            print '\tname', name
+            print '\tparent', pGate.parent
+            print '\tchannels', channel1,channel2,"\n"
+            self.nga.controller.save_gate('%s.gate'%name,verts,self.channelDict[channel1],self.channelDict[channel2],pGate.parent)
+
+    def read_fcm_poly_gate(self,pGate):
+        verts = pGate.vert
+        name  = pGate.name
+        _channel1,_channel2  = pGate.chan
+        channel1,channel2 = None,None
+
+        ## determine the chan inds from a given set of chans
+        mchannel1 = get_official_name_match(_channel1)
+        mchannel2 = get_official_name_match(_channel2)
+
+        numMatched = 0
+        if mchannel1 == "Unmatched":
+            for c in self.channelNameList:
+                for part in re.split("_|-",c):
+                    if len(part) <= 2:
+                        continue
+                    if re.search(part,_channel1):
+                        #print '\t\t', part,_channel1
+                        channel1 = get_official_name_match(c)
+                        numMatched += 1
+            if numMatched > 1:
+                print "WARNING GateImporter.read_fcm_poly_gate -- more than one channel match"
+        else:
+            channel1 = mchannel1
+
+        numMatched = 0
+        if mchannel2 == "Unmatched":
+            for c in self.channelDict.keys():
+                for part in re.split("_|-",c):
+                    if len(part) <= 2:
+                        continue
+                    if re.search(part,_channel2):
+                        channel2 = get_official_name_match(c)
+                        numMatched += 1
+            if numMatched > 1:
+                print "WARNING GateImporter.read_fcm_poly_gate -- more than one channel match"
+        else:
+            channel2 = mchannel2
+
+        if channel1 == None or channel2 == None:
+            print "WARNING GateImporter.read_fcm_poly_gate -- cannot make channel match"
+            print "....... ", _channel1, channel2, pGate.chan
+
+        return verts,name,channel1,channel2            
+            
