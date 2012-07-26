@@ -239,6 +239,9 @@ class NoGuiAnalysis():
         returns a set of filter indices relative to original events
         """
         
+        if filterID == None:
+            return []
+
         filterIndices = self.controller.model.load_filter(fileName,filterID)
         
         return filterIndices
