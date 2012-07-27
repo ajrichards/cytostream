@@ -608,6 +608,11 @@ class Controller:
                               compensationFilePath=self.compensationFilePath,transform=transform,autoComp=autoComp,
                               logicleScaleMax=logicleScaleMax)
 
+        ## reload the log file and save it      
+        self.log = Logger()
+        self.log.initialize(self.homeDir,load=True)
+        self.save()
+
         ## initialize class wide variables 
         self.fileNameList = get_fcs_file_names(self.homeDir)
 
