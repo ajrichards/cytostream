@@ -9,7 +9,6 @@ import fcm
 from fcm.core.transforms import _logicle as logicle
 from cytostream.tools import officialNames,get_official_name_match
 
-
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
@@ -269,7 +268,6 @@ class GateImporter:
         self.nga = nga
         self.fileNameList = self.nga.get_file_names()
         self.channelNameList = self.nga.get_channel_names()
-        print 'channel list', self.channelNameList
         self.modelRunID = modelRunID
         self.transform = transform
         self.savedGates = []
@@ -298,7 +296,48 @@ class GateImporter:
             return
 
         ## parse out the gates
-        self.read_gate(xmlFilePath)
+        self.read_gates(xmlFilePath)
+
+        ## plot gates
+        self.plot_gates()
+
+    def plot_gates(self):
+
+        ## make a plot
+        for fileName in self.fileNameList[:2]:
+            fileInd = self.fileNameList.index(fileName)
+            numSubplots = len(self.savedGates)
+            self.nga.set("plots_to_view_files",[fileInd for i in range(16)])
+            self.nga.set("plots_to_view_runs",[self.modelRunID for i in range(16)])
+
+            ## set titles
+            subplotTitles = ["%s\n%s"%(self.savedGates[i]['parent'],self.savedGates[i]['name']) for i in range(numSubplots)]
+
+            ## set gates
+            gatesToShow = [[] for c in range(16)]
+            for i in range(numSubplots):
+                gatesToShow[i] = [self.savedGates[i]['verts']]
+
+            ## set filters
+            plotsToViewFilters = [None for c in range(16)]
+            for i in range(numSubplots):
+                if self.savedGates[i]['parent'] != 'root':
+                    plotsToViewFilters[i] = 'iFilter_%s'%self.savedGates[i]['parent']
+            
+            self.nga.set('plots_to_view_filters',plotsToViewFilters)
+            
+            ## set channels to view
+            plotsToViewChannels = [(0,0)] * 16
+            for i in range(numSubplots):
+                plotsToViewChannels[i] = (self.savedGates[i]['channel1'],self.savedGates[i]['channel2'])
+            self.nga.set('plots_to_view_channels',plotsToViewChannels)
+
+            ## save
+            figName = os.path.join('.','figures','xmlfj',self.nga.controller.projectID,'%s_fjxml.png'%(fileName))
+            figTitle = "Imported FJ gates %s"%re.sub("\_","-",fileName)
+            print '...saving', figName
+            self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,
+                                              drawState='heat',subplotTitles=subplotTitles,gatesToShow=gatesToShow)  
 
     def logical_transform(self,gateVerts,axis='both',reverse=False):
         '''
@@ -322,7 +361,38 @@ class GateImporter:
    
         return newGate
 
-    def read_gate(self,xmlFilePath):
+    def read_fcm_poly_gate(self,pGate):
+        verts = pGate.vert
+        name  = re.sub("\s+","_",pGate.name)
+        name = re.sub("\s+","_",name)
+        name = re.sub("\.gate","",name)
+        _channel1,_channel2  = pGate.chan
+
+        shortChannels = self.nga.get('short_channel_labels')
+        if len(shortChannels) == 0:
+            print "ERROR: GateImporter fatal error - no short labels -- exiting..."
+            sys.exit()
+
+        channel1Ind = shortChannels.index(_channel1)
+        channel2Ind = shortChannels.index(_channel2)
+        channel1Name, channel2Name = None,None
+        for chanName, chanIndx in self.channelDict.iteritems():
+            if int(channel1Ind) == int(chanIndx):
+                channel1Name = chanName
+            if int(channel2Ind) == int(chanIndx):
+                channel2Name = chanName
+
+        scatterList = ['FSC','FSCA','FSCW','FSCH','SSC','SSCA','SSCW','SSCH']
+        if channel1Name not in scatterList and not channel2Name in scatterList:
+            verts = self.logical_transform(verts,axis='both',reverse=False)
+        elif channel1Name not in scatterList:
+            verts = self.logical_transform(verts,axis='x',reverse=False)
+        elif channel2Name not in scatterList:
+            verts = self.logical_transform(verts,axis='y',reverse=False)
+
+        return verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name
+
+    def read_gates(self,xmlFilePath):
         '''
         uses fcm to read in the xmlfile
         this function is very specific to a panel and is not likely to generalize
@@ -350,56 +420,28 @@ class GateImporter:
         ## assumes that all gates are the same for each file (otherwise create a loop)
         gateList = gates[gates.keys()[1]]
         print 'found %s gates', len(gateList)
-        pGate = gateList[0]
         for pGate in gateList:
-            verts,name,channel1,channel2 = self.read_fcm_poly_gate(pGate.gate)
-            print '\tname', name
-            print '\tparent', pGate.parent
-            print '\tchannels', channel1,channel2,"\n"
-            self.nga.controller.save_gate('%s.gate'%name,verts,self.channelDict[channel1],self.channelDict[channel2],pGate.parent)
-
-    def read_fcm_poly_gate(self,pGate):
-        verts = pGate.vert
-        name  = pGate.name
-        _channel1,_channel2  = pGate.chan
-        channel1,channel2 = None,None
-
-        ## determine the chan inds from a given set of chans
-        mchannel1 = get_official_name_match(_channel1)
-        mchannel2 = get_official_name_match(_channel2)
-
-        numMatched = 0
-        if mchannel1 == "Unmatched":
-            for c in self.channelNameList:
-                for part in re.split("_|-",c):
-                    if len(part) <= 2:
-                        continue
-                    if re.search(part,_channel1):
-                        #print '\t\t', part,_channel1
-                        channel1 = get_official_name_match(c)
-                        numMatched += 1
-            if numMatched > 1:
-                print "WARNING GateImporter.read_fcm_poly_gate -- more than one channel match"
-        else:
-            channel1 = mchannel1
-
-        numMatched = 0
-        if mchannel2 == "Unmatched":
-            for c in self.channelDict.keys():
-                for part in re.split("_|-",c):
-                    if len(part) <= 2:
-                        continue
-                    if re.search(part,_channel2):
-                        channel2 = get_official_name_match(c)
-                        numMatched += 1
-            if numMatched > 1:
-                print "WARNING GateImporter.read_fcm_poly_gate -- more than one channel match"
-        else:
-            channel2 = mchannel2
-
-        if channel1 == None or channel2 == None:
-            print "WARNING GateImporter.read_fcm_poly_gate -- cannot make channel match"
-            print "....... ", _channel1, channel2, pGate.chan
-
-        return verts,name,channel1,channel2            
+            print "\n ...................."
+            verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name = self.read_fcm_poly_gate(pGate.gate)
+            parent = pGate.parent
+            parent = re.sub("\s+","_",parent)
+            parent = re.sub("\.gate","",parent)
             
+            print '\tname', name
+            print '\tparent', parent
+            print '\tchannels', channel1Ind,channel2Ind,channel1Name,channel2Name, "\n"
+            self.nga.controller.save_gate('%s.gate'%name,verts,channel1Ind,channel2Ind,channel1Name,channel2Name,parent)           
+
+            pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
+            isCytokine = False
+            if re.search(pattern,name):
+                isCytokine = True
+
+            gateToSave = {'verts':verts,
+                          'name':name,
+                          'channel1':channel1Ind,
+                          'channel2':channel2Ind,
+                          'parent':parent,
+                          'cytokine':isCytokine}
+
+            self.savedGates.append(gateToSave)

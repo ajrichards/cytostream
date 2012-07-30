@@ -22,6 +22,8 @@ from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
 from cytostream.tools import get_official_name_match
+from cytostream.tools import get_clusters_from_gate, get_indices_from_gate
+from SaveSubplots import SaveSubplots
 
 try:
     from config_cs import CONFIGCS
@@ -905,35 +907,46 @@ class Controller:
                         proc.wait()
                         break
         else:
-            #argsList = [script,"-h",self.homeDir,"-f",fileName]
-            
-            view.mc.init_model_process(cmd,script,fileList)
+             view.mc.init_model_process(cmd,script,fileList)
 
-            ## wait until file is complete before moving on to next file
-            #isComplete = False
-            #while isComplete == False:
-            #    time.sleep(4)
-            #    
-            #    for fName in os.listdir(os.path.join(self.homeDir,'models')):
-            #        if not re.search("\_%s\.log"%modelRunID,fName):
-            #            continue
-            #        else:
-            #            isComplete = True
-                                        
-            #percentComplete = float(fileCount) / float(len(fileList)) * 100.0
-            #report_progress(percentComplete,percentagesReported,progressBar=progressBar)
-
-    def save_gate(self,gateName,verts,channel1,channel2,parent):
+    def save_gate(self,gateName,verts,channel1,channel2,channel1Name,channel2Name,parent,modelRunID='run1',modelMode='components'):
         '''
         saves a given gate
         channels are the channel index
+
+        iFilter - is a filter created using indices within a gate
+        cFilter - is a filter created using indices derived from clusters within a gate
         '''
         
+        isCytokine = False
+        cytokineChan = None
+        parent = re.sub("\s+","_",parent)
+        gateName = re.sub("\s+","_",gateName)
+        parent = re.sub("\.gate","",parent)
+        gateName = re.sub("\.gate","",gateName)
         gateFilePath = os.path.join(os.path.join(self.homeDir,"data"),gateName)
+
+        pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
+        if re.search(pattern,gateName):
+            isCytokine = True
+            if re.search(pattern,channel1Name):
+                cytokineChan = 0
+            if re.search(pattern,channel2Name):
+                cytokineChan = 1
+            
+            ## rewrite the verts to be a stright line
+            cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
+            if cytokineChan == 1:
+                verts = [(i[0],cytoThreshold) for i in verts]
+            elif cytokineChan == 0:
+                verts = [(cytoThreshold,i[1]) for i in verts]
+
         gateToSave = {'verts':verts,
                       'channel1':channel1,
                       'channel2':channel2,
-                      'parent':parent}
+                      'parent':parent,
+                      'name':gateName,
+                      'cytokine':isCytokine}
 
         if not re.search("\.gate",gateFilePath):
             gateFilePath = gateFilePath+".gate"
@@ -941,6 +954,43 @@ class Controller:
         tmp1 = open(gateFilePath,'w')
         cPickle.dump(gateToSave,tmp1)
         tmp1.close()
+
+        ## create filters for each file using both indices and clusters
+        for fileName in self.fileNameList[:2]:
+            print fileName
+            fileEvents = self.get_events(fileName)
+            fileLabels = self.get_labels(fileName,modelRunID)
+            if isCytokine == False:
+                _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
+                _gateClusters = [str(int(c)) for c in _gateClusters]
+                _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+
+            if parent != 'root':
+                parentGate = self.load_gate(parent)
+                parentClusterIndices = self.model.load_filter(fileName,'cFilter_%s'%parent)
+                parentClusters = np.unique(fileLabels[parentClusterIndices])
+                parentClusters = [str(int(c)) for c in parentClusters]
+                parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
+
+                if isCytokine == True:
+                    #cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
+                    _cytoIndices = np.where(fileEvents[:,[channel1,channel2][cytokineChan]] > cytoThreshold)[0]
+                    
+                    cytoIndicesFromClusters = list(set(parentClusterIndices).intersection(set(_cytoIndices)))
+                    cytoIndicesFromIndices = list(set(parentIndices).intersection(set(_cytoIndices)))
+                else:
+                    gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
+                    gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+            else:
+                gateClusters = _gateClusters
+                gateIndices = _gateIndices
+
+            if isCytokine == False:
+                self.handle_filtering_by_clusters('cFilter_%s'%gateName,fileName,modelRunID,modelMode,gateClusters)
+                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
+            else:
+                self.handle_filtering_by_indices('cFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromClusters)
+                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromIndices)
 
     def load_gate(self,gateID):
         '''
@@ -958,3 +1008,11 @@ class Controller:
         tmp.close()
 
         return gate
+
+    def save_subplots(self,figName,numSubplots,figMode='analysis',figTitle=None,useScale=False,drawState='heat',subplotTitles=None,gatesToShow=None):
+        '''
+        function used from within cytostream when SaveSubplots cannot be imported
+        '''
+
+        ss = SaveSubplots(self,figName,numSubplots,figMode=figMode,figTitle=figTitle,useScale=useScale,
+                          drawState=drawState,subplotTitles=subplotTitles,gatesToShow=gatesToShow)
