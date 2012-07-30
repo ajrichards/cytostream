@@ -216,6 +216,13 @@ class SaveSubplots():
             else:
                 print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
 
+            ## filter overwrites subsamples
+            if subplotFilter != None:
+                labels = self.controller.get_labels(subplotFile,subplotRunID)
+                filterIndices = self.controller.model.load_filter(subplotFile,subplotFilter)
+                labels = labels[filterIndices]
+                subsampleIndices = filterIndices
+
             ## error check that  labels and subsample match
             if labels == None:
                 pass
