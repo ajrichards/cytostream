@@ -935,11 +935,11 @@ class Controller:
                 cytokineChan = 1
             
             ## rewrite the verts to be a stright line
-            cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
-            if cytokineChan == 1:
-                verts = [(i[0],cytoThreshold) for i in verts]
-            elif cytokineChan == 0:
-                verts = [(cytoThreshold,i[1]) for i in verts]
+            #cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
+            #if cytokineChan == 1:
+            #    verts = [(i[0],cytoThreshold) for i in verts]
+            #elif cytokineChan == 0:
+            #    verts = [(cytoThreshold,i[1]) for i in verts]
 
         gateToSave = {'verts':verts,
                       'channel1':channel1,
@@ -956,14 +956,13 @@ class Controller:
         tmp1.close()
 
         ## create filters for each file using both indices and clusters
-        for fileName in self.fileNameList[:2]:
+        for fileName in self.fileNameList:
             print fileName
             fileEvents = self.get_events(fileName)
             fileLabels = self.get_labels(fileName,modelRunID)
-            if isCytokine == False:
-                _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
-                _gateClusters = [str(int(c)) for c in _gateClusters]
-                _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+            _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
+            _gateClusters = [str(int(c)) for c in _gateClusters]
+            _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
 
             if parent != 'root':
                 parentGate = self.load_gate(parent)
@@ -971,26 +970,19 @@ class Controller:
                 parentClusters = np.unique(fileLabels[parentClusterIndices])
                 parentClusters = [str(int(c)) for c in parentClusters]
                 parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
-
-                if isCytokine == True:
-                    #cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
-                    _cytoIndices = np.where(fileEvents[:,[channel1,channel2][cytokineChan]] > cytoThreshold)[0]
-                    
-                    cytoIndicesFromClusters = list(set(parentClusterIndices).intersection(set(_cytoIndices)))
-                    cytoIndicesFromIndices = list(set(parentIndices).intersection(set(_cytoIndices)))
-                else:
-                    gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
-                    gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+                gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
+                gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
             else:
                 gateClusters = _gateClusters
                 gateIndices = _gateIndices
 
+            ## only save cytokine filters for events by index
             if isCytokine == False:
                 self.handle_filtering_by_clusters('cFilter_%s'%gateName,fileName,modelRunID,modelMode,gateClusters)
                 self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
             else:
-                self.handle_filtering_by_indices('cFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromClusters)
-                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromIndices)
+                #self.handle_filtering_by_indices('cFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromClusters)
+                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
 
     def load_gate(self,gateID):
         '''
@@ -1009,10 +1001,12 @@ class Controller:
 
         return gate
 
-    def save_subplots(self,figName,numSubplots,figMode='analysis',figTitle=None,useScale=False,drawState='heat',subplotTitles=None,gatesToShow=None):
+    def save_subplots(self,figName,numSubplots,figMode='analysis',figTitle=None,useScale=False,drawState='heat',
+                      subplotTitles=None,gatesToShow=None,positiveToShow=None,drawLabels=True,textToShow=None):
         '''
         function used from within cytostream when SaveSubplots cannot be imported
         '''
 
-        ss = SaveSubplots(self,figName,numSubplots,figMode=figMode,figTitle=figTitle,useScale=useScale,
-                          drawState=drawState,subplotTitles=subplotTitles,gatesToShow=gatesToShow)
+        ss = SaveSubplots(self,figName,numSubplots,figMode=figMode,figTitle=figTitle,useScale=useScale,drawLabels=drawLabels,
+                          drawState=drawState,subplotTitles=subplotTitles,gatesToShow=gatesToShow,positiveToShow=positiveToShow,
+                          textToShow=textToShow)

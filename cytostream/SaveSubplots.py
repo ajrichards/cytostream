@@ -26,7 +26,8 @@ class SaveSubplots():
     def __init__(self,controller, figName, numSubplots,mainWindow=None,plotType='scatter',figMode='qa',
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='sans',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
-                 gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True):
+                 gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True,
+                 textToShow=None):
 
         ## arg variables
         self.controller = controller
@@ -51,6 +52,7 @@ class SaveSubplots():
         self.resultsMode = 'components'
         self.gatesToShow = gatesToShow
         self.positiveToShow= positiveToShow
+        self.textToShow= textToShow
         self.trimmed = trimmed
         self.hasFrame = hasFrame
         inputDPI = dpi
@@ -280,6 +282,7 @@ class SaveSubplots():
                 ax = self.get_axes(subplotIndex)
                 linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
 
+            
             ## add gate if specified
             if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:
                 for i in range(len(self.gatesToShow[subplotIndex])):
@@ -289,26 +292,33 @@ class SaveSubplots():
                     line = Line2D(gx,gy,linewidth=2.0,alpha=0.8)
                     ax = self.get_axes(subplotIndex)
                     ax.add_line(line)
-
+            
+            
+            if self.textToShow != None and self.textToShow != None:
+                txt = self.textToShow[subplotIndex]
+                ax = self.get_axes(subplotIndex)
+                def add_text(ax,xPos,yPos,txt):
+                    ax.text(xPos,yPos,txt,color='white',fontsize=10,
+                            ha="center", va="top",fontname=self.fontName,
+                            bbox = dict(boxstyle="round",facecolor='black',alpha=0.8)
+                            )
+                
+                ax.text(0.11, 0.92,txt,
+                        horizontalalignment='left',
+                        verticalalignment='center',
+                        transform = ax.transAxes)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=False)
+            
             ## add positivity events if specified
             if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
+                positiveEventInds = self.positiveToShow[subplotIndex]
                 ax = self.get_axes(subplotIndex)
-                posDimIndex = self.positiveToShow[subplotIndex][0]
-                fThreshold = self.positiveToShow[subplotIndex][1]
                 dataX,dataY = (events[:,index1],events[:,index2])
-                dataPosDim = events[:,posDimIndex]
-                if index1 == posDimIndex:
-                    ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
-                
-                _positiveEventInds = np.where(dataPosDim > fThreshold)[0]
-                if _positiveEventInds.size > 0:
-                    positiveEventInds = np.array(list(set(indicesFG.tolist()).intersection(set(_positiveEventInds.tolist()))))
-                    #positiveEventInds = _positiveEventInds
-                    if positiveEventInds.size > 0:
-                        ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='blue',s=3,edgecolor='none')
-        
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,'sans',useSimple=False,axesOff=False,useScaled=True)
-                
+                #ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
+                ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='#FFDD22',s=3,edgecolor='none')      
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=False)
+             
+
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:
             ax = self.fig.add_subplot(1,1,subplotIndex+1)
