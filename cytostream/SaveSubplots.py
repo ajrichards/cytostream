@@ -222,7 +222,11 @@ class SaveSubplots():
             if subplotFilter != None:
                 labels = self.controller.get_labels(subplotFile,subplotRunID)
                 filterIndices = self.controller.model.load_filter(subplotFile,subplotFilter)
-                labels = labels[filterIndices]
+                if len(filterIndices) > 0:
+                    labels = labels[filterIndices]
+                else:
+                    labels = [] 
+                
                 subsampleIndices = filterIndices
 
             ## error check that  labels and subsample match
