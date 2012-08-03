@@ -16,4 +16,4 @@ from FALib import calculate_intercluster_score, pool_compare_scan, pool_compare_
 from FALib import get_alignment_scores, get_saved_template
 from TemplateFileCreator import TemplateFileCreator
 from FileAlignerLib import FileAligner
-from SupervisedLearning import get_sl_training_data
+from SupervisedLearning import get_sl_data,run_svm

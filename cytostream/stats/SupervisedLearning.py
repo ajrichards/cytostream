@@ -1,6 +1,48 @@
 from libSVM import *
+import matplotlib.pyplot as plt
+from scikits.learn import svm
 
-def get_sl_training_data(nga,childFilterID,parentFilterID,fileNameList,modelRunID='run1'):
+
+def _run_svm(X_train,y_train,X_test,y_test):
+    clf = SVM(kernel=gaussian_kernel,C=4.0)
+    clf.fit(X_train, y_train)
+    y_predict = clf.predict(X_test)
+    correct = np.sum(y_predict == y_test)
+    print "%d out of %d predictions correct" % (correct, len(y_predict))
+    return clf,y_predict
+
+def run_svm(X1,y1,X2,y2,figPath):
+    X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
+    X1_train = X_train[y_train==1.]
+    X2_train = X_train[y_train==-1.]
+
+    svc = svm.SVC(kernel='rbf')
+    svc.fit(X_train, y_train)
+    y_predict = svc.predict(X_test)
+    correct = np.sum(y_predict == y_test)
+
+    print "SVM:%d out of %d predictions correct" % (correct, len(y_predict))
+    tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
+    print "\t...tp",len(tp)
+    print "\t...tn",len(tn)
+    print "\t...fp",len(fp)
+    print "\t...fn",len(fn)
+    sys.exit()
+
+
+    fig = plt.figure()
+    #trainingDims = [fscChanInd,sscChanInd]
+    #clf1,y_predict1 = _run_svm(X_train,y_train,X_test,y_test)
+    ax = fig.add_subplot(231)
+    make_contour_panel_train(X1_train,X2_train,y_predict1,y_test,X_test,clf1,
+                             ax,xLab='x',yLab='y')
+    ax = fig.add_subplot(234)
+    make_contour_panel_test(X1_train,X2_train,y_predict1,y_test,X_test,clf1,ax,xLab='x',yLab='y')
+
+    plt.subplots_adjust(wspace=0.15,hspace=0.2)
+    plt.savefig(figPath)
+
+def get_sl_data(nga,childFilterID,parentFilterID,fileNameList,modelRunID='run1',subsample=1000):
     '''
     the parent gate is used to define the non-target centroids or events
     so it does not necessarly have to be the direct parent
@@ -8,13 +50,29 @@ def get_sl_training_data(nga,childFilterID,parentFilterID,fileNameList,modelRunI
 
     ## get indices        
     #trainingIndices = nga.get_filter_indices(fileName,'iFilter_%s'%_cd3GateName)  
-    #gate = nga.controller.load_gate(filterID)
+    gate = nga.controller.load_gate(childFilterID)
+    channel1 = gate['channel1']
+    channel2 = gate['channel2']
     #if parentFilterID != 'root':
     #    parentGate = nga.controller.load_gate(parentFilterID)
 
+    ## get included channels
+    #excludedChannels =  nga.get('excluded_channels_analysis')
+    #fileChannels = nga.get_channel_names()
+    #
+    #if len(excludedChannels) != 0:
+    #    includedChannels = np.array(list(set(range(len(fileChannels))).difference(set(excludedChannels))))
+    #    includedChannelLabels = np.array(fileChannels)[includedChannels].tolist()
+    #    excludedChannelLabels = np.array(fileChannels)[excludedChannels].tolist()
+    #else:
+    #    includedChannels = np.arange(len(fileChannels))
+    #    includedChannelLabels = fileChannels
+    #    excludedChannelLabels = []
+    includedChannels = [channel1,channel2]
     print 'loading training data'
+    
     #print '...',gate['name']
-
+    trainingData = {}
     for fileName in fileNameList:
         fileEvents = nga.get_events(fileName)
         fileLabels = nga.get_labels(fileName,modelRunID,modelType='components',subsample='original',getLog=False)
@@ -25,13 +83,41 @@ def get_sl_training_data(nga,childFilterID,parentFilterID,fileNameList,modelRunI
         else:
             parentIndices = nga.get_filter_indices(fileName,'cFilter_%s'%parentFilterID)
             parentClusters = np.unique(fileLabels[parentClusterIndices])
-
-        print childClusters
-        childClusters, chileMeanMat = get_mean_matrix(fileEvents,fileLabels)
-        print childClusters
         
+        print fileName
+        #print 'num par indices', parentIndices.shape
+        #print 'num chd indices', childIndices.shape
+        #print 'non chd indices', np.array(list(set(parentIndices).difference(set(childIndices)))).shape[0]
+        if subsample == None:
+            pass
+        elif parentIndices.shape[0] > subsample and childIndices.shape[0] > subsample:
+            randIndices =  np.random.randint(0,parentIndices.shape[0],subsample)
+            parentIndices = parentIndices[randIndices]
+            randIndices =  np.random.randint(0,childIndices.shape[0],subsample)
+            childIndices = childIndices[randIndices]
+        
+        print 'num par indices', parentIndices.shape
+        print 'num chd indices', childIndices.shape
+        nonChildIndices = np.array(list(set(parentIndices).difference(set(childIndices))))
+        print 'non chd indices', nonChildIndices.shape[0]
+        print 'included channels', includedChannels
+        print 'file events      ', fileEvents.shape
 
+        X1 = fileEvents[childIndices,:]
+        X1 = X1[:,includedChannels]
+        y1 = np.array([1.]).repeat(childIndices.shape[0])
+        X2 = fileEvents[nonChildIndices,:]
+        X2 = X2[:,includedChannels]
+        y2 = np.array([1.]).repeat(nonChildIndices.shape[0])
 
+        trainingData[fileName] =  {"X1":X1,
+                                   "y1":y1,
+                                   "X2":X2,
+                                   "y2":y2}
+    
+    return trainingData
+
+    
     '''
     nga = NoGuiAnalysis(homeDir,loadExisting=True)
     fileList = nga.get_file_names()

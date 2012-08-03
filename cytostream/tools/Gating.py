@@ -374,7 +374,7 @@ class GateImporter:
                         else:
                             parentIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['parent'])
                         childIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['name'])
-                        if len(childIndices) == 0:
+                        if len(childIndices) == 0 or len(parentIndices) == 0:
                             textToShow[i] = '0.0'
                         textToShow[i] = str(round((float(len(childIndices)) / float(len(parentIndices))) * 100.0,4))
 
