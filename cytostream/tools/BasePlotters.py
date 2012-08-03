@@ -10,8 +10,7 @@ from matplotlib.nxutils import points_inside_poly
 from matplotlib.ticker import ScalarFormatter
 from cytostream.tools import rgb_to_hex, get_cmap_blues, get_file_sample_stats, get_all_colors
 from cytostream.tools import set_logicle_transformed_ticks, set_scatter_ticks, set_log_transformed_ticks
-from cytostream.tools import get_fontsize, get_fontname, set_logicle_transformed_ticks
-from cytostream.tools import set_scatter_ticks,set_log_transformed_ticks
+from cytostream.tools import get_fontsize, get_fontname
 from fcm.graphics import bilinear_interpolate
 
 '''

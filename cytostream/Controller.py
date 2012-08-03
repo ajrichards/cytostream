@@ -967,7 +967,10 @@ class Controller:
             if parent != 'root':
                 parentGate = self.load_gate(parent)
                 parentClusterIndices = self.model.load_filter(fileName,'cFilter_%s'%parent)
-                parentClusters = np.unique(fileLabels[parentClusterIndices])
+                if str(parentClusterIndices) == 'None':
+                    parentClusters = []
+                else:
+                    parentClusters = np.unique(fileLabels[parentClusterIndices])
                 parentClusters = [str(int(c)) for c in parentClusters]
                 parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
                 gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
