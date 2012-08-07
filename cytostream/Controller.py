@@ -909,7 +909,8 @@ class Controller:
         else:
              view.mc.init_model_process(cmd,script,fileList)
 
-    def save_gate(self,gateName,verts,channel1,channel2,channel1Name,channel2Name,parent,modelRunID='run1',modelMode='components'):
+    def save_gate(self,gateName,verts,channel1,channel2,channel1Name,channel2Name,parent,fileName,
+                  modelRunID='run1',modelMode='components'):
         '''
         saves a given gate
         channels are the channel index
@@ -956,36 +957,34 @@ class Controller:
         tmp1.close()
 
         ## create filters for each file using both indices and clusters
-        for fileName in self.fileNameList:
-            print fileName
-            fileEvents = self.get_events(fileName)
-            fileLabels = self.get_labels(fileName,modelRunID)
-            _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
-            _gateClusters = [str(int(c)) for c in _gateClusters]
-            _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+        #for fileName in self.fileNameList:
+        fileEvents = self.get_events(fileName)
+        fileLabels = self.get_labels(fileName,modelRunID)
+        _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
+        _gateClusters = [str(int(c)) for c in _gateClusters]
+        _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
 
-            if parent != 'root':
-                parentGate = self.load_gate(parent)
-                parentClusterIndices = self.model.load_filter(fileName,'cFilter_%s'%parent)
-                if str(parentClusterIndices) == 'None':
-                    parentClusters = []
-                else:
-                    parentClusters = np.unique(fileLabels[parentClusterIndices])
-                parentClusters = [str(int(c)) for c in parentClusters]
-                parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
-                gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
-                gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+        if parent != 'root':
+            parentGate = self.load_gate(parent)
+            parentClusterIndices = self.model.load_filter(fileName,'cFilter_%s'%parent)
+            if str(parentClusterIndices) == 'None':
+                parentClusters = []
             else:
-                gateClusters = _gateClusters
-                gateIndices = _gateIndices
+                parentClusters = np.unique(fileLabels[parentClusterIndices])
+            parentClusters = [str(int(c)) for c in parentClusters]
+            parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
+            gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
+            gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+        else:
+            gateClusters = _gateClusters
+            gateIndices = _gateIndices
 
-            ## only save cytokine filters for events by index
-            if isCytokine == False:
-                self.handle_filtering_by_clusters('cFilter_%s'%gateName,fileName,modelRunID,modelMode,gateClusters)
-                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
-            else:
-                #self.handle_filtering_by_indices('cFilter_%s'%gateName,fileName,modelRunID,modelMode,cytoIndicesFromClusters)
-                self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
+        ## only save cytokine filters for events by index
+        if isCytokine == False:
+            self.handle_filtering_by_clusters('cFilter_%s'%gateName,fileName,modelRunID,modelMode,gateClusters)
+            self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
+        else:
+            self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
 
     def load_gate(self,gateID):
         '''
