@@ -11,6 +11,7 @@ from sklearn.preprocessing import Scaler
 from sklearn.datasets import load_iris
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.grid_search import GridSearchCV
+from matplotlib.nxutils import points_inside_poly
 
 '''
 def _run_svm(X_train,y_train,X_test,y_test):
@@ -72,47 +73,116 @@ def run_svm(svc,X1,y1,X2,y2):
     print "\t...fp",len(fp)
     print "\t...fn",len(fn)
 
-def run_svm_validation(X1,y1,X2,y2):
+def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=False):
     X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
-    svc = svm.SVC(kernel='rbf')
-    svc.fit(X_train, y_train)
-    y_predict = svc.predict(X_test)
-    correct = np.sum(y_predict == y_test)
 
-    print "SVM:%d out of %d predictions correct" % (correct, len(y_predict))
-    tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
-    print "\t...tp",len(tp)
-    print "\t...tn",len(tn)
-    print "\t...fp",len(fp)
-    print "\t...fn",len(fn)
-    
-def get_sl_data(nga,childFilterID,parentFilterID,fileNameList,modelRunID='run1',subsample=None,useMeans=True):
+
+    if useLinear == True:
+        svc = svm.LinearSVC()
+        svc.fit(X_train, y_train)
+
+        y_predict = svc.predict(X_test)
+        
+        tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
+        if len(tp) == 0 and len(fp) == 0:
+            precision = 0.0
+        else:
+            precision = float(len(tp))/(float(len(tp))+float(len(fp)))
+        if len(tp) == 0 and len(fn) == 0:
+            recall = 0.0
+        else:
+            recall = float(len(tp))/(float(len(tp))+float(len(fn)))
+
+        return (precision,recall)
+
+    cRange = [0.001,0.01,0.1,1.0,10.0]
+    gammaList = [0.0001,0.001,0.01,0.1,1.0,10.0]
+    bestResults = None
+
+    for C in cRange:
+        for gamma in gammaList:
+
+            svc = svm.SVC(kernel='rbf',gamma=gamma,C=C)
+            svc.fit(X_train, y_train)
+            y_predict = svc.predict(X_test)        
+            tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
+            #print "\t...tp",len(tp)
+            #print "\t...tn",len(tn)
+            #print "\t...fp",len(fp)
+            #print "\t...fn",len(fn)
+            if len(tp) == 0 and len(fp) == 0:
+                precision = 0.0
+            else:
+                precision = float(len(tp))/(float(len(tp))+float(len(fp)))
+            if len(tp) == 0 and len(fn) == 0:
+                recall = 0.0
+            else:
+                recall = float(len(tp))/(float(len(tp))+float(len(fn)))
+            #print "\t...precision", precision
+            #print "\t...recall", recall
+
+            if bestResults == None:
+                bestResults = (gamma,C,precision,recall)
+                continue
+
+            if bestResults[2] + bestResults[3] < precision + recall:
+                bestResults = (gamma,C,precision,recall)
+
+    return bestResults
+
+def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID='run1',subsample=None,useMeans=True,useIndices=False):
     '''
     the parent gate is used to define the non-target centroids or events
     so it does not necessarly have to be the direct parent
     '''
 
-    ## get indices 
-    gate = nga.controller.load_gate(childFilterID)
-    channel1 = gate['channel1']
-    channel2 = gate['channel2']
-    includedChannels = [channel1,channel2]
+    ## error check
+    if len(childFilterIDList) != len(parentFilterIDList):
+        print "ERROR in get_sl_data -- dims must match"
+
+    ## declare variables
     toReturnX1 = None
     toReturnX2 = None
     toReturnY1 = None
     toReturnY2 = None
+
+    for filterIndex in range(len(childFilterIDList)):
+        childFilterID = childFilterIDList[filterIndex]
+        parentFilterID = parentFilterIDList[filterIndex]
+        fileName = fileNameList[filterIndex]
+
+        ## get indices 
+        gate = nga.controller.load_gate(childFilterID)
+        channel1 = gate['channel1']
+        channel2 = gate['channel2']
+        includedChannels = [channel1,channel2]
     
-    trainingData = {}
-    for fileName in fileNameList:
+        trainingData = {}
+        
+        #for fileName in fileNameList:
         fileEvents = nga.get_events(fileName)
         fileLabels = nga.get_labels(fileName,modelRunID,modelType='components',subsample='original',getLog=False)
-        childIndices = nga.get_filter_indices(fileName,'cFilter_%s'%childFilterID)  
+        if useIndices == False:
+            childIndices = nga.get_filter_indices(fileName,'cFilter_%s'%childFilterID)  
+        else:
+            childIndices = nga.get_filter_indices(fileName,'iFilter_%s'%childFilterID)  
         if parentFilterID == 'root':
             parentIndices = np.arange(fileEvents.shape[0])
         else:
-            parentIndices = nga.get_filter_indices(fileName,'cFilter_%s'%parentFilterID)
-        
-        nonChildIndices = np.array(list(set(parentIndices).difference(set(childIndices))))
+            if useIndices == False:
+                parentIndices = nga.get_filter_indices(fileName,'cFilter_%s'%parentFilterID)
+            else:
+                parentIndices = nga.get_filter_indices(fileName,'iFilter_%s'%parentFilterID)
+
+        nonChildIndices1 = list(set(parentIndices).difference(set(childIndices)))
+
+        ## double check that points are not inside the gate
+        allData = [(d[0], d[1]) for d in fileEvents[:,includedChannels]]
+        indicesInGate = np.nonzero(points_inside_poly(allData, gate['verts']))[0]
+        nonChildIndices2 = list(set(parentIndices).difference(set(indicesInGate)))
+        nonChildIndices = np.array(list(set(nonChildIndices1).intersection(set(nonChildIndices2))))
+
+        #print 'check', nonChildIndices.shape, nonChildIndices2.shape
 
         if subsample == None:
             pass
@@ -122,60 +192,54 @@ def get_sl_data(nga,childFilterID,parentFilterID,fileNameList,modelRunID='run1',
             randIndices =  np.random.randint(0,nonChildIndices.shape[0],subsample)
             nonChildIndices = nonChildIndices[randIndices]
       
-        X1 = fileEvents[childIndices,:]
-        X1 = X1[:,includedChannels]
-        X2 = fileEvents[nonChildIndices,:]
-        X2 = X2[:,includedChannels]
+        X1 = fileEvents[childIndices,:].copy()
+        X1 = X1[:,includedChannels].copy()
+        X2 = fileEvents[nonChildIndices,:].copy()
+        X2 = X2[:,includedChannels].copy()
 
         ## scale the data
         #scaler  = Scaler()
         #X1 = scaler.fit_transform(X1)
         #X2 = scaler.fit_transform(X2)
 
-        ## convert to standard normal
-        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
-        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
-        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
-        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
-
         if useMeans == True:
             uLabelsX1,X1 = get_mean_matrix(X1,fileLabels[childIndices])
             uLabelsX2,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
-        
+
+        ## convert to standard normal
+        #print X1.shape,X2.shape
+        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
+        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
+        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
+        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
+
         y1 = np.array([1.]).repeat(X1.shape[0])
         y2 = np.array([0.]).repeat(X2.shape[0])
-
-        #X1 = (X1 - X1.min(axis=0)) / X1.ptp(axis=0)
-        #X2 = (X2 - X2.min(axis=0)) / X2.ptp(axis=0)
-        #X1 = (X1) / X1.ptp(axis=0)
-        #X2 = (X2) / X2.ptp(axis=0)
-
-        ## normalize data between -1 and 1
-        #X1[:,0] = X1[:,0]/abs(X1[:,0]).max()
-        #X1[:,1] = X1[:,1]/abs(X1[:,1]).max()
-        #X2[:,0] = X2[:,0]/abs(X2[:,0]).max()
-        #X2[:,1] = X2[:,1]/abs(X2[:,1]).max()
 
         if toReturnX1 == None:
             toReturnX1 = X1
         else:
             toReturnX1 = np.vstack((toReturnX1,X1))
-
         if toReturnX2 == None:
             toReturnX2 = X2
         else:
             toReturnX2 = np.vstack((toReturnX2,X2))
-
         if toReturnY1 == None:
             toReturnY1 = y1
         else:
             toReturnY1 = np.hstack((toReturnY1,y1))
-
         if toReturnY2 == None:
             toReturnY2 = y2
         else:
             toReturnY2 = np.hstack((toReturnY2,y2))
 
+    ## transform the data
+    X = np.vstack((toReturnX1, toReturnX2))
+    y = np.hstack((toReturnY1, toReturnY2))
+    X = (X - X.mean(axis=0)) / X.std(axis=0)
+    toReturnX1 = X[np.where(y==1)[0]].copy()
+    toReturnX2 = X[np.where(y==0)[0]].copy()
+    
     trainingData =  {"X1":toReturnX1,
                      "y1":toReturnY1,
                      "X2":toReturnX2,
@@ -184,6 +248,7 @@ def get_sl_data(nga,childFilterID,parentFilterID,fileNameList,modelRunID='run1',
     return trainingData
 
 def make_basic_sl_plot(ax,data,gate,fileName,nga):
+    buff = 0.2
     X1 = data['X1']
     X2 = data['X2']
     y1 = data['y1']
@@ -191,8 +256,8 @@ def make_basic_sl_plot(ax,data,gate,fileName,nga):
     X = np.vstack((X1, X2))
     Y = np.hstack((y1, y2))
 
-    ax.scatter(X1[:,0], X1[:,1],c='yellow') 
-    ax.scatter(X2[:,0], X2[:,1],c='blue')
+    ax.scatter(X1[:,0], X1[:,1],c='#FF6600',s=5,edgecolor='none',alpha=0.7) 
+    ax.scatter(X2[:,0], X2[:,1],c='#0066FF',s=5,edgecolor='none',alpha=0.7)
     
     #ax.set_xlabel(channelNames[gate['channel1']])
     #x.set_ylabel(channelNames[gate['channel2']])
@@ -216,24 +281,13 @@ def make_basic_sl_plot(ax,data,gate,fileName,nga):
     
     scatterList = ['FSC','FSCA','FSCW','FSCH','SSC','SSCA','SSCW','SSCH']
 
-    if channel1Name in scatterList:
-        ax.set_xlim([0,262144])
-    else:
-        ax.set_xlim([0, 1e05])    
-    if channel2Name in scatterList:
-        ax.set_ylim([0,262144])
-    else:
-        ax.set_ylim([0, 1e05])
+    bufferX = buff * (X[:,0].max() - X[:,0].min())
+    ax.set_xlim([X[:,0].min()-bufferX,X[:,0].max()+bufferX])
+
+    bufferY = buff * (X[:,1].max() - X[:,1].min())
+    ax.set_ylim([X[:,1].min()-bufferY,X[:,1].max()+bufferY])
 
     ax.set_aspect(1./ax.get_data_ratio())
-
-    #h = .02  # step size in the mesh 
-    #classifiers = dict(
-    #    knn=neighbors.KNeighborsClassifier(),
-    #    logistic=linear_model.LogisticRegression(C=1e5),
-    #    svm=svm.LinearSVC(C=1e5, loss='l1'),
-    #    )
-
 
     
 def svm_optimize_parameters(X1,y1,X2,y2,figPath1,figPath2):
