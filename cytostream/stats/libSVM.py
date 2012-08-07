@@ -4,6 +4,7 @@ from numpy import linalg
 import pylab as pl
 import cvxopt
 import cvxopt.solvers
+from sklearn.preprocessing import Scaler
 
 def linear_kernel(x1, x2):
     return np.dot(x1, x2)
@@ -79,16 +80,21 @@ def split_train_test(X1, y1, X2, y2):
     return X_train, y_train, X_test, y_test
 
 def evaluate_predictions(y_test,y_predict):
+    #print 'evaluate', y_test.shape, y_predict.shape
+
     tp,fp,tn,fn = [],[],[],[]
     for i in range(len(y_test)):
         if y_test[i] == 1 and y_predict[i] == 1:
             tp.append(i)
-        if y_test[i] == 1 and y_predict[i] == -1:
+        elif y_test[i] == 1 and y_predict[i] == 0:
             fn.append(i)
-        if y_test[i] == -1 and y_predict[i] == 1:
+        elif y_test[i] == 0 and y_predict[i] == 1:
             fp.append(i)
-        if y_test[i] == -1 and y_predict[i] == -1:
+        elif y_test[i] == 0 and y_predict[i] == 0:
             tn.append(i)
+        else:
+            print 'evaluate_predictions -- invalid', y_test[i], y_predict[i]
+
 
     return tp,fp,tn,fn
 
@@ -258,9 +264,13 @@ def get_mean_matrix(events,labels):
             meanMat = np.array([clusterEvents.mean(axis=0)])
         else:
             meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+
+
+    #scaler = Scaler()
+    #meanMat= scaler.fit_transform(meanMat)
             
     ## convert to standard normal
-    meanMat = (meanMat - meanMat.mean(axis=0)) / meanMat.std(axis=0)
+    #meanMat = (meanMat - meanMat.mean(axis=0)) / meanMat.std(axis=0)
 
     return uniqueLabels,meanMat
 

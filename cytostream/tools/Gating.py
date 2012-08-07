@@ -270,7 +270,8 @@ class GateImporter:
         self.channelNameList = self.nga.get_channel_names()
         self.modelRunID = modelRunID
         self.transform = transform
-        self.savedGates = []
+        self.savedGates = {}
+        self.plotGates = plotGates
 
         ## specify the default scatters
         self.channelDict = self.nga.channelDict
@@ -298,14 +299,10 @@ class GateImporter:
         ## parse out the gates
         self.read_gates(xmlFilePath)
 
-        ## plot gates
-        if plotGates == True:
-            self.plot_gates()
-
-    def plot_gates(self,viaSubset=True):
+    def plot_gates(self,fileName,viaSubset=True):
 
         basicSubsets = ["CD4","CD8"]
-        gateNames = [g['name'] for g in self.savedGates]
+        gateNames = [g['name'] for g in self.savedGates[fileName]]
         def get_gates_to_plot(bsubset):
             gatesToPlot = []
             if bsubset == 'CD4':
@@ -313,88 +310,88 @@ class GateImporter:
                     if re.search('CD8',gname,flags=re.IGNORECASE):
                         pass
                     else:
-                        gatesToPlot.append(self.savedGates[gind])
+                        gatesToPlot.append(self.savedGates[fileName][gind])
             else:
                 for gind, gname in enumerate(gateNames):
                     if re.search('CD4',gname,flags=re.IGNORECASE):
                         pass
                     else:
-                        gatesToPlot.append(self.savedGates[gind])
+                        gatesToPlot.append(self.savedGates[fileName][gind])
 
             return gatesToPlot
 
         if viaSubset == True:
             gatesToPlotList = [get_gates_to_plot(bs) for bs in basicSubsets]
         else:
-            gatesToPlotList = self.savedGates
+            gatesToPlotList = self.savedGates[fileName]
         
-        for fileName in self.fileNameList:
-            fileInd = self.fileNameList.index(fileName)
-            fileEvents = self.nga.get_events(fileName)
-            for gind, gatesToPlot in enumerate(gatesToPlotList):
-                gateNamesToPlot = [g['name'] for g in gatesToPlot]
-                print 'plotting',basicSubsets[gind],gateNamesToPlot
+        #for fileName in self.fileNameList:
+        fileInd = self.fileNameList.index(fileName)
+        fileEvents = self.nga.get_events(fileName)
+        for gind, gatesToPlot in enumerate(gatesToPlotList):
+            gateNamesToPlot = [g['name'] for g in gatesToPlot]
+            print 'plotting',basicSubsets[gind],gateNamesToPlot
     
-                numSubplots = len(gatesToPlot)
-                self.nga.set("plots_to_view_files",[fileInd for i in range(16)])
-                self.nga.set("plots_to_view_runs",[self.modelRunID for i in range(16)])
+            numSubplots = len(gatesToPlot)
+            self.nga.set("plots_to_view_files",[fileInd for i in range(16)])
+            self.nga.set("plots_to_view_runs",[self.modelRunID for i in range(16)])
 
-                ## set titles
-                subplotTitles = ["%s (%s)"%(gatesToPlot[i]['parent'],gatesToPlot[i]['name']) for i in range(numSubplots)]
+            ## set titles
+            subplotTitles = [re.sub(fileName,"","%s (%s)"%(gatesToPlot[i]['parent'],gatesToPlot[i]['name'])) for i in range(numSubplots)]
 
-                ## set gates
-                gatesToShow = [[] for c in range(16)]
+            ## set gates
+            gatesToShow = [[] for c in range(16)]
+            for i in range(numSubplots):
+                gatesToShow[i] = [gatesToPlot[i]['verts']]
+
+            ## set filters
+            plotsToViewFilters = [None for c in range(16)]
+            for i in range(numSubplots):
+                if gatesToPlot[i]['parent'] != 'root':
+                    plotsToViewFilters[i] = 'iFilter_%s'%gatesToPlot[i]['parent']
+            self.nga.set('plots_to_view_filters',plotsToViewFilters)
+            
+            ## unhighlight all events except positive ones
+            if len(gatesToPlotList) > 1:
+                plotsToViewHighlights = [None for c in range(16)]
                 for i in range(numSubplots):
-                    gatesToShow[i] = [gatesToPlot[i]['verts']]
-
-                ## set filters
-                plotsToViewFilters = [None for c in range(16)]
-                for i in range(numSubplots):
-                    if gatesToPlot[i]['parent'] != 'root':
-                        plotsToViewFilters[i] = 'iFilter_%s'%gatesToPlot[i]['parent']
-                self.nga.set('plots_to_view_filters',plotsToViewFilters)
-                
-                ## unhighlight all events except positive ones
-                if len(gatesToPlotList) > 1:
-                    plotsToViewHighlights = [None for c in range(16)]
-                    for i in range(numSubplots):
-                        plotsToViewHighlights[i] = []
+                    plotsToViewHighlights[i] = []
                     
-                    self.nga.set('plots_to_view_highlights',plotsToViewHighlights)
-                    cytokinePosInds = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[-1]['name'])
-                    positiveToShow = [None for c in range(16)]
-                    for i in range(numSubplots):
-                        positiveToShow[i] = cytokinePosInds
-    
-                    ## add gate percentages
-                    textToShow = [None for c in range(16)]
-                    for i in range(numSubplots):
-                        if gatesToPlot[i]['parent'] == 'root':
-                            parentIndices = range(fileEvents.shape[0])
-                        else:
-                            parentIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['parent'])
-                        childIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['name'])
-                        if len(childIndices) == 0 or len(parentIndices) == 0:
-                            textToShow[i] = '0.0'
-                        textToShow[i] = str(round((float(len(childIndices)) / float(len(parentIndices))) * 100.0,4))
-
-                ## set channels to view
-                plotsToViewChannels = [(0,0)] * 16
+                self.nga.set('plots_to_view_highlights',plotsToViewHighlights)
+                cytokinePosInds = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[-1]['name'])
+                positiveToShow = [None for c in range(16)]
                 for i in range(numSubplots):
-                    plotsToViewChannels[i] = (gatesToPlot[i]['channel1'],gatesToPlot[i]['channel2'])
-                self.nga.set('plots_to_view_channels',plotsToViewChannels)
+                    positiveToShow[i] = cytokinePosInds
+    
+                ## add gate percentages
+                textToShow = [None for c in range(16)]
+                for i in range(numSubplots):
+                    if gatesToPlot[i]['parent'] == 'root':
+                        parentIndices = range(fileEvents.shape[0])
+                    else:
+                        parentIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['parent'])
+                    childIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['name'])
+                    if len(childIndices) == 0 or len(parentIndices) == 0:
+                        textToShow[i] = '0.0'
+                    textToShow[i] = str(round((float(len(childIndices)) / float(len(parentIndices))) * 100.0,4))
 
-                ## save
-                if len(gatesToPlotList) > 1:
-                    figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_%s_fjxml.png'%(fileName,basicSubsets[gind]))
-                    figTitle = "Imported FJ gates %s - %s"%(re.sub("\_","-",fileName),basicSubsets[gind])
-                else:
-                    figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_fjxml.png'%(fileName))
-                    figTitle = "Imported FJ gates %s"%re.sub("\_","-",fileName)
-                print '...saving', figName
-                self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,
-                                                  drawState='heat',subplotTitles=subplotTitles,gatesToShow=gatesToShow,
-                                                  positiveToShow=positiveToShow,drawLabels=False,textToShow=textToShow)
+            ## set channels to view
+            plotsToViewChannels = [(0,0)] * 16
+            for i in range(numSubplots):
+                plotsToViewChannels[i] = (gatesToPlot[i]['channel1'],gatesToPlot[i]['channel2'])
+            self.nga.set('plots_to_view_channels',plotsToViewChannels)
+
+            ## save
+            if len(gatesToPlotList) > 1:
+                figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_%s_fjxml.png'%(fileName,basicSubsets[gind]))
+                figTitle = "Imported FJ gates %s - %s"%(re.sub("\_","-",fileName),basicSubsets[gind])
+            else:
+                figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_fjxml.png'%(fileName))
+                figTitle = "Imported FJ gates %s"%re.sub("\_","-",fileName)
+            print '...saving', figName
+            self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,
+                                              drawState='heat',subplotTitles=subplotTitles,gatesToShow=gatesToShow,
+                                              positiveToShow=positiveToShow,drawLabels=False,textToShow=textToShow)
 
     def logical_transform(self,gateVerts,axis='both',reverse=False):
         '''
@@ -418,11 +415,12 @@ class GateImporter:
    
         return newGate
 
-    def read_fcm_poly_gate(self,pGate):
+    def read_fcm_poly_gate(self,pGate,fileName):
         verts = pGate.vert
         name  = re.sub("\s+","_",pGate.name)
         name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
+        name = name + "_" + fileName
         _channel1,_channel2  = pGate.chan
 
         shortChannels = self.nga.get('short_channel_labels')
@@ -449,7 +447,6 @@ class GateImporter:
         
         ## add the point to the end
         verts = verts + [verts[0]]
-
         return verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name
 
     def read_gates(self,xmlFilePath):
@@ -459,9 +456,9 @@ class GateImporter:
         '''
 
         ## read in gates
+        gates = {}
         fjxml = fcm.load_flowjo_xml(xmlFilePath)
         fjxml = fjxml.flat_gates()
-        gates = {}
         resultType = None
         for key, item in fjxml.iteritems():
             key = re.sub("\.fcs","",key)
@@ -478,30 +475,74 @@ class GateImporter:
                 resultsType = 1
 
         ## assumes that all gates are the same for each file (otherwise create a loop)
-        gateList = gates[gates.keys()[1]]
-        print 'found %s gates', len(gateList)
-        for pGate in gateList:
-            print "\n ...................."
-            verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name = self.read_fcm_poly_gate(pGate.gate)
-            parent = pGate.parent
-            parent = re.sub("\s+","_",parent)
-            parent = re.sub("\.gate","",parent)
+        #print 'found %s keys', len(gates.keys())
+        #gateList = gates[gates.keys()[1]]
+        #print 'found %s gates', len(gateList)
+        #print gates.kepys()
+
+        ## ensure we have the correct number of matches
+        matches = 0
+        for fileNameToMatch in gates.keys():
+            fileNameToMatch = parent = re.sub("\s+","_",fileNameToMatch)
+            matchedName = None
+            for fileName in self.fileNameList:
+                if fileName == fileNameToMatch:
+                   matchedName = fileName
+
+            if matchedName == None:
+                continue
+            matches += 1
+
+        if matches != len(self.fileNameList):
+            print "WARNING: either not all files contains a gate match in GateImporter or a match could not be found"
+            print "...", self.fileNameList
+            print "...", gates.keys()
+            return
+
+        matches = 0
+        for _fileNameToMatch in gates.keys():
+            fileNameToMatch = parent = re.sub("\s+","_",_fileNameToMatch)
+            matchedName = None
+            for fileName in self.fileNameList:
+                if fileName == fileNameToMatch:
+                   matchedName = fileName
+
+            if matchedName == None:
+                continue
+            matches += 1
+            print "Extracting gates for %s", matchedName
+            print gates.keys()[:3]
+            gateList = gates[_fileNameToMatch]
+            fileName = matchedName
+            self.savedGates[fileName] = []
+            ## for a given file import all of its gates
+            for pGate in gateList:
+                verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name = self.read_fcm_poly_gate(pGate.gate,matchedName)
+                parent = pGate.parent
+                parent = re.sub("\s+","_",parent)
+                parent = re.sub("\.gate","",parent)
+                if parent != 'root':
+                    parent = parent + "_" + fileName
             
-            print '\tname', name
-            print '\tparent', parent
-            print '\tchannels', channel1Ind,channel2Ind,channel1Name,channel2Name, "\n"
-            self.nga.controller.save_gate('%s.gate'%name,verts,channel1Ind,channel2Ind,channel1Name,channel2Name,parent)           
+                print '\tname', name
+                print '\tparent', parent
+                print '\tchannels', channel1Ind,channel2Ind,channel1Name,channel2Name, "\n"
+                self.nga.controller.save_gate('%s.gate'%name,verts,channel1Ind,channel2Ind,channel1Name,channel2Name,parent,fileName)           
 
-            pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
-            isCytokine = False
-            if re.search(pattern,name):
-                isCytokine = True
+                pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
+                isCytokine = False
+                if re.search(pattern,name):
+                    isCytokine = True
 
-            gateToSave = {'verts':verts,
-                          'name':name,
-                          'channel1':channel1Ind,
-                          'channel2':channel2Ind,
-                          'parent':parent,
-                          'cytokine':isCytokine}
+                gateToSave = {'verts':verts,
+                              'name':name,
+                              'channel1':channel1Ind,
+                              'channel2':channel2Ind,
+                              'parent':parent,
+                              'cytokine':isCytokine}
 
-            self.savedGates.append(gateToSave)
+                self.savedGates[fileName].append(gateToSave)
+
+            ## plot gates
+            if self.plotGates == True:
+                self.plot_gates(matchedName)
