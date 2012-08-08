@@ -23,6 +23,30 @@ def _run_svm(X_train,y_train,X_test,y_test):
     return clf,y_predict
 '''
 
+def get_mean_matrix(events,labels):
+    meanMat = None
+    uniqueLabels = get_valid_unique_clusters(events,labels)
+    allLabels = list(set(labels))
+    allLabels.sort()
+    for clusterId in allLabels:
+        if clusterId not in uniqueLabels:
+            empty = np.array([np.nan for i in range(events.shape[1])])
+            if meanMat == None:
+                meanMat = empty
+            else:
+                meanMat = np.vstack([meanMat,empty])
+            continue
+
+        clusterIndices = np.where(labels == clusterId)[0]
+        clusterEvents = events[clusterIndices,:]
+        if meanMat == None:
+            meanMat = np.array([clusterEvents.mean(axis=0)])
+        else:
+            meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+
+    usedIndices = np.where(np.isnan(meanMat[:,1])==True)[0]
+    return usedIndices,meanMat
+
 def gaussian_kernel(x, y):
     print x.shape,y.shape
     sigma = 2.0
@@ -61,9 +85,12 @@ def train_svm(X1,y1,X2,y2,C=1.0,gamma=0.7,useLinear=False):
    
     return svc
 
+
 def run_svm(svc,X,XLabels,useMeans=True):
     y_predict = svc.predict(X)
     
+    return y_predict
+
     if useMeans == True:
         posClusters = XLabels[np.where(y_predict==1)[0]]
         negClusters = XLabels[np.where(y_predict==0)[0]]
@@ -134,9 +161,10 @@ def get_sl_test_data(fileEvents,fileLabels,includedChannels,subsample=None,useMe
     X = fileEvents[:,includedChannels].copy()
        
     if useMeans == True:
-        uLabels,X = get_mean_matrix(X,fileLabels)
+        clusterIndicesX,X = get_mean_matrix(X,fileLabels)
+        X = X[clusterIndicesX,:]
         X = (X - X.mean(axis=0)) / X.std(axis=0)
-        return uLabels,X
+        return clusterIndicesX,X
     
     # transform
     X = (X - X.mean(axis=0)) / X.std(axis=0)
@@ -215,8 +243,13 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         #X2 = scaler.fit_transform(X2)
 
         if useMeans == True:
-            uLabelsX1,X1 = get_mean_matrix(X1,fileLabels[childIndices])
-            uLabelsX2,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
+            print '1', X1.shape
+            clusterIndicesX1,X1 = get_mean_matrix(X1,fileLabels[childIndices])
+            print '2', X1.shape
+            X1 = X1[clusterIndicesX1,:]
+            print '3', X1.shape
+            clusterIndicesX2,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
+            X2 = X2[clusterIndicesX2,:]
 
         y1 = np.array([1.]).repeat(X1.shape[0])
         y2 = np.array([0.]).repeat(X2.shape[0])

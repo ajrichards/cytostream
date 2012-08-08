@@ -257,22 +257,25 @@ def get_valid_unique_clusters(events,runLabels):
 def get_mean_matrix(events,labels):
     meanMat = None
     uniqueLabels = get_valid_unique_clusters(events,labels)
-    for clusterIdx in uniqueLabels:
-        clusterIndices = np.where(labels == clusterIdx)[0]
+    allLabels = list(set(labels))
+    allLabels.sort()
+    for clusterId in allLabels:
+        if clusterId not in uniqueLabels:
+            empty = np.array([np.nan for i in events.shape[1]])
+            if meanMat == None:
+                meanMat = empty
+            else:
+                meanMat = np.vstack([meanMat,empty])
+            continue
+
+        clusterIndices = np.where(labels == clusterId)[0]
         clusterEvents = events[clusterIndices,:]
         if meanMat == None:
             meanMat = np.array([clusterEvents.mean(axis=0)])
         else:
             meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
 
-
-    #scaler = Scaler()
-    #meanMat= scaler.fit_transform(meanMat)
-            
-    ## convert to standard normal
-    #meanMat = (meanMat - meanMat.mean(axis=0)) / meanMat.std(axis=0)
-
-    return uniqueLabels,meanMat
+    return meanMat
 
 
 class SVM(object):
