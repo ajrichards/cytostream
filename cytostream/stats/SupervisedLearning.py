@@ -48,39 +48,38 @@ def my_kernel(x, y):
     print 'return',np.dot(np.dot(x, M), y.T).shape
     return np.dot(np.dot(x, M), y.T)
 
-def train_svm(X1,y1,X2,y2,C=1.0,gamma=0.7):
+def train_svm(X1,y1,X2,y2,C=1.0,gamma=0.7,useLinear=False):
     X_train = np.vstack((X1, X2))
     y_train = np.hstack((y1, y2))
     #svc = svm.SVC(kernel='poly',degree=3,C=1.0)
-    svc = svm.SVC(kernel='rbf',gamma=gamma,C=C) #gamma=10.0
-    #svc = svm.SVC(kernel=my_kernel) #gamma=10.0
-    #svc = svm.SVC(kernel=gaussian_kernel) #gamma=10.0
+    if useLinear == True:
+        svc = svm.LinearSVC()
+    else:
+        svc = svm.SVC(kernel='rbf',gamma=gamma,C=C)
+
     svc.fit(X_train, y_train)
    
     return svc
 
-def run_svm(svc,X1,y1,X2,y2):
-    X_test = np.vstack((X1, X2))
-    y_test = np.hstack((y1, y2))
-    y_predict = svc.predict(X_test)
-    #for i in range(len(y_test)):
-    #    print y_test[i], y_predict[i]
+def run_svm(svc,X,XLabels,useMeans=True):
+    y_predict = svc.predict(X)
+    
+    if useMeans == True:
+        posClusters = XLabels[np.where(y_predict==1)[0]]
+        negClusters = XLabels[np.where(y_predict==0)[0]]
+        return posClusters,negClusters
 
-    #print "SVM: %d out of %d predictions correct" % (correct, len(y_predict))
-    tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
-    print "\t...tp",len(tp)
-    print "\t...tn",len(tn)
-    print "\t...fp",len(fp)
-    print "\t...fn",len(fn)
+    posIndices = np.where(y_predict==1)[0]
+    negIndices = np.where(y_predict==0)[0]
+       
+    return posIndices,negIndices
 
 def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=False):
     X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
 
-
     if useLinear == True:
         svc = svm.LinearSVC()
         svc.fit(X_train, y_train)
-
         y_predict = svc.predict(X_test)
         
         tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
@@ -130,6 +129,20 @@ def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=Fal
 
     return bestResults
 
+def get_sl_test_data(fileEvents,fileLabels,includedChannels,subsample=None,useMeans=True):
+    ## declare variables
+    X = fileEvents[:,includedChannels].copy()
+       
+    if useMeans == True:
+        uLabels,X = get_mean_matrix(X,fileLabels)
+        X = (X - X.mean(axis=0)) / X.std(axis=0)
+        return uLabels,X
+    
+    # transform
+    X = (X - X.mean(axis=0)) / X.std(axis=0)
+
+    return X
+    
 def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID='run1',subsample=None,useMeans=True,useIndices=False):
     '''
     the parent gate is used to define the non-target centroids or events
@@ -183,7 +196,6 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         nonChildIndices = np.array(list(set(nonChildIndices1).intersection(set(nonChildIndices2))))
 
         #print 'check', nonChildIndices.shape, nonChildIndices2.shape
-
         if subsample == None:
             pass
         elif parentIndices.shape[0] > subsample and childIndices.shape[0] > subsample:
@@ -205,13 +217,6 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         if useMeans == True:
             uLabelsX1,X1 = get_mean_matrix(X1,fileLabels[childIndices])
             uLabelsX2,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
-
-        ## convert to standard normal
-        #print X1.shape,X2.shape
-        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
-        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
-        #X1 = (X1 - X1.mean(axis=0)) / X1.std(axis=0)
-        #X2 = (X2 - X2.mean(axis=0)) / X2.std(axis=0)
 
         y1 = np.array([1.]).repeat(X1.shape[0])
         y2 = np.array([0.]).repeat(X2.shape[0])
@@ -258,11 +263,6 @@ def make_basic_sl_plot(ax,data,gate,fileName,nga):
 
     ax.scatter(X1[:,0], X1[:,1],c='#FF6600',s=5,edgecolor='none',alpha=0.7) 
     ax.scatter(X2[:,0], X2[:,1],c='#0066FF',s=5,edgecolor='none',alpha=0.7)
-    
-    #ax.set_xlabel(channelNames[gate['channel1']])
-    #x.set_ylabel(channelNames[gate['channel2']])
-    #pl.xlim(xx.min(), xx.max()) 
-    #pl.ylim(yy.min(), yy.max())
     ax.set_xticks(())
     ax.set_yticks(())
 

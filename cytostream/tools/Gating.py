@@ -474,12 +474,6 @@ class GateImporter:
                 gates[normalizedKey] = item
                 resultsType = 1
 
-        ## assumes that all gates are the same for each file (otherwise create a loop)
-        #print 'found %s keys', len(gates.keys())
-        #gateList = gates[gates.keys()[1]]
-        #print 'found %s gates', len(gateList)
-        #print gates.kepys()
-
         ## ensure we have the correct number of matches
         matches = 0
         for fileNameToMatch in gates.keys():
