@@ -288,6 +288,7 @@ def handle_dump_filtering(nga,channelInds,modelRunID='run1',fileList=None, figsD
             ss = SaveSubplots(nga.homeDir,figName,numSubplots,figMode='analysis',figTitle=figTitle,forceScale=False,drawState='heat',
                               addLine=thresholdLines[fileName],axesOff=True,subplotTitles=subplotTitles)
 
+
 def get_cytokine_threshold(nga,posControlFile,negControlFile,cytoIndex,filterID,beta,fullOutput=True,theta=3.0):
     '''
     returns a dict of results for cytokine threshold analysis

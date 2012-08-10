@@ -301,12 +301,6 @@ class SaveSubplots():
             if self.textToShow != None and self.textToShow != None:
                 txt = self.textToShow[subplotIndex]
                 ax = self.get_axes(subplotIndex)
-                def add_text(ax,xPos,yPos,txt):
-                    ax.text(xPos,yPos,txt,color='white',fontsize=10,
-                            ha="center", va="top",fontname=self.fontName,
-                            bbox = dict(boxstyle="round",facecolor='black',alpha=0.8)
-                            )
-                
                 ax.text(0.11, 0.92,txt,
                         horizontalalignment='left',
                         verticalalignment='center',

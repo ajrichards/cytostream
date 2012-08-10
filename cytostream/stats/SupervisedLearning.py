@@ -26,17 +26,8 @@ def _run_svm(X_train,y_train,X_test,y_test):
 def get_mean_matrix(events,labels):
     meanMat = None
     uniqueLabels = get_valid_unique_clusters(events,labels)
-    allLabels = list(set(labels))
-    allLabels.sort()
-    for clusterId in allLabels:
-        if clusterId not in uniqueLabels:
-            empty = np.array([np.nan for i in range(events.shape[1])])
-            if meanMat == None:
-                meanMat = empty
-            else:
-                meanMat = np.vstack([meanMat,empty])
-            continue
 
+    for clusterId in uniqueLabels:
         clusterIndices = np.where(labels == clusterId)[0]
         clusterEvents = events[clusterIndices,:]
         if meanMat == None:
@@ -44,8 +35,7 @@ def get_mean_matrix(events,labels):
         else:
             meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
 
-    usedIndices = np.where(np.isnan(meanMat[:,1])==True)[0]
-    return usedIndices,meanMat
+    return uniqueLabels,meanMat
 
 def gaussian_kernel(x, y):
     print x.shape,y.shape
@@ -72,6 +62,7 @@ def my_kernel(x, y):
     print 'return',np.dot(np.dot(x, M), y.T).shape
     return np.dot(np.dot(x, M), y.T)
 
+
 def train_svm(X1,y1,X2,y2,C=1.0,gamma=0.7,useLinear=False):
     X_train = np.vstack((X1, X2))
     y_train = np.hstack((y1, y2))
@@ -85,45 +76,44 @@ def train_svm(X1,y1,X2,y2,C=1.0,gamma=0.7,useLinear=False):
    
     return svc
 
-
-def run_svm(svc,X,XLabels,useMeans=True):
+def run_svm(svc,X):
+    X = X.copy()
+    scaler  = Scaler()
+    X  = scaler.fit_transform(X)
     y_predict = svc.predict(X)
     
     return y_predict
 
-    if useMeans == True:
-        posClusters = XLabels[np.where(y_predict==1)[0]]
-        negClusters = XLabels[np.where(y_predict==0)[0]]
-        return posClusters,negClusters
-
-    posIndices = np.where(y_predict==1)[0]
-    negIndices = np.where(y_predict==0)[0]
-       
-    return posIndices,negIndices
-
 def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=False):
     X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
 
+    X = np.vstack((X1, X2))
+    Y = np.hstack((y1, y2))
+
+    scaler = Scaler()
+    X = scaler.fit_transform(X)
+
     if useLinear == True:
-        svc = svm.LinearSVC()
+        svc = svm.LinearSVC(C=1000.0,tol=1.0)
+        #svc = svm.SVC(kernel='poly',degree=3,C=1.0)
         svc.fit(X_train, y_train)
-        y_predict = svc.predict(X_test)
-        
-        tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
-        if len(tp) == 0 and len(fp) == 0:
-            precision = 0.0
-        else:
-            precision = float(len(tp))/(float(len(tp))+float(len(fp)))
-        if len(tp) == 0 and len(fn) == 0:
-            recall = 0.0
-        else:
-            recall = float(len(tp))/(float(len(tp))+float(len(fn)))
+    
+        return svc
 
-        return (precision,recall)
+    C_range = 10.0 ** np.arange(-2, 9)
+    gamma_range = 10.0 ** np.arange(-5, 4)
+    param_grid = dict(gamma=gamma_range, C=C_range)
 
-    cRange = [0.001,0.01,0.1,1.0,10.0]
-    gammaList = [0.0001,0.001,0.01,0.1,1.0,10.0]
-    bestResults = None
+    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=StratifiedKFold(y=Y, k=3))
+    grid.fit(X, Y)
+
+    print("The best classifier is: ", grid.best_estimator_)
+    return grid.best_estimator
+    
+
+    #cRange = [0.001,0.01,0.1,1.0,10.0]
+    #gammaList = [0.000000001,0.00000001,0.0000001,0.000001,.00001,0.0001,0.001,0.01,0.1,1.0,10.0]
+    #bestResults = None
 
     for C in cRange:
         for gamma in gammaList:
@@ -156,19 +146,19 @@ def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=Fal
 
     return bestResults
 
-def get_sl_test_data(fileEvents,fileLabels,includedChannels,subsample=None,useMeans=True):
+def get_sl_test_data(fileEvents,fileLabels,includedChannels,useMeans=False):
     ## declare variables
     X = fileEvents[:,includedChannels].copy()
-       
-    if useMeans == True:
-        clusterIndicesX,X = get_mean_matrix(X,fileLabels)
-        X = X[clusterIndicesX,:]
-        X = (X - X.mean(axis=0)) / X.std(axis=0)
-        return clusterIndicesX,X
-    
-    # transform
-    X = (X - X.mean(axis=0)) / X.std(axis=0)
+    scaler  = Scaler()
+    X = scaler.fit_transform(X)
 
+    #X = (X - X.mean(axis=0)) / X.std(axis=0)
+
+    if useMeans == True:
+        clusterIds,X = get_mean_matrix(X,fileLabels)
+        #X = (X - X.mean(axis=0)) / X.std(axis=0)
+        return clusterIds,X
+    
     return X
     
 def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID='run1',subsample=None,useMeans=True,useIndices=False):
@@ -202,13 +192,20 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         
         #for fileName in fileNameList:
         fileEvents = nga.get_events(fileName)
+        fileEvents = fileEvents.copy()
+        
+        # transform
+        #fileEvents = (fileEvents - fileEvents.mean(axis=0)) / fileEvents.std(axis=0)
+        #scaler  = Scaler()
+        #fileEvents = scaler.fit_transform(fileEvents)
+
         fileLabels = nga.get_labels(fileName,modelRunID,modelType='components',subsample='original',getLog=False)
         if useIndices == False:
             childIndices = nga.get_filter_indices(fileName,'cFilter_%s'%childFilterID)  
         else:
             childIndices = nga.get_filter_indices(fileName,'iFilter_%s'%childFilterID)  
         if parentFilterID == 'root':
-            parentIndices = np.arange(fileEvents.shape[0])
+           parentIndices = np.arange(fileEvents.shape[0])
         else:
             if useIndices == False:
                 parentIndices = nga.get_filter_indices(fileName,'cFilter_%s'%parentFilterID)
@@ -231,25 +228,28 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
             childIndices = childIndices[randIndices]
             randIndices =  np.random.randint(0,nonChildIndices.shape[0],subsample)
             nonChildIndices = nonChildIndices[randIndices]
+        elif parentIndices.shape[0] > subsample: 
+            randIndices =  np.random.randint(0,childIndices.shape[0],subsample)            
+            if randIndices.shape[0] >= childIndices.shape[0]:
+                childIndices = childIndices
+            else:
+                childIndices = childIndices[randIndices]
+
+            randIndices =  np.random.randint(0,nonChildIndices.shape[0],subsample)
+            if randIndices.shape[0] >= nonChildIndices.shape[0]:
+                nonChildIndices = nonChildIndices
+            else:
+                nonChildIndices = nonChildIndices[randIndices]
+
       
         X1 = fileEvents[childIndices,:].copy()
         X1 = X1[:,includedChannels].copy()
         X2 = fileEvents[nonChildIndices,:].copy()
         X2 = X2[:,includedChannels].copy()
 
-        ## scale the data
-        #scaler  = Scaler()
-        #X1 = scaler.fit_transform(X1)
-        #X2 = scaler.fit_transform(X2)
-
         if useMeans == True:
-            print '1', X1.shape
-            clusterIndicesX1,X1 = get_mean_matrix(X1,fileLabels[childIndices])
-            print '2', X1.shape
-            X1 = X1[clusterIndicesX1,:]
-            print '3', X1.shape
-            clusterIndicesX2,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
-            X2 = X2[clusterIndicesX2,:]
+            clusterIds,X1 = get_mean_matrix(X1,fileLabels[childIndices])
+            clusterIds,X2 = get_mean_matrix(X2,fileLabels[nonChildIndices])
 
         y1 = np.array([1.]).repeat(X1.shape[0])
         y2 = np.array([0.]).repeat(X2.shape[0])
@@ -271,13 +271,6 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         else:
             toReturnY2 = np.hstack((toReturnY2,y2))
 
-    ## transform the data
-    X = np.vstack((toReturnX1, toReturnX2))
-    y = np.hstack((toReturnY1, toReturnY2))
-    X = (X - X.mean(axis=0)) / X.std(axis=0)
-    toReturnX1 = X[np.where(y==1)[0]].copy()
-    toReturnX2 = X[np.where(y==0)[0]].copy()
-    
     trainingData =  {"X1":toReturnX1,
                      "y1":toReturnY1,
                      "X2":toReturnX2,
@@ -322,16 +315,16 @@ def make_basic_sl_plot(ax,data,gate,fileName,nga):
 
     ax.set_aspect(1./ax.get_data_ratio())
 
-    
+'''    
 def svm_optimize_parameters(X1,y1,X2,y2,figPath1,figPath2):
 
     ##############################################################################
     # Load and prepare data set
     #
     # dataset for grid search
-    iris = load_iris()
-    X = iris.data
-    Y = iris.target
+    #iris = load_iris()
+    #X = iris.data
+    #Y = iris.target
 
     X = np.vstack((X1, X2))
     Y = np.hstack((y1, y2))
@@ -352,7 +345,6 @@ def svm_optimize_parameters(X1,y1,X2,y2,figPath1,figPath2):
     # just applying it on the test set.
 
     scaler = Scaler()
-
     X = scaler.fit_transform(X)
     X_2d = scaler.fit_transform(X_2d)
 
@@ -427,3 +419,4 @@ def svm_optimize_parameters(X1,y1,X2,y2,figPath1,figPath2):
     pl.yticks(np.arange(len(C_range)), C_range)
 
     pl.savefig(figPath2)
+'''
