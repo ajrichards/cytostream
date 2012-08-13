@@ -28,7 +28,7 @@ def get_valid_unique_clusters(events,runLabels):
     validUniqueLabels = []
 
     for i,u in enumerate(uniqueLabels):
-        if np.where(runLabels==u)[0].size > 4:
+        if np.where(runLabels==u)[0].size > 5:
             validUniqueLabels.append(u)
 
     return np.array(validUniqueLabels)
@@ -41,11 +41,11 @@ def get_mean_matrix(events,labels):
         clusterIndices = np.where(labels == clusterId)[0]
         clusterEvents = events[clusterIndices,:]
         if meanMat == None:
-            #meanMat = np.array([clusterEvents.mean(axis=0)])
-            meanMat = np.array([np.median(clusterEvents,axis=0)])
+            meanMat = np.array([clusterEvents.mean(axis=0)])
+            #meanMat = np.array([np.median(clusterEvents,axis=0)])
         else:
-            #meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
-            meanMat = np.vstack([meanMat,np.median(clusterEvents,axis=0)])
+            meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+            #meanMat = np.vstack([meanMat,np.median(clusterEvents,axis=0)])
 
     return uniqueLabels,meanMat
 
@@ -54,13 +54,6 @@ def gaussian_kernel(x, y):
     sigma = 2.0
     eDist = np.linalg.norm(x-y)
     return np.exp(-eDist**2 / (2 *(sigma**2)))
-
-#def gaussian_kernel(x, y, sigma=5.0):
-#    return np.exp(-linalg.norm(x-y)**2 / (2 * (sigma ** 2)))
-
-#def kernel_gaussian(x,y):
-#    print 'shape',np.exp(-np.sum((x-y)**2) / 20.0)
-#    return np.exp(-np.sum((x-y)**2) / 20.0)
 
 def my_kernel(x, y):
     """
@@ -97,7 +90,7 @@ def run_svm(svc,X):
     return y_predict
 
 def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=False):
-    X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
+    #X_train,y_train,X_test,y_test = split_train_test(X1,y1,X2,y2)
 
     X = np.vstack((X1, X2))
     Y = np.hstack((y1, y2))
@@ -115,19 +108,21 @@ def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=Fal
     gamma_range = 10.0 ** np.arange(-5, 4)
     param_grid = dict(gamma=gamma_range, C=C_range)
 
-    grid = GridSearchCV(SVC(class_weight={1: 10}), param_grid=param_grid, cv=StratifiedKFold(y=Y,k=3))
+    grid = GridSearchCV(SVC(class_weight={1: 100}), param_grid=param_grid, cv=StratifiedKFold(y=Y,k=2))
     grid.fit(X, Y)
 
     print("The best classifier is: ", grid.best_estimator_)
-    #return grid.best_estimator
     return grid.best_estimator_
     
-def get_sl_test_data(fileEvents,fileLabels,includedChannels,useMeans=False):
+def get_sl_test_data(fileEvents,fileLabels,includedChannels,useMeans=False,parentIndices=None):
     ## declare variables
     X = fileEvents[:,includedChannels].copy()
     scaler  = Scaler()
     X = scaler.fit_transform(X)
 
+    #if parentIndices != None:
+    #    X = X[parentIndices,:]
+    
     #X = (X - X.mean(axis=0)) / X.std(axis=0)
 
     if useMeans == True:

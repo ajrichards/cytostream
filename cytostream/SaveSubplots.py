@@ -219,13 +219,14 @@ class SaveSubplots():
                 print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
 
             ## filter overwrites subsamples
-            if subplotFilter != None:
+            if str(subplotFilter) != 'None':
                 labels = self.controller.get_labels(subplotFile,subplotRunID)
                 filterIndices = self.controller.model.load_filter(subplotFile,subplotFilter)
                 if len(filterIndices) > 0:
-                    labels = labels[filterIndices]
+                    labels = np.array(labels[filterIndices])
                 else:
-                    labels = [] 
+                    labels = np.array([]) 
+                    print "WARNING: not displaying any events no events in filter"
                 
                 subsampleIndices = filterIndices
 
