@@ -210,8 +210,15 @@ def get_indices_from_gate(data,gate):
     returns indices from a gate
     '''
 
-    allData = [(d[0], d[1]) for d in data]
-    ind = np.nonzero(points_inside_poly(allData, gate))[0]
+    #allData = [(d[0], d[1]) for d in data]
+    
+    allData = [(d[0]+10000, d[1]+10000) for d in data]
+    gate = [(g[0]+10000, g[1]+10000) for g in gate]
+    pip = points_inside_poly(allData, gate)
+    #print 'points', pip
+    #sys.exit()
+    #ind = np.nonzero(points_inside_poly(allData, gate))[0]
+    ind = np.where(pip==True)[0]
 
     return ind
 
@@ -389,7 +396,7 @@ class GateImporter:
                 figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_fjxml.png'%(fileName))
                 figTitle = "Imported FJ gates %s"%re.sub("\_","-",fileName)
             print '...saving', figName
-            self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=False,
+            self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=True,
                                               drawState='heat',subplotTitles=subplotTitles,gatesToShow=gatesToShow,
                                               positiveToShow=positiveToShow,drawLabels=False,textToShow=textToShow)
 
@@ -417,11 +424,28 @@ class GateImporter:
 
     def read_fcm_poly_gate(self,pGate,fileName):
         verts = pGate.vert
+        eps = 10#np.finfo(float).eps
         name  = re.sub("\s+","_",pGate.name)
         name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
         name = name + "_" + fileName
         _channel1,_channel2  = pGate.chan
+
+        ## setup for bug fix for neg vals
+        dimX = np.array([g[0] for g in verts])
+        dimY = np.array([g[1] for g in verts])
+        negValsX = (np.where(dimX < 0)[0],dimX[np.where(dimX < 0)[0]])
+        negValsY = (np.where(dimY < 0)[0],dimY[np.where(dimY < 0)[0]])
+        verts = [(np.abs(dimX[p]),np.abs(dimY[p])) for p in range(len(verts))]
+        
+
+        #print 'X', negValsX
+        #print 'Y', negValsY
+        
+        #if name == "Singlets::CD3+::Lymphs::CD4+_004_J6901J4Q_04_C06":
+        #print 'original'
+        #for v in verts:
+        #    print v
 
         shortChannels = self.nga.get('short_channel_labels')
         if len(shortChannels) == 0:
@@ -445,8 +469,41 @@ class GateImporter:
         elif channel2Name not in scatterList:
             verts = self.logical_transform(verts,axis='y',reverse=False)
         
+
+        ## revert any negative values to their original values
+        dimX = np.array([g[0] for g in verts])
+        dimY = np.array([g[1] for g in verts])
+        #print 'dimX', dimX
+        #print 'dimY', dimY
+        #print 'ngvX',negValsX[0], negValsX[1]
+        #print 'ngvY',negValsY[0], negValsY[1]
+        if len(negValsX[0]) > 0:
+            dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))                   # negValsX[1]
+        if len(negValsY[0]) > 0:
+            dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))                   # negValsY[1]
+        verts = [(dimX[p],dimY[p]) for p in range(len(verts))]
+
+        #print 'transformed'
+        for v in verts:
+            print v
+
+
+
         ## add the point to the end
         verts = verts + [verts[0]]
+        
+        
+        
+        #if name == "Singlets::CD3+::Lymphs::CD4+_004_J6901J4Q_04_C06":
+        #    sys.exit()
+
+        
+        
+            
+        ## subtract eps from all points
+        #_verts = [(pt[0]-eps,pt[1]-eps) for pt in verts]
+        #verts = _verts
+                    
         return verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name
 
     def read_gates(self,xmlFilePath):

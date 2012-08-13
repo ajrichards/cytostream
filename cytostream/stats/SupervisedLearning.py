@@ -1,7 +1,7 @@
-from libSVM import *
+#from libSVM import *
 import matplotlib.pyplot as plt
-from scikits.learn import svm
-
+#from scikits.learn import svm
+from sklearn import svm
 
 import numpy as np
 import pylab as pl
@@ -22,6 +22,16 @@ def _run_svm(X_train,y_train,X_test,y_test):
     print "%d out of %d predictions correct" % (correct, len(y_predict))
     return clf,y_predict
 '''
+                       
+def get_valid_unique_clusters(events,runLabels):
+    uniqueLabels = np.sort(np.unique(runLabels))
+    validUniqueLabels = []
+
+    for i,u in enumerate(uniqueLabels):
+        if np.where(runLabels==u)[0].size > 4:
+            validUniqueLabels.append(u)
+
+    return np.array(validUniqueLabels)
 
 def get_mean_matrix(events,labels):
     meanMat = None
@@ -31,9 +41,11 @@ def get_mean_matrix(events,labels):
         clusterIndices = np.where(labels == clusterId)[0]
         clusterEvents = events[clusterIndices,:]
         if meanMat == None:
-            meanMat = np.array([clusterEvents.mean(axis=0)])
+            #meanMat = np.array([clusterEvents.mean(axis=0)])
+            meanMat = np.array([np.median(clusterEvents,axis=0)])
         else:
-            meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+            #meanMat = np.vstack([meanMat,clusterEvents.mean(axis=0)])
+            meanMat = np.vstack([meanMat,np.median(clusterEvents,axis=0)])
 
     return uniqueLabels,meanMat
 
@@ -93,59 +105,23 @@ def run_svm_validation(X1,y1,X2,y2,gammaRange=[0.5],cRange=[0.005],useLinear=Fal
     scaler = Scaler()
     X = scaler.fit_transform(X)
 
-    if useLinear == True:
-        svc = svm.LinearSVC(C=1000.0,tol=1.0)
-        #svc = svm.SVC(kernel='poly',degree=3,C=1.0)
-        svc.fit(X_train, y_train)
-    
-        return svc
+    #if useLinear == True:
+    #    svc = svm.SVC(kernel='linear')#class_weight={1: 10
+    #    #    #    #svc = svm.SVC(kernel='poly',degree=3,C=1.0)
+    #    svc.fit(X, Y)
+    #    return svc
 
     C_range = 10.0 ** np.arange(-2, 9)
     gamma_range = 10.0 ** np.arange(-5, 4)
     param_grid = dict(gamma=gamma_range, C=C_range)
 
-    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=StratifiedKFold(y=Y, k=3))
+    grid = GridSearchCV(SVC(class_weight={1: 10}), param_grid=param_grid, cv=StratifiedKFold(y=Y,k=3))
     grid.fit(X, Y)
 
     print("The best classifier is: ", grid.best_estimator_)
-    return grid.best_estimator
+    #return grid.best_estimator
+    return grid.best_estimator_
     
-
-    #cRange = [0.001,0.01,0.1,1.0,10.0]
-    #gammaList = [0.000000001,0.00000001,0.0000001,0.000001,.00001,0.0001,0.001,0.01,0.1,1.0,10.0]
-    #bestResults = None
-
-    for C in cRange:
-        for gamma in gammaList:
-
-            svc = svm.SVC(kernel='rbf',gamma=gamma,C=C)
-            svc.fit(X_train, y_train)
-            y_predict = svc.predict(X_test)        
-            tp,fp,tn,fn = evaluate_predictions(y_test,y_predict)
-            #print "\t...tp",len(tp)
-            #print "\t...tn",len(tn)
-            #print "\t...fp",len(fp)
-            #print "\t...fn",len(fn)
-            if len(tp) == 0 and len(fp) == 0:
-                precision = 0.0
-            else:
-                precision = float(len(tp))/(float(len(tp))+float(len(fp)))
-            if len(tp) == 0 and len(fn) == 0:
-                recall = 0.0
-            else:
-                recall = float(len(tp))/(float(len(tp))+float(len(fn)))
-            #print "\t...precision", precision
-            #print "\t...recall", recall
-
-            if bestResults == None:
-                bestResults = (gamma,C,precision,recall)
-                continue
-
-            if bestResults[2] + bestResults[3] < precision + recall:
-                bestResults = (gamma,C,precision,recall)
-
-    return bestResults
-
 def get_sl_test_data(fileEvents,fileLabels,includedChannels,useMeans=False):
     ## declare variables
     X = fileEvents[:,includedChannels].copy()
@@ -161,10 +137,14 @@ def get_sl_test_data(fileEvents,fileLabels,includedChannels,useMeans=False):
     
     return X
     
-def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID='run1',subsample=None,useMeans=True,useIndices=False):
+def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID='run1',subsample=None,useMeans=True,useIndicesParent=False,useIndicesChild=False):
     '''
     the parent gate is used to define the non-target centroids or events
     so it does not necessarly have to be the direct parent
+
+    useMeans returns a mean matrix of the data
+    useIndices the indices that we get the data to return from comes from iFilter or cFilter
+
     '''
 
     ## error check
@@ -200,14 +180,14 @@ def get_sl_data(nga,childFilterIDList,parentFilterIDList,fileNameList,modelRunID
         #fileEvents = scaler.fit_transform(fileEvents)
 
         fileLabels = nga.get_labels(fileName,modelRunID,modelType='components',subsample='original',getLog=False)
-        if useIndices == False:
+        if useIndicesChild == False:
             childIndices = nga.get_filter_indices(fileName,'cFilter_%s'%childFilterID)  
         else:
             childIndices = nga.get_filter_indices(fileName,'iFilter_%s'%childFilterID)  
         if parentFilterID == 'root':
            parentIndices = np.arange(fileEvents.shape[0])
         else:
-            if useIndices == False:
+            if useIndicesParent == False:
                 parentIndices = nga.get_filter_indices(fileName,'cFilter_%s'%parentFilterID)
             else:
                 parentIndices = nga.get_filter_indices(fileName,'iFilter_%s'%parentFilterID)

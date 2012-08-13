@@ -157,7 +157,6 @@ def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='sans'):
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0, 1e05])
 
-
 def set_log_transformed_ticks(ax,axis='x',fontsize=10,fontname='sans'):
     '''
     to map an axis to a scale that immunologists are familar with
