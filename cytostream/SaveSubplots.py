@@ -305,7 +305,7 @@ class SaveSubplots():
                         horizontalalignment='left',
                         verticalalignment='center',
                         transform = ax.transAxes)
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=False)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
             
             ## add positivity events if specified
             if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
@@ -315,7 +315,7 @@ class SaveSubplots():
                 #ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
                 if len(positiveEventInds) > 0:
                     ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='#FFDD22',s=3,edgecolor='none')      
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=False)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
              
 
     def get_axes(self,subplotIndex):
