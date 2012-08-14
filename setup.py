@@ -8,7 +8,7 @@ setup(name='cytostream',
             author='Adam J Richards, ',
             author_email='adam.richards@stat.duke.edu',
             url='http://code.google.com/p/cytostream/',
-            packages=['cytostream','cytostream.opengl','cytostream.qtlib','cytostream.tools','cytostream.stats'],
+            packages=['cytostream','cytostream.opengl','cytostream.qtlib','cytostream.qtlib.leftdock','cytostream.tools','cytostream.stats'],
             long_description = '',
             license='GNU GPL v3',
             )
