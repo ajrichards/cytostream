@@ -122,7 +122,7 @@ class Centroids:
 
         return plotID, channelsID
 
-def set_logicle_transformed_ticks(ax,axis='x',fontsize=10,fontname='sans'):
+def set_logicle_transformed_ticks(ax,axis='x',fontsize=9,fontname='sans'):
     '''
     to map an axis to a scale that immunologists are familar with
     '''
@@ -227,17 +227,17 @@ def get_fontsize(numSubplots):
     elif numSubplots in [2]:
         fontSize = 10
     elif numSubplots in [3]:
-        fontSize = 7
+        fontSize = 10
     elif numSubplots in [4]:
-        fontSize = 6
+        fontSize = 10
     elif numSubplots in [5,6]:
-        fontSize = 5
+        fontSize = 10
     elif numSubplots in [7,8,9]:
-        fontSize = 4
+        fontSize = 10
     elif numSubplots in [10,11,12]:
-        fontSize = 3
+        fontSize = 8
     elif numSubplots in [13,14,15,16]:
-        fontSize = 3
+        fontSize = 9
 
     return fontSize
 

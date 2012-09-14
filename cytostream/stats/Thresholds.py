@@ -16,11 +16,14 @@ try:
 except:
     pass
 
-
 ## functions
 def _calculate_fscores(neg_pdf, pos_pdf, beta=0.2, theta=3.0):
     n = len(neg_pdf)
-    #print '...beta:%s,theta:%s'%(beta,theta)
+    _thetaMax = ((0.00001 + pos_pdf)/(0.00001 + neg_pdf)).max()
+    thetaMax = 1.6 - _thetaMax
+    print thetaMax
+    thetaMax = scale(thetaMax, (0.2,0.6),(2.0,15.0))
+
     fpos = np.where(pos_pdf > theta*neg_pdf, pos_pdf-neg_pdf, 0)
     tp = np.array([np.sum(fpos[i:]) for i in range(n)])
     fn = np.array([np.sum(fpos[:i]) for i in range(n)])
@@ -37,7 +40,7 @@ def _calculate_fscores(neg_pdf, pos_pdf, beta=0.2, theta=3.0):
     fscores = (1+beta*beta)*(precision*recall)/(denom)
     fscores[np.where(np.isnan(fscores)==True)[0]]=0
 
-    return fscores,precision,recall
+    return fscores,precision,recall,thetaMax
 
 def calculate_fscores(neg,pos,beta=0.2,theta=3.0,fullOutput=True):
 
@@ -50,12 +53,12 @@ def calculate_fscores(neg,pos,beta=0.2,theta=3.0,fullOutput=True):
     pdfNeg, bins = np.histogram(neg, bins=numBins, normed=True)
     pdfPos, bins = np.histogram(pos, bins=bins, normed=True)
     xs = (bins[:-1]+bins[1:])/2.0
-    fscores,precision,recall = _calculate_fscores(pdfNeg, pdfPos,beta=beta, theta=theta)
+    fscores,precision,recall,thetaMax = _calculate_fscores(pdfNeg, pdfPos,beta=beta, theta=theta)
     fThreshold = xs[np.argmax(fscores)]
 
     if fullOutput == True:
         return {'threshold':fThreshold, 'fscores':fscores, 'pdfx': xs, 'pdfpos':pdfPos, 'pdfneg':pdfNeg,
-                'precision':precision,'recall':recall}
+                'precision':precision,'recall':recall,'thetamax':thetaMax}
     else:
         return fThreshold
 
@@ -347,17 +350,14 @@ def get_cytokine_positive_events(nga,cytoIndex,fThreshold,filterID,fileList=None
         positiveEventInds = np.array([])
         if filterID != None:
             filterInds = nga.get_filter_indices(fileName,filterID)
-          
             if str(filterInds) == 'None' or str(filterInds) == 'False':
                 pass
-            elif len(filterInds) > 0:
-                _positiveEventInds = np.where(events[:,cytoIndex] > fThreshold)[0]
+            elif filterInds.size > 0:
+                _positiveEventInds = np.where(events[:,cytoIndex] >= fThreshold)[0]
                 if _positiveEventInds.size > 0:
                     positiveEventInds = np.array(list(set(filterInds.tolist()).intersection(set(_positiveEventInds.tolist()))))
-            else:
-                print 'not suppose to happen'
         else:
-            positiveEventInds = np.where(events[:,cytoIndex] > fThreshold)[0]
+            positiveEventInds = np.where(events[:,cytoIndex] >= fThreshold)[0]
 
         if events.shape[0] == 0 or len(positiveEventInds) == 0:
             percentages[fileName] = 0.0

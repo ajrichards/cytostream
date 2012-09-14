@@ -424,7 +424,6 @@ class GateImporter:
 
     def read_fcm_poly_gate(self,pGate,fileName):
         verts = pGate.vert
-        eps = 10#np.finfo(float).eps
         name  = re.sub("\s+","_",pGate.name)
         name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
@@ -438,15 +437,6 @@ class GateImporter:
         negValsY = (np.where(dimY < 0)[0],dimY[np.where(dimY < 0)[0]])
         verts = [(np.abs(dimX[p]),np.abs(dimY[p])) for p in range(len(verts))]
         
-
-        #print 'X', negValsX
-        #print 'Y', negValsY
-        
-        #if name == "Singlets::CD3+::Lymphs::CD4+_004_J6901J4Q_04_C06":
-        #print 'original'
-        #for v in verts:
-        #    print v
-
         shortChannels = self.nga.get('short_channel_labels')
         if len(shortChannels) == 0:
             print "ERROR: GateImporter fatal error - no short labels -- exiting..."
@@ -469,41 +459,19 @@ class GateImporter:
         elif channel2Name not in scatterList:
             verts = self.logical_transform(verts,axis='y',reverse=False)
         
-
         ## revert any negative values to their original values
-        dimX = np.array([g[0] for g in verts])
-        dimY = np.array([g[1] for g in verts])
-        #print 'dimX', dimX
-        #print 'dimY', dimY
-        #print 'ngvX',negValsX[0], negValsX[1]
-        #print 'ngvY',negValsY[0], negValsY[1]
+        #dimX = np.array([g[0] for g in verts])
+        #dimY = np.array([g[1] for g in verts])
+
         if len(negValsX[0]) > 0:
-            dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))                   # negValsX[1]
+            dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))
         if len(negValsY[0]) > 0:
-            dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))                   # negValsY[1]
+            dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))
         verts = [(dimX[p],dimY[p]) for p in range(len(verts))]
-
-        #print 'transformed'
-        for v in verts:
-            print v
-
-
 
         ## add the point to the end
         verts = verts + [verts[0]]
-        
-        
-        
-        #if name == "Singlets::CD3+::Lymphs::CD4+_004_J6901J4Q_04_C06":
-        #    sys.exit()
-
-        
-        
-            
-        ## subtract eps from all points
-        #_verts = [(pt[0]-eps,pt[1]-eps) for pt in verts]
-        #verts = _verts
-                    
+                            
         return verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name
 
     def read_gates(self,xmlFilePath):

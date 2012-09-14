@@ -1,8 +1,8 @@
 .. cytostream documentation tutorial file, created by ARichards
 
-=========
-Tutorials
-=========
+====================
+Cytostream Tutorials
+====================
 A number of tutorials to help users learn cytostream by example.
 ________________________________________________________________
 
