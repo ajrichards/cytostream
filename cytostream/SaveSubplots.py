@@ -27,7 +27,7 @@ class SaveSubplots():
                  figTitle=None,useSimple=False,useScale=False,inputLabels=None,drawState='heat',fontName='sans',
                  minNumEvents=3,subplotTitles=None,addLine=None,figSize=None,axesOff=False,subsample='original',
                  gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True,
-                 textToShow=None):
+                 textToShow=None,fontSize=10):
 
         ## arg variables
         self.controller = controller
@@ -36,6 +36,8 @@ class SaveSubplots():
         self.figMode = figMode
         self.figTitle = figTitle
         self.figName = figName
+        self.fontSize = fontSize
+        self.fontName = fontName
         self.plotType = plotType
         self.buff = 0.02
         self.useScale = useScale
@@ -134,7 +136,7 @@ class SaveSubplots():
             self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
             dpi = 220
         elif self.numSubplots in [10,11,12]:
-            self.fig.subplots_adjust(hspace=0.4,wspace=0.2)
+            self.fig.subplots_adjust(hspace=0.6,wspace=0.3)
             dpi = 240
         elif self.numSubplots in [13,14,15,16]:
             self.fig.subplots_adjust(hspace=0.2,wspace=0.4)
@@ -298,7 +300,6 @@ class SaveSubplots():
                     ax = self.get_axes(subplotIndex)
                     ax.add_line(line)
             
-            
             if self.textToShow != None and self.textToShow != None:
                 txt = self.textToShow[subplotIndex]
                 ax = self.get_axes(subplotIndex)
@@ -306,7 +307,7 @@ class SaveSubplots():
                         horizontalalignment='left',
                         verticalalignment='center',
                         transform = ax.transAxes)
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],self.fontSize,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
             
             ## add positivity events if specified
             if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
@@ -316,8 +317,19 @@ class SaveSubplots():
                 #ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
                 if len(positiveEventInds) > 0:
                     ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='#FFDD22',s=3,edgecolor='none')      
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],8,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
-             
+                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],self.fontSize,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
+       
+            ## ensure correct font size
+            ax = self.get_axes(subplotIndex)
+            
+            for t in ax.get_xticklabels():
+                t.set_fontsize(self.fontSize-4)
+                t.set_fontname(self.fontName)
+
+            for t in ax.get_yticklabels():
+                t.set_fontsize(self.fontSize-4)
+                t.set_fontname(self.fontName)
+
 
     def get_axes(self,subplotIndex):
         if self.numSubplots == 1:

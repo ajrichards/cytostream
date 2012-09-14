@@ -1,0 +1,34 @@
+.. reproducible research tutorial file, created by ARichards
+
+==================================
+No GUI Analysis - project creation
+==================================
+
+
+
+
+
+
+About lpEdit
+
+This is a page about lpEdit. This page is incomplete.
+
+
+Installation
+============
+
+GNU/Linux
+^^^^^^^^^
+
+.. code-block:: none
+
+    ~$  sudo apt-get install python-qscintilla2 python-qt4 python-numpy python-matplotlib
+    ~$  hg clone https://ajrichards@bitbucket.org/ajrichards/reproducible-research
+    ~$  cd reproducible-research/editor
+    ~$  sudo python setup.py install
+    ~$  python lpEdit.py
+
+
+
+
+
