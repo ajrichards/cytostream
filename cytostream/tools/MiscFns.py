@@ -1,6 +1,7 @@
 import sys,os,re,csv,cPickle
 import numpy as np
 import fcm
+from GlobalVariables import *
 
 def get_file_data(dataPath,dataType='fcs',channelsOnly=False):
 
@@ -180,3 +181,17 @@ def get_file_sample_stats(events,labels):
         n[str(int(cluster))] = len(np.where(labels==cluster)[0])
 
     return centroids,variances,n 
+
+def auto_generate_channel_dict(filePath):
+    fcsData = fcm.loadFCS(filePath,auto_comp=False,transform=None)
+    nameMatchedChannels = [get_official_name_match(chan) for chan in fcsData.channels]
+    isValidDict = True
+    channelDict = {}
+    
+    for c, cname in enumerate(nameMatchedChannels):
+        if cname == 'Unmatched':
+            isValidDict = False
+
+        channelDict[cname] = c
+
+    return isValidDict,channelDict

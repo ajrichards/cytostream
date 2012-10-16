@@ -10,7 +10,6 @@ Logger class used to document the steps involved in the analysis pipeline
 __author__ = "A Richards"
 
 import os,csv,re,ast
-import numpy as np
 from cytostream import configDictDefault
 
 

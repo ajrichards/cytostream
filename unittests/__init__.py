@@ -37,26 +37,6 @@ from TestCase2 import *
 TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
 runSuite = unittest.TestSuite([TestCase2Suite])
 
-#from TestCase3 import *
-#TestCase3Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase3)
-#runSuite = unittest.TestSuite([TestCase3Suite])
-
-#from TestCase4 import *
-#TestCase4Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase4)
-#runSuite = unittest.TestSuite([TestCase4Suite])
-
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
 caculatorSuite = unittest.TestSuite([DistanceCalculatorSuite])
-
-## file aligner tests
-#from TemplateFileCreatorTest import TemplateFileCreatorTest
-#from FileAlignerTest1 import FileAlignerTest1
-
-#TemplateFileCreatorTestSuite = unittest.TestLoader().loadTestsFromTestCase(TemplateFileCreatorTest)
-#FileAlignerTestSuite1 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest1)
-
-#from FileAlignerTest2 import FileAlignerTest2
-#FileAlignerTestSuite2 = unittest.TestLoader().loadTestsFromTestCase(FileAlignerTest2)
-
-#fileAlignerSuite = unittest.TestSuite([FileAlignerTestSuite1,FileAlignerTestSuite2])

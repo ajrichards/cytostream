@@ -27,8 +27,6 @@ from matplotlib.mlab import dist_point_to_segment
 from matplotlib.lines import Line2D
 import numpy as np
 
-
-
 class PolyGateInteractor:
     """
     gate interaction with a polygon
@@ -210,14 +208,10 @@ def get_indices_from_gate(data,gate):
     returns indices from a gate
     '''
 
-    #allData = [(d[0], d[1]) for d in data]
-    
+
     allData = [(d[0]+10000, d[1]+10000) for d in data]
     gate = [(g[0]+10000, g[1]+10000) for g in gate]
     pip = points_inside_poly(allData, gate)
-    #print 'points', pip
-    #sys.exit()
-    #ind = np.nonzero(points_inside_poly(allData, gate))[0]
     ind = np.where(pip==True)[0]
 
     return ind
@@ -429,10 +423,10 @@ class GateImporter:
         name = re.sub("\.gate","",name)
         name = name + "_" + fileName
         _channel1,_channel2  = pGate.chan
-
-        ## setup for bug fix for neg vals
         dimX = np.array([g[0] for g in verts])
         dimY = np.array([g[1] for g in verts])
+        
+        ## setup for bug fix for neg vals
         negValsX = (np.where(dimX < 0)[0],dimX[np.where(dimX < 0)[0]])
         negValsY = (np.where(dimY < 0)[0],dimY[np.where(dimY < 0)[0]])
         verts = [(np.abs(dimX[p]),np.abs(dimY[p])) for p in range(len(verts))]
@@ -460,9 +454,6 @@ class GateImporter:
             verts = self.logical_transform(verts,axis='y',reverse=False)
         
         ## revert any negative values to their original values
-        #dimX = np.array([g[0] for g in verts])
-        #dimY = np.array([g[1] for g in verts])
-
         if len(negValsX[0]) > 0:
             dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))
         if len(negValsY[0]) > 0:

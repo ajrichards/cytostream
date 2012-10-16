@@ -1,10 +1,10 @@
 .. Cytostream documentation, created by ARichards
 
-======================
-Command line Tutorials
-======================
+========================
+Cytostream API Tutorials
+========================
 Tutorials to use cytostream through the use of Python scripting
-____________________________________________________
+_______________________________________________________________
 
 Cytostream is a project centric software and it was developed so that
 projects could be created using the graphical interface or through
@@ -36,6 +36,7 @@ underlying engine for Cytostream.
    /nogui/NoGuiQualityAssurance
    /nogui/NoGuiRunningModels
    /nogui/NoGuiLabelsFromExternalSources
+   /nogui/NoGuiChannelNameMapping
 
 Useful links
 ^^^^^^^^^^^^
