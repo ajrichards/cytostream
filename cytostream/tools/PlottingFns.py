@@ -10,7 +10,7 @@ if mpl.get_backend() != 'agg':
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator,ScalarFormatter
 from cytostream.tools import read_txt_to_file_channels, read_txt_into_array, get_file_data, get_file_sample_stats
 from fcm.core.transforms import _logicle as logicle
 import fcm
@@ -220,6 +220,37 @@ def set_scatter_ticks(ax,axis,numTicks=6,fontsize=10,fontname='sans'):
         ax.set_yticklabels(tickLabels,fontsize=fontsize-2,fontname=fontname)
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([0,262144])
+
+    
+def set_arbitrary_ticks(ax,axis,events,index1,index2,fontsize=10,fontname='sans'):
+    """
+    if an axis is using an unknown scale or we just with to use the data to scale 
+    the axis
+    """
+
+    buff = 0.02
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-3,3))
+
+    ## handle data edge buffers
+    if axis in ['x','both']:
+        bufferX = buff * (events[:,index1].max() - events[:,index1].min())
+        ax.set_xlim([events[:,index1].min()-bufferX,events[:,index1].max()+bufferX])
+        ax.xaxis.set_major_formatter(formatter)
+    if axis in ['y','both']:
+        bufferY = buff * (events[:,index2].max() - events[:,index2].min())
+        ax.set_ylim([events[:,index2].min()-bufferY,events[:,index2].max()+bufferY])
+        ax.yaxis.set_major_formatter(formatter)
+
+    if axis in ['x','both']:
+        for tick in ax.xaxis.get_major_ticks():
+            tick.label.set_fontsize(fontsize-2) 
+            tick.label.set_fontname(fontname)
+    if axis in ['y','both']:
+        for tick in ax.yaxis.get_major_ticks():
+            tick.label.set_fontsize(fontsize-2) 
+            tick.label.set_fontname(fontname)
 
 def get_fontsize(numSubplots):
     if numSubplots in [1]:

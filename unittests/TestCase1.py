@@ -2,6 +2,7 @@
 import sys,os,unittest,time,re
 from cytostream import NoGuiAnalysis, configDictDefault
 
+
 '''
 description - Shows the user how a normal analysis is carried out.
               If initial parameters other than the transform need to be changed

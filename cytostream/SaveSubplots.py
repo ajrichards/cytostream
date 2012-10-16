@@ -288,7 +288,6 @@ class SaveSubplots():
             if self.addLine != None and subplotIndex in self.addLine.keys():
                 ax = self.get_axes(subplotIndex)
                 linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
-
             
             ## add gate if specified
             if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:

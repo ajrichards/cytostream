@@ -26,7 +26,6 @@ class ControllerTest(unittest.TestCase):
       
         self.controller = Controller(debug=False)
         channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
-
         self.controller.create_new_project(self.homeDir,channelDict=channelDict,record=False)
         self.controller.load_files_handler([self.fcsFileName])
         self.controller.log.log['model_reference'] = '3FITC_4PE_004'
@@ -63,6 +62,7 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(len(fileChannels),4)
 
     def testSubsampling(self):
+        print '...testing subsampler'
         subsample = '1e3'
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
@@ -70,14 +70,15 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(events.shape[0], 1000)
     
     def testProcessImagesQa(self):
+        print '...testing qa images'
         subsample = '1e3'
-        print '...making qa images...'
         self.controller.log.log['subsample_qa'] = subsample
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
     
     def testRunModelDPMMM(self):
+        print '...testing dpmm'
         excludedChannelInd = 1
         subsample = '1e3'
         self.controller.log.log['num_iters_mcmc'] = 1100
@@ -108,6 +109,7 @@ class ControllerTest(unittest.TestCase):
         self.assertTrue(len(modelRunLog2.keys()) > 5)
     
     def testRunModelKmeans(self):
+        print '...testing kmeans'
         excludedChannelInd = 1
         subsample = '1e3'
         self.controller.log.log['dpmm_k'] = 16
@@ -128,7 +130,6 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(self.projectID,modelRunLog1['project id'])
 
         ## test process images after model run
-        print '...making run1 images...'
         self.controller.process_images('analysis',modelRunID='run1')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','run1','3FITC_4PE_004_thumbs')))
     

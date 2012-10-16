@@ -42,6 +42,8 @@ import matplotlib.cm as cm
 from PyQt4 import QtCore, QtGui
 rc('font',family = 'sans-serif')
 
+import warnings
+  
 class Model:
     """ 
     Class to carry out interfacing with data files and fcm library
@@ -223,7 +225,7 @@ class Model:
         """
         
         fileList = get_fcs_file_names(self.homeDir)
-        
+
         if fileName not in fileList and fileDir != None:
             if os.path.isdir(fileDir) == False:
                 print "ERROR: Model.get_events_from_pickle -- Invalid fileDir specified"
@@ -238,8 +240,11 @@ class Model:
             print originalFilePath
             return None
 
+        
         ## load events using pickle
-        events = np.load(originalFilePath)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            events = np.load(originalFilePath)
 
         return events
         

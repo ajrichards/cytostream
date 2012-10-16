@@ -21,8 +21,8 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names,get_saved_gate_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
-from cytostream.tools import get_official_name_match
-from cytostream.tools import get_clusters_from_gate, get_indices_from_gate
+from tools import get_official_name_match
+from tools import get_clusters_from_gate, get_indices_from_gate
 from SaveSubplots import SaveSubplots
 
 try:
@@ -33,10 +33,10 @@ except:
 
 class Controller:
     def __init__(self,viewType=None,configDict=None,debug=False):
-        '''
+        """
         construct an instance of the controller class
         to use invoke the method initialize
-        '''
+        """
 
         ## basic application wide variables 
         self.viewType = viewType
@@ -89,7 +89,7 @@ class Controller:
         self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
-
+        
         if len(self.fileNameList) < 50: 
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
         else:
@@ -106,6 +106,7 @@ class Controller:
 
         if self.channelDict == None:
             self.channelDict = self.model.load_channel_dict()
+
 
     def labels_load(self,modelRunID,modelType='components'):
         '''

@@ -9,12 +9,13 @@ if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
 from cytostream import Controller, get_fcs_file_names,get_models_run_list
+from cytostream.tools import auto_generate_channel_dict
 import numpy as np
 BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
-    def __init__(self,homeDir,channelDict=None,filePathList=[],useSubsample=True,makeQaFigs=False,configDict=None,record=True,
+    def __init__(self,homeDir,filePathList=[],channelDict=None,useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
                  logicleScaleMax=10**5,autoComp=True):
         """
@@ -31,12 +32,16 @@ class NoGuiAnalysis():
             return None
 
         ## ensure basic variables are present
-        if loadExisting == False and channelDict == None:
-            print "ERROR: NoGuiAnalysis--channel dict must be specified for a new project"
-            return None
+        #if loadExisting == False and channelDict == None:
+        #    print "ERROR: NoGuiAnalysis--channel dict must be specified for a new project"
+        #    return None
         if loadExisting == False and len(filePathList) == 0:
             print "ERROR: NoGuiAnalysis--filePathList must contain filePaths for a new project"
             return None
+
+        ## attempt to autogenerate the channel dict
+        if channelDict == None:
+            isValidDict,channelDict = auto_generate_channel_dict(filePathList[0])
 
         ## declare variables
         self.homeDir = homeDir
@@ -51,6 +56,7 @@ class NoGuiAnalysis():
         self.compensationFilePath = compensationFilePath
         self.autoComp = autoComp
         self.channelDict = channelDict
+        self.isValidDict = isValidDict
 
         ## initialize
         if loadExisting == False:
@@ -116,6 +122,13 @@ class NoGuiAnalysis():
         print 'initializing existing'
         self.controller = Controller(debug=self.verbose)
         self.controller.initialize_project(self.homeDir,loadExisting=True)
+
+    def is_valid(self):
+        """
+        returns true/false 
+        based on whether all channels could be identified in channelDict
+        """
+        return self.isValidDict
 
     def load_files(self):
         """
