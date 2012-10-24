@@ -15,12 +15,15 @@ BASEDIR = os.path.dirname(__file__)
 
 ## test class for the main window function
 class NoGuiAnalysis():
+    """
+    Central object for the application programming interface of cytostream.
+    """
+
     def __init__(self,homeDir,filePathList=[],channelDict=None,useSubsample=True,makeQaFigs=False,configDict=None,record=True,
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
                  logicleScaleMax=10**5,autoComp=True):
         """
           class constructor 
-
         """
 
         ## error checking
@@ -32,16 +35,15 @@ class NoGuiAnalysis():
             return None
 
         ## ensure basic variables are present
-        #if loadExisting == False and channelDict == None:
-        #    print "ERROR: NoGuiAnalysis--channel dict must be specified for a new project"
-        #    return None
         if loadExisting == False and len(filePathList) == 0:
             print "ERROR: NoGuiAnalysis--filePathList must contain filePaths for a new project"
             return None
 
         ## attempt to autogenerate the channel dict
-        if channelDict == None:
+        if loadExisting == False and channelDict == None:
             isValidDict,channelDict = auto_generate_channel_dict(filePathList[0])
+        else:
+            isValidDict = None
 
         ## declare variables
         self.homeDir = homeDir
@@ -108,6 +110,9 @@ class NoGuiAnalysis():
             else:
                 self.qmake_qa_figures()
 
+        
+
+
     def initialize(self):
         """
         initializes a project
@@ -128,6 +133,15 @@ class NoGuiAnalysis():
         returns true/false 
         based on whether all channels could be identified in channelDict
         """
+        
+        if self.isValidDict == None:
+            isValidDict = True
+            for cname in self.channelDict.iterkeys():
+                if cname == 'Unmatched':
+                    isValidDict = False
+
+            self.isValidDict = isValidDict
+
         return self.isValidDict
 
     def load_files(self):
@@ -398,6 +412,18 @@ class NoGuiAnalysis():
         alignedLabels = cPickle.load(tmp)
         tmp.close()
         return alignedLabels
+
+    def get_excluded_channels(self, includedChannels):
+        '''
+        uses official names to return excluded channel names
+        '''
+        for chan in includedChannels:
+            if self.channelDict.has_key(chan) == False:
+                print "WARNING: cannot get excluded channels -- channel not present in channelDict"
+                return None
+        
+        includedChannels = list(set(self.channelDict.keys()).difference(includedChannels))
+        return includedChannels
 
     def get_subset_info(self,modelRunID,ssFilePath=None):
         '''        

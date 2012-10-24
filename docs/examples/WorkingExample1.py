@@ -12,8 +12,11 @@ homeDir =  os.path.join(currentWorkingDir,projectID)
 fileNameList = ["G69019FF_Costim_CD4.fcs", "G69019FF_SEB_CD4.fcs","G69019FF_CMVpp65_CD4.fcs"]
 filePathList = [os.path.join(currentWorkingDir, fn) for fn in fileNameList]
 
-## create a project with the files specified in filePathList
-nga = NoGuiAnalysis(homeDir,filePathList,autoComp=False)
+## load the project
+if os.path.isdir(homeDir) == False:
+    nga = NoGuiAnalysis(homeDir,filePathList,autoComp=False)
+else:
+    nga = NoGuiAnalysis(homeDir,loadExisting=True)
 
 ## determine if all channels could be identified automatically
 print nga.is_valid()

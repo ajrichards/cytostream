@@ -50,7 +50,7 @@ Creating a project
 
 .. literalinclude:: /examples/WorkingExample1.py
    :language: python
-   :lines: 14-16
+   :lines: 14-19
 
 During the creation of a project NoGuiAnalysis attempts map each
 channel automatically to a name that it understands and we can check
@@ -58,7 +58,7 @@ to see if all channels were identified by
 
 .. literalinclude:: /examples/WorkingExample1.py
    :language: python
-   :lines: 17-19
+   :lines: 20-22
 
 If the output of this variable is *False* or if you wish to learn more
 about how to map channels to cytosteams list of official names the see
