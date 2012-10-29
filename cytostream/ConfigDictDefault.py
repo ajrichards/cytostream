@@ -45,6 +45,9 @@ configDictDefault = {
     'plots_to_view_highlights'              : plotsToViewHighlights,              # defined above'
     'plots_to_view_filters'                 : plotsToViewFilters,                 # defined above'
 
+    ########### path variables  ########################################################## 
+    'python_path'                           : 'None',                             # dpmm-mcmc, dpmm-bem, kmeans etc
+
     ########### analysis variables  ########################################################## 
     'subsample_qa'                          : '1e4',                              # any float, int or string (quality assurance)
     'subsample_analysis'                    : '7.5e04',                           # any float, int or string (plot visualization)

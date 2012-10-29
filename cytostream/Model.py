@@ -21,19 +21,12 @@ Adam Richards
 adam.richards@stat.duke.edu
 """
 
-import sys,csv,os,re,cPickle,subprocess,time
+import ast,sys,csv,os,re,cPickle,subprocess,time
 import matplotlib as mpl
 
 if mpl.get_backend() != 'agg':
     mpl.use('agg')
 
-try:
-    from config_cs import CONFIGCS
-    pythonPath = CONFIGCS['python_path']
-except:
-    pythonPath = None
-
-sys.path.append("/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages")
 import numpy as np
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names
 from ModelsInfo import modelsInfo
@@ -75,6 +68,15 @@ class Model:
             self.baseDir = os.path.dirname(__file__)
 
         ## set python path
+        pathsToTry = ["/opt/local/bin/python",
+                      "/usr/local/bin/python",
+                      "/usr/bin/python"]
+        pythonPath = None
+        for path in pathsToTry:
+            if os.path.exists(path):
+                pythonPath = path
+                break
+        
         if pythonPath != None: 
             if os.path.exists(pythonPath) == False:
                 print "ERROR: bad specified python path in config.py... using default", pythonPath
@@ -83,8 +85,6 @@ class Model:
                 self.pythonPath = pythonPath
         elif sys.platform == 'win32':
             self.pythonPath = os.path.join("C:\Python27\python")
-        elif sys.platform == 'darwin':
-            self.pythonPath = os.path.join("/","usr","local","bin","python")
         else:
             self.pythonPath = os.path.join(os.path.sep,"usr","bin","python")
 
@@ -97,7 +97,6 @@ class Model:
             Associates a class with a project and home directory. The function
             also sets the python path.
         input:
-            projectID - a string for the project name
             homeDir - is the full path for the home dir including the projectID
         return:
             None
@@ -107,8 +106,8 @@ class Model:
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
             
-    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None,autoComp=True,compensationFilePath=None,
-                   logicleScaleMax=262144):
+    def load_files(self,fileList,dataType='fcs',transform='log',progressBar=None,fileChannelPath=None,
+                   autoComp=True,compensationFilePath=None,logicleScaleMax=262144):
         """
         about: 
             This is a handler function for the script LoadFile.py which loads an fcs
@@ -187,10 +186,8 @@ class Model:
                         next_line = proc.stdout.readline()
                         if next_line == '' and proc.poll() != None:
                             break
-
                         ## to debug uncomment the following line
                         print next_line
-
                     except:
                         break
             
@@ -375,62 +372,83 @@ class Model:
 
         return randEvents
 
-    def load_model_results_pickle(self,fileName,modelNum,modelType='components'):
+    def save_labels(self,fileName,fileLabels,labelsID):
         """
-        about:
-            loads a pickled fcm file into the workspace
-        args:
-            fileName - string representing the file without the full path and without a file extension
-            modelNum - each model run is given a unique run id: run1, run2, etc.
-            modelType - either components or modes
-        return:
-            model and classify
+        saves labels as a numpy array object for a given file name
         """
 
-        if modelType not in ['components','modes']:
-            print "ERROR: invalide model type specified in load_model_results"
-            return False
+        if type(fileLabels) == type([]):
+            fileLabels = np.array(fileLabels)
 
-        ## check to see if full is saved
-        full = None
-        tmpFileFull = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_full.pickle")        
-        if os.path.exists(tmpFileFull):
-            tmp1 = open(tmpFileFull,'r')
-            full = cPickle.load(tmp1)
-            tmp1.close()
+        saveFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".npy")
+        if os.path.exists(saveFilePath):
+            print "ERROR: Model.save_labels -- labels file already exists skipping"
+            return
 
-        labelsFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+"_%s.npy"%modelType)
+        np.save(saveFilePath,fileLabels)
 
-        if os.path.isfile(labelsFile) == False:
-            print "ERROR: Model -- bad labels file specified -- path does not exist", labelsFile
+    def save_labels_log(self,fileName,logDict,labelsID):
+        """
+        saves label log as a human readable csv file
+        """
+
+        logFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".log")
+        if os.path.exists(logFilePath):
+            print "ERROR: Model.save_labels_log -- labels file already exists skipping"
+            return
+        
+        fid = open(logFilePath,"w")
+        writer = csv.writer(fid)   
+
+        for key,item in logDict.iteritems():
+            if item == None:
+                item = 'None'
+            elif type(item) != type('i am a string'):
+                item = str(item)
+
+            writer.writerow([key,item])
+
+        fid.close()
+
+    def load_saved_labels(self,fileName,labelsID):
+        """
+        loads labels that have been saved by cytostream
+        returns the labels in the form of a np.array
+        """
+
+        saveFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".npy")
+
+        if os.path.isfile(saveFilePath) == False:
+            print "ERROR: Model cannot load labels -- file does not exist"
+            print "...", saveFilePath
+            return None
 
         ## load the labels
-        tmp2 = open(labelsFile,'r')
-        classify = np.load(tmp2)
-        tmp2.close()
+        tmp = open(saveFilePath,'r')
+        fileLabels = np.load(tmp)
+        tmp.close()
 
-        return full,classify
+        return fileLabels
     
-    def load_model_results_log(self,fileName,modelNum):
+    def load_saved_labels_log(self,fileName,labelsID):
         """
-        about:
-            loads a pickled fcm file into the workspace
-        args:
-            fileName - string representing the file without the full path and without a file extension
-            modelNum - each model run is given a unique run id: run1, run2, etc.
-            modelType - either components or modes
-        return:
-            model and classify
+        loads the log file that is associated with a labelsID 
+        returns the log in the form of a dictionary
         """
         
-        tmpFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(modelNum)+".log")
+        print 'loading saved labels log...', fileName, labelsID
+        tmpFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".log")
         if os.path.isfile(tmpFile) == False:
             return None
 
         logFileDict = {}
         reader = csv.reader(open(tmpFile,'r'))
         for linja in reader:
-            logFileDict[linja[0]] = linja[1]
+            item = linja[1]
+            if re.search("\[|\{|None",str(item)):
+                item = ast.literal_eval(str(item))
+
+            logFileDict[linja[0]] = item
 
         return logFileDict
 

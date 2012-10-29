@@ -34,11 +34,12 @@ class ControllerTest(unittest.TestCase):
         self.controller.log.log['current_state'] = "Quality Assurance"
         self.controller.log.log['highest_state'] = '2'
         self.controller.save()
+
     
     def testLog(self):
         self.controller.save()
         self.assertTrue(os.path.isfile(os.path.join(self.controller.homeDir,"%s.log"%self.controller.projectID)))
-    
+
     def testCreateNewProject(self):
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"data")))
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,"figs")))
@@ -97,17 +98,10 @@ class ControllerTest(unittest.TestCase):
         time.sleep(1)
         labels1 = self.controller.get_labels(self.fileName,'run1')
         self.assertEqual(labels1.size,1000)        
-        modelRunLog1, labels1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
+        labels1,modelRunLog1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
         self.assertTrue(len(modelRunLog1.keys()) > 5)
-
-        ## check that same code it works with gpu subprocessing
-        self.controller.run_selected_model_gpu()
-        time.sleep(1)
-        labels2 = self.controller.get_labels(self.fileName,'run2')
-        self.assertEqual(labels2.size,1000)
-        modelRunLog2, labels2 = self.controller.get_labels(self.fileName,'run2',getLog=True)
-        self.assertTrue(len(modelRunLog2.keys()) > 5)
     
+    '''
     def testRunModelKmeans(self):
         print '...testing kmeans'
         excludedChannelInd = 1
@@ -132,7 +126,8 @@ class ControllerTest(unittest.TestCase):
         ## test process images after model run
         self.controller.process_images('analysis',modelRunID='run1')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','run1','3FITC_4PE_004_thumbs')))
-    
+    '''
+
 ### Run the tests
 if __name__ == '__main__':
     unittest.main()
