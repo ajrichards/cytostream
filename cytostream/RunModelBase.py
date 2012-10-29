@@ -102,3 +102,18 @@ class RunModelBase(object):
             return '[]'
         else:
             return strList
+
+    def get_labels_log(self):
+        """
+        returns a dictionary of key values that are in all
+        label log files
+        """
+
+        logDict = {"timestamp":          time.asctime(),
+                   "project id":         self.projName,
+                   "used channels":      self.list2Str(self.includedChannelLabels),
+                   "unused channels":    self.list2Str(self.excludedChannelLabels)
+        }
+
+        return logDict
+   

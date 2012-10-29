@@ -110,9 +110,6 @@ class NoGuiAnalysis():
             else:
                 self.qmake_qa_figures()
 
-        
-
-
     def initialize(self):
         """
         initializes a project
@@ -165,14 +162,25 @@ class NoGuiAnalysis():
         
         self.set('model_reference', fileList[0])
 
-    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original',getLog=False):
+    def get_labels(self,fileName,labelsID,getLog=False):
+        """
+        returns the labels for a file and a given labelsID
+        """
 
         if getLog == True:
-            modelLog, modelLabels = self.controller.get_labels(selectedFileName,modelRunID,modelType=modelType,subsample=subsample,getLog=getLog)
-            return modelLog, modelLabels
+            savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,modelType=modelType,getLog=getLog)
+            return savedLabels, savedLog
         else:
-            modelLabels = self.controller.get_labels(selectedFileName,modelRunID,modelType=modelType,subsample=subsample,getLog=getLog)
-            return modelLabels
+            modelLabels = self.controller.get_labels(fileName,labelsID,getLog=getLog)
+            return savedLabels
+
+    def save_labels(self,fileName,fileLabels,labelsID):
+        """
+        saves a set of file labels -- normally generated outside of cytostream
+        labels must be vector that is the same size as the number of events in the file
+        """
+
+        self.controller.save_labels(fileName,fileLabels,labelsID)
 
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)
@@ -305,38 +313,38 @@ class NoGuiAnalysis():
         self.set('current_state', 'Model Results')
         self.set('highest_state', '4')
 
-    def get_model_results(self,fileName,modelRunID,modelType):
-        """
-        returns model results
+    #def get_model_results(self,fileName,modelRunID,modelType):
+    #    """
+    #    returns model results
+    #
+    #    """
+    #    
+    #    fileList = self.get_file_names()
+    #    if fileName not in fileList:
+    #        print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model results"
+    #        return None 
+    #
+    #    modelsRun = self.get_models_run()
+    #    if modelRunID not in modelsRun:
+    #        print "ERROR: NoGuiAnalysis -- fileName is not in modelsRun - skipping get model results"
+    #        return None
+    #
+    #    statModel, statModelClasses = self.controller.model.load_saved_labelsresults_pickle(fileName,modelRunID,modelType=modelType)
+    #    
+    #    return statModel, statModelClasses
 
-        """
-        
-        fileList = self.get_file_names()
-        if fileName not in fileList:
-            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model results"
-            return None
-
-        modelsRun = self.get_models_run()
-        if modelRunID not in modelsRun:
-            print "ERROR: NoGuiAnalysis -- fileName is not in modelsRun - skipping get model results"
-            return None
-
-        statModel, statModelClasses = self.controller.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
-        
-        return statModel, statModelClasses
-
-    def get_model_log(self,fileName,modelRunID):
-        """
-        returns model run dictionary
-
-        """
-        fileList = self.get_file_names()
-        if fileName not in fileList:
-            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model log"
-            return None
-
-        modelLog = self.controller.model.load_model_results_log(fileName,modelRunID)
-        return modelLog
+    #def get_labels_log(self,fileName,labelsID):
+    #    """
+    #    returns model run dictionary
+    #    """
+    #
+    #    fileList = self.get_file_names()
+    #    if fileName not in fileList:
+    #        print "ERROR: NoGuiAnalysis -- fileName is not in fileList - cannot load saved labels log"
+    #        return None
+    #
+    #    modelLog = self.controller.model.load_saved_labels_log(fileName,labelsID)
+    #    return modelLog
 
     def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,asIndices=False):
         fileList = self.get_file_names()

@@ -94,7 +94,7 @@ if dataType == 'fcs':
     ## init a logger
     log = Logger()
     log.initialize(homeDir,load=True)
-    
+
     ## get short names 
     shortNames = [fcsData.notes.text['p%dn' % (i+1)] for i in range(int(fcsData.notes.text['par']))]
     log.log['short_channel_labels'] = shortNames

@@ -97,7 +97,7 @@ class Controller:
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
 
         self.labelsList = {}
-        self.modelsRunLog = {}
+        self.labelsLogList = {}
 
         if len(self.fileNameList) > 0:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
@@ -108,29 +108,29 @@ class Controller:
             self.channelDict = self.model.load_channel_dict()
 
 
-    def labels_load(self,modelRunID,modelType='components'):
+    def _labels_load(self,labelsID):
         '''
-        load the labels from a given model run
+        load the labels from a given labelsID
+        Often the model run id is the labelsID
+
         '''
 
-        modelsRunList = get_models_run_list(self.log.log)
-        if modelRunID not in modelsRunList:
-            print "DEBUGG: no model present"
+        if labelsID == None:
+            return
+
+        if self.labelsList.has_key(labelsID) == True:
             return None
-        else:
-            if self.labelsList.has_key(modelRunID) == True:
-                return None
             
-            _labelsList = []
-            _logsList = []
-            for fileName in self.fileNameList:
-                fModel, fClasses = self.model.load_model_results_pickle(fileName,modelRunID,modelType=modelType)
-                modelLog = self.model.load_model_results_log(fileName,modelRunID)
-                _labelsList.append(fClasses)
-                _logsList.append(modelLog)
-            self.labelsList[modelRunID] = _labelsList
-            self.modelsRunLog[modelRunID] = _logsList
-
+        _labelsList = []
+        _logsList = []
+        for fileName in self.fileNameList:
+            _labels = self.model.load_saved_labels(fileName,labelsID)
+            modelLog = self.model.load_saved_labels_log(fileName,labelsID)
+            _labelsList.append(_labels)
+            _logsList.append(modelLog)
+        self.labelsList[labelsID] = _labelsList
+        self.labelsLogList[labelsID] = _logsList
+        
     def get_events(self,selectedFileName,subsample='original'):
         '''
             input:
@@ -157,37 +157,56 @@ class Controller:
             key = str(int(float(subsample)))
             return origEvents[self.subsampleDict[key],:]
     
-    def get_labels(self,selectedFileName,modelRunID,modelType='components',subsample='original',getLog=False):
+    def get_labels(self,fileName,labelsID,subsample='original',getLog=False):
         """
-        returns labels for a given file and run id
+        returns labels for a given file name and run id
+        labels are preloaded into a dictionary for speed
         """
         
-        if modelType != 'components':
-            print "WARNING: Controller -- cytostream defaults to the use of components"
-            modelType = 'components'
-
-        modelsRunList = get_models_run_list(self.log.log)
-
-        if modelRunID not in modelsRunList:
-            return None
-        if selectedFileName not in self.fileNameList:
-            print "ERROR: Controller.get_labels - Invalid selectedFile specified", selectedFileName
+        if fileName not in self.fileNameList:
+            print "ERROR: Controller.get_labels - Invalid selectedFile specified", fileName
             return None
 
         ## ensure labels are present
-        self.labels_load(modelRunID,modelType=modelType)
-        labels = self.labelsList[modelRunID][self.fileNameList.index(selectedFileName)]
-        modelRunLog = self.modelsRunLog[modelRunID][self.fileNameList.index(selectedFileName)]
-
-        if subsample == 'original':
-            labelsToReturn = labels
-        else:
-            labelsToReturn = labels[self.subsampleDict[key],:]
-        
+        self._labels_load(labelsID)
+        labels = self.labelsList[labelsID][self.fileNameList.index(fileName)]
+        labelsLog = self.labelsLogList[labelsID][self.fileNameList.index(fileName)]
+        labelsToReturn = labels
+                
         if getLog == True:
-            return modelRunLog,labelsToReturn
+            return labels,labelsLog
         else:
-            return labelsToReturn
+            return labels
+
+    def save_labels(self,fileName,fileLabels,labelsID):
+        """
+        convenience function to save labels
+        """
+
+        ## error checking
+        if fileName not in self.fileNameList:
+            print "ERROR: Controller.save_labels -- fileName is not in fileList - skipping..."
+            return None
+
+        fileEvents = self.get_events(fileName)
+        if len(fileLabels) != int(fileEvents.shape[0]):
+            print "ERROR: Controller.save_labels -- input fileLabels must be the same size as events"
+            return None
+        
+        self.model.save_labels(fileName,fileLabels,labelsID)
+
+    
+    def save_labels_log(self,fileName,logDict,labelsID):
+        """
+        convenience funtion to save label log
+        """
+  
+        ## error checking
+        if fileName not in self.fileNameList:
+            print "ERROR: Controller.save_labels -- fileName is not in fileList - skipping..."
+            return None
+        
+        self.model.save_labels_log(fileName,logDict,labelsID)
 
     def process_images(self,mode,modelRunID=None,progressBar=None,view=None,verbose=False):
 

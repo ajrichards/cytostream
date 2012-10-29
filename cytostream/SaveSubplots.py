@@ -29,6 +29,9 @@ class SaveSubplots():
                  gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True,
                  textToShow=None,fontSize=10):
 
+        #print '...savesubplots', plotType, figMode
+
+
         ## arg variables
         self.controller = controller
         self.numSubplots = numSubplots
@@ -188,7 +191,10 @@ class SaveSubplots():
                 print "WARNING: unexpected event occured in SaveSubplots.py", self.figMode
 
             ## get original events and labels for draw_plot
-            labels = self.controller.get_labels(subplotFile,subplotRunID)
+            if subplotRunID != None and self.figMode != 'qa':
+                labels = self.controller.get_labels(subplotFile,subplotRunID)
+            else:
+                labels = None
             events = self.controller.get_events(subplotFile,'original')
             
             ## ensure approproate subsample
