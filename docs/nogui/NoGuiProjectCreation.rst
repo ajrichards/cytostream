@@ -5,7 +5,7 @@ Project creation
 ================
 
 The full example file for this example can be downloaded as a script:
-:download:`WorkingExample1.py </examples/WorkingExample1.py>`. In
+:download:`BasicExample.py </examples/BasicExample.py>`. In
 order to run this example on your computer Cytostream must be
 installed and the following data files need to be downloaded to the
 same directory that you intend to run this example from.
@@ -19,7 +19,7 @@ Importing Cytostream
 
 Imports the NoGuiClass form Cytostream.
 
-.. literalinclude:: /examples/WorkingExample1.py
+.. literalinclude:: /examples/BasicExample.py
    :language: python
    :emphasize-lines: 4
    :lines: 1-4
@@ -31,13 +31,13 @@ If you have trouble importing cytostream then visit the
 :doc:`/Installation` page.  Next we need to give a name to the project
 and specify its location (*homeDir*).
 
-.. literalinclude:: /examples/WorkingExample1.py
+.. literalinclude:: /examples/BasicExample.py
    :language: python
    :lines: 5-10
 
 The fcs files are then specified in a python list.
 
-.. literalinclude:: /examples/WorkingExample1.py
+.. literalinclude:: /examples/BasicExample.py
    :language: python
    :lines: 10-14
 
@@ -48,7 +48,7 @@ cytostream project which is completely contained in the specified
 Creating a project
 ******************
 
-.. literalinclude:: /examples/WorkingExample1.py
+.. literalinclude:: /examples/BasicExample.py
    :language: python
    :lines: 14-19
 
@@ -56,7 +56,7 @@ During the creation of a project NoGuiAnalysis attempts map each
 channel automatically to a name that it understands and we can check
 to see if all channels were identified by
 
-.. literalinclude:: /examples/WorkingExample1.py
+.. literalinclude:: /examples/BasicExample.py
    :language: python
    :lines: 20-22
 

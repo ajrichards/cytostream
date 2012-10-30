@@ -162,16 +162,19 @@ class NoGuiAnalysis():
         
         self.set('model_reference', fileList[0])
 
-    def get_labels(self,fileName,labelsID,getLog=False):
+    def load_labels(self,fileName,labelsID,getLog=False):
         """
         returns the labels for a file and a given labelsID
         """
+        savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,getLog=True)
+
+        if savedLabels == None:
+            print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
+            return None
 
         if getLog == True:
-            savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,modelType=modelType,getLog=getLog)
             return savedLabels, savedLog
         else:
-            modelLabels = self.controller.get_labels(fileName,labelsID,getLog=getLog)
             return savedLabels
 
     def save_labels(self,fileName,fileLabels,labelsID):
@@ -181,6 +184,14 @@ class NoGuiAnalysis():
         """
 
         self.controller.save_labels(fileName,fileLabels,labelsID)
+
+    def save_labels_log(self,fileName,logDict,labelsID):
+        """
+        saves a log file for file labels
+        """
+
+        self.controller.save_labels_log(fileName,logDict,labelsID)
+
 
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)
@@ -284,7 +295,6 @@ class NoGuiAnalysis():
     def make_qa_figures(self,verbose=False):
         """
         makes the figures for quality assurance
-
         """
 
         subsample = self.controller.log.log['subsample_qa']
@@ -299,52 +309,14 @@ class NoGuiAnalysis():
     def run_model(self):
         """
         runs model for all input files
-
         """
 
         subsample = self.controller.log.log['subsample_analysis']
         self.controller.handle_subsampling(subsample)
-
-        if  self.controller.log.log['model_to_run'] in ['dpmm-mcmc']:
-            self.controller.run_selected_model_gpu()
-        else:
-            self.controller.run_selected_model_cpu()
+        self.controller.run_selected_model()
 
         self.set('current_state', 'Model Results')
         self.set('highest_state', '4')
-
-    #def get_model_results(self,fileName,modelRunID,modelType):
-    #    """
-    #    returns model results
-    #
-    #    """
-    #    
-    #    fileList = self.get_file_names()
-    #    if fileName not in fileList:
-    #        print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get model results"
-    #        return None 
-    #
-    #    modelsRun = self.get_models_run()
-    #    if modelRunID not in modelsRun:
-    #        print "ERROR: NoGuiAnalysis -- fileName is not in modelsRun - skipping get model results"
-    #        return None
-    #
-    #    statModel, statModelClasses = self.controller.model.load_saved_labelsresults_pickle(fileName,modelRunID,modelType=modelType)
-    #    
-    #    return statModel, statModelClasses
-
-    #def get_labels_log(self,fileName,labelsID):
-    #    """
-    #    returns model run dictionary
-    #    """
-    #
-    #    fileList = self.get_file_names()
-    #    if fileName not in fileList:
-    #        print "ERROR: NoGuiAnalysis -- fileName is not in fileList - cannot load saved labels log"
-    #        return None
-    #
-    #    modelLog = self.controller.model.load_saved_labels_log(fileName,labelsID)
-    #    return modelLog
 
     def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,asIndices=False):
         fileList = self.get_file_names()
@@ -364,9 +336,9 @@ class NoGuiAnalysis():
             self.controller.handle_filtering_by_indices(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
 
     def is_valid_filter(self,filterID,fileName):
-        '''
+        """
         check for a valid filter id
-        '''
+        """
 
         filterFile = os.path.join(self.homeDir,'data',fileName + "_indices_%s.pickle"%filterID)
   

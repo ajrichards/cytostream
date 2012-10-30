@@ -382,7 +382,7 @@ class Model:
 
         saveFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".npy")
         if os.path.exists(saveFilePath):
-            print "ERROR: Model.save_labels -- labels file already exists skipping"
+            print "WARNING: Model.save_labels -- labels file already exists skipping"
             return
 
         np.save(saveFilePath,fileLabels)
@@ -394,7 +394,7 @@ class Model:
 
         logFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".log")
         if os.path.exists(logFilePath):
-            print "ERROR: Model.save_labels_log -- labels file already exists skipping"
+            print "WARNING: Model.save_labels_log -- labels file already exists skipping"
             return
         
         fid = open(logFilePath,"w")
@@ -419,8 +419,6 @@ class Model:
         saveFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".npy")
 
         if os.path.isfile(saveFilePath) == False:
-            print "ERROR: Model cannot load labels -- file does not exist"
-            print "...", saveFilePath
             return None
 
         ## load the labels
@@ -436,7 +434,6 @@ class Model:
         returns the log in the form of a dictionary
         """
         
-        print 'loading saved labels log...', fileName, labelsID
         tmpFile = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".log")
         if os.path.isfile(tmpFile) == False:
             return None
