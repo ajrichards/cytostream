@@ -25,12 +25,6 @@ from tools import get_official_name_match
 from tools import get_clusters_from_gate, get_indices_from_gate
 from SaveSubplots import SaveSubplots
 
-try:
-    from config_cs import CONFIGCS
-except:
-    CONFIGCS = {'python_path':'/usr/local/bin/python',
-                'number_gpus': 1}
-
 class Controller:
     def __init__(self,viewType=None,configDict=None,debug=False):
         """
@@ -69,6 +63,8 @@ class Controller:
         self.channelDict = None
         self.subsampleDict = {}
         self.uniqueLabels = {}
+        self.labelsList = {}
+        self.labelsLogList = {}
 
         if self.debug == True:
             print 'DEBUG ON'
@@ -96,9 +92,6 @@ class Controller:
             print "WARNING: Controller has more than 50 files shoud we be using events list?"
             self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
 
-        self.labelsList = {}
-        self.labelsLogList = {}
-
         if len(self.fileNameList) > 0:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         else:
@@ -107,12 +100,10 @@ class Controller:
         if self.channelDict == None:
             self.channelDict = self.model.load_channel_dict()
 
-
     def _labels_load(self,labelsID):
         '''
         load the labels from a given labelsID
         Often the model run id is the labelsID
-
         '''
 
         if labelsID == None:
@@ -120,9 +111,10 @@ class Controller:
 
         if self.labelsList.has_key(labelsID) == True:
             return None
-            
+
         _labelsList = []
         _logsList = []
+
         for fileName in self.fileNameList:
             _labels = self.model.load_saved_labels(fileName,labelsID)
             modelLog = self.model.load_saved_labels_log(fileName,labelsID)
@@ -171,8 +163,7 @@ class Controller:
         self._labels_load(labelsID)
         labels = self.labelsList[labelsID][self.fileNameList.index(fileName)]
         labelsLog = self.labelsLogList[labelsID][self.fileNameList.index(fileName)]
-        labelsToReturn = labels
-                
+    
         if getLog == True:
             return labels,labelsLog
         else:
@@ -190,7 +181,7 @@ class Controller:
 
         fileEvents = self.get_events(fileName)
         if len(fileLabels) != int(fileEvents.shape[0]):
-            print "ERROR: Controller.save_labels -- input fileLabels must be the same size as events"
+            print "ERROR: Controller.save_labels -- input fileLabels must be the same size as events",len(fileLabels),fileEvents.shape[0]
             return None
         
         self.model.save_labels(fileName,fileLabels,labelsID)
@@ -203,7 +194,11 @@ class Controller:
   
         ## error checking
         if fileName not in self.fileNameList:
-            print "ERROR: Controller.save_labels -- fileName is not in fileList - skipping..."
+            print "ERROR: Controller.save_labels_log -- fileName is not in fileList - skipping..."
+            return None
+        
+        if type(logDict) != type({}):
+            print "ERROR: Controller.save_labels_log -- logDict must be of type dictionary - skipping..."
             return None
         
         self.model.save_labels_log(fileName,logDict,labelsID)
@@ -714,156 +709,7 @@ class Controller:
         else:
             return True
 
-    def run_selected_model_gpu(self,progressBar=None,view=None):
-        """
-        used for gpu enabled models
-        """
-
-        def report_progress(percentComplete,percentReported,progressBar=None):
-            if progressBar != None:
-                #progressBar.move_bar(int(round(percentComplete)))
-                totalProgress = 0
-                for _gpu,_percent in percentComplete.iteritems():
-                    totalProgress += float(_percent)
-                
-                pComplete = totalProgress / (len(percentComplete) * 100.0)
-                progressBar.move_bar(int(round(pComplete)))
-
-            else:
-                isNew = False
-                for _gpu,_percent in percentComplete.iteritems():
-                    if int(round(_percent)) not in percentReported[_gpu]:
-                        isNew = True
-                
-                if isNew == True:
-                    allComplete = True
-                    for _gpu,_percent in percentComplete.iteritems():
-                        if int(round(_percent)) != 100:
-                            allComplete = False
-                    isFirst = True
-                    for _gpu,_percent in percentComplete.iteritems():
-                        
-                        if isFirst == True:
-                            print "\rGPU:%s"%_gpu,int(round(_percent)),
-                        if isFirst == False:
-                            print "GPU:%s"%_gpu,int(round(_percent)),
-                        isFirst = False
-
-                    if allComplete == True:
-                        print "\nAll models have been run"
-
-        ## ensure filelist variable is up to date
-        if len(self.fileNameList) == 0:
-            self.fileNameList = get_fcs_file_names(self.homeDir)
-
-        ## variables
-        percentDone = 0
-        percentagesReported = []
-        fileList = self.fileNameList
-        
-        ## iterate models run
-        self.log.log['models_run_count'] = str(int(self.log.log['models_run_count']) + 1)
-        modelRunID = 'run'+self.log.log['models_run_count']
-        self.log.log['selected_model'] = modelRunID
-        self.save()
-
-        ## if model mode is 'onefit' ensure the reference file comes first
-        modelMode = self.log.log['model_mode']
-        modelReference = self.log.log['model_reference']
-        if modelMode == 'onefit':
-            if fileList.__contains__(modelReference) == False:
-                print "ERROR: Controller.run_selected_model - bad model reference"
-                return
-            
-        ## if using model reference ensure ref comes first
-        if modelReference != None:    
-            refPosition = fileList.index(modelReference)
-            if refPosition != 0:
-                refFile = fileList.pop(refPosition)
-                fileList = [refFile] + fileList
-
-        ## handle GPU identification
-        numGPUs = CONFIGCS['number_gpus']
-
-        ## option to force the use of only a single gpu
-        if self.log.log['force_single_gpu'] == True:
-            numGPUs = 1
-
-        if type(numGPUs) != type(1):
-            print "ERROR: Controller numGPUs is invalid variable type"
-
-        ## split the file list among the total number of gpus        
-        selectedModel = self.log.log['model_to_run']
-        gpuDeviceList = np.arange(numGPUs)
-        fileListByGPU = {}
-        
-        print 'running... %s via %s'%(selectedModel,self.model.modelsInfo[selectedModel][1])
-        print '\tusing %s gpu devices'%len(gpuDeviceList)
-
-        gpuCount = -1
-        for fileInd in range(len(fileList)):
-            gpuCount+=1
-            if gpuCount > max(gpuDeviceList):
-                gpuCount = 0
-
-            if fileListByGPU.has_key(str(gpuCount)) == False:
-                fileListByGPU[str(gpuCount)] = []
-    
-            fileListByGPU[str(gpuCount)].append(fileList[fileInd])
-
-        ## send jobs to appropriate gpu
-        for gpu,fList in fileListByGPU.iteritems():
-            fListStr = re.sub("\[|\]|\s|\'","",str(fList))
-            script = os.path.join(self.baseDir,"QueueGPU.py")
-            if os.path.isfile(script) == False:
-                print "ERROR: Invalid model run file path ", script
-            
-            cmd = "'%s' '%s' -b '%s' -h '%s' -f '%s' -g '%s' -s '%s'"%(self.pythonPath,script,self.baseDir,
-                                                                       self.homeDir,fListStr,gpu,
-                                                                       selectedModel)
-            ## sanitize shell input
-            isClean = self.sanitize_check(cmd)
-            if isClean == False:
-                print "ERROR: An unclean file name or another argument was passed to QueueGPU --- exiting process"
-                sys.exit()
-
-            proc = subprocess.Popen(cmd,shell=True)
-            
-        if self.verbose == True:
-            print "INFO: Controller -- all jobs have been sent"
-
-        totalCompletedFiles = 0
-        percentComplete = {}
-        percentReported = {}
-        for gpu in fileListByGPU.keys():
-            percentComplete[gpu] = 0.001
-            percentReported[gpu] = []
-
-        ## update progress bar or prompt out by tracking log files
-        while totalCompletedFiles < len(self.fileNameList):
-            time.sleep(3)
-            completedFiles = {}
-            for gpu in fileListByGPU.keys():
-                completedFiles[gpu] = []
-
-            for fName in os.listdir(os.path.join(self.homeDir,'models')):
-                if not re.search("\_%s\.log"%modelRunID,fName):
-                    continue
-                
-                ## count completed files
-                actualFileName = re.sub("\_%s\.log"%modelRunID,"",fName)
-                for gpu,fList in fileListByGPU.iteritems():
-                    if actualFileName in fList:
-                        completedFiles[gpu].append(actualFileName)
-                        totalCompletedFiles += 1        
-
-                ## print out process
-                for gpu,fList in completedFiles.iteritems():
-                    _percentComplete = (float(len(completedFiles[gpu])) / float(len(fileListByGPU[gpu]))) * 100.0
-                    percentComplete[gpu] = _percentComplete
-                    report_progress(percentComplete,percentReported,progressBar=progressBar)
-
-    def run_selected_model_cpu(self,progressBar=None,view=None):
+    def run_selected_model(self,progressBar=None,view=None):
 
         def report_progress(percentComplete,percentagesReported,progressBar=None):
             if progressBar != None:
