@@ -169,7 +169,7 @@ class NoGuiAnalysis():
         savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,getLog=True)
 
         if savedLabels == None:
-            print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
+            #print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
             return None
 
         if getLog == True:
