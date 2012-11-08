@@ -6,6 +6,11 @@ Importing labels into cytostream
 
 The full example file for this example can be downloaded as a script:
 :download:`LoadingExternalLabels.py </examples/LoadingExternalLabels.py>`. 
+The data files may also be downloaded as well.
+
+* :download:`G69019FF_Costim_CD4.fcs </examples/G69019FF_Costim_CD4.fcs>`
+* :download:`G69019FF_SEB_CD4.fcs </examples/G69019FF_SEB_CD4.fcs>`
+* :download:`G69019FF_CMVpp65_CD4.fcs </examples/G69019FF_CMVpp65_CD4.fcs>`
 
 
 Initializing a project
@@ -38,8 +43,9 @@ the file and the order must be preserved.
 
 The important lines used to save labels and a labels log file are highlighted.
 
-For consistency it is recommended that a labels file is loaded for 
-each file in a project under a given **labelsID**.
+For consistency it is recommended that a labels file is loaded for
+each file in a project under a given **labelsID**.  In this case the
+**labelsID** is *kmeans*.
 
 
 Loading the labels
