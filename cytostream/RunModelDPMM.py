@@ -1,6 +1,6 @@
 #!/usr/bin/python
 '''
-run the kmeans model on a given file
+run the DPMM model on a given file
 '''
 
 __author__ = 'A. Richards'
@@ -20,9 +20,9 @@ try:
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -h homeDir -g gpuDevice[optional]"
     print " Note: fileName (-f) must be the full" 
-    print " homeDir  (-h) home directory for current project"
-    print " gpuDevice     (-k) device id for gpu"
-    print " verbose       (-v) verbose flag"
+    print " homeDir        (-h) home directory for current project"
+    print " gpuDevice      (-k) device id for gpu"
+    print " verbose        (-v) verbose flag"
     sys.exit()
 
 name = None
@@ -56,11 +56,14 @@ class RunModelDPMM(RunModelBase):
         ## persistant parameters
         selectedModel = self.log.log['model_to_run']
         subsample = self.subsample
-        modelMode = self.log.log['model_mode']
         modelRunID = self.modelRunID
-        modelReference = self.log.log['model_reference']
-        modelReferenceRunID =  self.log.log['model_reference_run_id']
+        modelFilter = self.log.log['model_filter']
         includedChannels = self.includedChannels
+        modelReferenceRunID =  self.log.log['model_reference_run_id']
+
+        ## dep parameters
+        modelMode = self.log.log['model_mode']
+        modelReference = self.log.log['model_reference']
 
         ## model specific parameters
         cleanBorderEvents = True
@@ -71,7 +74,11 @@ class RunModelDPMM(RunModelBase):
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
-        if subsample != 'original':
+        if modelFilter != None:
+            filterLabels = self.model.load_saved_labels(fileName,modelFilter)
+            filterIndices = np.where(filterLabels==1)[0]
+            events = events[filterIndices,:]
+        elif subsample != 'original':
             subsampleIndices = self.model.get_subsample_indices(subsample)
             events = events[subsampleIndices,:]
 
@@ -108,7 +115,6 @@ class RunModelDPMM(RunModelBase):
         ## classification
         classifyStart = time.time()
         componentLabels = full.classify(events)
-        print componentLabels.shape
         classifyEnd = time.time()
         classifyTime = classifyEnd - classifyStart
         runTime = self.get_run_time()
@@ -133,12 +139,12 @@ class RunModelDPMM(RunModelBase):
         logDict["file name"]        = fileName
         logDict["full model name"]  = re.sub('"',"",self.model.modelsInfo[selectedModel][0]),
         logDict["total runtime"]    = time.strftime('%H:%M:%S', time.gmtime(runTime))
-        logDict["model runtime"]    = time.strftime('%H:%M:%S', time.gmtime(runTime-classifyTime))
-        logDict["classify runtime"] = time.strftime('%H:%M:%S', time.gmtime(classifyTime))
         logDict["number events"]    = str(events.shape[0])
         logDict["model mode"]       = modelMode
         
         ## add model specific values for the logfile
+        logDict["model runtime"]    = time.strftime('%H:%M:%S', time.gmtime(runTime-classifyTime))
+        logDict["classify runtime"] = time.strftime('%H:%M:%S', time.gmtime(classifyTime)) 
         logDict["number components"] = str(k)
         logDict["dpmm gamma"]        = str(dpmmGamma)
         logDict["dpmm nIters"]       = str(nIters)

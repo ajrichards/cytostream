@@ -1,6 +1,6 @@
 #!/usr/bin/env python                                                                                                                                                                                                                       
 import sys,os,unittest,time,re
-from cytostream import NoGuiAnalysis, configDictDefault
+from cytostream import NoGuiAnalysis, Controller
 
 
 '''
@@ -19,46 +19,37 @@ description - Shows the user how a normal analysis is carried out.
 __author__ = "AJ Richards"
 
 class TestCase1(unittest.TestCase):
+
     def setUp(self):
-        cwd = os.getcwd()
-        if os.path.split(cwd)[1] == 'unittests':
-            BASEDIR = os.path.split(cwd)[0]
-        elif os.path.split(cwd)[1] == 'cytostream':
-            BASEDIR = cwd
-        else:
-            print "ERROR: Model test cannot find home dir -- cwd", cwd
+        self.controller = Controller(debug=False)
+        self.dataDir = os.path.realpath(os.path.join(self.controller.baseDir,'example_data'))
+        self.projectDir = os.path.realpath(os.path.join(self.controller.baseDir,'projects'))
 
-        ## basic variables
+        ## declare variables
         projectID = 'utest'
-        homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
-
-        ## specify variables needed for NoGuiAnalysis
-        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
-        channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
-    
-        ## shows how to set parameters before analysis is begun
-        configDict = configDictDefault.copy()
-        configDict['load_transform'] = 'logicle'
-
-        ## initialize the analysis class
-        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,configDict=configDict,
-                                 makeQaFigs=False,record=False)
+        homeDir =  os.path.join(self.projectDir, projectID)
+        filePathList = [os.path.join(self.dataDir,"3FITC_4PE_004.fcs")]
+        self.fileName = '3FITC_4PE_004'
         
-        ## normal way to modify parameters
-        self.nga.set('excluded_channels_analysis',[channelDict['FSCH']])
+        ## run the initial model for all files
+        self.nga = NoGuiAnalysis(homeDir,filePathList)
+    
+        subsample = 500
         self.nga.set('dpmm_niter',1)
         self.nga.set('dpmm_burnin',999)
         self.nga.set('dpmm_k',16)
-        self.nga.set('subsample_qa',500)             # num. events for qa plots
-        self.nga.set('subsample_run',500)       # num. events for model run and plots
-        self.nga.set('subsample_analysis',500)       # num. events for model run and plots
+        self.nga.set('subsample_qa', subsample)
+        self.nga.set('subsample_run', subsample)
+        self.nga.set('subsample_analysis', subsample)
         self.nga.set('model_to_run','dpmm-mcmc')
+        self.nga.set('excluded_channels_analysis',[])
+    
+    def tests(self):
 
         ## run the model
         self.nga.run_model()
         self.fileNameList = self.nga.get_file_names()
-    
-    def tests(self):
+        testFileName = self.fileNameList[0]
         time.sleep(2)
 
         ## ensure project was created
@@ -71,12 +62,15 @@ class TestCase1(unittest.TestCase):
 
         ## check that model results can be retrieved
         modelRunID = 'run1'
-        componentModel, componentClasses = self.nga.get_model_results(self.fileNameList[0],modelRunID,'components')
-        self.assertEqual(componentClasses.size,500)
+        run1Labels,run1Log = self.nga.load_labels(testFileName,'run1',getLog=True)
+
+
+        self.assertEqual(run1Labels.size,500)
+        self.assertEqual('utest',run1Log['project id'])
                 
         ## check that information can be retrieved from model log file
-        modelLog = self.nga.get_model_log(self.fileNameList[0],modelRunID)
-        self.assertEqual('utest',modelLog['project id'])
+        #modelLog = self.nga.get_model_log(self.fileNameList[0],modelRunID)
+
 
 
 ### Run the tests 

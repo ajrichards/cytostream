@@ -2,7 +2,7 @@
                                                                               
 import sys,os,unittest,time,re
 import numpy as np
-from cytostream import NoGuiAnalysis
+from cytostream import NoGuiAnalysis,Controller
 
 '''
 description - Shows the user how to run an original set of files using one set of parameters.  Then
@@ -14,23 +14,19 @@ __author__ = "AJ Richards"
 
 class TestCase2(unittest.TestCase):
     def setUp(self):
-        cwd = os.getcwd()
-        if os.path.split(cwd)[1] == 'unittests':
-            BASEDIR = os.path.split(cwd)[0]
-        elif os.path.split(cwd)[1] == 'cytostream':
-            BASEDIR = cwd
-        else:
-            print "ERROR: Model test cannot find home dir -- cwd", cwd
+        self.controller = Controller(debug=False)
+        self.dataDir = os.path.realpath(os.path.join(self.controller.baseDir,'example_data'))
+        self.projectDir = os.path.realpath(os.path.join(self.controller.baseDir,'projects'))
 
         ## declare variables
         projectID = 'utest'
-        homeDir =  os.path.join(BASEDIR,"cytostream","projects", projectID)
-        filePathList = [os.path.join(BASEDIR,"cytostream","example_data", "3FITC_4PE_004.fcs")]
+        homeDir =  os.path.join(self.projectDir, projectID)
+        filePathList = [os.path.join(self.dataDir,"3FITC_4PE_004.fcs")]
         self.fileName = '3FITC_4PE_004'
-        channelDict = {'FSCH':0,'SSCH':1,'FL1H':2,'FL2H':3}
         
         ## run the initial model for all files
-        self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
+        self.nga = NoGuiAnalysis(homeDir,filePathList)
+        #self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
         subsample = 1000
         self.nga.set('subsample_qa', subsample)
         self.nga.set('subsample_run', subsample)
@@ -45,32 +41,27 @@ class TestCase2(unittest.TestCase):
 
         ## create a filter that consists of clusters 1 and 2
         parentModelRunID = 'run1'
-        filterID = 'ftr1'
-        modelMode = 'components'
-        fileNameList =self. nga.get_file_names()
+        filterID = 'filter12'
+        fileNameList = self. nga.get_file_names()
         clusterIDs = [1,2]
         for fileName in fileNameList:
-            self.nga.handle_filtering(filterID,fileName,parentModelRunID,'components',clusterIDs)
+            self.nga.handle_filtering_by_clusters(filterID,fileName,clusterIDs,parentModelRunID)
 
-        ## set subsample to filter id
-        self.nga.set('subsample_run','ftr1')
+        testFileName = fileNameList[0]
+        run1Labels,run1Log = self.nga.load_labels(testFileName,'run1',getLog=True)
+        filter1Labels,filter1Log = self.nga.load_labels(testFileName,filterID,getLog=True)
+
+        totalEventsInCluster = np.where(run1Labels==1)[0].size + np.where(run1Labels==2)[0].size
+        self.assertEqual(np.where(filter1Labels==1)[0].size,totalEventsInCluster) 
+
+        ## set the filter so that the next model run uses the filter
+        self.nga.set('model_filter',filterID)
 
         ## run the second model
         self.nga.run_model()
+        run2Labels,run2Log = self.nga.load_labels(testFileName,'run2',getLog=True)
 
-        ## ensure project was created
-        self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
-
-        modelLog1, modelLabels1 = self.nga.get_labels(self.fileName,'run1',modelType='components',getLog=True)
-        modelLog2, modelLabels2 = self.nga.get_labels(self.fileName,'run2',modelType='components',getLog=True)
-
-        ## ensure we end up with the correct number of labels
-        clusterLabels = []
-        for lab in clusterIDs:
-            clusterInds = np.where(modelLabels1 == lab)[0]
-            clusterLabels.extend(clusterInds.tolist())
-
-        self.assertEqual(modelLabels2.shape[0],len(clusterLabels))
+        self.assertEqual(totalEventsInCluster,run2Labels.size)
 
 ### Run the tests 
 if __name__ == '__main__':

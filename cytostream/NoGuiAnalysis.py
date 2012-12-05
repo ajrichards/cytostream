@@ -117,11 +117,12 @@ class NoGuiAnalysis():
 
         self.controller = Controller(configDict=self.configDict,debug=self.verbose)
         self.controller.create_new_project(self.homeDir,self.channelDict,record=self.record)
+
     def initialize_existing(self):
-        '''
+        """
         initialize existing project
-        '''
-        print 'initializing existing'
+        """
+
         self.controller = Controller(debug=self.verbose)
         self.controller.initialize_project(self.homeDir,loadExisting=True)
 
@@ -144,7 +145,6 @@ class NoGuiAnalysis():
     def load_files(self):
         """
         loads the list of files supplied as input into the project
-
         """
 
         self.controller.compensationFilePath = self.compensationFilePath
@@ -170,7 +170,10 @@ class NoGuiAnalysis():
 
         if savedLabels == None:
             #print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
-            return None
+            if getLog == False:
+                return None
+            else:
+                return None,None
 
         if getLog == True:
             return savedLabels, savedLog
@@ -191,7 +194,6 @@ class NoGuiAnalysis():
         """
 
         self.controller.save_labels_log(fileName,logDict,labelsID)
-
 
     def get_file_specific_channels(self,fileName):
         fileChannels = self.controller.model.get_file_channel_list(fileName)
@@ -268,29 +270,16 @@ class NoGuiAnalysis():
     def get_events(self,fileName,subsample='original'):
         """
         returns the events from a given file name
-
         """
 
         fileList = self.get_file_names()
         if fileName not in fileList:
-            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"            
             return None
 
         events = self.controller.get_events(fileName,subsample=subsample)
 
         return events
-
-    def get_filter_indices(self,fileName,filterID):
-        """
-        returns a set of filter indices relative to original events
-        """
-        
-        if filterID == None:
-            return []
-
-        filterIndices = self.controller.model.load_filter(fileName,filterID)
-        
-        return filterIndices
 
     def make_qa_figures(self,verbose=False):
         """
@@ -318,7 +307,12 @@ class NoGuiAnalysis():
         self.set('current_state', 'Model Results')
         self.set('highest_state', '4')
 
-    def handle_filtering(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs,asIndices=False):
+    def handle_filtering_by_clusters(self,filterID,fileName,clusterIDs,parentModelRunID):
+        """
+        Filtering saves a np.array using the original array shape where row indices that have
+        been filtered become 0 or 1. Filter results can be fetched like labels. 
+        """
+
         fileList = self.get_file_names()
         modelsRunList = self.get_models_run()
 
@@ -326,14 +320,28 @@ class NoGuiAnalysis():
         if fileName not in fileList:
             print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
             return None
-        if asIndices == False and parentModelRunID not in modelsRunList:
+        if parentModelRunID not in modelsRunList:
             print "ERROR: NoGuiAnalysis -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        if asIndices == False: 
-            self.controller.handle_filtering_by_clusters(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
-        else:
-            self.controller.handle_filtering_by_indices(filterID,fileName,parentModelRunID,modelMode,clusterIDs)
+        self.controller.handle_filtering_by_clusters(filterID,fileName,parentModelRunID,clusterIDs)
+
+    def handle_filtering_by_indices(self,filterID,fileName,indices,parentModelRun=None):
+        """
+        Filtering saves a np.array using the original array shape where row indices that have
+        been filtered become 0 or 1. Filter results can be fetched like labels. 
+        """
+
+        fileList = self.get_file_names()
+        modelsRunList = self.get_models_run()
+
+        ## error checkings
+        if fileName not in fileList:
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping filtering"
+            return None
+        
+        self.controller.handle_filtering_by_indices(filterID,fileName,indices,
+                                                    parentModelRun=parentModelRun)
 
     def is_valid_filter(self,filterID,fileName):
         """

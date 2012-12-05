@@ -73,6 +73,7 @@ configDictDefault = {
     'model_mode'                            : 'normal',                           # normal,onefit,pooled,target
     'model_reference'                       : 'None',                             # fileName, pooled
     'model_reference_run_id'                : 'None',                             # a run id i.e. run1
+    'model_filter'                          : 'None',                             # None, a valid filter name
     'channel_view'                          : 'normal',                           # normal, custom
     'app_color'                             : '#999999',                          # a color
     'visualization_mode'                    : 'thumbnails',                       # thumbs, 1D-viewer etc
