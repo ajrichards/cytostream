@@ -26,7 +26,7 @@ class TestCase2(unittest.TestCase):
         
         ## run the initial model for all files
         self.nga = NoGuiAnalysis(homeDir,filePathList)
-        #self.nga = NoGuiAnalysis(homeDir,channelDict,filePathList,useSubsample=True,makeQaFigs=False,record=False)
+    
         subsample = 1000
         self.nga.set('subsample_qa', subsample)
         self.nga.set('subsample_run', subsample)

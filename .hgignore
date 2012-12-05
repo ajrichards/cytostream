@@ -10,3 +10,4 @@ unittests/alignfigs/*
 unittests/results/*
 cytostream/tools/reports/*
 cytostream/tools/report/*
+cytostream/sandbox/*
