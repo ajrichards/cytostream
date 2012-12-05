@@ -123,7 +123,7 @@ class Controller:
         self.labelsList[labelsID] = _labelsList
         self.labelsLogList[labelsID] = _logsList
         
-    def get_events(self,selectedFileName,subsample='original'):
+    def get_events(self,selectedFileName,subsample='original',filterName=None):
         '''
             input:
                 selectedFileName - string representing the file without the full path and without a file extension
@@ -144,6 +144,10 @@ class Controller:
 
         if subsample == 'original':
             return origEvents
+        elif filterName != None:
+            if self.subsampleDict.has_key(filterName) == False:
+                print "WARNING: Controller.get_events -- invalid filterName"
+            return origEvents[self.subsampleDict[key],:]
         else:
             self.handle_subsampling(subsample)
             key = str(int(float(subsample)))
@@ -454,38 +458,29 @@ class Controller:
             print "ERROR: bad file name specified",fileName
 
     def get_subsample_indices(self,subsample):
+        """
+        returns a np.array of indices
+        """
+
         if subsample == 'original':
             return
-
+        
         self.handle_subsampling(subsample)
         key = str(int(float(subsample)))
+
         return self.subsampleDict[key]
 
-    def handle_subsampling(self,subsample,isFilter=False):
+    def handle_subsampling(self,subsample):
         '''
         handels subsampling by fetching saved indices
         if subsampling is specified at the qa or analysis stage and the number is the same 
-        this function enables the use of only a single subsampling.
-
-        When isFilter is set to False -- the subsample arg is an int or float
-        When isFilter is set to True  -- the subsample arg is a np.array of indices
-
+        this function enables the use of only a single subsampling
         '''
 
-        ## ensure
-        if isFilter == True and type(subsample) != type(np.array([])):
-            print "ERROR: Controller.handle_subsampling invalid input with isFilter flag on"
-            
-        ## if subsample is set to some filter
         if subsample == 'original':
             return True
-        if re.search('ftr',str(subsample)):
-            return True
-
-        ## handle non filtering subsampling
-        elif subsample != 'original':
+        else:
             subsample = int(float(subsample))
-            
             key = str(subsample)
             if self.subsampleDict.has_key(key) == False:
                 subsampleIndices = self.model.get_subsample_indices(subsample)
@@ -496,8 +491,6 @@ class Controller:
                     return False
 
                 self.subsampleDict[key] = subsampleIndices
-            return True
-        else:
             return True
 
     def create_new_project(self,homeDir,channelDict={},record=True):
@@ -642,7 +635,12 @@ class Controller:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         self.channelDict = self.model.load_channel_dict()
 
-    def handle_filtering_by_clusters(self,filterID,fileName,parentModelRunID,modelMode,clusterIDs):
+    def handle_filtering_by_clusters(self,filterID,fileName,parentModelRunID,clusterIDs):
+        """
+        Filtering saves a np.array using the original array shape where row indices that have 
+        been filtered become 0 or 1. Filter results can be fetched like a subsample.
+        """
+
         modelsRunList = get_models_run_list(self.log.log)
 
         ## error checkings 
@@ -653,18 +651,48 @@ class Controller:
             print "ERROR: Controller.handle_filtering_by_clusters -- parentModelRun is not in modelsRunList - skipping filtering"
             return None
 
-        filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRunID,modelMode,clusterIDs)
-        self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
+        ## create a log
+        logDict = {"timestamp":          time.asctime(),
+                   "parent model":       parentModelRunID}
 
-    def handle_filtering_by_indices(self,filterID,fileName,parentModelRunID,modelMode,filterIndices):
+        ## get the filter labels
+        fileEvents = self.get_events(fileName)
+        fileLabels = a = np.zeros((fileEvents.shape[0]),dtype=int)
+        filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRunID,clusterIDs)
+        fileLabels[filterIndices] = 1
+
+        ## save the filter indices
+        self.model.save_labels(fileName,fileLabels,filterID)
+        self.model.save_labels_log(fileName,logDict,filterID)
+
+    def handle_filtering_by_indices(self,filterID,fileName,filterIndices,parentModelRun=None):
+        """
+        Filtering saves a np.array using the original array shape where row indices that have 
+        been filtered become 0 or 1. Filter results can be fetched like a subsample.
+        """
+
         modelsRunList = get_models_run_list(self.log.log)
 
-        ## error checkings 
+        ## create a log
+        logDict = {"timestamp":          time.asctime(),
+                   "parent model":       parentModelRunID}
+
+        ## error checking
         if fileName not in self.fileNameList:
             print "ERROR: Controller.handle_filtering_by_clusters -- fileName is not in fileList - skipping filtering"
             return None
 
-        self.model.save_filter_indices(fileName,parentModelRunID,modelMode,filterIndices,filterID)
+        ## get the filter labels
+        fileEvents = self.get_events(fileName)
+        fileLabels = a = np.zeros((fileEvents.shape[0]),dtype=int)
+        fileLabels[filterIndices] = 1
+
+        ## save the filter indices
+        self.handle_filtering(filterName,subsampleIndices=filterIndices)
+
+        ## save the filter indices
+        self.model.save_labels(fileName,fileLabels,filterID)
+        self.model.save_labels_log(fileName,logDict,filterID)
 
     def validate_channel_dict(self,fileChannels,channelDict):
         """

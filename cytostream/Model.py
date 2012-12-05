@@ -324,9 +324,6 @@ class Model:
         if subsample == "original":
             return None
 
-        if not re.search('filter',str(subsample)):
-            subsample = int(float(subsample))
-
         ## use pickle file if already created
         sampleIndicesFilePath = os.path.join(self.homeDir,'data','subsample_%s.npy'%subsample)        
         if os.path.isfile(sampleIndicesFilePath) == True:
@@ -502,7 +499,8 @@ class Model:
         tmp.close()
 
         return channelDict
-
+    
+    """
     def save_filter_indices(self,fileName,parentModelRunID,modelMode,filterIndices,filterID):
         ## check to see if a log file has been created for this project
         filterLogFile = os.path.join(self.homeDir,"data",'%s_%s.log'%(fileName,filterID))
@@ -531,25 +529,24 @@ class Model:
         
         filterIndices = np.load(indicesFilePath)
         return filterIndices
+    """
 
-    def get_filter_indices_by_clusters(self,fileName,parentModelRunID,modelMode,clusterIDs):
+    def get_filter_indices_by_clusters(self,fileName,parentModelRunID,clusterIDs):
         '''
         given a set of cluster ids (list) the respective events indices are found and returned
         always returns indices with respect to original data
-
         '''
 
+        ## error check
         if len(clusterIDs) == 0:
             print "WARNING: Controller.get_indices_for_filter -- clusterIDs was empty"
             return None
 
-        statModel, fileLabels = self.load_model_results_pickle(fileName,parentModelRunID,modelType=modelMode)
-        modelLog = self.load_model_results_log(fileName,parentModelRunID)
+        ## get model labels
+        fileLabels = self.load_saved_labels(fileName,parentModelRunID)
+        modelLog = self.load_saved_labels_log(fileName,parentModelRunID)
         parentSubsample = modelLog['subsample']
-                
-        ## get events
-        #events = self.get_events(fileName,subsample=parentSubsample)
-        
+                        
         ## check that labels are of right type
         if type(clusterIDs[0]) != type(1):
             clusterIDs = [int(cid) for cid in clusterIDs]
@@ -568,8 +565,6 @@ class Model:
        
         ## if subsample was used get indices in terms of original data
         if parentSubsample != 'original':
-            #events = self.get_events(fileName,subsample=parentSubsample)
-            #origLabels = np.arange(0,events.shape[0])
             parentSubsampleIndices = self.get_subsample_indices(parentSubsample)
             filterIndices = parentSubsampleIndices[filterIndices]
 

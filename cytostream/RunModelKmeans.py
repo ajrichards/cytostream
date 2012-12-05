@@ -20,9 +20,9 @@ try:
 except getopt.GetoptError:
     print sys.argv[0] + "-f fileName -h homeDir -g gpuDevice[optional]"
     print " Note: fileName (-f) must be the full" 
-    print " homeDir  (-h) home directory for current project"
-    print " gpuDevice     (-k) device id for gpu"
-    print " verbose       (-v) verbose flag"
+    print " homeDir        (-h) home directory for current project"
+    print " gpuDevice      (-k) device id for gpu"
+    print " verbose        (-v) verbose flag"
     sys.exit()
 
 name = None
@@ -44,20 +44,24 @@ class RunModelKmeans(RunModelBase):
         RunModelBase.__init__(self,homeDir)
         
     def run(self):
-        '''
+        """
         run specified model
-        '''
+        """
 
         if verbose == True:
             print '\t...writing log file',os.path.split(__file__)[-1]
 
         ## persistant parameters
         selectedModel = self.log.log['model_to_run']
-        modelMode = self.log.log['model_mode']
+        subsample = self.subsample
+        modelFilter = self.log.log['model_filter']
         modelRunID = self.modelRunID
-        modelReference = self.log.log['model_reference']
         modelReferenceRunID =  self.log.log['model_reference_run_id']
         includedChannels = self.includedChannels
+        
+        ## dep
+        modelMode = self.log.log['model_mode']
+        modelReference = self.log.log['model_reference']
 
         ## model specific parameters
         cleanBorderEvents = False
@@ -66,11 +70,13 @@ class RunModelKmeans(RunModelBase):
 
         ## prepare events
         events = self.model.get_events_from_file(fileName)
-        if re.search('ftr',self.subsample):
-            filterIndices = self.model.load_filter(fileName,self.subsample)
+
+        if modelFilter != None:
+            filterLabels = self.model.load_saved_labels(fileName,modelFilter)
+            filterIndices = np.where(filterLabels==1)[0]
             events = events[filterIndices,:]
-        elif self.subsample != 'original':
-            subsampleIndices = self.model.get_subsample_indices(self.subsample)
+        elif subsample != 'original':
+            subsampleIndices = self.model.get_subsample_indices(subsample)
             events = events[subsampleIndices,:]
 
         events = events[:,includedChannels]
@@ -82,17 +88,10 @@ class RunModelKmeans(RunModelBase):
         
         bestRepeat = (None,None,-2.0)
         for repeat in range(repeats):
-            
-            #try:
             kmeanResults, kmeanLabels = kmeans2(events,k,minit='points')
             silValues = get_silhouette_values([events],[kmeanLabels],subsample=10000,
                                                   minNumEvents=3,resultsType='raw')
-
-            #svg = SilValueGenerator(events,kmeanLabels)
-            #print silValues['0'].keys()
             avgSilVal = silValues['0'].mean()
-            #except:
-            #kmeanResults = None
 
             if kmeanResults == None or avgSilVal == -2.0:
                 continue
@@ -108,30 +107,27 @@ class RunModelKmeans(RunModelBase):
         avgSilVal = bestRepeat[2]
         runTime = self.get_run_time()
 
-        ## save cluster labels (components)
-        componentsFilePath = os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+"_components.npy")
-        np.save(componentsFilePath,labels)
+        ## save cluster labels
+        self.model.save_labels(fileName,labels,modelRunID)
 
-        ## save a log file
+        ## save labels log file
+        logDict = self.get_labels_log()
+        logDict["subsample"]        = str(subsample)
+        logDict["file name"]        = fileName
+        logDict["full model name"]  = re.sub('"',"",self.model.modelsInfo[selectedModel][0]),
+        logDict["total runtime"]    = time.strftime('%H:%M:%S', time.gmtime(runTime))
+        logDict["number events"]    = str(events.shape[0])
+        logDict["model mode"]       = modelMode
+        
+        ## add model specific values for the logfile
+        logDict["number components"] = str(k)
+        logDict["repeats"]        = str(repeats)
+
+        ## save the logfile
         if verbose == True:
             print '\t...writing log file', os.path.split(__file__)[-1]
 
-        writer = csv.writer(open(os.path.join(homeDir,'models',fileName+"_%s"%(modelRunID)+".log"),'w'))
-        
-        ## for all models
-        writer.writerow(["timestamp", time.asctime()])
-        writer.writerow(["subsample", str(self.subsample)])
-        writer.writerow(["project id", self.projName])
-        writer.writerow(["file name", fileName])
-        writer.writerow(["full model name", self.model.modelsInfo[selectedModel][0]])
-        writer.writerow(["model runtime",str(round(runTime,4))])
-        writer.writerow(["used channels",self.list2Str(self.includedChannelLabels)])
-        writer.writerow(["unused channels",self.list2Str(self.excludedChannelLabels)])        
-        writer.writerow(["number events",str(events.shape[0])])
-        writer.writerow(["model mode", modelMode])
-
-        ## model specific
-        writer.writerow(["number components",str(k)])
+        self.model.save_labels_log(fileName,logDict,modelRunID)
 
 if __name__ == '__main__':
     runModel = RunModelKmeans(homeDir)
