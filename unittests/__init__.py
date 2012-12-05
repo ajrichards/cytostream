@@ -24,10 +24,7 @@ from ControllerTest import *
 ControllerTestSuite = unittest.TestLoader().loadTestsFromTestCase(ControllerTest)
 controllerSuite = unittest.TestSuite([ControllerTestSuite])
 
-from ModelTest import *
-ModelTestSuite = unittest.TestLoader().loadTestsFromTestCase(ModelTest)
-modelSuite = unittest.TestSuite([ModelTestSuite])
-
+## simple example
 from TestCase1 import *
 TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
 runSuite = unittest.TestSuite([TestCase1Suite])
@@ -36,6 +33,12 @@ runSuite = unittest.TestSuite([TestCase1Suite])
 from TestCase2 import *
 TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
 runSuite = unittest.TestSuite([TestCase2Suite])
+
+
+## stats tests
+from PositivityThresholding import *
+PositivityThresholdingSuite = unittest.TestLoader().loadTestsFromTestCase(PositivityThresholding)
+runSuite = unittest.TestSuite([PositivityThresholdingSuite])
 
 from DistanceCalculatorTest import DistanceCalculatorTest
 DistanceCalculatorSuite = unittest.TestLoader().loadTestsFromTestCase(DistanceCalculatorTest)
