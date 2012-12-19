@@ -274,7 +274,8 @@ class NoGuiAnalysis():
 
         fileList = self.get_file_names()
         if fileName not in fileList:
-            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"            
+            print "ERROR: NoGuiAnalysis -- fileName is not in fileList - skipping get events"
+            print "...", fileName
             return None
 
         events = self.controller.get_events(fileName,subsample=subsample)

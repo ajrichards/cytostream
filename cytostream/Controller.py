@@ -635,7 +635,7 @@ class Controller:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         self.channelDict = self.model.load_channel_dict()
 
-    def handle_filtering_by_clusters(self,filterID,fileName,parentModelRunID,clusterIDs):
+    def handle_filtering_by_clusters(self,filterID,fileName,parentModelRun,clusterIDs):
         """
         Filtering saves a np.array using the original array shape where row indices that have 
         been filtered become 0 or 1. Filter results can be fetched like a subsample.
@@ -653,12 +653,12 @@ class Controller:
 
         ## create a log
         logDict = {"timestamp":          time.asctime(),
-                   "parent model":       parentModelRunID}
+                   "parent model":       parentModelRun}
 
         ## get the filter labels
         fileEvents = self.get_events(fileName)
         fileLabels = a = np.zeros((fileEvents.shape[0]),dtype=int)
-        filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRunID,clusterIDs)
+        filterIndices = self.model.get_filter_indices_by_clusters(fileName,parentModelRun,clusterIDs)
         fileLabels[filterIndices] = 1
 
         ## save the filter indices
@@ -675,7 +675,7 @@ class Controller:
 
         ## create a log
         logDict = {"timestamp":          time.asctime(),
-                   "parent model":       parentModelRunID}
+                   "parent model":       parentModelRun}
 
         ## error checking
         if fileName not in self.fileNameList:
@@ -686,9 +686,6 @@ class Controller:
         fileEvents = self.get_events(fileName)
         fileLabels = a = np.zeros((fileEvents.shape[0]),dtype=int)
         fileLabels[filterIndices] = 1
-
-        ## save the filter indices
-        self.handle_filtering(filterName,subsampleIndices=filterIndices)
 
         ## save the filter indices
         self.model.save_labels(fileName,fileLabels,filterID)
@@ -706,6 +703,7 @@ class Controller:
 
         mismatchFound = False
         for key,chanInd in channelDict.iteritems():
+            key = key.lower()
             keyParts = key.split("+")
             for k in keyParts:
                 if k == 'ifng':
@@ -719,7 +717,7 @@ class Controller:
 
             strippedChannelName = re.sub("\s|\-|\_","",fileChannels[chanInd])
             if not re.search(k,strippedChannelName,flags=re.IGNORECASE):
-                print "WARNING: Controller.validate_channel_dict file channel to channel dict mismatch?", key, fileChannels[chanInd]
+                print "WARNING: Controller.validate_channel_dict file channel to channel dict mismatch?", k, key, fileChannels[chanInd]
                 mismatchFound = True
 
         if mismatchFound == True:

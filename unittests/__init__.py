@@ -30,9 +30,9 @@ TestCase1Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase1)
 runSuite = unittest.TestSuite([TestCase1Suite])
 
 ## filtering
-from TestCase2 import *
-TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
-runSuite = unittest.TestSuite([TestCase2Suite])
+#from TestCase2 import *
+#TestCase2Suite = unittest.TestLoader().loadTestsFromTestCase(TestCase2)
+#runSuite = unittest.TestSuite([TestCase2Suite])
 
 
 ## stats tests
