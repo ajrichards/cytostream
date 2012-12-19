@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys,os,unittest,time,re,cPickle,csv,ast
-from PyQt4 import QtGui, QtCore
 import subprocess
 import matplotlib as mpl
 
@@ -23,7 +22,7 @@ class NoGuiAnalysis():
                  verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
                  logicleScaleMax=10**5,autoComp=True):
         """
-          class constructor 
+        class constructor 
         """
 
         ## error checking

@@ -8,7 +8,7 @@ A.Richards
 
 '''
 
-import re,os,csv,sys,time,re
+import re,os,csv,sys,time,re,shutil
 import subprocess, cPickle
 import Image
 import numpy as np
@@ -24,35 +24,48 @@ from Logging import Logger
 from tools import get_official_name_match
 from tools import get_clusters_from_gate, get_indices_from_gate
 from SaveSubplots import SaveSubplots
+from version import __version__
 
 class Controller:
-    def __init__(self,viewType=None,configDict=None,debug=False):
+    def __init__(self,configDict=None,debug=False):
         """
         construct an instance of the controller class
         to use invoke the method initialize
         """
 
         ## basic application wide variables 
-        self.viewType = viewType
         self.appName = "cytostream"
-
-        ## set debug mode
         self.debug = debug
 
         if self.debug == True:
             self.verbose = True
+            self.defaultDir = os.path.join(self.baseDir,'projects')
         else:
             self.verbose = False
+            self.defaultDir = os.getenv("HOME")
 
         ## application variables
         self.configDict = configDict
         self.reset_workspace()
 
+        # get base directory
+        if hasattr(sys,'frozen'):
+            self.baseDir = os.path.dirname(sys.executable)
+            self.baseDir = re.sub("MacOS","Resources",self.baseDir)
+        else:
+            self.baseDir = os.path.dirname(__file__)
+
+        if os.path.split(self.baseDir)[-1] != "cytostream":
+            self.baseDir = os.path.join(self.baseDir,"cytostream")
+
+        if os.path.isdir(os.path.join(self.baseDir,'cytostream')) == True:
+            self.baseDir = os.path.join(self.baseDir,"cytostream")
+
     def reset_workspace(self):
         self.projectID = None
         self.homeDir = None
         self.model = Model(verbose=self.verbose)
-        self.log = Logger()
+        self.log = None
         self.subsampleIndices = None
         self.fileChannelPath = None
         self.baseDir = self.model.baseDir
@@ -65,24 +78,24 @@ class Controller:
         self.uniqueLabels = {}
         self.labelsList = {}
         self.labelsLogList = {}
-
-        if self.debug == True:
-            print 'DEBUG ON'
-            self.verbose = True
-            self.defaultDir = os.path.join(self.baseDir,'projects')
-        else:
-            self.verbose = False
-            self.defaultDir = os.getenv("HOME")
-
         self.pythonPath = self.model.pythonPath                           
         
     def save(self):
         self.log.write()
 
     def initialize_project(self,homeDir,loadExisting=False):
+        ## clean
+        #if clean == True:
+
+        self.homeDir = os.path.realpath(homeDir)
+
+        if loadExisting == False:
+            self.remove_project(self.homeDir)
+            os.mkdir(self.homeDir)
+
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
-        self.log.initialize(self.homeDir,load=loadExisting,configDict=self.configDict) 
+        self.log = Logger(self.homeDir,configDict=self.configDict) 
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
         
@@ -167,7 +180,7 @@ class Controller:
         self._labels_load(labelsID)
         labels = self.labelsList[labelsID][self.fileNameList.index(fileName)]
         labelsLog = self.labelsLogList[labelsID][self.fileNameList.index(fileName)]
-    
+
         if getLog == True:
             return labels,labelsLog
         else:
@@ -530,24 +543,11 @@ class Controller:
         return True
 
     def remove_project(self,homeDir):        
-        for fileOrDir in os.listdir(homeDir):
-            if os.path.isfile(os.path.join(homeDir,fileOrDir)) == True:
-                os.remove(os.path.join(homeDir,fileOrDir))
-            elif os.path.isdir(os.path.join(homeDir,fileOrDir)) == True:
-                for fileOrDir2 in os.listdir(os.path.join(homeDir,fileOrDir)):
-                    if os.path.isfile(os.path.join(homeDir,fileOrDir,fileOrDir2)) == True:
-                        os.remove(os.path.join(homeDir,fileOrDir,fileOrDir2))
-                    elif os.path.isdir(os.path.join(homeDir,fileOrDir,fileOrDir2)) == True:
-                        for fileOrDir3 in os.listdir(os.path.join(homeDir,fileOrDir,fileOrDir2)):
-                            if os.path.isfile(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3)) == True:
-                                os.remove(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3))
-                            elif os.path.isdir(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3)) == True:     
-                                for fileName in os.listdir(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3)):
-                                    os.remove(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3,fileName))
-                                os.rmdir(os.path.join(homeDir,fileOrDir,fileOrDir2,fileOrDir3))
-                        os.rmdir(os.path.join(homeDir,fileOrDir,fileOrDir2))
-                os.rmdir(os.path.join(homeDir,fileOrDir))
-        os.rmdir(homeDir)
+        """
+        deletes a project and all associated data
+        """
+
+        shutil.rmtree(self.homeDir)
 
     def rm_fcs_file(self,fcsFile):
         """
@@ -619,8 +619,7 @@ class Controller:
                               logicleScaleMax=logicleScaleMax)
 
         ## reload the log file and save it      
-        self.log = Logger()
-        self.log.initialize(self.homeDir,load=True)
+        self.log = Logger(self.homeDir)
         self.save()
 
         ## initialize class wide variables 

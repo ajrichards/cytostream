@@ -92,8 +92,7 @@ if dataType == 'fcs':
         fcsData = fcm.loadFCS(filePath,auto_comp=autoComp,transform=None)
 
     ## init a logger
-    log = Logger()
-    log.initialize(homeDir,load=True)
+    log = Logger(homeDir)
 
     ## get short names 
     shortNames = [fcsData.notes.text['p%dn' % (i+1)] for i in range(int(fcsData.notes.text['par']))]

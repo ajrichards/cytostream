@@ -24,8 +24,7 @@ class RunModelBase(object):
         self.projectID = os.path.split(homeDir)[-1]
 
         ## initialize a logger and a model to get specified files and channels
-        self.log = Logger()
-        self.log.initialize(homeDir,load=True)
+        self.log = Logger(homeDir)
     
         ## prepare model
         self.model = Model()
