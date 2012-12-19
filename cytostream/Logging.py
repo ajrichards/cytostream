@@ -66,7 +66,8 @@ class Logger():
 
     ## effectivly the only action necessary to save a project in its current state
     def write(self):
-        writer = csv.writer(open(os.path.join(self.homeDir,self.projectID+'.log'),'w'))
+        writeFile = open(os.path.join(self.homeDir,self.projectID+'.log'),'w')
+        writer = csv.writer(writeFile)
 
         for key,item in self.log.iteritems():
             if item == None:
@@ -75,7 +76,8 @@ class Logger():
                 item = str(item)
 
             writer.writerow([key,item])
-            
+        writeFile.close()
+
     ## reads the log file assciated with the current project and returns a dict
     def read_project_log(self):
         projLog = os.path.join(self.homeDir,self.projectID+".log")
