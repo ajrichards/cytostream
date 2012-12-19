@@ -15,27 +15,19 @@ from cytostream import configDictDefault
 
 class Logger():
     '''
-    Logger class to handle the logging tasks of the pipline software
-    project logfile - main log file that holds project specific history and variable information
-    model logfiles - each run of a model results in a results pickle as well as a log file
-    figure logfiles - figures may be manipulated after the run of a model
-
+    Logger class to handle the logging interface for cytostream
     '''
 
-    def __init__(self):
+    def __init__(self,homeDir,configDict=None):
         '''
         constructor
 
         '''
 
-        self.log = {'current_state':'Initial'}
-
-    def initialize(self,homeDir,load=False,configDict=None):
+        ## variables
         self.projectID = os.path.split(homeDir)[-1]
         self.homeDir = homeDir
-        self.modelDir = os.path.join(self.homeDir,'models')
-        self.figDir  = os.path.join(self.homeDir, 'figs')
-        self.dataDir = os.path.join(self.homeDir, 'data')
+        self.logFilePath = os.path.join(self.homeDir,self.projectID+'.log')
 
         if configDict == None:
             self.configDict = configDictDefault
@@ -46,27 +38,21 @@ class Logger():
         if type(self.configDict) != type({}):
             print "INPUT ERROR: in Logging.py configDict must be of type dict"
 
-        ## setup the logger from existing or from new
-        if load == False:
-            self.log = self.set_var_defaults()
-        elif load == True:
+        ## either load or create a new log file    
+        if os.path.exists(self.logFilePath):
             self.log = self.read_project_log()
+        else:
+            self.log = {}
 
-    def set_var_defaults(self):
-        log = {}
+            for key,item in self.configDict.iteritems():
+                if re.search("\[|\{|None",str(item)):
+                    item = ast.literal_eval(str(item))
 
-        ## load default variables
-        for key,item in self.configDict.iteritems():
-            if re.search("\[|\{|None",str(item)):
-                item = ast.literal_eval(str(item))
+                self.log[key] = item
 
-            log[key] = item
-
-        return log
-
-    ## effectivly the only action necessary to save a project in its current state
+    ## effectivly the only action necessary to save a project
     def write(self):
-        writeFile = open(os.path.join(self.homeDir,self.projectID+'.log'),'w')
+        writeFile = open(self.logFilePath,'w')
         writer = csv.writer(writeFile)
 
         for key,item in self.log.iteritems():

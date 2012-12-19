@@ -77,7 +77,7 @@ class ControllerTest(unittest.TestCase):
         self.controller.handle_subsampling(subsample)
         self.controller.process_images('qa')
         self.assertTrue(os.path.isdir(os.path.join(self.controller.homeDir,'figs','qa','3FITC_4PE_004_thumbs')))
-    
+
     def testRunModelDPMMM(self):
         print '...testing dpmm'
         excludedChannelInd = 1
@@ -95,12 +95,16 @@ class ControllerTest(unittest.TestCase):
 
         ## check that it works with cpu subprocessing
         self.controller.run_selected_model()
-        time.sleep(1)
+        time.sleep(10)
         labels1 = self.controller.get_labels(self.fileName,'run1')
+        
         self.assertEqual(labels1.size,1000)        
         labels1,modelRunLog1 = self.controller.get_labels(self.fileName,'run1',getLog=True)
         self.assertTrue(len(modelRunLog1.keys()) > 5)
     
+    ## mas
+
+
     '''
     def testRunModelKmeans(self):
         print '...testing kmeans'

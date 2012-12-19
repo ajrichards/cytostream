@@ -18,7 +18,7 @@ if mpl.get_backend() != 'agg':
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from cytostream import Model, Logger, get_fcs_file_names
+from cytostream import Model,get_fcs_file_names
 from cytostream.tools import get_all_colors, get_file_data, draw_plot,finalize_draw
 import Controller
 
