@@ -266,7 +266,7 @@ class Model:
 
         ## remove white space
         allChannels = [re.sub("\s+","-",c) for c in allChannels]
-
+        print 'ac', allChannels
         return allChannels
 
     def get_master_channel_indices(self,channels):
@@ -281,7 +281,7 @@ class Model:
 
         masterList = self.get_master_channel_list()
         channelInds = [np.where(np.array(masterList) == c)[0][0] for c in channels]
-        
+
         return channelInds
    
     def get_file_channel_list(self,fileName):
