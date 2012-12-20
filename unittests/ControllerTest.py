@@ -95,7 +95,7 @@ class ControllerTest(unittest.TestCase):
 
         ## check that it works with cpu subprocessing
         self.controller.run_selected_model()
-        time.sleep(10)
+        time.sleep(1)
         labels1 = self.controller.get_labels(self.fileName,'run1')
         
         self.assertEqual(labels1.size,1000)        

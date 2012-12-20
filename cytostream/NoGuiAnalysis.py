@@ -32,6 +32,11 @@ class NoGuiAnalysis():
         if type(homeDir) != type('abc'):
             print "INPUT ERROR: homedir in NoGuiAnalysis input must be of type str", homeDir
             return None
+        
+        ## existing ensure valid project
+        if loadExisting == True and os.path.isdir(homeDir) == False:
+            print "INPUT ERROR: project does not exist exiting", homeDir
+            return None
 
         ## ensure basic variables are present
         if loadExisting == False and len(filePathList) == 0:
@@ -99,7 +104,7 @@ class NoGuiAnalysis():
             print 'loading existing project'
 
         ## eusure minimum information present in channel dict 
-        fileChannels = self.controller.model.get_master_channel_list()
+        fileChannels = self.controller.fileChannels
         self.controller.validate_channel_dict(fileChannels,self.channelDict)
         
         ## quality assurance figures

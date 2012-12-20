@@ -90,6 +90,7 @@ class Controller:
         self.homeDir = os.path.realpath(homeDir)
 
         if loadExisting == False:
+            print '...cleaning home directory'
             self.remove_project(self.homeDir)
             os.mkdir(self.homeDir)
 
@@ -547,7 +548,8 @@ class Controller:
         deletes a project and all associated data
         """
 
-        shutil.rmtree(self.homeDir)
+        if os.path.isdir(self.homeDir):
+            shutil.rmtree(self.homeDir)
 
     def rm_fcs_file(self,fcsFile):
         """
