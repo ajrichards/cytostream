@@ -110,7 +110,7 @@ class PolyGateInteractor:
 
     def remove_vert(self):
         self.poly.xy = self.poly.xy[:-1]
-        x, y = zip(*self.poly.xy)                                                                                                  
+        x, y = zip(*self.poly.xy)
         x = [i for i in x] + [x[0]]  
         y = [i for i in y] + [y[0]] 
         self.line.set_data((x,y))
@@ -120,7 +120,7 @@ class PolyGateInteractor:
         newX = np.random.uniform(min(x), max(x))
         newY = np.random.uniform(min(y), max(y))
         self.poly.xy = np.vstack([self.poly.xy, [newX,newY]])
-        x, y = zip(*self.poly.xy)                                                                                                  
+        x, y = zip(*self.poly.xy)
         x = [i for i in x] + [x[0]]  
         y = [i for i in y] + [y[0]] 
         self.line.set_data((x,y))
@@ -221,6 +221,10 @@ def get_clusters_from_gate(data,labels,gate):
     returns clusters from a gate
     '''
 
+    if labels == None:
+        print "WARNING: GateImporter.get_clusters_from_gate -- labels were 'None'"
+        return []
+
     ## create a matrix of the mean values
     meanMat = None
     uniqueLabels = np.sort(np.unique(labels))
@@ -260,13 +264,17 @@ class GateImporter:
     used to import gates from flojo xml files
     '''
     
-    def __init__(self,nga,xmlFilePath,modelRunID='run1',transform='logicle',plotGates=False):
+    def __init__(self,nga,xmlFilePath,modelRunID='run1',transform='logicle',plotGates=False,
+                 regex="\s+"):
         '''
         constructor initalizes all necessary variables
+        regex = a regexpression (str) that converts original file names to appropriate file names
+
         '''
 
         ## declare variables
         self.nga = nga
+        self.regex = regex
         self.fileNameList = self.nga.get_file_names()
         self.channelNameList = self.nga.get_channel_names()
         self.modelRunID = modelRunID
@@ -338,7 +346,8 @@ class GateImporter:
             self.nga.set("plots_to_view_runs",[self.modelRunID for i in range(16)])
 
             ## set titles
-            subplotTitles = [re.sub(fileName,"","%s (%s)"%(gatesToPlot[i]['parent'],gatesToPlot[i]['name'])) for i in range(numSubplots)]
+            gtp = gatesToPlot
+            subplotTitles = [re.sub(fileName,"","%s (%s)"%(gtp[i]['parent'],gtp[i]['name'])) for i in range(numSubplots)]
 
             ## set gates
             gatesToShow = [[] for c in range(16)]
@@ -417,11 +426,14 @@ class GateImporter:
         return newGate
 
     def read_fcm_poly_gate(self,pGate,fileName):
+        print 'reading fcm_poly_gate'
         verts = pGate.vert
         name  = re.sub("\s+","_",pGate.name)
+        #name  = re.sub(self.regex,"",pGate.name)
         name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
         name = name + "_" + fileName
+        print 'debug', name, fileName
         _channel1,_channel2  = pGate.chan
         dimX = np.array([g[0] for g in verts])
         dimY = np.array([g[1] for g in verts])
@@ -478,7 +490,7 @@ class GateImporter:
         resultType = None
         for key, item in fjxml.iteritems():
             key = re.sub("\.fcs","",key)
-            normalizedKey = re.sub("\.","_",re.sub("\s+","",key))
+            normalizedKey = re.sub("\.","_",re.sub(self.regex,"",key))
             normalizedKey = re.sub("-","_",key)
             
             for fn in self.fileNameList:
@@ -491,27 +503,40 @@ class GateImporter:
                 resultsType = 1
 
         ## ensure we have the correct number of matches
-        matches = 0
+        matchedNames = []
+        unmatchedNames = []
+        matchedIndices = []
         for fileNameToMatch in gates.keys():
-            fileNameToMatch = parent = re.sub("\s+","_",fileNameToMatch)
+            fileNameToMatch = re.sub(self.regex,"",fileNameToMatch)
             matchedName = None
             for fileName in self.fileNameList:
                 if fileName == fileNameToMatch:
                    matchedName = fileName
 
             if matchedName == None:
+                print "WARNING: gate importer unmatched name"
+                unmatchedNames.append(fileNameToMatch)
+                print fileNameToMatch
                 continue
-            matches += 1
 
-        if matches != len(self.fileNameList):
-            print "WARNING: either not all files contains a gate match in GateImporter or a match could not be found"
-            print "...", self.fileNameList
-            print "...", gates.keys()
+            matchedIndices.append(self.fileNameList.index(matchedName))
+            matchedNames.append(fileNameToMatch)
+
+        matchedIndices = list(set(matchedIndices))
+        if len(matchedIndices) != len(self.fileNameList):
+            print "WARNING: either not all files could be matched or there was an invalid number of matchs"
+            matchedNames.sort()
+            unmatchedNames.sort()
+            print "From XML -- matched names\n", matchedNames
+            print "From XML -- unmatched names\n", unmatchedNames
+            print "From nga -- unmatched names\n"
+            print np.array(self.fileNameList)[list(set(range(len(self.fileNameList))).difference(set(matchedIndices)))]
+            print len(matchedIndices),len(self.fileNameList)
             return
 
         matches = 0
         for _fileNameToMatch in gates.keys():
-            fileNameToMatch = parent = re.sub("\s+","_",_fileNameToMatch)
+            fileNameToMatch = re.sub(self.regex,"",_fileNameToMatch)
             matchedName = None
             for fileName in self.fileNameList:
                 if fileName == fileNameToMatch:
@@ -520,14 +545,14 @@ class GateImporter:
             if matchedName == None:
                 continue
             matches += 1
-            print "Extracting gates for %s", matchedName
-            print gates.keys()[:3]
+            print "Extracting gates for %s"%matchedName
             gateList = gates[_fileNameToMatch]
             fileName = matchedName
             self.savedGates[fileName] = []
+
             ## for a given file import all of its gates
             for pGate in gateList:
-                verts,name,channel1Ind,channel2Ind,channel1Name,channel2Name = self.read_fcm_poly_gate(pGate.gate,matchedName)
+                verts,name,chan1Ind,chan2Ind,chan1Name,chan2Name = self.read_fcm_poly_gate(pGate.gate,matchedName)
                 parent = pGate.parent
                 parent = re.sub("\s+","_",parent)
                 parent = re.sub("\.gate","",parent)
@@ -536,8 +561,9 @@ class GateImporter:
             
                 print '\tname', name
                 print '\tparent', parent
-                print '\tchannels', channel1Ind,channel2Ind,channel1Name,channel2Name, "\n"
-                self.nga.controller.save_gate('%s.gate'%name,verts,channel1Ind,channel2Ind,channel1Name,channel2Name,parent,fileName)           
+                print '\tchannels', chan1Ind,chan2Ind,chan1Name,chan2Name, "\n"
+                self.nga.controller.save_gate('%s.gate'%name,verts,chan1Ind,chan2Ind,
+                                              chan1Name,chan2Name,parent,fileName)
 
                 pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
                 isCytokine = False
@@ -546,8 +572,8 @@ class GateImporter:
 
                 gateToSave = {'verts':verts,
                               'name':name,
-                              'channel1':channel1Ind,
-                              'channel2':channel2Ind,
+                              'channel1':chan1Ind,
+                              'channel2':chan2Ind,
                               'parent':parent,
                               'cytokine':isCytokine}
 
