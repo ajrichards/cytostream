@@ -12,7 +12,8 @@ description - Shows the user how a normal analysis is carried out.
               the paramerters are altered and the model is run again.
               
               Note that the import and use of configDictDefault is only necessary for certain variables
-              Most variables maybe be changed using nga.set(), however it may also be programatically convenient
+              Most variables maybe be changed using nga.set()
+              Some users may prefer the config method because it can be programatically convenient
 
 '''
 
@@ -53,7 +54,8 @@ class TestCase1(unittest.TestCase):
         time.sleep(2)
 
         ## ensure project was created
-        self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,"%s.log"%self.nga.controller.projectID)))
+        self.assertTrue(os.path.isfile(os.path.join(self.nga.controller.homeDir,
+                                                    "%s.log"%self.nga.controller.projectID)))
         self.failIf(len(os.listdir(os.path.join(self.nga.controller.homeDir,"data"))) < 2)
                 
         ## get events

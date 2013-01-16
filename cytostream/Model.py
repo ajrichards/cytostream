@@ -266,7 +266,6 @@ class Model:
 
         ## remove white space
         allChannels = [re.sub("\s+","-",c) for c in allChannels]
-        print 'ac', allChannels
         return allChannels
 
     def get_master_channel_indices(self,channels):
@@ -361,7 +360,8 @@ class Model:
             np.random.shuffle(randEvents)
             randEvents = randEvents[:subsample]
         else:
-            print "WARNING: Model.py get_sumsample_indices -- subsample must be the array or an int -- using original data"
+            msg = "subsample must be the array or an int -- using original data"
+            print "WARNING: Model.py get_sumsample_indices -- %s"%msg
             return None
 
         ## save rand events for future use
@@ -378,9 +378,10 @@ class Model:
             fileLabels = np.array(fileLabels)
 
         saveFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".npy")
-        if os.path.exists(saveFilePath):
-            print "WARNING: Model.save_labels -- labels file already exists skipping"
-            return
+        #if os.path.exists(saveFilePath):
+        #    print "WARNING: Model.save_labels -- labels file already exists skipping"
+        #    print "...", saveFilePath
+        #    return
 
         np.save(saveFilePath,fileLabels)
 
@@ -390,9 +391,9 @@ class Model:
         """
 
         logFilePath = os.path.join(self.homeDir,'models',fileName+"_%s"%(labelsID)+".log")
-        if os.path.exists(logFilePath):
-            print "WARNING: Model.save_labels_log -- labels file already exists skipping"
-            return
+        #if os.path.exists(logFilePath):
+        #    print "WARNING: Model.save_labels_log -- labels file already exists skipping"
+        #    return
         
         fid = open(logFilePath,"w")
         writer = csv.writer(fid)   

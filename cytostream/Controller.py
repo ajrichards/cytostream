@@ -21,7 +21,7 @@ from Model import Model
 from FileControls import get_fcs_file_names,get_img_file_names,get_project_names,get_saved_gate_names
 from FileControls import add_project_to_log,get_models_run_list
 from Logging import Logger
-from tools import get_official_name_match
+from tools import get_official_name_match,cytokinePattern
 from tools import get_clusters_from_gate, get_indices_from_gate
 from SaveSubplots import SaveSubplots
 from version import __version__
@@ -100,12 +100,9 @@ class Controller:
         self.model.initialize(self.homeDir)
         self.fileNameList = get_fcs_file_names(self.homeDir)
         
-        if len(self.fileNameList) < 50: 
-            self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
-        else:
-            print "WARNING: Controller has more than 50 files shoud we be using events list?"
-            self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
-
+        ## this needs to be tested or modified for very large projects
+        self.eventsList = [self.model.get_events_from_file(fn) for fn in self.fileNameList]
+        
         if len(self.fileNameList) > 0:
             self.fileChannels = self.model.get_file_channel_list(self.fileNameList[0])
         else:
@@ -646,10 +643,12 @@ class Controller:
 
         ## error checkings 
         if fileName not in self.fileNameList:
-            print "ERROR: Controller.handle_filtering_by_clusters -- fileName is not in fileList - skipping filtering"
+            msg = "fileName is not in fileList - skipping filtering"
+            print "ERROR: Controller.handle_filtering_by_clusters -- %s"%msg
             return None
-        if parentModelRunID not in modelsRunList:
-            print "ERROR: Controller.handle_filtering_by_clusters -- parentModelRun is not in modelsRunList - skipping filtering"
+        if parentModelRun not in modelsRunList:
+            msg = "parentModelRun is not in modelsRunList - skipping filtering"
+            print "ERROR: Controller.handle_filtering_by_clusters -- %s"%msg
             return None
 
         ## create a log
@@ -803,13 +802,16 @@ class Controller:
              view.mc.init_model_process(cmd,script,fileList)
 
     def save_gate(self,gateName,verts,channel1,channel2,channel1Name,channel2Name,parent,fileName,
-                  modelRunID='run1',modelMode='components'):
+                  modelRunID='run1'):
         '''
         saves a given gate
         channels are the channel index
 
         iFilter - is a filter created using indices within a gate
         cFilter - is a filter created using indices derived from clusters within a gate
+        
+        This function and all functions that interact with proprietary software output are
+        experimental and functionality is not guaranteed.
         '''
         
         isCytokine = False
@@ -820,21 +822,14 @@ class Controller:
         gateName = re.sub("\.gate","",gateName)
         gateFilePath = os.path.join(os.path.join(self.homeDir,"data"),gateName)
 
-        pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
-        if re.search(pattern,gateName):
+        ## check to see if we have a cytokine
+        if re.search(cytokinePattern,gateName):
             isCytokine = True
-            if re.search(pattern,channel1Name):
+            if re.search(cytokinePattern,channel1Name):
                 cytokineChan = 0
-            if re.search(pattern,channel2Name):
+            if re.search(cytokinePattern,channel2Name):
                 cytokineChan = 1
             
-            ## rewrite the verts to be a stright line
-            #cytoThreshold = np.array([i[cytokineChan] for i in verts]).min()
-            #if cytokineChan == 1:
-            #    verts = [(i[0],cytoThreshold) for i in verts]
-            #elif cytokineChan == 0:
-            #    verts = [(cytoThreshold,i[1]) for i in verts]
-
         gateToSave = {'verts':verts,
                       'channel1':channel1,
                       'channel2':channel2,
@@ -850,34 +845,20 @@ class Controller:
         tmp1.close()
 
         ## create filters for each file using both indices and clusters
-        #for fileName in self.fileNameList:
         fileEvents = self.get_events(fileName)
         fileLabels = self.get_labels(fileName,modelRunID)
-        _gateClusters = get_clusters_from_gate(fileEvents[:,[channel1,channel2]],fileLabels,verts)
-        _gateClusters = [str(int(c)) for c in _gateClusters]
         _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
 
         if parent != 'root':
             parentGate = self.load_gate(parent)
-            parentClusterIndices = self.model.load_filter(fileName,'cFilter_%s'%parent)
-            if str(parentClusterIndices) == 'None':
-                parentClusters = []
-            else:
-                parentClusters = np.unique(fileLabels[parentClusterIndices])
-            parentClusters = [str(int(c)) for c in parentClusters]
-            parentIndices = self.model.load_filter(fileName,'iFilter_%s'%parent)
-            gateClusters = list(set(parentClusters).intersection(set(_gateClusters)))
+            filterLabels = self.get_labels(fileName,'iFilter_%s'%parent,getLog=False)
+            parentIndices = np.where(filterLabels==1)[0]
             gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
         else:
-            gateClusters = _gateClusters
             gateIndices = _gateIndices
 
-        ## only save cytokine filters for events by index
-        if isCytokine == False:
-            self.handle_filtering_by_clusters('cFilter_%s'%gateName,fileName,modelRunID,modelMode,gateClusters)
-            self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
-        else:
-            self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,modelRunID,modelMode,gateIndices)
+        ## save events by index
+        self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,gateIndices)
 
     def load_gate(self,gateID):
         '''
