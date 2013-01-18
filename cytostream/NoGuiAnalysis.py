@@ -18,8 +18,9 @@ class NoGuiAnalysis():
     Central object for the application programming interface of cytostream.
     """
 
-    def __init__(self,homeDir,filePathList=[],channelDict=None,useSubsample=True,makeQaFigs=False,configDict=None,record=True,
-                 verbose=False,dType='fcs',inputChannels=None,loadExisting=False,compensationFilePath=None,transform='logicle',
+    def __init__(self,homeDir,filePathList=[],channelDict=None,useSubsample=True,makeQaFigs=False,
+                 configDict=None,record=True,verbose=False,dType='fcs',inputChannels=None,
+                 loadExisting=False,compensationFilePath=None,transform='logicle',
                  logicleScaleMax=10**5,autoComp=True):
         """
         class constructor 
@@ -173,7 +174,8 @@ class NoGuiAnalysis():
         savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,getLog=True)
 
         if savedLabels == None:
-            #print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
+            print "WARNING: NoGuiAnalysis -- load_labels returned None. Check your labelsID"
+            print "... cannot find %s"%fileName+"_%s"%(labelsID)+".npy"
             if getLog == False:
                 return None
             else:
