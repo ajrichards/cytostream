@@ -8,6 +8,7 @@ from PyQt4 import QtGui,QtCore
 import fcm
 from fcm.core.transforms import _logicle as logicle
 from cytostream.tools import officialNames,get_official_name_match
+from cytostream.tools import cytokinePattern, scatterPattern
 
 import matplotlib as mpl
 if mpl.get_backend() != 'agg':
@@ -208,7 +209,6 @@ def get_indices_from_gate(data,gate):
     returns indices from a gate
     '''
 
-
     allData = [(d[0]+10000, d[1]+10000) for d in data]
     gate = [(g[0]+10000, g[1]+10000) for g in gate]
     pip = points_inside_poly(allData, gate)
@@ -299,7 +299,7 @@ class GateImporter:
             
         ## error check
         if os.path.exists(xmlFilePath) == False: 
-            print "cannot find xml file", self.xmlFilePath
+            print "cannot find xml file", xmlFilePath
             return
         if self.transform != 'logicle':
             print "ERROR: GateImporter is only implemented for logicle transforms"
@@ -334,7 +334,6 @@ class GateImporter:
         else:
             gatesToPlotList = self.savedGates[fileName]
         
-        #for fileName in self.fileNameList:
         fileInd = self.fileNameList.index(fileName)
         fileEvents = self.nga.get_events(fileName)
         for gind, gatesToPlot in enumerate(gatesToPlotList):
@@ -347,7 +346,8 @@ class GateImporter:
 
             ## set titles
             gtp = gatesToPlot
-            subplotTitles = [re.sub(fileName,"","%s (%s)"%(gtp[i]['parent'],gtp[i]['name'])) for i in range(numSubplots)]
+            nsp = numSubplots
+            subplotTitles = [re.sub(fileName,"","%s (%s)"%(gtp[i]['parent'],gtp[i]['name'])) for i in range(nsp)]
 
             ## set gates
             gatesToShow = [[] for c in range(16)]
@@ -358,17 +358,18 @@ class GateImporter:
             plotsToViewFilters = [None for c in range(16)]
             for i in range(numSubplots):
                 if gatesToPlot[i]['parent'] != 'root':
-                    plotsToViewFilters[i] = 'iFilter_%s'%gatesToPlot[i]['parent']
+                    plotsToViewFilters[i] = gatesToPlot[i]['parent']
             self.nga.set('plots_to_view_filters',plotsToViewFilters)
             
             ## unhighlight all events except positive ones
             if len(gatesToPlotList) > 1:
                 plotsToViewHighlights = [None for c in range(16)]
                 for i in range(numSubplots):
-                    plotsToViewHighlights[i] = []
-                    
+                    plotsToViewHighlights[i] = []    
                 self.nga.set('plots_to_view_highlights',plotsToViewHighlights)
-                cytokinePosInds = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[-1]['name'])
+                
+                cytokinePosLabels = self.nga.load_labels(fileName,gatesToPlot[-1]['name'],getLog=False)
+                cytokinePosInds = np.where(cytokinePosLabels==1)[0] 
                 positiveToShow = [None for c in range(16)]
                 for i in range(numSubplots):
                     positiveToShow[i] = cytokinePosInds
@@ -379,8 +380,11 @@ class GateImporter:
                     if gatesToPlot[i]['parent'] == 'root':
                         parentIndices = range(fileEvents.shape[0])
                     else:
-                        parentIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['parent'])
-                    childIndices = self.nga.controller.model.load_filter(fileName,'iFilter_%s'%gatesToPlot[i]['name'])
+                        parentLabels = self.nga.load_labels(fileName,gatesToPlot[i]['parent'],getLog=False)
+                        parentIndices = np.where(parentLabels==1)[0]
+
+                    childLabels = self.nga.load_labels(fileName,gatesToPlot[i]['name'],getLog=False)
+                    childIndices = np.where(childLabels==1)[0]
                     if len(childIndices) == 0 or len(parentIndices) == 0:
                         textToShow[i] = '0.0'
                     textToShow[i] = str(round((float(len(childIndices)) / float(len(parentIndices))) * 100.0,4))
@@ -392,22 +396,28 @@ class GateImporter:
             self.nga.set('plots_to_view_channels',plotsToViewChannels)
 
             ## save
+            figDir = os.path.join(self.nga.homeDir,'results','imported-xml')
+            if os.path.isdir(figDir) == False:
+                os.mkdir(figDir)
             if len(gatesToPlotList) > 1:
-                figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_%s_fjxml.png'%(fileName,basicSubsets[gind]))
+                figName = os.path.join(figDir,'%s_%s_xml.png'%(fileName,basicSubsets[gind]))
                 figTitle = "Imported FJ gates %s - %s"%(re.sub("\_","-",fileName),basicSubsets[gind])
             else:
-                figName = os.path.join('.','results','xmlfj',self.nga.controller.projectID,'%s_fjxml.png'%(fileName))
+
+                figName = os.path.join(figDir,'%s_xml.png'%(fileName))
                 figTitle = "Imported FJ gates %s"%re.sub("\_","-",fileName)
             print '...saving', figName
-            self.nga.controller.save_subplots(figName,numSubplots,figMode='analysis',figTitle=figTitle,useScale=True,
+
+            self.nga.controller.save_subplots(figName,numSubplots,figMode='qa',figTitle=figTitle,useScale=False,
                                               drawState='heat',subplotTitles=subplotTitles,gatesToShow=gatesToShow,
-                                              positiveToShow=positiveToShow,drawLabels=False,textToShow=textToShow)
+                                              positiveToShow=positiveToShow,drawLabels=False,textToShow=textToShow,
+                                              fontSize=8)
 
     def logical_transform(self,gateVerts,axis='both',reverse=False):
         '''
         used to logicle transform channels as the gate is imported
         '''
-        
+
         dim0 = [g[0] for g in gateVerts]
         dim1 = [g[1] for g in gateVerts]
 
@@ -433,7 +443,6 @@ class GateImporter:
         name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
         name = name + "_" + fileName
-        print 'debug', name, fileName
         _channel1,_channel2  = pGate.chan
         dimX = np.array([g[0] for g in verts])
         dimY = np.array([g[1] for g in verts])
@@ -457,20 +466,19 @@ class GateImporter:
             if int(channel2Ind) == int(chanIndx):
                 channel2Name = chanName
 
-        scatterList = ['FSC','FSCA','FSCW','FSCH','SSC','SSCA','SSCW','SSCH']
-        if channel1Name not in scatterList and not channel2Name in scatterList:
+        if not re.search(scatterPattern,channel1Name) and not re.search(scatterPattern,channel2Name):
             verts = self.logical_transform(verts,axis='both',reverse=False)
-        elif channel1Name not in scatterList:
+        elif not re.search(scatterPattern,channel1Name):
             verts = self.logical_transform(verts,axis='x',reverse=False)
-        elif channel2Name not in scatterList:
+        elif not re.search(scatterPattern,channel2Name):
             verts = self.logical_transform(verts,axis='y',reverse=False)
-        
+
         ## revert any negative values to their original values
-        if len(negValsX[0]) > 0:
-            dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))
-        if len(negValsY[0]) > 0:
-            dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))
-        verts = [(dimX[p],dimY[p]) for p in range(len(verts))]
+        #if len(negValsX[0]) > 0:
+        #    dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))
+        #if len(negValsY[0]) > 0:
+        #    dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))
+        #verts = [(dimX[p],dimY[p]) for p in range(len(verts))]
 
         ## add the point to the end
         verts = verts + [verts[0]]
@@ -559,15 +567,19 @@ class GateImporter:
                 if parent != 'root':
                     parent = parent + "_" + fileName
             
+                ## fixes the bug where the parent gate is marked as another cytokine 
+                #if re.search(cytokinePattern,parent):
+                #    print "WARNING: detected cytokine as parent -- using root"
+                #parent = 'root'
+
                 print '\tname', name
                 print '\tparent', parent
                 print '\tchannels', chan1Ind,chan2Ind,chan1Name,chan2Name, "\n"
                 self.nga.controller.save_gate('%s.gate'%name,verts,chan1Ind,chan2Ind,
                                               chan1Name,chan2Name,parent,fileName)
 
-                pattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
                 isCytokine = False
-                if re.search(pattern,name):
+                if re.search(cytokinePattern,name):
                     isCytokine = True
 
                 gateToSave = {'verts':verts,

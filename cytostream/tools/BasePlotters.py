@@ -10,7 +10,7 @@ from matplotlib.nxutils import points_inside_poly
 from matplotlib.ticker import ScalarFormatter
 from cytostream.tools import rgb_to_hex, get_cmap_blues, get_file_sample_stats, get_all_colors
 from cytostream.tools import set_logicle_transformed_ticks, set_scatter_ticks, set_log_transformed_ticks
-from cytostream.tools import get_fontsize, get_fontname
+from cytostream.tools import get_fontsize, get_fontname,scatterPattern
 from fcm.graphics import bilinear_interpolate
 
 '''
@@ -144,7 +144,6 @@ def draw_labels(ax,events,indicesFG,indicesBG,index1,index2,labels,markerSize,hi
 def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontName,useSimple=False,axesOff=False,useScaled=False):
 
     ## variables
-    scatterList = ['FSC','FSCA','FSCW','FSCH','SSC','SSCA','SSCW','SSCH']
     xTransformed, yTransformed = False, False
     buff = 0.02
     formatter = ScalarFormatter(useMathText=True)
@@ -172,10 +171,10 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
 
     ## handle scatter axes
     for key,val in channelDict.iteritems():
-        if xTransformed == False and key in scatterList and index1 == val:
+        if xTransformed == False and re.search(scatterPattern,key) and index1 == val:
             set_scatter_ticks(ax,'x',fontsize=fontSize,fontname=fontName)
             xTransformed = True
-        if yTransformed == False and key in scatterList and index2 == val:
+        if yTransformed == False and re.search(scatterPattern,key) and index2 == val:
             set_scatter_ticks(ax,'y',fontsize=fontSize,fontname=fontName)
             yTransformed = True
 
@@ -220,7 +219,7 @@ def finalize_draw(ax,events,channelDict,index1,index2,transform,fontSize,fontNam
     ## make axes square
     ax.set_aspect(1./ax.get_data_ratio())
 
-def draw_plot(args,parent=None,axesOff=False,markerSize=1):
+def draw_plot(args,parent=None,axesOff=False,markerSize=1,fontSize=None):
     ''' 
     draw_plot takes args to create a plot 
     can be entirely independent of classes however a parent
@@ -270,20 +269,10 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     isGui        = args[18]
     drawLabels   = args[19]
 
-    ## force drawState to heat if necessary
-    if labels == None and drawState != 'heat':
-        msg = "Forcing draw state to heat because labels were not provided"
-        if parent != None:
-            reply = QtGui.QMessageBox.warning(parent, "Warning", msg)
-            parent.vizSelector.btns['heat'].setChecked(True)
-            parent.vizSelector.selectedItem = 'heat'
-            parent.drawState = 'heat'
-        else:
-            print "WARNING:"+msg
-        drawState = 'heat'
+    ## variables
+    n,d = events.shape
 
     ## handle subsampling by ensuring subsample Inds are present
-    n,d = events.shape
     if type(np.array([])) == type(subsample):
         randEvents = subsample
     elif type(0) == type(subsample):
@@ -308,11 +297,26 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     else:
         subsampleInds = randEvents
 
+    ## force drawState to a specific color if necessary
+    if labels == None and drawState != 'heat':
+        labels = np.zeros(subsampleInds.size,dtype=int)
+        drawLabels = False
+        #msg = "Forcing draw state to heat because labels were not provided"
+        #if parent != None:
+        #    reply = QtGui.QMessageBox.warning(parent, "Warning", msg)
+        #    parent.vizSelector.btns['heat'].setChecked(True)
+        #    parent.vizSelector.selectedItem = 'heat'
+        #    parent.drawState = 'heat'
+        #else:
+        #    print "WARNING:"+msg
+        #drawState = 'heat'
+
     ## other variables
     centroids = None
     masterColorList = get_all_colors()
     fontName = get_fontname()
-    fontSize = get_fontsize(numSubplots)
+    if fontSize == None:
+        fontSize = get_fontsize(numSubplots)
 
     if numSubplots == None:
         numSubplots = 1
@@ -335,9 +339,9 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
         print "ERROR: draw_plot labels and events do not match", eventsToPlot.shape[0], len(labels)
 
     ## get centroids
-    if parent != None and str(labels) != "None":
+    if parent != None and str(labels) != "None" and drawLabels == True:
         centroids,variances,sizes = parent.currentCentroids
-    if parent == None and str(labels) != "None":
+    if parent == None and str(labels) != "None" and drawLabels == True:
         centroids,variances,sizes = get_file_sample_stats(eventsToPlot,labels)
 
     ## error check
@@ -349,7 +353,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     ## handle highlighting
     totalPts,totalDims = eventsToPlot.shape
 
-    if str(highlight) != "None" and str(labels) == "None":
+    if str(highlight) != "None" and str(highlight) != '[]' and str(labels) == "None":
         print "ERROR in BasePlotters highlight cannot be specified without labels"
 
     if str(highlight) != "None" and type(highlight) != type([]):
@@ -384,8 +388,9 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     else:
         indicesFG = subsampleInds
         indicesBG = []
-        colorList = masterColorList[labels]
 
+        colorList = masterColorList[labels]
+            
     ## draw the points
     if str(labels) != "None" and drawState == 'scatter':
         if max(labels) > len(masterColorList):
@@ -419,6 +424,10 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
     if type(colorList) == type([]):
         colorList = np.array(colorList)
 
+    ## debug
+    #print 'indicesFG',len(indicesFG)
+    #print 'indicesBG',len(indicesBG)
+
     if drawState in ['scatter', 'heat']:
         draw_scatter(ax,events,indicesFG,indicesBG,channel1Ind,channel2Ind,labels,markerSize,highlight,colorList,
                      drawState=drawState)
@@ -451,7 +460,7 @@ def draw_plot(args,parent=None,axesOff=False,markerSize=1):
             plotTitle = re.sub("_"," ",plotTitle)
             ax.set_title(plotTitle,fontname=fontName,fontsize=fontSize)
 
-        finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
+        #finalize_draw(ax,eventsToPlot,channelDict,channel1Ind,channel2Ind,transform,fontSize,fontName,useSimple,axesOff,useScaled=useScaled)
     else:
         print "ERROR: BasePlotters: draw state not implemented", drawState
 

@@ -29,9 +29,6 @@ class SaveSubplots():
                  gatesToShow=None,positiveToShow=None,dpi=None,trimmed=False,hasFrame=True,drawLabels=True,
                  textToShow=None,fontSize=10):
 
-        #print '...savesubplots', plotType, figMode
-
-
         ## arg variables
         self.controller = controller
         self.numSubplots = numSubplots
@@ -136,7 +133,7 @@ class SaveSubplots():
             self.fig.subplots_adjust(hspace=0.0,wspace=0.5)
             dpi = 220
         elif self.numSubplots in [9]:
-            self.fig.subplots_adjust(hspace=0.3,wspace=0.05)
+            self.fig.subplots_adjust(hspace=0.4,wspace=0.001)
             dpi = 220
         elif self.numSubplots in [10,11,12]:
             self.fig.subplots_adjust(hspace=0.6,wspace=0.3)
@@ -148,10 +145,10 @@ class SaveSubplots():
         if inputDPI != None:
             dpi = inputDPI
 
-        if self.trimmed == True:
-            self.fig.savefig(self.figName,transparent=False,dpi=dpi,bbox_inches='tight')
-        else:
-            self.fig.savefig(self.figName,transparent=False,dpi=dpi)
+        #if self.trimmed == True:
+        self.fig.savefig(self.figName,transparent=False,dpi=dpi,bbox_inches='tight')
+        #else:
+        #    self.fig.savefig(self.figName,transparent=False,dpi=dpi)
     def generic_callback():
         print "generic callback"
 
@@ -183,10 +180,7 @@ class SaveSubplots():
             elif self.figMode == 'analysis' and self.inputLabels != None:
                 labels = self.inputLabels[subplotIndex]
             elif self.figMode == 'analysis':
-                statModel, statModelClasses = self.model.load_model_results_pickle(subplotFile,subplotRunID,modelType=self.resultsMode)
-                labels = statModelClasses
-                modelLog = self.model.load_model_results_log(subplotFile,subplotRunID)
-                self.subsample = modelLog['subsample']
+                labels,labelsLog = self.controller.get_labels(subplotFile,subplotRunID,getLog=True)
             else:
                 print "WARNING: unexpected event occured in SaveSubplots.py", self.figMode
 
@@ -205,36 +199,44 @@ class SaveSubplots():
 
             ## ensure only maximum num events are shown
             maxScatter = int(float(self.log.log['setting_max_scatter_display']))
-            if self.subsample == 'original' and events.shape[0] > maxScatter:
-                subsampleToUse = maxScatter
-                subsampleIndices = self.controller.model.get_subsample_indices(subsampleToUse)
-                if labels != None:
-                    labels = labels[subsampleIndices]
+            #if events.shape[0] > maxScatter:
+            #    print "INFO: save subplots down sample is turned off in save subplots"
+
+            #if self.subsample == 'original' and events.shape[0] > maxScatter:
+            #    subsampleToUse = maxScatter
+            #    subsampleIndices = self.controller.model.get_subsample_indices(subsampleToUse)
+            #    if labels != None:
+            #        labels = labels[subsampleIndices]
             ## case where original is smaller than max scatter display
-            elif self.subsample == 'original':
-                subsampleIndices = np.arange(events.shape[0])
+            #elif self.subsample == 'original':
+            #    subsampleIndices = np.arange(events.shape[0])
             ## case where we have a subsample but no labels
-            elif labels == None:
-                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            #elif labels == None:
+            #    subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
             ## case where labels are smaller than subsample (usually means model was run on a subsample)
-            elif len(labels) < self.subsample:
-                self.subsample = len(labels)
-                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            #elif len(labels) < self.subsample:
+            #    self.subsample = len(labels)
+            #    subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
             ## case where labels and subsample match
-            elif len(labels) == self.subsample:
-                subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
-            else:
-                print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
+            #elif len(labels) == self.subsample:
+            #    subsampleIndices = self.controller.model.get_subsample_indices(self.subsample)
+            #else:
+            #    print "WARNING: something unexpected occured in SaveSubplots subsample handeling"
+            subsampleIndices = np.arange(events.shape[0])
 
             ## filter overwrites subsamples
             if str(subplotFilter) != 'None':
                 labels = self.controller.get_labels(subplotFile,subplotRunID)
-                filterIndices = self.controller.model.load_filter(subplotFile,subplotFilter)
+                if labels == None:
+                    labels = np.zeros(events.shape[0],dtype=int)
+                filterLabels = self.controller.get_labels(subplotFile,subplotFilter,getLog=False)
+                filterIndices = np.where(filterLabels==1)[0]
+                print filterLabels.shape,filterIndices.shape
                 if len(filterIndices) > 0:
                     labels = np.array(labels[filterIndices])
                 else:
                     labels = np.array([]) 
-                    print "WARNING: not displaying any events no events in filter"
+                    print "WARNING: cannot display any events no events in filter"
                 
                 subsampleIndices = filterIndices
 
@@ -242,7 +244,8 @@ class SaveSubplots():
             if labels == None:
                 pass
             elif len(labels) != subsampleIndices.shape[0]:
-                print "ERROR: SaveSubplots Error Check -- subsample, labels and events don't match", events.shape, len(labels), type(self.subsample)
+                print "ERROR: SaveSubplots Error Check -- subsample, labels and events don't match"
+                print "...", events.shape, len(labels), type(self.subsample)
 
             index1,index2 = subplotChannels
 
@@ -289,7 +292,7 @@ class SaveSubplots():
             args[19] = self.drawLabels
 
             ## add a line if specified {subplot:(lineX,lineY)}
-            indicesFG = draw_plot(args,axesOff=self.axesOff)
+            indicesFG = draw_plot(args,axesOff=self.axesOff,fontSize=self.fontSize)
 
             if self.addLine != None and subplotIndex in self.addLine.keys():
                 ax = self.get_axes(subplotIndex)
@@ -308,11 +311,10 @@ class SaveSubplots():
             if self.textToShow != None and self.textToShow != None:
                 txt = self.textToShow[subplotIndex]
                 ax = self.get_axes(subplotIndex)
-                ax.text(0.11, 0.92,txt,
+                ax.text(0.11, 0.92,txt,fontsize=self.fontSize,
                         horizontalalignment='left',
                         verticalalignment='center',
                         transform = ax.transAxes)
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],self.fontSize,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
             
             ## add positivity events if specified
             if self.positiveToShow != None and self.positiveToShow[subplotIndex] != None:
@@ -322,8 +324,12 @@ class SaveSubplots():
                 #ax.plot(np.array([fThreshold]).repeat(50),np.linspace(dataY.min(),dataY.max(),50),color='orange',linestyle='-',linewidth=1.0)
                 if len(positiveEventInds) > 0:
                     ax.scatter([dataX[positiveEventInds]],[dataY[positiveEventInds]],c='#FFDD22',s=3,edgecolor='none')      
-                finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],self.fontSize,self.fontName,useSimple=False,axesOff=False,useScaled=self.useScale)
        
+            ax = self.get_axes(subplotIndex)
+            finalize_draw(ax,events,self.channelDict,index1,index2,self.log.log['plots_transform'],
+                              self.fontSize,self.fontName,useSimple=False,axesOff=False,
+                              useScaled=self.useScale)
+
             ## ensure correct font size
             ax = self.get_axes(subplotIndex)
             

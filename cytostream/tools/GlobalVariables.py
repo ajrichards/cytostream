@@ -32,6 +32,8 @@ officialNames = {'CD107':"lysosomal-associated membrane protein or 'LAMP1' and '
                  'Unmatched':'no match'}   
 
 cytokinePattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
+scatterPattern = re.compile("FSC|FSCA|FSCW|FSCH|SSC|SSCA|SSCW|SSCH",re.IGNORECASE)
+
 
 def get_official_name_match(channel):
     strippedChannel = re.sub("\s|\-|\_","",channel)

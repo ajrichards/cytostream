@@ -66,14 +66,8 @@ class TestCase1(unittest.TestCase):
         modelRunID = 'run1'
         run1Labels,run1Log = self.nga.load_labels(testFileName,'run1',getLog=True)
 
-
         self.assertEqual(run1Labels.size,500)
         self.assertEqual('utest',run1Log['project id'])
-                
-        ## check that information can be retrieved from model log file
-        #modelLog = self.nga.get_model_log(self.fileNameList[0],modelRunID)
-
-
 
 ### Run the tests 
 if __name__ == '__main__':

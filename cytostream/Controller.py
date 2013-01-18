@@ -822,6 +822,11 @@ class Controller:
         gateName = re.sub("\.gate","",gateName)
         gateFilePath = os.path.join(os.path.join(self.homeDir,"data"),gateName)
 
+        #gateName = re.sub(fileName,"",gateName)
+        #parent = re.sub(fileName,"",parent)
+        #gateName = re.sub("_gate_$","",gateName)
+        #parent = re.sub("_gate_$","",parent)
+        
         ## check to see if we have a cytokine
         if re.search(cytokinePattern,gateName):
             isCytokine = True
@@ -844,21 +849,21 @@ class Controller:
         cPickle.dump(gateToSave,tmp1)
         tmp1.close()
 
-        ## create filters for each file using both indices and clusters
-        fileEvents = self.get_events(fileName)
-        fileLabels = self.get_labels(fileName,modelRunID)
-        _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+        ## save the labels associated with each gate
+        #fileEvents = self.get_events(fileName)
+        #fileLabels = self.get_labels(fileName,modelRunID)
+        #_gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
 
-        if parent != 'root':
-            parentGate = self.load_gate(parent)
-            filterLabels = self.get_labels(fileName,'iFilter_%s'%parent,getLog=False)
-            parentIndices = np.where(filterLabels==1)[0]
-            gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
-        else:
-            gateIndices = _gateIndices
+        #if parent != 'root':
+        #    parentGate = self.load_gate(parent)
+        #    filterLabels = self.get_labels(fileName,parent,getLog=False)
+        #    parentIndices = np.where(filterLabels==1)[0]
+        #    gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+        #else:
+        #    gateIndices = _gateIndices
 
         ## save events by index
-        self.handle_filtering_by_indices('iFilter_%s'%gateName,fileName,gateIndices)
+        #self.handle_filtering_by_indices(gateName,fileName,gateIndices)
 
     def load_gate(self,gateID):
         '''
@@ -868,6 +873,7 @@ class Controller:
         gateList = get_saved_gate_names(self.homeDir)
         if gateID not in gateList:
             print "ERROR: Controller.load_gate -- invalid gate specified",gateID
+            print gateList
             return
         
         gateFilePath = os.path.join(self.homeDir,'data','%s.gate'%gateID)
@@ -878,11 +884,13 @@ class Controller:
         return gate
 
     def save_subplots(self,figName,numSubplots,figMode='analysis',figTitle=None,useScale=False,drawState='heat',
-                      subplotTitles=None,gatesToShow=None,positiveToShow=None,drawLabels=True,textToShow=None):
+                      subplotTitles=None,gatesToShow=None,positiveToShow=None,drawLabels=True,textToShow=None,
+                      fontSize=10):
         '''
         function used from within cytostream when SaveSubplots cannot be imported
         '''
 
-        ss = SaveSubplots(self,figName,numSubplots,figMode=figMode,figTitle=figTitle,useScale=useScale,drawLabels=drawLabels,
-                          drawState=drawState,subplotTitles=subplotTitles,gatesToShow=gatesToShow,positiveToShow=positiveToShow,
-                          textToShow=textToShow)
+        ss = SaveSubplots(self,figName,numSubplots,figMode=figMode,figTitle=figTitle,useScale=useScale,
+                          drawLabels=drawLabels,drawState=drawState,subplotTitles=subplotTitles,
+                          gatesToShow=gatesToShow,positiveToShow=positiveToShow,textToShow=textToShow,
+                          fontSize=fontSize)
