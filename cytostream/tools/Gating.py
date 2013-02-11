@@ -265,11 +265,10 @@ class GateImporter:
     '''
     
     def __init__(self,nga,xmlFilePath,modelRunID='run1',transform='logicle',plotGates=False,
-                 regex="\s+"):
+                 regex="\s+",force=False):
         '''
         constructor initalizes all necessary variables
         regex = a regexpression (str) that converts original file names to appropriate file names
-
         '''
 
         ## declare variables
@@ -281,6 +280,7 @@ class GateImporter:
         self.transform = transform
         self.savedGates = {}
         self.plotGates = plotGates
+        self.force = force
 
         ## specify the default scatters
         self.channelDict = self.nga.channelDict
@@ -309,7 +309,6 @@ class GateImporter:
         self.read_gates(xmlFilePath)
 
     def plot_gates(self,fileName,viaSubset=True):
-
         basicSubsets = ["CD4","CD8"]
         gateNames = [g['name'] for g in self.savedGates[fileName]]
         def get_gates_to_plot(bsubset):
@@ -422,9 +421,9 @@ class GateImporter:
         dim1 = [g[1] for g in gateVerts]
 
         if axis in ['x','both']:
-            dim0 = (10**5)*logicle(dim0, 262144, 4.5, None, 0.5)
+            dim0 = (10**5)*(logicle(dim0, 262144, 4.5, None, 0.5))
         if axis in ['y','both']:
-            dim1 = (10**5)*logicle(dim1, 262144, 4.5, None, 0.5)
+            dim1 = (10**5)*(logicle(dim1, 262144, 4.5, None, 0.5))
     
         newGate = []
         for g in range(len(gateVerts)):
@@ -447,38 +446,44 @@ class GateImporter:
         dimX = np.array([g[0] for g in verts])
         dimY = np.array([g[1] for g in verts])
         
-        ## setup for bug fix for neg vals
-        negValsX = (np.where(dimX < 0)[0],dimX[np.where(dimX < 0)[0]])
-        negValsY = (np.where(dimY < 0)[0],dimY[np.where(dimY < 0)[0]])
-        verts = [(np.abs(dimX[p]),np.abs(dimY[p])) for p in range(len(verts))]
-        
         shortChannels = self.nga.get('short_channel_labels')
+        
         if len(shortChannels) == 0:
             print "ERROR: GateImporter fatal error - no short labels -- exiting..."
             sys.exit()
 
-        channel1Ind = shortChannels.index(_channel1)
-        channel2Ind = shortChannels.index(_channel2)
-        channel1Name, channel2Name = None,None
-        for chanName, chanIndx in self.channelDict.iteritems():
-            if int(channel1Ind) == int(chanIndx):
-                channel1Name = chanName
-            if int(channel2Ind) == int(chanIndx):
-                channel2Name = chanName
+        if not shortChannels.__contains__(_channel1):
+            print "channel 1 could not be matched to short channels", _channel1
+            channel1Ind = 'NA'
+        else:
+            channel1Ind = shortChannels.index(_channel1)
 
+        if not shortChannels.__contains__(_channel2):
+            print "channel 2 could not be matched to short channels", _channel2
+            channel2Ind = 'NA'
+        else:
+            channel2Ind = shortChannels.index(_channel2)
+
+        ## find the channel name using the exact match
+        channel1Name,channel2Name = None,None
+        for chanName, chanIndx in self.channelDict.iteritems():
+            if channel1Ind == 'NA':
+                channel1Name = 'NA'
+            elif int(channel1Ind) == int(chanIndx):
+                channel1Name = chanName
+
+            if channel2Ind == 'NA':
+                channel2Name = 'NA'  
+            elif int(channel2Ind) == int(chanIndx):
+                channel2Name = chanName
+        
+        ## transform the channels
         if not re.search(scatterPattern,channel1Name) and not re.search(scatterPattern,channel2Name):
             verts = self.logical_transform(verts,axis='both',reverse=False)
         elif not re.search(scatterPattern,channel1Name):
             verts = self.logical_transform(verts,axis='x',reverse=False)
         elif not re.search(scatterPattern,channel2Name):
             verts = self.logical_transform(verts,axis='y',reverse=False)
-
-        ## revert any negative values to their original values
-        #if len(negValsX[0]) > 0:
-        #    dimX[negValsX[0]] = np.negative(np.abs(dimX[negValsX[0]]))
-        #if len(negValsY[0]) > 0:
-        #    dimY[negValsY[0]] = np.negative(np.abs(dimY[negValsY[0]]))
-        #verts = [(dimX[p],dimY[p]) for p in range(len(verts))]
 
         ## add the point to the end
         verts = verts + [verts[0]]
@@ -525,22 +530,26 @@ class GateImporter:
                 print "WARNING: gate importer unmatched name"
                 unmatchedNames.append(fileNameToMatch)
                 print fileNameToMatch
-                continue
+                #for fn in self.fileNameList:
+                #    print "...", fn
 
-            matchedIndices.append(self.fileNameList.index(matchedName))
+                if self.force == False:
+                    continue
+            else:
+                matchedIndices.append(self.fileNameList.index(matchedName))
             matchedNames.append(fileNameToMatch)
 
         matchedIndices = list(set(matchedIndices))
         if len(matchedIndices) != len(self.fileNameList):
             print "WARNING: either not all files could be matched or there was an invalid number of matchs"
-            matchedNames.sort()
-            unmatchedNames.sort()
-            print "From XML -- matched names\n", matchedNames
-            print "From XML -- unmatched names\n", unmatchedNames
-            print "From nga -- unmatched names\n"
-            print np.array(self.fileNameList)[list(set(range(len(self.fileNameList))).difference(set(matchedIndices)))]
-            print len(matchedIndices),len(self.fileNameList)
-            return
+            #matchedNames.sort()
+            #unmatchedNames.sort()
+            #print "From XML -- matched names\n", matchedNames
+            #print "From XML -- unmatched names\n", unmatchedNames
+            #print "From nga -- unmatched names\n"
+            #print np.array(self.fileNameList)[list(set(range(len(self.fileNameList))).difference(set(matchedIndices)))]
+            #print len(matchedIndices),len(self.fileNameList)
+            #return
 
         matches = 0
         for _fileNameToMatch in gates.keys():
@@ -551,7 +560,12 @@ class GateImporter:
                    matchedName = fileName
 
             if matchedName == None:
-                continue
+                matchedName = fileNameToMatch
+                
+                if self.force == False:
+                    print "skipping gates for %s..."%fileNameToMatch
+                    continue
+                    
             matches += 1
             print "Extracting gates for %s"%matchedName
             gateList = gates[_fileNameToMatch]
@@ -572,12 +586,20 @@ class GateImporter:
                 #    print "WARNING: detected cytokine as parent -- using root"
                 #parent = 'root'
 
+                ## debug by filtering on a specific file name
+                #if not re.search("_A01",fileName):
+                #    continue
+
                 print '\tname', name
                 print '\tparent', parent
                 print '\tchannels', chan1Ind,chan2Ind,chan1Name,chan2Name, "\n"
-                self.nga.controller.save_gate('%s.gate'%name,verts,chan1Ind,chan2Ind,
-                                              chan1Name,chan2Name,parent,fileName)
+                if self.force == True:
+                    saveLabels = False
+                else:
+                    saveLabels = True
 
+                self.nga.controller.save_gate('%s.gate'%name,verts,chan1Ind,chan2Ind,
+                                              chan1Name,chan2Name,parent,fileName,saveLabels=saveLabels)
                 isCytokine = False
                 if re.search(cytokinePattern,name):
                     isCytokine = True

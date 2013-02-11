@@ -231,7 +231,7 @@ class SaveSubplots():
                     labels = np.zeros(events.shape[0],dtype=int)
                 filterLabels = self.controller.get_labels(subplotFile,subplotFilter,getLog=False)
                 filterIndices = np.where(filterLabels==1)[0]
-                print filterLabels.shape,filterIndices.shape
+
                 if len(filterIndices) > 0:
                     labels = np.array(labels[filterIndices])
                 else:
@@ -291,12 +291,17 @@ class SaveSubplots():
             args[18] = False
             args[19] = self.drawLabels
 
-            ## add a line if specified {subplot:(lineX,lineY)}
-            indicesFG = draw_plot(args,axesOff=self.axesOff,fontSize=self.fontSize)
+            ## draw the plot
+            if labels != None and len(labels) == 0:
+                indicesFG = []
+            else:
+                indicesFG = draw_plot(args,axesOff=self.axesOff,fontSize=self.fontSize)
 
+            ## add a line if specified {subplot:(lineX,lineY)}
             if self.addLine != None and subplotIndex in self.addLine.keys():
                 ax = self.get_axes(subplotIndex)
-                linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],color="#FF7722",linewidth=1.5)
+                linePlt = ax.plot(self.addLine[subplotIndex][0],self.addLine[subplotIndex][1],
+                                  color="#FF7722",linewidth=1.5)
             
             ## add gate if specified
             if self.gatesToShow != None and len(self.gatesToShow[subplotIndex]) != 0:
@@ -311,7 +316,7 @@ class SaveSubplots():
             if self.textToShow != None and self.textToShow != None:
                 txt = self.textToShow[subplotIndex]
                 ax = self.get_axes(subplotIndex)
-                ax.text(0.11, 0.92,txt,fontsize=self.fontSize,
+                ax.text(0.3, 0.92,txt,fontsize=self.fontSize,
                         horizontalalignment='left',
                         verticalalignment='center',
                         transform = ax.transAxes)

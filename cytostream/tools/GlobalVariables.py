@@ -29,7 +29,7 @@ officialNames = {'CD107':"lysosomal-associated membrane protein or 'LAMP1' and '
                  'SSCW':'Side Scatter - Width',
                  'TNF':'tumor necrosis factor',
                  'Time':'Time',
-                 'Unmatched':'no match'}   
+                 'Unmatched':'no match'}
 
 cytokinePattern = re.compile("IFN|IFNG|CD27|CD45|CD107|IL2",re.IGNORECASE)
 scatterPattern = re.compile("FSC|FSCA|FSCW|FSCH|SSC|SSCA|SSCW|SSCH",re.IGNORECASE)

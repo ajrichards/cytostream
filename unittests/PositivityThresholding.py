@@ -49,7 +49,7 @@ class PositivityThresholding(unittest.TestCase):
         ## get the percentages and indices of the positive events
         eventsList = [nga.get_events(fn) for fn in allFiles]
         percentages,idx = get_positive_events(allFiles,nga.channelDict[cytokine],
-                                                       fResults['threshold'],eventsList)
+                                              fResults['threshold'],eventsList)
 
         ## ensure correct results
         self.assertTrue(percentages["G69019FF_Costim_CD4"] < 1.0)

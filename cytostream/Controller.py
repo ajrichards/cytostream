@@ -802,7 +802,7 @@ class Controller:
              view.mc.init_model_process(cmd,script,fileList)
 
     def save_gate(self,gateName,verts,channel1,channel2,channel1Name,channel2Name,parent,fileName,
-                  modelRunID='run1'):
+                  modelRunID='run1',saveLabels=True):
         '''
         saves a given gate
         channels are the channel index
@@ -849,21 +849,28 @@ class Controller:
         cPickle.dump(gateToSave,tmp1)
         tmp1.close()
 
-        ## save the labels associated with each gate
-        #fileEvents = self.get_events(fileName)
-        #fileLabels = self.get_labels(fileName,modelRunID)
-        #_gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+        if saveLabels == False:
+            return
 
-        #if parent != 'root':
-        #    parentGate = self.load_gate(parent)
-        #    filterLabels = self.get_labels(fileName,parent,getLog=False)
-        #    parentIndices = np.where(filterLabels==1)[0]
-        #    gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
-        #else:
-        #    gateIndices = _gateIndices
+        ## save the labels associated with each gate
+        fileEvents = self.get_events(fileName)
+        fileLabels = self.get_labels(fileName,modelRunID)
+        _gateIndices  = get_indices_from_gate(fileEvents[:,[channel1,channel2]],verts)
+
+        if parent != 'root':
+            parentGate = self.load_gate(parent)
+            filterLabels = self.get_labels(fileName,parent,getLog=False)
+            parentIndices = np.where(filterLabels==1)[0]
+            gateIndices = list(set(parentIndices).intersection(set(_gateIndices)))
+        else:
+            gateIndices = _gateIndices
 
         ## save events by index
-        #self.handle_filtering_by_indices(gateName,fileName,gateIndices)
+        #labels = np.zeros((fileEvents.shape[0]),dtype=int)
+        #if gateIndices != None:
+        #    labels[posIndices] = 1
+        #nga.save_labels(fileName,labels,gn)
+        self.handle_filtering_by_indices(gateName,fileName,gateIndices)
 
     def load_gate(self,gateID):
         '''
