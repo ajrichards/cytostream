@@ -636,7 +636,7 @@ if __name__ == '__main__':
     masterChannelList = ['FL1-H', 'FL2-H', 'FSC-H', 'SSC-H']
     fileList = ['file1','file2','file3']
     #fileList = []
-    showProgressBar= True
+    showProgressBar= False
     dpc = DataProcessingCenter(fileList, masterChannelList,showProgressBar=showProgressBar)
     dpc.show()
     sys.exit(app.exec_())
