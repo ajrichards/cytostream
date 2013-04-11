@@ -171,6 +171,7 @@ class NoGuiAnalysis():
         """
         returns the labels for a file and a given labelsID
         """
+
         savedLabels,savedLog = self.controller.get_labels(fileName,labelsID,getLog=True)
 
         if savedLabels == None:

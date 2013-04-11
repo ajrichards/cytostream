@@ -437,9 +437,9 @@ class GateImporter:
     def read_fcm_poly_gate(self,pGate,fileName):
         print 'reading fcm_poly_gate'
         verts = pGate.vert
-        name  = re.sub("\s+","_",pGate.name)
+        name  = re.sub(self.regex,"_",pGate.name)
         #name  = re.sub(self.regex,"",pGate.name)
-        name = re.sub("\s+","_",name)
+        #name = re.sub("\s+","_",name)
         name = re.sub("\.gate","",name)
         name = name + "_" + fileName
         _channel1,_channel2  = pGate.chan
@@ -520,7 +520,8 @@ class GateImporter:
         unmatchedNames = []
         matchedIndices = []
         for fileNameToMatch in gates.keys():
-            fileNameToMatch = re.sub(self.regex,"",fileNameToMatch)
+            #fileNameToMatch = re.sub(self.regex,"",fileNameToMatch)
+            fileNameToMatch = re.sub(self.regex,"_",fileNameToMatch)
             matchedName = None
             for fileName in self.fileNameList:
                 if fileName == fileNameToMatch:
@@ -553,7 +554,7 @@ class GateImporter:
 
         matches = 0
         for _fileNameToMatch in gates.keys():
-            fileNameToMatch = re.sub(self.regex,"",_fileNameToMatch)
+            fileNameToMatch = re.sub(self.regex,"_",_fileNameToMatch)
             matchedName = None
             for fileName in self.fileNameList:
                 if fileName == fileNameToMatch:
@@ -576,7 +577,7 @@ class GateImporter:
             for pGate in gateList:
                 verts,name,chan1Ind,chan2Ind,chan1Name,chan2Name = self.read_fcm_poly_gate(pGate.gate,matchedName)
                 parent = pGate.parent
-                parent = re.sub("\s+","_",parent)
+                parent = re.sub(self.regex,"_",parent)
                 parent = re.sub("\.gate","",parent)
                 if parent != 'root':
                     parent = parent + "_" + fileName
